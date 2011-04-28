@@ -56,7 +56,7 @@
     <ClCompile>
       <AdditionalOptions>-Zm149 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\src;$(BOOST_DIR);$(FREEIMAGELIB_DIR)\Dist;$(FREEIMAGEPLUSLIB_DIR)\Dist;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\src;$(BOOST_DIR);$(FREEIMAGELIB_DIR)\Dist;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\Dist;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;AIMP_CONTROL_PLUGIN_EXPORTS;BOOST_NO_POINTER_TO_MEMBER_TEMPLATE_PARAMETERS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -69,11 +69,11 @@
       </DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>Ws2_32.lib;FreeImagePlusd.lib;DelayImp.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(BOOST_DIR)\stage\lib;$(FREEIMAGEPLUSLIB_DIR)\dist;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Ws2_32.lib;FreeImagePlus.lib;DelayImp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(BOOST_DIR)\stage\lib;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\dist;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ModuleDefinitionFile>..\src\control_plugin.def</ModuleDefinitionFile>
-      <DelayLoadDLLs>FreeImagePlusd.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <DelayLoadDLLs>FreeImagePlus.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
@@ -85,7 +85,7 @@
       <AdditionalOptions>/MP$(NUMBER_OF_PROCESSORS) -Zm149 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\src;$(BOOST_DIR);$(FREEIMAGELIB_DIR)\Dist;$(FREEIMAGEPLUSLIB_DIR)\Dist;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\src;$(BOOST_DIR);$(FREEIMAGELIB_DIR)\Dist;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\Dist;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;AIMP_CONTROL_PLUGIN_EXPORTS;BOOST_NO_POINTER_TO_MEMBER_TEMPLATE_PARAMETERS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -98,7 +98,7 @@
     <Link>
       <AdditionalDependencies>Ws2_32.lib;FreeImagePlus.lib;DelayImp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(AIMP_PLUGINS_DIR)\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>$(BOOST_DIR)\stage\lib;$(FREEIMAGEPLUSLIB_DIR)\dist;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(BOOST_DIR)\stage\lib;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\dist;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>..\src\control_plugin.def</ModuleDefinitionFile>
       <DelayLoadDLLs>FreeImagePlus.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
