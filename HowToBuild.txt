@@ -60,10 +60,24 @@ Win32 build of Subversion
 Download and install from http://sourceforge.net/projects/win32svn
 Used for creating PDB file with links to source files in SVN repository. Usefull for debugging.
 
+FreeImage
+Download FreeImage DLL(for example, FreeImage 3.15.0 [WIN32]) from http://freeimage.sourceforge.net/download.html and unzip to some folder.
+If you do not want use precompiled package you can download source distribution.
+Requiired only for enabling Rpc function which extracts album cover.
 
 After installing software mentioned above set actual paths in setup_environment.bat and setup_vs_project_variables.bat scripts.
+
 
 To create Release version run build_installer.bat script.
     It will create temp_build\Release folder with plugin DLL, client scripts and installer.
 To debug plugin in Visual Studio launch vs_launch.bat script.
     Important note: do not launch msvc/aimp_control_plugin.vcxproj project directly since project relies on environment variables which are set by vs_launch.bat script.
+    To easy switch between AIMP2 and AIMP3:
+        1) Make symbolic links with name AIMP.exe for AIMP2.exe and AIMP3.exe and put them near correspond executable files.
+        2) In project properties, Configuration Properties->Debugging
+                set Command field to "$(AIMP_PLUGINS_DIR)\..\AIMP2.exe"
+                set Environment field to "PATH=$(FREEIMAGELIB_DIR)\Dist;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\Dist"
+           We must to add path to FreeImagePlus.dll and to FreeImage.dll to have working getAlbumCover Rpc function.
+           If that libraries not found album cover cannot be retrieved through Rpc.
+        3) Set AIMP_PLUGINS_DIR variable in setup_vs_project_variables.bat script.
+    
