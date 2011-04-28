@@ -1,0 +1,59 @@
+Server code uses:
+
+1) Boost C++ libraries: asio, date_time, filesystem, property_tree, thread and other.
+http://www.boost.org
+
+Including Boost Log 1.0 library
+http://boost-log.sourceforge.net
+Copyright © 2007 , 2008, 2009, 2010 Andrey Semashev
+
+2) JsonRpc-Cpp
+http://jsonrpc-cpp.sourceforge.net
+
+3) XmlRpc++
+http://xmlrpcpp.sourceforge.net
+
+4) The FreeImage open source image library. See http://freeimage.sourceforge.net for details.
+FreeImage is used under the (GNU GPL or FIPL), version (license version).
+
+
+Client code uses:
+
+1) jQuery Javascript library
+http://jquery.com
+
+2) jQueryUI Javascript library
+http://jqueryui.com
+
+3) Plugins for jQuery library:
+    3.1) DataTables
+    http://www.datatables.net
+    3.2) Cookie
+    http://plugins.jquery.com/files/jquery.cookie.js.txt
+    Copyright (c) 2006 Klaus Hartl (stilbuero.de)
+    3.3) Star Rating
+    http://www.fyneworks.com/jquery/star-rating
+    3.4) Select boxes
+    http://www.texotela.co.uk/code/jquery/select
+    Copyright (c) 2006-2010 Sam Collett (http://www.texotela.co.uk)
+    3.5) jScroller2
+    http://jscroller2.markusbordihn.de
+    Copyright (c) 2008 Markus Bordihn (markusbordihn.de)
+
+4) JSON/XML-RPC Client
+http://code.google.com/p/json-xml-rpc
+Copyright: 2007, Weston Ruter <http://weston.ruter.net/>
+
+
+Following tools are used in build process:
+
+1) Google Closure Compiler
+http://code.google.com/intl/ru/closure/compiler
+2) YUI Compressor
+http://developer.yahoo.com/yui/compressor
+3) Verpatch
+http://www.codeproject.com/KB/install/VerPatch.aspx
+4) Inno Setup installer
+http://www.jrsoftware.org/isinfo.php
+
+Great thanks to all the people who created these libraries and tools, and to all people who support them.

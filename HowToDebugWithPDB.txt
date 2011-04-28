@@ -1,0 +1,4 @@
+For details see http://msdn.microsoft.com/en-us/magazine/cc301459.aspx, also http://www.wintellect.com/CS/blogs/jrobbins/archive/2009/06/24/7981.aspx
+
+In debuggers Windbg, Visual Studio debugger following env. variable is used to determine symbol path:
+    set _NT_SYMBOL_PATH=SRV*C:\Symbols*http://msdl.microsoft.com/download/symbols

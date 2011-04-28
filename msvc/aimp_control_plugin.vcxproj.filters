@@ -1,0 +1,291 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="src\http server">
+      <UniqueIdentifier>{12fd4988-8793-4f59-9875-8defa4907c87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\aimp_manager">
+      <UniqueIdentifier>{7403a0e5-65d3-4b1a-8c6d-4d512c67b709}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\utils">
+      <UniqueIdentifier>{6279ffe3-e4bf-4429-8b81-1b5210994967}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\plugin">
+      <UniqueIdentifier>{80cd679c-5af8-41fb-a316-0d12d17fb821}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\rpc_server">
+      <UniqueIdentifier>{a8674460-f8af-40f1-9d30-72b1fcef4735}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\rpc_server\general">
+      <UniqueIdentifier>{353048a2-7cbe-4f7c-a429-734f7fd71193}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\rpc_server\xml">
+      <UniqueIdentifier>{312e5041-f3c0-4a20-9f9c-019c7b7e9668}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\rpc_server\json">
+      <UniqueIdentifier>{74fdbf6e-b174-4ebf-a796-0e5b4679b647}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\rpc_server\json\json_cpp">
+      <UniqueIdentifier>{8785a5b5-f2f9-41db-9d39-be945889a6cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\rpc_server\webctl">
+      <UniqueIdentifier>{5b0d084a-e2be-41bd-9ddf-ae2a519e9dab}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\stdafx.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dllmain.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\utils\base64.cpp">
+      <Filter>src\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\utils\image.cpp">
+      <Filter>src\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\utils\string_encoding.cpp">
+      <Filter>src\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\utils\util.cpp">
+      <Filter>src\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\rpc\methods.cpp">
+      <Filter>src\rpc_server\general</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\rpc\multi_user_mode_manager.cpp">
+      <Filter>src\rpc_server\general</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\rpc\utils.cpp">
+      <Filter>src\rpc_server\general</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\plugin\control_plugin.cpp">
+      <Filter>src\plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\plugin\logger.cpp">
+      <Filter>src\plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\plugin\settings.cpp">
+      <Filter>src\plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\http_server\connection.cpp">
+      <Filter>src\http server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\http_server\mime_types.cpp">
+      <Filter>src\http server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\http_server\reply.cpp">
+      <Filter>src\http server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\http_server\server.cpp">
+      <Filter>src\http server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\aimp\entries_sorter.cpp">
+      <Filter>src\aimp_manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\aimp\manager.cpp">
+      <Filter>src\aimp_manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\aimp\playlist.cpp">
+      <Filter>src\aimp_manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\xmlrpc\parse_util.cpp">
+      <Filter>src\rpc_server\xml</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\xmlrpc\xmlrpc_value.cpp">
+      <Filter>src\rpc_server\xml</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\xmlrpc\xmlrpc_request_parser.cpp">
+      <Filter>src\rpc_server\xml</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\xmlrpc\xmlrpc_response_serializer.cpp">
+      <Filter>src\rpc_server\xml</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\rpc\rpc_request_handler.cpp">
+      <Filter>src\rpc_server\general</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\rpc\rpc_value.cpp">
+      <Filter>src\rpc_server\general</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\http_server\http_request_handler.cpp">
+      <Filter>src\http server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\http_server\http_request_parser.cpp">
+      <Filter>src\http server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\jsonrpc\json_reader.cpp">
+      <Filter>src\rpc_server\json\json_cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\jsonrpc\json_value.cpp">
+      <Filter>src\rpc_server\json\json_cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\jsonrpc\json_writer.cpp">
+      <Filter>src\rpc_server\json\json_cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\jsonrpc\jsonrpc_request_parser.cpp">
+      <Filter>src\rpc_server\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\jsonrpc\jsonrpc_response_serializer.cpp">
+      <Filter>src\rpc_server\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\webctlrpc\webctlrpc_request_parser.cpp">
+      <Filter>src\rpc_server\webctl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\webctlrpc\webctlrpc_response_serializer.cpp">
+      <Filter>src\rpc_server\webctl</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\stdafx.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\utils\base64.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\utils\image.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\utils\string_encoding.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\utils\util.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\rpc\exception.h">
+      <Filter>src\rpc_server\general</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\rpc\frontend.h">
+      <Filter>src\rpc_server\general</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\rpc\method.h">
+      <Filter>src\rpc_server\general</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\rpc\methods.h">
+      <Filter>src\rpc_server\general</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\rpc\multi_user_mode_manager.h">
+      <Filter>src\rpc_server\general</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\rpc\request_handler.h">
+      <Filter>src\rpc_server\general</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\rpc\request_parser.h">
+      <Filter>src\rpc_server\general</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\rpc\response_serializer.h">
+      <Filter>src\rpc_server\general</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\rpc\utils.h">
+      <Filter>src\rpc_server\general</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\rpc\value.h">
+      <Filter>src\rpc_server\general</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\xmlrpc\frontend.h">
+      <Filter>src\rpc_server\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\xmlrpc\request_parser.h">
+      <Filter>src\rpc_server\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\xmlrpc\response_serializer.h">
+      <Filter>src\rpc_server\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\xmlrpc\util.h">
+      <Filter>src\rpc_server\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\xmlrpc\value.h">
+      <Filter>src\rpc_server\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\plugin\control_plugin.h">
+      <Filter>src\plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\plugin\logger.h">
+      <Filter>src\plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\plugin\settings.h">
+      <Filter>src\plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\http_server\connection.h">
+      <Filter>src\http server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\http_server\header.h">
+      <Filter>src\http server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\http_server\mime_types.h">
+      <Filter>src\http server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\http_server\reply.h">
+      <Filter>src\http server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\http_server\request.h">
+      <Filter>src\http server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\http_server\request_handler.h">
+      <Filter>src\http server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\http_server\request_parser.h">
+      <Filter>src\http server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\http_server\server.h">
+      <Filter>src\http server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp2_sdk.h">
+      <Filter>src\aimp_manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\common_types.h">
+      <Filter>src\aimp_manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\entries_sorter.h">
+      <Filter>src\aimp_manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\manager.h">
+      <Filter>src\aimp_manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\playlist.h">
+      <Filter>src\aimp_manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\playlist_entry.h">
+      <Filter>src\aimp_manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\config.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\jsonrpc\writer.h">
+      <Filter>src\rpc_server\json\json_cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\jsonrpc\reader.h">
+      <Filter>src\rpc_server\json\json_cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\jsonrpc\value.h">
+      <Filter>src\rpc_server\json\json_cpp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\jsonrpc\frontend.h">
+      <Filter>src\rpc_server\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\jsonrpc\request_parser.h">
+      <Filter>src\rpc_server\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\jsonrpc\response_serializer.h">
+      <Filter>src\rpc_server\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\webctlrpc\frontend.h">
+      <Filter>src\rpc_server\webctl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\webctlrpc\request_parser.h">
+      <Filter>src\rpc_server\webctl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\webctlrpc\response_serializer.h">
+      <Filter>src\rpc_server\webctl</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\src\plugin\control_plugin.def">
+      <Filter>src\plugin</Filter>
+    </None>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,17 @@
+{
+    "sProcessing": "Track list loading...",
+    "sLengthMenu": "Show _MENU_ tracks",
+    "sZeroRecords": "No matching tracks found",
+    "sInfo": "Showing _START_ to _END_ of _TOTAL_ tracks",
+    "sInfoEmtpy": "Showing 0 to 0 of 0 tracks",
+    "sInfoFiltered": "(filtered from _MAX_ total tracks)",
+    "sInfoPostFix": "",
+    "sSearch": "Search:",
+    "sUrl": "",
+    "oPaginate": {
+        "sFirst": "First",
+        "sPrevious": "Previous",
+        "sNext": "Next",
+        "sLast": "Last"
+    }
+}

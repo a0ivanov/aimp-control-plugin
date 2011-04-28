@@ -1,0 +1,215 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title></title>
+<!--theme jQueryUI-->
+<link type="text/css" href="development-bundle/themes/ui-darkness/jquery-ui-1.8.2.custom.css" rel="stylesheet" />
+<!--playlist-->
+<link type="text/css" href="dataTables-1.6/media/css/playlist_table.css" rel="stylesheet" />
+<!--star rating of current track control-->
+<link type="text/css" href="css/jquery.rating.css" rel="stylesheet" />
+<!--main page-->
+<link type="text/css" href="css/main_page.css" rel="stylesheet" />
+
+<script type="text/javascript" src="development-bundle/jquery-1.4.2.js"></script>
+<script type="text/javascript" src="development-bundle/ui/jquery.ui.core.js"></script>
+<script type="text/javascript" src="development-bundle/ui/jquery.ui.widget.js"></script>
+<!--playlists-->
+<script type="text/javascript" src="development-bundle/ui/jquery.ui.tabs.js"></script>
+<script type="text/javascript" src="development-bundle/ui/jquery.ui.button.js"></script>
+<!--sortable items in settings dialog-->
+<script type="text/javascript" src="development-bundle/ui/jquery.ui.mouse.js"></script>
+<script type="text/javascript" src="development-bundle/ui/jquery.ui.sortable.js"></script>
+<!--volume slider-->
+<script type="text/javascript" src="development-bundle/ui/jquery.ui.slider.js"></script>
+<!--dialog controls-->
+<script type="text/javascript" src="development-bundle/ui/jquery.ui.draggable.js"></script>
+<script type="text/javascript" src="development-bundle/ui/jquery.ui.position.js"></script>
+<script type="text/javascript" src="development-bundle/ui/jquery.ui.resizable.js"></script>
+<script type="text/javascript" src="development-bundle/ui/jquery.ui.dialog.js"></script>
+<script type="text/javascript" src="development-bundle/ui/jquery.effects.core.js"></script>
+<!-- settings dialog language select box -->
+<script type="text/javascript" src="js/jquery.selectboxes.js"></script>
+<!--star rating control-->
+<script type="text/javascript" src="js/jquery.rating.js"></script>
+<!--playlist-->
+<script type="text/javascript" src="dataTables-1.6/media/js/jquery.dataTables.js"></script>
+<!--autoscroller-->
+<script type="text/javascript" src="js/jscroller2-1.61-src.js"></script>
+<!--cookie utils-->
+<script type="text/javascript" src="js/jquery.cookie.js"></script>
+<!--rpc client-->
+<script type="text/javascript" src="js/rpc.js"></script>
+<!--localization-->
+<script type="text/javascript" src="js/i18n.js"></script>
+<script language="javascript">
+    load_l10n_data(); // see comment below.
+</script>
+<script language="javascript">
+    /*
+        initLocalization() should be called from separate script( relative to load_l10n_data() )
+        since load_l10n_data() adds several scripts to page and they should be processed before initLocalization() call.
+    */
+    initLocalization();
+</script>
+<!--aimp manager-->
+<script type="text/javascript" src="js/aimp_manager.js"></script>
+<!--main page logic utils-->
+<script type="text/javascript" src="js/aimp_control.js"></script>
+<!--user settings dialog utils-->
+<script type="text/javascript" src="js/settings_dialog.js"></script>
+
+<script type="text/javascript">
+(function($) {
+    $(document).ready(initAimpControlPage); // $(document).ready() will be invoked after page loading.
+})(jQuery)
+</script>
+
+</head>
+
+<table>
+    <tbody>
+    <tr>
+        <td>
+            <div id="control_panel" class="aimp-panel ui-widget-header ui-corner-all">
+                <div id="control_panel_buttons">
+                    <button id="play"></button>
+                    <button id="stop"></button>
+                    <button id="previous"></button>
+                    <button id="next"></button>
+
+                    <input type="checkbox" id="shuffle" /><label for="shuffle"></label>
+                    <input type="checkbox" id="repeat" /><label for="repeat"></label>
+
+                    <button id="show_settings_form"></button>
+
+                    <div id="volume_controls">
+                        <div id="mute_button_holder">
+                            <div id="mute_button">
+                                <span id="mute_icon" class="ui-icon"></span>
+                            </div>
+                        </div>
+                        <div id="volume_slider"></div>
+                    </div>
+                </div>
+            </div>
+        </td>
+        <td valign="top">
+            <div id="playback_panel_container" class="aimp-panel ui-widget-header ui-corner-all">
+                <span id="playback_state_label"></span>
+                <div>
+                    <div id="scroll_current_track_container">
+                        <div class="jscroller2_left jscroller2_speed-20 jscroller2_alternate jscroller2_ignoreleave jscroller2_dynamic" style="white-space:nowrap; margin: 0;"></div>
+                    </div>
+                </div>
+            </div>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<div id="playlists">
+    <ul></ul>
+</div>
+
+<div id="settings-dialog-form">
+    <form>
+        <div id="settings-dialog-tabs">
+            <ul>
+                <li><a href="#settings-dialog-tab-playlistview" id="settings-dialog-tab-playlistview-label"></a></li>
+                <li><a href="#settings-dialog-tab-language" id="settings-dialog-tab-language-label"></a></li>
+            </ul>
+            <div id="settings-dialog-tab-playlistview">
+                <fieldset>
+                    <div class="fields_to_view">
+                        <h3 id="entry_fields_label_show"></h3>
+                        <ul id="fields_displayed" class="connectedSortableFields"></ul>
+                    </div>
+                    <div class="fields_to_view">
+                        <h3 id="entry_fields_label_hide"></h3>
+                        <ul id="fields_hidden" class="connectedSortableFields"></ul>
+                    </div>
+                </fieldset>
+            </div>
+            <div id="settings-dialog-tab-language">
+                <select id="language-combobox">
+                    <option value="ru">Русский</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+       </div>
+    </form>
+</div>
+
+<div id="track_info_dialog">
+    <table width="100%">
+        <tbody>
+            <tr class="track_info_table_row">
+                <td>
+                    <span id="label_track_info_title" class="track_info_label"></span>
+                    <span id="track_info_title"></span>
+                </td>
+                <td>
+                    <span id="label_track_info_date" class="track_info_label"></span>
+                    <span id="track_info_date"></span>
+                </td>
+            </tr>
+            <tr class="track_info_table_row">
+                <td>
+                    <span id="label_track_info_artist" class="track_info_label"></span>
+                    <span id="track_info_artist"></span>
+                </td>
+                <td>
+                    <span id="label_track_info_genre" class="track_info_label"></span>
+                    <span id="track_info_genre"></span>
+                </td>
+            </tr>
+            <tr class="track_info_table_row">
+                <td>
+                    <span id="label_track_info_album" class="track_info_label"></span>
+                    <span id="track_info_album"></span>
+                </td>
+                <td>
+                    <span id="label_track_info_filesize" class="track_info_label"></span>
+                    <span id="track_info_filesize"></span>
+                </td>
+            </tr>
+            <tr class="track_info_table_row">
+                <td>
+                    <span id="label_track_info_bitrate" class="track_info_label"></span>
+                    <span id="track_info_bitrate"></span>
+                </td>
+                <td>
+                    <span id="label_track_info_duration" class="track_info_label"></span>
+                    <span id="track_info_duration"></span>
+                </td>
+            </tr>
+            <tr class="track_info_table_row">
+                <td colspan="2">
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <span id="label_track_info_rating" class="track_info_label"></span>
+                                </td>
+                                <td>
+                                    <div id="track_info_rating">
+                                        <input type="radio" class="track_info_rating_star" value="1"/>
+                                        <input type="radio" class="track_info_rating_star" value="2"/>
+                                        <input type="radio" class="track_info_rating_star" value="3"/>
+                                        <input type="radio" class="track_info_rating_star" value="4"/>
+                                        <input type="radio" class="track_info_rating_star" value="5"/>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

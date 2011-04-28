@@ -1,0 +1,96 @@
+/* Common settings */
+body {
+    font-size: 62.5%;
+    font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
+}
+
+/* Control panel */
+#control_panel_buttons {
+    padding : 5px 4px;
+}
+
+#volume_controls {
+    float: right;
+    margin-top: -4px;
+}
+
+#mute_button_holder { /* need specify size to prevent volume slider moving on mouse over this control. */
+    width: 20px;
+    height: 20px;
+}
+
+#mute_button {
+    width: 15px;
+    height: 15px;
+    left : 0px;
+    top: 0px;
+    position: relative;
+}
+
+#mute_icon {
+    left : 0px;
+    top: -1px;
+    position: relative;
+}
+
+#volume_slider {
+    width: 100px;
+}
+
+/* Control and Playback panels */
+.aimp-panel {
+    width: 310px;
+    height: 38px;
+}
+
+/* Playback panel, current track scroller */
+#scroll_current_track_container {
+    height: 20px;
+    overflow: auto;
+}
+
+/* Settings dialog */
+fieldset {
+    padding:0;
+    border:0;
+    margin-top:25px;
+}
+
+h1 {
+    font-size: 1.2em;
+    margin: .6em 0;
+}
+
+/* settings fields holders */
+div.fields_to_view {
+    margin: 0;
+    padding: 0;
+    float: left;
+}
+
+#fields_hidden, #fields_displayed {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    float: left;
+    margin-right: 10px;
+    background: #eee;
+    padding: 5px;
+    min-width: 140px;
+}
+
+#fields_hidden li, #fields_displayed li {
+    margin: 5px;
+    padding: 5px;
+    font-size: 1.2em;
+    min-width: 140px;
+}
+
+/* track info labels */
+.track_info_label {
+    font-weight: bold;
+}
+
+.track_info_table_row {
+    vertical-align: top;
+}

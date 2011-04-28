@@ -1,0 +1,17 @@
+{
+    "sProcessing": "Загрузка списка треков...",
+    "sLengthMenu": "Показывать _MENU_ треков",
+    "sZeroRecords": "Ничего не найдено",
+    "sInfo": "Показано с _START_ по _END_ из _TOTAL_ треков",
+    "sInfoEmtpy": "Показано с 0 по 0 из 0 треков",
+    "sInfoFiltered": "(выбрано из _MAX_)",
+    "sInfoPostFix": "",
+    "sSearch": "Поиск:",
+    "sUrl": "",
+    "oPaginate": {
+        "sFirst": "Первая",
+        "sPrevious": "Предыдущая",
+        "sNext": "Следующая",
+        "sLast": "Последняя"
+    }
+}

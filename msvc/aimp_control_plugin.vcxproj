@@ -1,0 +1,212 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{FAEE3ABF-3697-4B07-8971-1EBD7B2994A1}</ProjectGuid>
+    <RootNamespace>aimp_control_plugin</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)..\temp_build\$(Configuration)\vs\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\temp_build\$(Configuration)\vs\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)..\temp_build\$(Configuration)\vs\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\temp_build\$(Configuration)\vs\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectName)</TargetName>
+    <SourcePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(VCInstallDir)crt\src;$(BOOST_DIR)\libs\log\src</SourcePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(VCInstallDir)include;$(WindowsSdkDir)include</IncludePath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(VCInstallDir)lib;$(WindowsSdkDir)lib</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+    <ClCompile>
+      <AdditionalOptions>-Zm149 %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\src;$(BOOST_DIR);$(FREEIMAGELIB_DIR)\Dist;$(FREEIMAGEPLUSLIB_DIR)\Dist;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;AIMP_CONTROL_PLUGIN_EXPORTS;BOOST_NO_POINTER_TO_MEMBER_TEMPLATE_PARAMETERS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DisableSpecificWarnings>
+      </DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>Ws2_32.lib;FreeImagePlusd.lib;DelayImp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(BOOST_DIR)\stage\lib;$(FREEIMAGEPLUSLIB_DIR)\dist;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ModuleDefinitionFile>..\src\control_plugin.def</ModuleDefinitionFile>
+      <DelayLoadDLLs>FreeImagePlusd.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+      <OutputFile>$(AIMP_PLUGINS_DIR)\$(TargetName)$(TargetExt)</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/MP$(NUMBER_OF_PROCESSORS) -Zm149 %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>..\src;$(BOOST_DIR);$(FREEIMAGELIB_DIR)\Dist;$(FREEIMAGEPLUSLIB_DIR)\Dist;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;AIMP_CONTROL_PLUGIN_EXPORTS;BOOST_NO_POINTER_TO_MEMBER_TEMPLATE_PARAMETERS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>Ws2_32.lib;FreeImagePlus.lib;DelayImp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(AIMP_PLUGINS_DIR)\$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalLibraryDirectories>$(BOOST_DIR)\stage\lib;$(FREEIMAGEPLUSLIB_DIR)\dist;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile>..\src\control_plugin.def</ModuleDefinitionFile>
+      <DelayLoadDLLs>FreeImagePlus.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\aimp\entries_sorter.cpp" />
+    <ClCompile Include="..\src\aimp\manager.cpp" />
+    <ClCompile Include="..\src\aimp\playlist.cpp" />
+    <ClCompile Include="..\src\dllmain.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </PrecompiledHeader>
+      <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </PrecompiledHeader>
+      <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</CompileAsManaged>
+    </ClCompile>
+    <ClCompile Include="..\src\http_server\connection.cpp" />
+    <ClCompile Include="..\src\http_server\http_request_handler.cpp" />
+    <ClCompile Include="..\src\http_server\http_request_parser.cpp" />
+    <ClCompile Include="..\src\http_server\mime_types.cpp" />
+    <ClCompile Include="..\src\http_server\reply.cpp" />
+    <ClCompile Include="..\src\http_server\server.cpp" />
+    <ClCompile Include="..\src\jsonrpc\jsonrpc_request_parser.cpp" />
+    <ClCompile Include="..\src\jsonrpc\jsonrpc_response_serializer.cpp" />
+    <ClCompile Include="..\src\jsonrpc\json_reader.cpp" />
+    <ClCompile Include="..\src\jsonrpc\json_value.cpp" />
+    <ClCompile Include="..\src\jsonrpc\json_writer.cpp" />
+    <ClCompile Include="..\src\plugin\control_plugin.cpp" />
+    <ClCompile Include="..\src\plugin\logger.cpp" />
+    <ClCompile Include="..\src\plugin\settings.cpp" />
+    <ClCompile Include="..\src\rpc\methods.cpp" />
+    <ClCompile Include="..\src\rpc\multi_user_mode_manager.cpp" />
+    <ClCompile Include="..\src\rpc\rpc_request_handler.cpp" />
+    <ClCompile Include="..\src\rpc\rpc_value.cpp" />
+    <ClCompile Include="..\src\rpc\utils.cpp" />
+    <ClCompile Include="..\src\stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\src\utils\base64.cpp" />
+    <ClCompile Include="..\src\utils\image.cpp" />
+    <ClCompile Include="..\src\utils\string_encoding.cpp" />
+    <ClCompile Include="..\src\utils\util.cpp" />
+    <ClCompile Include="..\src\webctlrpc\webctlrpc_request_parser.cpp" />
+    <ClCompile Include="..\src\webctlrpc\webctlrpc_response_serializer.cpp" />
+    <ClCompile Include="..\src\xmlrpc\parse_util.cpp" />
+    <ClCompile Include="..\src\xmlrpc\xmlrpc_request_parser.cpp" />
+    <ClCompile Include="..\src\xmlrpc\xmlrpc_response_serializer.cpp" />
+    <ClCompile Include="..\src\xmlrpc\xmlrpc_value.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\aimp\aimp2_sdk.h" />
+    <ClInclude Include="..\src\aimp\common_types.h" />
+    <ClInclude Include="..\src\aimp\entries_sorter.h" />
+    <ClInclude Include="..\src\aimp\manager.h" />
+    <ClInclude Include="..\src\aimp\playlist.h" />
+    <ClInclude Include="..\src\aimp\playlist_entry.h" />
+    <ClInclude Include="..\src\config.h" />
+    <ClInclude Include="..\src\http_server\connection.h" />
+    <ClInclude Include="..\src\http_server\header.h" />
+    <ClInclude Include="..\src\http_server\mime_types.h" />
+    <ClInclude Include="..\src\http_server\reply.h" />
+    <ClInclude Include="..\src\http_server\request.h" />
+    <ClInclude Include="..\src\http_server\request_handler.h" />
+    <ClInclude Include="..\src\http_server\request_parser.h" />
+    <ClInclude Include="..\src\http_server\server.h" />
+    <ClInclude Include="..\src\jsonrpc\frontend.h" />
+    <ClInclude Include="..\src\jsonrpc\reader.h" />
+    <ClInclude Include="..\src\jsonrpc\request_parser.h" />
+    <ClInclude Include="..\src\jsonrpc\response_serializer.h" />
+    <ClInclude Include="..\src\jsonrpc\value.h" />
+    <ClInclude Include="..\src\jsonrpc\writer.h" />
+    <ClInclude Include="..\src\plugin\control_plugin.h" />
+    <ClInclude Include="..\src\plugin\logger.h" />
+    <ClInclude Include="..\src\plugin\settings.h" />
+    <ClInclude Include="..\src\rpc\exception.h" />
+    <ClInclude Include="..\src\rpc\frontend.h" />
+    <ClInclude Include="..\src\rpc\method.h" />
+    <ClInclude Include="..\src\rpc\methods.h" />
+    <ClInclude Include="..\src\rpc\multi_user_mode_manager.h" />
+    <ClInclude Include="..\src\rpc\request_handler.h" />
+    <ClInclude Include="..\src\rpc\request_parser.h" />
+    <ClInclude Include="..\src\rpc\response_serializer.h" />
+    <ClInclude Include="..\src\rpc\utils.h" />
+    <ClInclude Include="..\src\rpc\value.h" />
+    <ClInclude Include="..\src\stdafx.h" />
+    <ClInclude Include="..\src\utils\base64.h" />
+    <ClInclude Include="..\src\utils\image.h" />
+    <ClInclude Include="..\src\utils\string_encoding.h" />
+    <ClInclude Include="..\src\utils\util.h" />
+    <ClInclude Include="..\src\webctlrpc\frontend.h" />
+    <ClInclude Include="..\src\webctlrpc\request_parser.h" />
+    <ClInclude Include="..\src\webctlrpc\response_serializer.h" />
+    <ClInclude Include="..\src\xmlrpc\frontend.h" />
+    <ClInclude Include="..\src\xmlrpc\request_parser.h" />
+    <ClInclude Include="..\src\xmlrpc\response_serializer.h" />
+    <ClInclude Include="..\src\xmlrpc\util.h" />
+    <ClInclude Include="..\src\xmlrpc\value.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\src\plugin\control_plugin.def" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

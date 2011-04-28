@@ -1,0 +1,4 @@
+LIBRARY aimp_control_plugin
+
+EXPORTS
+	AIMP_QueryAddonEx

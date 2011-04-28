@@ -1,0 +1,1 @@
+Google closure compiler compress 600kb javascript source to 270kb against 304kb of yui_compressor.

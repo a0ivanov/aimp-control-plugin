@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings>
+	<httpserver>
+		<!-- Examples: "localhost", "192.168.0.1", ""(to bind to all network interfaces). -->
+		<ip_to_bind>localhost</ip_to_bind>
+        
+		<port>3333</port>
+        
+		<!-- Full path to browser scripts directory. -->
+		<document_root>./htdocs</document_root>
+	</httpserver>
+	
+	<logging>
+		<!-- Possible values are: debug = 0, info = 1, warning = 2, error = 3, critical = 4, none(logging is disabled) = 5. 
+			 By default, only most important log messages are saved to log file, other messages are ignored.
+		-->
+		<severity>0</severity>
+        
+		<!-- Modules where logging is enabled. Currently plugin consists of 4 modules: plugin, aimp_manager, http_server, rpc_server. -->
+		<modules>
+			<module>plugin</module>
+			<module>aimp_manager</module>
+			<module>http_server</module>
+			<module>rpc_server</module>
+		</modules>
+        
+		<!-- Directory where log files are stored. Base directory is directory where this settings file is located. -->
+		<directory>./</directory>        
+	</logging>
+</settings>
