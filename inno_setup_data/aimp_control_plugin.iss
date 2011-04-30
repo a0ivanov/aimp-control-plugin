@@ -51,7 +51,7 @@ Name: russian; MessagesFile: inno_setup_data\Russian.isl; LicenseFile: Lisense-R
 
 [Files]
 Source: {#SrcApp}; DestDir: {app}; Flags: ignoreversion
-Source: temp_build\Release\client_src\*; DestDir: {code:GetBrowserScriptsDir}; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: temp_build\Release\htdocs\*; DestDir: {code:GetBrowserScriptsDir}; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 Source: inno_setup_data\default_settings.dat; DestDir: {userappdata}\{#WorkDirRelativePath}; DestName: settings.dat; Flags: onlyifdoesntexist; AfterInstall: AfterInstallSettingsFile( ExpandConstant('{userappdata}\{#WorkDirRelativePath}\settings.dat') )
 

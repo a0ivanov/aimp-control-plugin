@@ -55,5 +55,7 @@ http://developer.yahoo.com/yui/compressor
 http://www.codeproject.com/KB/install/VerPatch.aspx
 4) Inno Setup installer
 http://www.jrsoftware.org/isinfo.php
+5) 7Zip
+http://www.7-zip.org
 
 Great thanks to all the people who created these libraries and tools, and to all people who support them.
