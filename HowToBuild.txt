@@ -68,8 +68,11 @@ Requiired only for enabling Rpc function which extracts album cover.
 After installing software mentioned above set actual paths in setup_environment.bat and setup_vs_project_variables.bat scripts.
 
 
-To create Release version run build_installer.bat script.
-    It will create temp_build\Release folder with plugin DLL, client scripts and installer.
+To create Release version run build_plugin.bat script.
+    It will create temp_build\Release folder with plugin DLL, client scripts.
+To create installer build installer use build_installer.bat script.
+    It will create installer in temp_build\Release\distrib.
+    
 To debug plugin in Visual Studio launch vs_launch.bat script.
     Important note: do not launch msvc/aimp_control_plugin.vcxproj project directly since project relies on environment variables which are set by vs_launch.bat script.
     To easy switch between AIMP2 and AIMP3:
