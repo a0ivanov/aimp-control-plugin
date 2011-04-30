@@ -54,7 +54,7 @@ Server::Server( boost::asio::io_service& io_service,
         for (; endpoint_iter != endpoint_iter_end; ++endpoint_iter) {
             BOOST_LOG_SEV(logger(), debug) << ip::tcp::endpoint(*endpoint_iter);
         }
-    } catch(std::exception& e) { // this also handles boost::system::system_error exceptions from acceptor_ methods.
+    } catch(std::exception& e) {
         std::ostringstream msg;
         msg << "Error in "__FUNCTION__": Failed to resolve endpoint for ip '" << address << "' and port '" << port << "'. Reason: " << e.what();
         throw std::runtime_error( msg.str() );
