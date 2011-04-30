@@ -16,7 +16,7 @@ namespace AIMPControlPlugin {
 //! contains logger utils.
 namespace PluginLogger {
 
-//! Identificators of log message's severity level.
+//! Identificators of log message's severity level. If you need to add levels update AIMPControlPlugin::PluginSettings severityToString/severityFromString functions.
 enum SEVERITY_LEVELS { debug = 0,
                        info,
                        warning,

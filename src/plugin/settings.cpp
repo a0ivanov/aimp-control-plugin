@@ -64,6 +64,8 @@ void loadPropertyTreeFromFile(wptree& pt, const boost::filesystem::wpath& filena
     istream.close();
 }
 
+int severityLevelFromString(const std::wstring& level_name);
+
 void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throws std::exception
 {
     // Get directory and store it in log_directory_ variable. Note that
@@ -77,7 +79,9 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
     // another version of get method: if logging.severity key is not
     // found, it will return default value (specified by second
     // parameter) instead of throwing.
-    const int log_severity_level = pt.get<int>(L"settings.logging.severity", critical);
+    const int log_severity_level = severityLevelFromString( pt.get<std::wstring>(L"settings.logging.severity",
+                                                                                 L"critical")
+                                                           );
 
     std::set<std::string> modules_to_log;
 
@@ -140,6 +144,8 @@ void savePropertyTreeToFile(const wptree& pt, const boost::filesystem::wpath& fi
     ostream.close();
 }
 
+const wchar_t* severityToString(int level);
+
 void saveSettingsToPropertyTree(const Settings& settings, wptree& pt) // throws std::exception
 {
     using namespace StringEncoding;
@@ -151,7 +157,7 @@ void saveSettingsToPropertyTree(const Settings& settings, wptree& pt) // throws 
     pt.put(L"settings.logging.directory", settings.logger.directory);
 
     // Put log severity in property tree
-    pt.put(L"settings.logging.severity", settings.logger.severity_level);
+    pt.put( L"settings.logging.severity", severityToString(settings.logger.severity_level) );
 
     BOOST_FOREACH(const std::string& name, settings.logger.modules_to_log) {
         pt.add( L"settings.logging.modules.module", system_ansi_encoding_to_utf16(name) ); // add() method is used instead put() since put() add only first module for some reason.
@@ -167,6 +173,36 @@ void Manager::save(const boost::filesystem::wpath& filename) const
     } catch (std::exception& e) {
         throw SaveError( std::string("Saving settings file failed. Reason: ") + e.what() );
     }
+}
+
+namespace {
+    const wchar_t * const severity_levels[] = {
+        L"debug",
+        L"info",
+        L"warning",
+        L"error",
+        L"critical",
+        L"none"
+    };
+    const size_t levels_count = sizeof(severity_levels) / sizeof(*severity_levels);
+}
+
+int severityLevelFromString(const std::wstring& level_name)
+{
+    for (size_t i = 0; i != levels_count; ++i) {
+        if (level_name == severity_levels[i]) {
+            return debug + i;
+        }
+    }
+    return severity_levels_count;
+}
+
+const wchar_t* severityToString(int level)
+{
+    if (static_cast<std::size_t>(level) < levels_count) {
+        return severity_levels[level];
+    }
+    return severity_levels[severity_levels_count];
 }
 
 } } // namespace AIMPControlPlugin::PluginSettings

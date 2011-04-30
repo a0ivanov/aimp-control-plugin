@@ -224,8 +224,9 @@ inline std::basic_ostream< CharT, TraitsT >& operator<< (
         "error",
         "critical"
     };
+    const std::size_t levels_count = sizeof(str) / sizeof(*str) ;
 
-    if ( static_cast<std::size_t>(severity) < ( sizeof(str) / sizeof(*str) ) ) {
+    if (static_cast<std::size_t>(severity) < levels_count) {
         strm << str[severity];
     } else {
         strm << static_cast<int>(severity);
