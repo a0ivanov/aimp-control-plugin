@@ -19,7 +19,14 @@ set PROJECT_VERSION_FILE=version.txt
     :: and plugin DLL
     tools\7z a -t7z !FULLPATH_ZIP! ^
              .\%TEMP_BUILD_DIR%\aimp_control_plugin.dll || goto ERROR_HANDLER         
-
+    :: and default settings.dat
+    copy /Y .\inno_setup_data\default_settings.dat .\%TEMP_BUILD_DIR%\settings.dat || goto ERROR_HANDLER 
+    tools\7z a -t7z !FULLPATH_ZIP! ^
+             .\%TEMP_BUILD_DIR%\settings.dat || goto ERROR_HANDLER             
+    :: and Readme.dat
+    copy /Y .\HowToSetupPluginFrom7zPackage.txt .\%TEMP_BUILD_DIR%\Readme.txt || goto ERROR_HANDLER 
+    tools\7z a -t7z !FULLPATH_ZIP! ^
+             .\%TEMP_BUILD_DIR%\Readme.txt || goto ERROR_HANDLER
 echo Archieve created.
 exit /B
 
