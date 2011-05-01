@@ -11,3 +11,6 @@ Installing plugin:
 3) In settings.dat set following values:
     httpserver.document_root - set full path to htdocs directory.
     httpserver.ip_to_bind - set address of network interface where plugin server will work.
+    
+Test plugin work:
+    Open plugin's page in browser. Default URL is http://localhost:3333/index.htm.
