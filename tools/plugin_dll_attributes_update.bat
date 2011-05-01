@@ -1,7 +1,7 @@
 :: Script updates Windows executable file's attributes such a version info and etc.
 :: Arguments:
 ::    <path to executable file>
-::  <version>
+::    <version>
 :: Example: plugin_dll_attributes_update.bat aimp_control_plugin.dll 1.0.0.1
 
 @echo off
@@ -18,7 +18,7 @@ chcp 1252 > nul
 set DLL_PATH=%1
 set VERSION="%2"
 set FILEVERSION=%VERSION%
-set FILEDESCR=/s desc "AIMP player plugin. Allows to control the player via the browser."
+set FILEDESCR=/s desc "AIMP player plugin. Provides network access to AIMP player."
 set COPYRIGHT=/s (c) "Copyright © 2011 Alexey Ivanov"
 set PRODINFO=/s product "AIMP Control Plugin"
 set PRODVERSION=/pv %VERSION%
