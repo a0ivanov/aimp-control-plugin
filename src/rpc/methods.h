@@ -633,7 +633,7 @@ public:
                    "1) 'play_state_change' - playback state change event (player switch to playing/paused/stopped state) and event when user forces change of track position."
                        "Response will contain following members:"
                            "'playback_state', string - playback state (playing, stopped, paused)"
-                           "'track_progress', int - current track position. Exist only if it has sense."
+                           "'track_position', int - current track position. Exist only if it has sense."
                            "'track_length', int - current track length. Exist only if it has sense."
                    "2) 'current_track_change' - current track change event (player switched track)"
                        "Response will contain following member:"

@@ -654,7 +654,7 @@ function updateTrackProgressBarState(control_panel_state)
 	if ($track_progress_bar[0].className == '') { // first time initialization.
 		$track_progress_bar.slider({ min : 0,
 								     max : control_panel_state.track_length,
-									 value : control_panel_state.track_progress,
+									 value : control_panel_state.track_position,
 									 animate : true,
 								  	 stop : function(event, ui) {
 									 	 aimp_manager.trackPosition({ position : ui.value },
@@ -667,10 +667,10 @@ function updateTrackProgressBarState(control_panel_state)
 								   });
 	}
 	
-	if ( control_panel_state.hasOwnProperty('track_progress') ) {
+	if ( control_panel_state.hasOwnProperty('track_length') ) {
 		setTrackProgressBarState($track_progress_bar, 'enabled');
 		
-		$track_progress_bar.slider('option', 'value', control_panel_state.track_progress);
+		$track_progress_bar.slider('option', 'value', control_panel_state.track_position);
 		$track_progress_bar.slider('option', 'max',   control_panel_state.track_length);
 		
 		updateTrackProgressBarHintText($track_progress_bar);

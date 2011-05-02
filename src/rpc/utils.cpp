@@ -46,17 +46,20 @@ void setCurrentPlaybackState(AIMPManager::PLAYBACK_STATE playback_state, Rpc::Va
 
 void setCurrentTrackProgress(size_t current_position, size_t track_length, Rpc::Value& result)
 {
-    result["track_progress"] = current_position;
+    result["track_position"] = current_position;
     result["track_length"] = track_length;
 }
 
 void setCurrentTrackProgressIfPossible(const AIMPManager& aimp_manager, Rpc::Value& result)
 {
     if (aimp_manager.getPlaybackState() != AIMPManager::STOPPED) {
-        const int track_progress = aimp_manager.getStatus(AIMPManager::STATUS_POS),
+        const int track_position = aimp_manager.getStatus(AIMPManager::STATUS_POS),
                   track_length   = aimp_manager.getStatus(AIMPManager::STATUS_LENGTH);
-        if (track_progress >= 0 && track_length >= 0) {
-            setCurrentTrackProgress(track_progress, track_length, result);
+        if (   track_position >= 0 
+            && track_length > 0 // track_length == 0 for internet radio.
+            )
+        {
+            setCurrentTrackProgress(track_position, track_length, result);
         }
     }
 }
