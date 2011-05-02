@@ -311,3 +311,7 @@ BrowserScriptsDirSelectionMsg2=Где будут храниться скрипты браузера?
 BrowserScriptsDirSelectionMsg3=Выберите каталог, где будут храниться скрипты браузера
 BrowserScriptsDirDestination=Папка скриптов браузера:
 SettingsFileDestination=Файл конфигурации плагина:
+
+AimpVerionSelectionMsg1=Версия проигрывателя
+AimpVerionSelectionMsg2=Выберите версию AIMP
+AimpVerionSelectionMsg3=Установить плагин для

@@ -5,7 +5,9 @@
 #define FileVerStr GetFileVersion(SourcePath + "\" + SourceDir + SrcApp)
 #define StripBuild(VerStr) Copy(VerStr, 1, RPos(".", VerStr)-1)
 #define AppVerStr StripBuild(FileVerStr)
-#define WorkDirRelativePath  "AIMP\Control Plugin"
+#define PluginWorkDirectoryName "Control Plugin"
+#define PluginsDirectoryName "Plugins"
+
 
 [Setup]
 
@@ -31,7 +33,7 @@ AppPublisherURL=http://code.google.com/p/aimp-control-plugin/
 AppSupportURL=http://code.google.com/p/aimp-control-plugin/w/list
 AppUpdatesURL=http://code.google.com/p/aimp-control-plugin/downloads/list
 
-DefaultDirName={pf}\AIMP2\PlugIns
+DefaultDirName={#PluginsDirectoryName}
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=true
 OutputDir=temp_build\Release\distrib\
@@ -53,7 +55,7 @@ Name: russian; MessagesFile: inno_setup_data\Russian.isl; LicenseFile: Lisense-R
 Source: {#SrcApp}; DestDir: {app}; Flags: ignoreversion
 Source: temp_build\Release\htdocs\*; DestDir: {code:GetBrowserScriptsDir}; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
-Source: inno_setup_data\default_settings.dat; DestDir: {userappdata}\{#WorkDirRelativePath}; DestName: settings.dat; Flags: onlyifdoesntexist; AfterInstall: AfterInstallSettingsFile( ExpandConstant('{userappdata}\{#WorkDirRelativePath}\settings.dat') )
+Source: inno_setup_data\default_settings.dat; DestDir: {userappdata}\{code:GetAimpPlayerAppDataDirName}\{#PluginWorkDirectoryName}; DestName: settings.dat; Flags: onlyifdoesntexist; AfterInstall: AfterInstallSettingsFile( ExpandConstant('{userappdata}\{code:GetAimpPlayerAppDataDirName}\{#PluginWorkDirectoryName}\settings.dat') )
 
 [Registry]
 ; etc.
@@ -61,24 +63,47 @@ Source: inno_setup_data\default_settings.dat; DestDir: {userappdata}\{#WorkDirRe
 [Code]
 var
   BrowserScriptsDirPage: TInputDirWizardPage;
+  AimpVerionSelectionPage: TInputOptionWizardPage;
   SettingsFileDestination: String;
 
 procedure InitializeWizard;
 begin
+  { Set AIMP player version, used to determine default path of Plugins directory and path to aimp AppData dir. }
+  AimpVerionSelectionPage := CreateInputOptionPage(wpLicense,
+                                                   ExpandConstant('{cm:AimpVerionSelectionMsg1}'),
+												   ExpandConstant('{cm:AimpVerionSelectionMsg2}'),
+												   ExpandConstant('{cm:AimpVerionSelectionMsg3}'),
+                                                   True,
+                                                   False
+                                                   );
+  AimpVerionSelectionPage.Add('AIMP2');
+  AimpVerionSelectionPage.Add('AIMP3');
+
+  AimpVerionSelectionPage.SelectedValueIndex := 0; { default is AIMP2, change it when stable AIMP3 will be released. }
+
   { Create the pages }
   BrowserScriptsDirPage := CreateInputDirPage(wpSelectDir,
-	ExpandConstant('{cm:BrowserScriptsDirSelectionMsg1}'),
-	ExpandConstant('{cm:BrowserScriptsDirSelectionMsg2}'),
-	ExpandConstant('{cm:BrowserScriptsDirSelectionMsg3}'),
-    False, '');
+											  ExpandConstant('{cm:BrowserScriptsDirSelectionMsg1}'),
+											  ExpandConstant('{cm:BrowserScriptsDirSelectionMsg2}'),
+											  ExpandConstant('{cm:BrowserScriptsDirSelectionMsg3}'),
+											  False, '');
   BrowserScriptsDirPage.Add('');
 
-  { Set default values, using settings that were stored last time if possible }
-  BrowserScriptsDirPage.Values[0] := GetPreviousData( 'BrowserScriptsDir', ExpandConstant('{userappdata}') + '\{#WorkDirRelativePath}\htdocs\' );
-
-  SettingsFileDestination := ExpandConstant('{userappdata}\{#WorkDirRelativePath}\settings.dat');
 end;
 
+procedure CurPageChanged(CurPageID: Integer);
+begin
+	if CurPageID = wpSelectDir then
+	  begin
+	  WizardForm.DirEdit.Text := ExpandConstant('{pf}\{code:GetAimpPlayerProgramDataDirName}\{#PluginsDirectoryName}')
+	  SettingsFileDestination := ExpandConstant('{userappdata}\{code:GetAimpPlayerAppDataDirName}\{#PluginWorkDirectoryName}\settings.dat');
+	  end
+	else if CurPageID = BrowserScriptsDirPage.ID then
+	  { Set default values, using settings that were stored last time if possible }
+	  BrowserScriptsDirPage.Values[0] := GetPreviousData( 'BrowserScriptsDir',
+														  ExpandConstant('{userappdata}\{code:GetAimpPlayerAppDataDirName}\{#PluginWorkDirectoryName}\htdocs\')
+														 );
+end;
 
 function GetBrowserScriptsDir(Param: String): String;
 begin
@@ -86,12 +111,28 @@ begin
   Result := BrowserScriptsDirPage.Values[0];
 end;
 
+function GetAimpPlayerAppDataDirName(Param: String): String;
+begin
+  { Return the name of AppData directory for selected AIMP player version }
+  if AimpVerionSelectionPage.SelectedValueIndex = 0 then
+	Result := 'AIMP'
+  else
+	Result := 'AIMP3';
+end;
+
+function GetAimpPlayerProgramDataDirName(Param: String): String;
+begin
+  { Return the name of program directory for selected AIMP player version }
+  if AimpVerionSelectionPage.SelectedValueIndex = 0 then
+	Result := 'AIMP2'
+  else
+	Result := 'AIMP3';
+end;
 
 procedure RegisterPreviousData(PreviousDataKey: Integer);
 begin
 	SetPreviousData(PreviousDataKey, 'BrowserScriptsDir', BrowserScriptsDirPage.Values[0]);
 end;
-
 
 procedure AfterInstallSettingsFile(Path: String);
 var
@@ -137,3 +178,5 @@ begin
   S := S + ExpandConstant('{cm:SettingsFileDestination}') + NewLine + Space + SettingsFileDestination + NewLine;
   Result := S;
 end;
+
+

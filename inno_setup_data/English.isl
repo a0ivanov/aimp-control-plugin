@@ -321,3 +321,7 @@ BrowserScriptsDirSelectionMsg2=Where should browser scripts be installed?
 BrowserScriptsDirSelectionMsg3=Select the folder in which Setup should install browser scripts files
 BrowserScriptsDirDestination=Browser scripts destination folder location:
 SettingsFileDestination=Plugin configuration file location:
+
+AimpVerionSelectionMsg1=Player version
+AimpVerionSelectionMsg2=Choose AIMP player version
+AimpVerionSelectionMsg3=Install plugin for
