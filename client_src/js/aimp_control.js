@@ -26,7 +26,17 @@ function createEntriesControl(index, $tab_ui)
 
     var $table;
 
-       /* Add a click handler to the rows - this could be used as a callback */
+	// Return track desc which linked with string.
+	function getDescriptionTrackOfRow(node_table_row) {
+		var playlist_id = node_table_row.parentNode.parentNode.id.split('_')[2]; // get id of playlist HTML table.(Ex.: id = 123 from string like this "entries_table_123" )
+		var aData = $table.fnGetData(node_table_row);
+		var track_id = aData[0];
+		return { playlist_id : parseInt(playlist_id),
+				 track_id : track_id
+			   };
+	}
+
+    /* Add a click handler to the rows - this could be used as a callback */
     $('#entries_table_' + playlist_id + ' tbody').click(
         function(event) {
             $($table.fnSettings().aoData).each(
@@ -35,6 +45,13 @@ function createEntriesControl(index, $tab_ui)
                 }
             );
             $(event.target.parentNode).addClass('row_selected');
+			
+			var track_desc = getDescriptionTrackOfRow(event.target.parentNode);
+			aimp_manager.play(track_desc,
+							  { on_exception : function(error, localized_message) {
+												   alert(localized_message);
+											   }
+							  }); // start playback.
         }
     );
 
