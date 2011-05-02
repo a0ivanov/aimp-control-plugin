@@ -91,12 +91,16 @@ begin
 
 end;
 
+procedure TerminateAimpExecutionIfNeedeed(); forward;
+
 procedure CurPageChanged(CurPageID: Integer);
 begin
 	if CurPageID = wpSelectDir then
 	  begin
 	  WizardForm.DirEdit.Text := ExpandConstant('{pf}\{code:GetAimpPlayerProgramDataDirName}\{#PluginsDirectoryName}')
 	  SettingsFileDestination := ExpandConstant('{userappdata}\{code:GetAimpPlayerAppDataDirName}\{#PluginWorkDirectoryName}\settings.dat');
+
+	  TerminateAimpExecutionIfNeedeed(); { must do this after WizardForm.DirEdit.Text set. }
 	  end
 	else if CurPageID = BrowserScriptsDirPage.ID then
 	  { Set default values, using settings that were stored last time if possible }
@@ -179,4 +183,32 @@ begin
   Result := S;
 end;
 
+function GetAimpHWND(): HWND;
+var
+	AimpHWND : HWND;
+begin
+	Result := FindWindowByClassName('AIMP2_RemoteInfo');
+end;
 
+function IsAimpLaunched(): boolean;
+begin
+	Result := GetAimpHWND() <> 0;
+end;
+
+const
+	WM_AIMP_COMMAND = 1024 + $75;
+	WM_AIMP_CALLFUNC = 3;
+	AIMP_QUIT = 10;
+procedure KillAimp();
+begin
+	SendMessage(GetAimpHWND(), WM_AIMP_COMMAND, WM_AIMP_CALLFUNC, AIMP_QUIT);
+end;
+
+procedure TerminateAimpExecutionIfNeedeed();
+begin
+	if IsAimpLaunched() then
+		if MsgBox(ExpandConstant('{cm:AimpApplicationTerminateQuery}'),
+				  mbConfirmation,
+				  MB_YESNO) = IDYES then
+			KillAimp();
+end;

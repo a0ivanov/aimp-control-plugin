@@ -325,3 +325,5 @@ SettingsFileDestination=Plugin configuration file location:
 AimpVerionSelectionMsg1=Player version
 AimpVerionSelectionMsg2=Choose AIMP player version
 AimpVerionSelectionMsg3=Install plugin for
+
+AimpApplicationTerminateQuery=It is necessary to close AIMP player for succeed plugin installation. Close now?

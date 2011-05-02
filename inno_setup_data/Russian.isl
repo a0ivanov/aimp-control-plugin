@@ -315,3 +315,5 @@ SettingsFileDestination=Файл конфигурации плагина:
 AimpVerionSelectionMsg1=Версия проигрывателя
 AimpVerionSelectionMsg2=Выберите версию AIMP
 AimpVerionSelectionMsg3=Установить плагин для
+
+AimpApplicationTerminateQuery=Для успешной установки необходимо закрыть AIMP. Закрыть сейчас?
