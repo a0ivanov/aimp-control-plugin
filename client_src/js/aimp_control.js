@@ -681,24 +681,26 @@ function updateTrackProgressBarState(control_panel_state)
 
 // Activates or deactivates track progress bar.
 function setTrackProgressBarState($track_progress_bar, state) {
-	var activate = (state === 'enabled');
-	$('.ui-slider-handle', $track_progress_bar).css('visibility', activate ? 'visible': 'hidden'); // we need to hide progress pointer, since progress has no sense.
-	$track_progress_bar.slider('option', 'disabled', !activate);
+	var enabled = (state === 'enabled');
+	$('.ui-slider-handle', $track_progress_bar).css('visibility', enabled ? 'visible': 'hidden'); // we need to hide progress pointer, since progress has no sense.
+	$track_progress_bar.slider('option', 'disabled', !enabled);
 	
 	if (track_progress_timer !== null) {
 		window.clearInterval(track_progress_timer);
 	}
 	
-	if (activate) {
-		var refresh_time_ms = 1000;
-		track_progress_timer = window.setInterval(function () {
-													var old_value_sec = $track_progress_bar.slider('option', 'value');
-													var new_value_sec = old_value_sec + refresh_time_ms / 1000;
-													$track_progress_bar.slider('option', 'value', new_value_sec);
-													updateTrackProgressBarHintText($track_progress_bar);
-												  },
-												  refresh_time_ms
-												  );
+	if (enabled) {
+		if ( isPlaybackActive() ) {
+			var refresh_time_ms = 1000;
+			track_progress_timer = window.setInterval(function () {
+														var old_value_sec = $track_progress_bar.slider('option', 'value');
+														var new_value_sec = old_value_sec + refresh_time_ms / 1000;
+														$track_progress_bar.slider('option', 'value', new_value_sec);
+														updateTrackProgressBarHintText($track_progress_bar);
+													  },
+													  refresh_time_ms
+													  );
+		}
 	} else {
 		$track_progress_bar.attr('title', '');
 	}
