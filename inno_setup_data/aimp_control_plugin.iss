@@ -184,8 +184,6 @@ begin
 end;
 
 function GetAimpHWND(): HWND;
-var
-	AimpHWND : HWND;
 begin
 	Result := FindWindowByClassName('AIMP2_RemoteInfo');
 end;
@@ -212,3 +210,4 @@ begin
 				  MB_YESNO) = IDYES then
 			KillAimp();
 end;
+
