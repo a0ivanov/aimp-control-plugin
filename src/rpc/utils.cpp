@@ -44,6 +44,23 @@ void setCurrentPlaybackState(AIMPManager::PLAYBACK_STATE playback_state, Rpc::Va
     result["playback_state"] = "unknown";
 }
 
+void setCurrentTrackProgress(size_t current_position, size_t track_length, Rpc::Value& result)
+{
+    result["track_progress"] = current_position;
+    result["track_length"] = track_length;
+}
+
+void setCurrentTrackProgressIfPossible(const AIMPManager& aimp_manager, Rpc::Value& result)
+{
+    if (aimp_manager.getPlaybackState() != AIMPManager::STOPPED) {
+        const int track_progress = aimp_manager.getStatus(AIMPManager::STATUS_POS),
+                  track_length   = aimp_manager.getStatus(AIMPManager::STATUS_LENGTH);
+        if (track_progress >= 0 && track_length >= 0) {
+            setCurrentTrackProgress(track_progress, track_length, result);
+        }
+    }
+}
+
 void setCurrentPlaylist(PlaylistID playlist_id, Rpc::Value& result)
 {
     result["playlist_id"] = playlist_id;
@@ -83,6 +100,7 @@ void setCurrentPlayingSourceInfo(const AIMPManager& aimp_manager, Rpc::Value& re
 void setControlPanelInfo(const AIMPManager& aimp_manager, Rpc::Value& result)
 {
     setCurrentPlaybackState(aimp_manager.getPlaybackState(), result);
+    setCurrentTrackProgressIfPossible(aimp_manager, result);
     setCurrentPlayingSourceInfo(aimp_manager, result);
     setCurrentVolume     (aimp_manager.getStatus(AIMPManager::STATUS_VOLUME),       result);
     setCurrentMuteMode   (aimp_manager.getStatus(AIMPManager::STATUS_MUTE) != 0,    result);

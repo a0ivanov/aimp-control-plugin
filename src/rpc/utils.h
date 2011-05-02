@@ -25,6 +25,11 @@ namespace RpcResultUtils {
 
 void setCurrentPlaybackState(AIMPPlayer::AIMPManager::PLAYBACK_STATE playback_state, Rpc::Value& result);
 
+void setCurrentTrackProgress(size_t current_position, size_t track_length, Rpc::Value& result);
+
+// Sets track progress when it has sense, otherwise does nothing.
+void setCurrentTrackProgressIfPossible(const AIMPPlayer::AIMPManager& aimp_manager, Rpc::Value& result);
+
 void setCurrentPlaylist(AIMPPlayer::PlaylistID playlist_id, Rpc::Value& result);
 
 void setCurrentPlaylistEntry(AIMPPlayer::PlaylistEntryID track_id, Rpc::Value& result);

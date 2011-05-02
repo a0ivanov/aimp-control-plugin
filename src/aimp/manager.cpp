@@ -406,6 +406,20 @@ void AIMPManager::onTimerPlaylistsChangeCheck(const boost::system::error_code& e
 
 #endif // #ifdef MANUAL_PLAYLISTS_CONTENT_CHANGES_DETERMINATION
 
+void AIMPManager::registerCallbackRange(int id_first, int id_last)
+{
+    for (int callback_id = id_first; callback_id != id_last; ++callback_id) {
+        // register notifier.
+        boolean result = aimp_controller_->AIMP_CallBack_Set( callback_id,
+                                                             &internalAIMPStateNotifier,
+                                                             reinterpret_cast<DWORD>(this) // user data that will be passed in internalAIMPStateNotifier().
+                                                            );
+        if (!result) {
+            BOOST_LOG_SEV(logger(), error) << "Error occured while register " << callback_id << " callback";
+        }
+    }
+}
+
 void AIMPManager::registerNotifiers()
 {
     using namespace boost::assign;
@@ -425,11 +439,15 @@ void AIMPManager::registerNotifiers()
         boolean result = aimp_controller_->AIMP_CallBack_Set( callback_id,
                                                               &internalAIMPStateNotifier,
                                                               reinterpret_cast<DWORD>(this) // user data that will be passed in internalAIMPStateNotifier().
-                                                            );
+                                                             );
         if (!result) {
             BOOST_LOG_SEV(logger(), error) << "Error occured while register " << callback.second << " callback";
         }
     }
+
+    // ID of playlists is sent when playlist is activated or changed.
+    //registerCallbackRange(AIMP_INFO_UPDATE + 1, AIMP_PLAYER_STATE);
+    //registerCallbackRange(AIMP_TRACK_POS_CHANGED + 1, 100);
 }
 
 void AIMPManager::unregisterNotifiers()
@@ -725,6 +743,9 @@ void AIMPManager::notifyAboutInternalEventOnStatusChange(AIMPManager::STATUS sta
     case STATUS_MUTE:
         notifyAboutInternalEvent(MUTE_EVENT);
         break;
+    case STATUS_POS:
+        notifyAboutInternalEvent(TRACK_PROGRESS_CHANGED_DIRECTLY_EVENT);
+        break;
     default:
         // do nothing, about other status changes AIMP will notify us itself.
         break;
@@ -943,6 +964,9 @@ void AIMPManager::notifyAboutInternalEvent(INTERNAL_EVENTS internal_event)
         break;
     case PLAYLISTS_CONTENT_CHANGED_EVENT:
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+        break;
+    case TRACK_PROGRESS_CHANGED_DIRECTLY_EVENT:
+        notifyAllExternalListeners(EVENT_TRACK_PROGRESS_CHANGED_DIRECTLY);
         break;
     default:
         assert(!"Unknown internal event in "__FUNCTION__);

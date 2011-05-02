@@ -675,6 +675,7 @@ void SubscribeOnAIMPStateUpdateEvent::prepareResponse(EVENTS event_id, Rpc::Valu
     {
     case PLAYBACK_STATE_CHANGE_EVENT:
         RpcResultUtils::setCurrentPlaybackState(aimp_manager_.getPlaybackState(), result);
+        RpcResultUtils::setCurrentTrackProgressIfPossible(aimp_manager_, result);
         break;
     case CURRENT_TRACK_CHANGE_EVENT:
         RpcResultUtils::setCurrentPlaylist(aimp_manager_.getActivePlaylist(), result);
@@ -696,9 +697,9 @@ void SubscribeOnAIMPStateUpdateEvent::aimpEventHandler(AIMPManager::EVENTS event
 {
     switch (event)
     {
-    case AIMPManager::EVENT_TRACK_POS_CHANGED: // it is sent with period 1 second.
+    case AIMPManager::EVENT_TRACK_POS_CHANGED: // it's sent with period 1 second in AIMP2, useless.
         break;
-    case AIMPManager::EVENT_PLAY_FILE: // sent when playback started.
+    case AIMPManager::EVENT_PLAY_FILE: // it's sent when playback started.
         sendNotifications(CURRENT_TRACK_CHANGE_EVENT);
         sendNotifications(CONTROL_PANEL_STATE_CHANGE_EVENT);
         break;
@@ -708,6 +709,9 @@ void SubscribeOnAIMPStateUpdateEvent::aimpEventHandler(AIMPManager::EVENTS event
         break;
     case AIMPManager::EVENT_PLAYLISTS_CONTENT_CHANGE:
         sendNotifications(PLAYLISTS_CONTENT_CHANGE_EVENT);
+        break;
+    case AIMPManager::EVENT_TRACK_PROGRESS_CHANGED_DIRECTLY:
+        sendNotifications(PLAYBACK_STATE_CHANGE_EVENT);
         break;
     case AIMPManager::EVENT_VOLUME:
     case AIMPManager::EVENT_MUTE:
@@ -1048,17 +1052,17 @@ void EmulationOfWebCtlPlugin::sortPlaylist(int playlist_id, const std::string& s
 {
     boost::shared_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp_manager_.aimp_playlist_manager_);
     using namespace AIMP2SDK;
-    if(sortType.compare("title") == 0) {
+    if (sortType.compare("title") == 0) {
         aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_TITLE);
-    } else if(sortType.compare("filename") == 0) {
+    } else if (sortType.compare("filename") == 0) {
         aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_FILENAME);
-    } else if(sortType.compare("duration") == 0) {
+    } else if (sortType.compare("duration") == 0) {
         aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_DURATION);
-    } else if(sortType.compare("artist") == 0) {
+    } else if (sortType.compare("artist") == 0) {
         aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_ARTIST);
-    } else if(sortType.compare("inverse") == 0) {
+    } else if (sortType.compare("inverse") == 0) {
         aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_INVERSE);
-    } else if(sortType.compare("randomize") == 0) {
+    } else if (sortType.compare("randomize") == 0) {
         aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_RANDOMIZE);
     }
 }

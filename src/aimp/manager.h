@@ -107,6 +107,7 @@ public:
         EVENT_TRACK_POS_CHANGED,
 
         EVENT_PLAYLISTS_CONTENT_CHANGE,
+        EVENT_TRACK_PROGRESS_CHANGED_DIRECTLY,
         EVENT_VOLUME,
         EVENT_MUTE,
         EVENT_SHUFFLE,
@@ -286,7 +287,9 @@ private:
                            MUTE_EVENT,
                            SHUFFLE_EVENT,
                            REPEAT_EVENT,
-                           PLAYLISTS_CONTENT_CHANGED_EVENT
+                           PLAYLISTS_CONTENT_CHANGED_EVENT,
+                           TRACK_PROGRESS_CHANGED_DIRECTLY_EVENT // This event occurs when user himself change track progress bar.
+                                                                 // Normal progress bar change(when track playing) does not generate this event.
     };
 
     //! Notify external subscribers about internal events.
@@ -306,6 +309,9 @@ private:
 
     //! Unsubscribes from all available AIMP callbacks.
     void unregisterNotifiers();
+
+    // Function used for testing available callbacks in AIMP3.
+    void registerCallbackRange(int id_first, int id_last);
 
     //! Callback function to notify manager about AIMP player state changes. Called by AIMP from it's thread.
     static void WINAPI internalAIMPStateNotifier(DWORD User, DWORD dwCBType);

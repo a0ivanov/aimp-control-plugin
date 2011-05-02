@@ -8,6 +8,7 @@ var $data_tables = {}; // maps entries table id to datatable object.
 var aimp_manager = new AimpManager();
 var control_panel_state = {};
 var control_menu_state_updaters = {}; // map menu unique ID to notifier descriptor - object with following members: notifier - function (entry_control_menu_descriptor), control_menu_descriptor - control menu descritor.
+var track_progress_timer = null;
 
 /* Invoke notifiers for all control menus. */
 function syncronizeControlMenus() {
@@ -528,7 +529,7 @@ function initControlPanel()
                                 { on_exception : on_control_panel_command }
             ); // set volume
         }
-    }).attr( 'title', getText('control_panel_volume') );
+    });
 
     $('#control_panel_buttons').buttonset();
 }
@@ -567,7 +568,11 @@ function updateControlPanel()
     }
 
     // volume slider
-    $('#volume_slider').slider('value', control_panel.volume);
+    var volume_slider = $('#volume_slider');
+    volume_slider.slider('value', control_panel.volume);
+	volume_slider.attr('title',
+					   getText('control_panel_volume') + ' ' + control_panel.volume + '/100'
+                       );
 
     // shuffle button
     var shuffle_button = $('#shuffle');
@@ -620,6 +625,76 @@ function updatePlaybackPanelState(control_panel_state)
         $('#playback_state_label').text( getText('playback_state_stopped') );
         $scroll_text_div.text('');
     }
+	
+	updateTrackProgressBarState(control_panel_state);
+}
+
+/* Updates state track progress bar controls to be sync with Aimp. */
+function updateTrackProgressBarState(control_panel_state)
+{
+    var $track_progress_bar = $('#track_progress_bar');
+	
+	if ($track_progress_bar[0].className == '') { // first time initialization.
+		$track_progress_bar.slider({ min : 0,
+								     max : control_panel_state.track_length,
+									 value : control_panel_state.track_progress,
+									 animate : true,
+								  	 stop : function(event, ui) {
+									 	 aimp_manager.trackPosition({ position : ui.value },
+																	{ on_exception : function(error, localized_message) {
+																						 alert(localized_message);
+																					 }
+																	}
+										 ); // set track position
+									 }
+								   });
+	}
+	
+	if ( control_panel_state.hasOwnProperty('track_progress') ) {
+		setTrackProgressBarState($track_progress_bar, 'enabled');
+		
+		$track_progress_bar.slider('option', 'value', control_panel_state.track_progress);
+		$track_progress_bar.slider('option', 'max',   control_panel_state.track_length);
+		
+		updateTrackProgressBarHintText($track_progress_bar);
+	} else {
+		setTrackProgressBarState($track_progress_bar, 'disabled');
+	}
+}
+
+// Activates or deactivates track progress bar.
+function setTrackProgressBarState($track_progress_bar, state) {
+	var activate = (state === 'enabled');
+	$('.ui-slider-handle', $track_progress_bar).css('visibility', activate ? 'visible': 'hidden'); // we need to hide progress pointer, since progress has no sense.
+	$track_progress_bar.slider('option', 'disabled', !activate);
+	
+	if (track_progress_timer !== null) {
+		window.clearInterval(track_progress_timer);
+	}
+	
+	if (activate) {
+		var refresh_time_ms = 1000;
+		track_progress_timer = window.setInterval(function () {
+													var old_value_sec = $track_progress_bar.slider('option', 'value');
+													var new_value_sec = old_value_sec + refresh_time_ms / 1000;
+													$track_progress_bar.slider('option', 'value', new_value_sec);
+													updateTrackProgressBarHintText($track_progress_bar);
+												  },
+												  refresh_time_ms
+												  );
+	} else {
+		$track_progress_bar.attr('title', '');
+	}
+}
+
+function updateTrackProgressBarHintText($track_progress_bar) {
+	var progress_sec = $track_progress_bar.slider('option', 'value');
+	var length_sec = $track_progress_bar.slider('option', 'max');
+	$track_progress_bar.attr('title',
+							 formatTime(progress_sec * 1000) // represent seconds as milliseconds.
+							 + '/'
+							 + formatTime(length_sec * 1000) // represent seconds as milliseconds.
+							 );	
 }
 
 /*
@@ -652,6 +727,24 @@ function subscribeOnControlPanelChangeEvent() {
                                     alert(message + ', error code = ' + error.code);
                                 }, // nothing to do in on_exception(), just try to subscribe again, on_complete() do it.
                                 on_complete : subscribeOnControlPanelChangeEvent // will be called unconditionally.
+                            }
+    );
+}
+
+/*
+    Subscribe for forced track position change event.
+    Endless cycle, call only once at page loading.
+*/
+function subscribeOnTrackPositionChangeEvent() {
+
+    aimp_manager.subscribe( { event : 'play_state_change' },
+                            {   on_success : function(result) {                                   
+                                    updateTrackProgressBarState(result);
+                                },
+                                on_exception : function(error, message) {
+                                    alert(message + ', error code = ' + error.code);
+                                }, // nothing to do in on_exception(), just try to subscribe again, on_complete() do it.
+                                on_complete : subscribeOnTrackPositionChangeEvent // will be called unconditionally.
                             }
     );
 }
@@ -707,6 +800,7 @@ function initAimpControlPage()
     subscribeOnControlPanelChangeEvent();
     syncronizeControlPanelStateWithAimp();
     subscribeOnPlaylistsContentChangeEvent();
+	subscribeOnTrackPositionChangeEvent(); ///!!! this can be done on track playing start.
     initSettingsDialog();
     loadPlaylists();
 }

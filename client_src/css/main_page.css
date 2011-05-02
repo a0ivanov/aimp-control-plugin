@@ -94,3 +94,8 @@ div.fields_to_view {
 .track_info_table_row {
     vertical-align: top;
 }
+
+#track_progress_bar {
+    margin-left: 5px;
+    margin-right: 5px;
+}

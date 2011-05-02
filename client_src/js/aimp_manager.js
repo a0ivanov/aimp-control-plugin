@@ -336,6 +336,19 @@ status : function(params, callbacks) {
     this.callRpc(this.aimp_service.status, params, callbacks);
 },
 
+/*
+    Sets track position.
+        Param params.position - int value: seconds from begin. Must be in range [0, track_length_in_seconds).
+        Param callbacks - see description in AimpManager comments.
+    With empty params returns current position.
+*/
+trackPosition : function(params, callbacks) {
+	var status_params = params.hasOwnProperty('position') ? { status_id : 31,
+														      value : params.position
+															}
+													      : {};
+    this.callRpc(this.aimp_service.status, status_params, callbacks);
+},
 
 /*
     Sets shuffle playback mode.
@@ -383,6 +396,8 @@ mute : function(params, callbacks) {
         Param callbacks - see description in AimpManager comments.
     Result is object with following members:
         playback_state - 'playing', 'stopped', 'paused';
+		track_progress - current track position. Exist only if it has sense.
+		track_length - current track length. Exist only if it has sense.
         playlist_id - playlist ID;
         track_id - track ID;
         volume - volume level in range [0-100];
@@ -401,6 +416,8 @@ getControlPanelState : function(params, callbacks) {
             1) 'play_state_change' - playback state change event (player switch to playing/paused/stopped state)
             Response will contain following members:
                 'playback_state', string - playback state (playing, stopped, paused)
+				track_progress, int - current track position. Exist only if it has sense.
+				track_length, int - current track length. Exist only if it has sense.
             2) 'current_track_change' - current track change event (player switched track)
             Response will contain following members:
                 1) 'playlist_id', int - playlist ID
