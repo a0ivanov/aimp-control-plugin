@@ -1049,8 +1049,7 @@ namespace
 
 /*!
     \brief Helper class for AIMPManager::getFormattedEntryTitle() function.
-           Simple implementation of AIMP title format analog.
-    \todo use boost::spirit to implement full AIMP title format with conditions.
+           Implementation of AIMP title format analog.
 */
 class PlaylistEntryTitleFormatter
 {
@@ -1073,36 +1072,85 @@ public:
             ( 'Y', _MAKE_FUNC_(PlaylistEntry::getDate) )
             ( 'M', _MAKE_FUNC_(PlaylistEntry::getRating) )
         ;
+        formatters_end_ = formatters_.end();
 #undef _MAKE_FUNC_
+    }
+
+    bool endOfFormatString(std::string::const_iterator curr_char,
+                           std::string::const_iterator end,
+                           char end_of_string
+                           ) const
+    {
+        return curr_char == end || *curr_char == end_of_string;
+    }
+
+    // returns count of characters read.
+    size_t format(const PlaylistEntry& entry,
+                  std::string::const_iterator begin,
+                  std::string::const_iterator end,
+                  char end_of_string,
+                  std::wstring& formatted_string) const
+    {
+        std::string::const_iterator curr_char = begin;
+        while ( !endOfFormatString(curr_char, end, end_of_string) ) {
+            if (*curr_char == format_argument_symbol) {
+                if (curr_char + 1 != end) {
+                    ++curr_char;
+                    Formatters::const_iterator formatter_it = formatters_.find(*curr_char);
+                    if (formatter_it != formatters_end_) {
+                        formatted_string += formatter_it->second(entry);
+                        curr_char += 1; // go to char next to format argument.
+                    } else {
+                        switch(*curr_char) {
+                        case '%':
+                        case ',': // since ',' and ')' chars are used in expression "%IF(a, b, c)" we must escape them in usual string as '%,' '%)'.
+                        case ')':
+                            formatted_string.push_back(*curr_char++);
+                            break;
+                        default:
+                            {
+                            if (*curr_char == 'I')
+                                if (curr_char != end && *++curr_char == 'F')
+                                    if (curr_char != end && *++curr_char == '(') {
+                                        // %IF(a, b, c): means a.empty() ? c : b;
+                                        ++curr_char;
+                                        std::wstring a;
+                                        std::advance( curr_char, format(entry, curr_char, end, ',', a) ); // read a.
+                                        ++curr_char;
+
+                                        std::wstring b;
+                                        std::advance( curr_char, format(entry, curr_char, end, ',', b) ); // read b.
+                                        ++curr_char;
+
+                                        std::wstring c;
+                                        std::advance( curr_char, format(entry, curr_char, end, ')', c) ); // read c.
+                                        ++curr_char;
+
+                                        formatted_string.append(a.empty() ? c : b);
+                                        break;
+                                    }
+                            throw std::invalid_argument("Wrong format string: unknown format argument.");
+                            }
+                            break;
+                        }
+                    }
+                } else {
+                    throw std::invalid_argument("Wrong format string: malformed format argument.");
+                }
+            } else {
+                formatted_string.push_back(*curr_char++);
+            }
+        }
+
+        return static_cast<size_t>( std::distance(begin, curr_char) );
     }
 
     std::wstring format(const PlaylistEntry& entry, const std::string& format_string) const // throw std::invalid_argument
     {
-        std::string::const_iterator curr_char = format_string.begin(),
-                                    end       = format_string.end();
-        const char format_argument_symbol = '%';
+        std::string::const_iterator begin = format_string.begin(),
+                                    end   = format_string.end();
         std::wstring formatted_string;
-        Formatters::const_iterator formatters_end = formatters_.end();
-
-        while(curr_char != end) {
-            if (*curr_char == format_argument_symbol) {
-                std::string::const_iterator next_char = curr_char + 1;
-                if (next_char == end) {
-                    throw std::invalid_argument("Wrong format string: malformed format argument.");
-                }
-                Formatters::const_iterator formatter = formatters_.find(*next_char);
-                if (formatters_end != formatter) {
-                    formatted_string += formatter->second(entry);
-                    curr_char += 2; // go to char next to format argument.
-                } else {
-                    throw std::invalid_argument("Wrong format string: unknown format argument.");
-                }
-            } else {
-                formatted_string.push_back(*curr_char);
-                ++curr_char;
-            }
-        }
-
+        format(entry, begin, end, '\0', formatted_string);
         return formatted_string;
     }
 
@@ -1120,6 +1168,10 @@ private:
 
     typedef std::map<char, boost::function<std::wstring(const PlaylistEntry&)> > Formatters;
     Formatters formatters_;
+    Formatters::const_iterator formatters_end_;
+
+    static const char format_argument_symbol = '%';
+
 } playlistentry_title_formatter;
 
 } // namespace anonymous

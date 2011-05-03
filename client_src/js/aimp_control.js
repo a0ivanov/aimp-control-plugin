@@ -629,7 +629,7 @@ function updatePlaybackPanelState(control_panel_state)
         aimp_manager.getFormattedTrackTitle({
                                               track_id : control_panel_state.track_id,
                                               playlist_id : control_panel_state.playlist_id,
-                                              format_string : '%a - %T'
+                                              format_string : '%IF(%a,%a - %T,%T)'
                                             },
                                             { on_success : function (result) {
                                                             //alert(result.formatted_string);
