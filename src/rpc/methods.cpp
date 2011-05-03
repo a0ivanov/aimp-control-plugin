@@ -709,6 +709,14 @@ void SubscribeOnAIMPStateUpdateEvent::aimpEventHandler(AIMPManager::EVENTS event
         break;
     case AIMPManager::EVENT_PLAYLISTS_CONTENT_CHANGE:
         sendNotifications(PLAYLISTS_CONTENT_CHANGE_EVENT);
+        // if internet radio is playing and track is changed we must notify about it.
+        if (   aimp_manager_.getPlaybackState() != AIMPManager::STOPPED
+            && aimp_manager_.getStatus(AIMPManager::STATUS_LENGTH) == 0
+            ) 
+        {
+            sendNotifications(CURRENT_TRACK_CHANGE_EVENT);
+            sendNotifications(CONTROL_PANEL_STATE_CHANGE_EVENT); // send notification about more general event than CURRENT_TRACK_CHANGE_EVENT, since web-client do not use CURRENT_TRACK_CHANGE_EVENT.
+        }
         break;
     case AIMPManager::EVENT_TRACK_PROGRESS_CHANGED_DIRECTLY:
         sendNotifications(PLAYBACK_STATE_CHANGE_EVENT);
