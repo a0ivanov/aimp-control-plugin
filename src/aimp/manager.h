@@ -243,6 +243,7 @@ public:
             %T - title
             %Y - date
             %M - rating
+            %IF(A, B, C) - if A is empty use C else use B.
         Example: format_string = "%a - %T", result = "artist - title".
         </PRE>
         \return formatted string for entry.

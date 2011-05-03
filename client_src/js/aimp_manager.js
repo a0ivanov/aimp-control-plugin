@@ -203,6 +203,7 @@ getPlaylistEntriesCount : function(params, callbacks) {
             %T - title
             %Y - date
             %M - rating
+            %IF(A, B, C) - if A is empty use C else use B.
         Example: format_string = "%a - %T", result = "artist - title".
         Param callbacks - see description in AimpManager comments.
     Result - is object with member 'formatted_string', string.
@@ -424,7 +425,8 @@ getControlPanelState : function(params, callbacks) {
                 2) 'track_id', int - track ID
             3) 'control_panel_state_change' - one of following events:
                     "playback state, mute, shuffle, repeat, volume level change.
-            Response will be the same as get_control_panel_state() function.
+                Response will be the same as get_control_panel_state() function.
+            4) 'playlists_content_change' - playlists content change.
     Result is specific for each event.
 */
 subscribe : function(params, callbacks) {

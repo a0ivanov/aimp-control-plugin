@@ -642,6 +642,7 @@ public:
                    "3) 'control_panel_state_change' - one of following events:"
                            "playback state, mute, shuffle, repeat, volume level change"
                        "Response will be the same as get_control_panel_state() function."
+                   "4) 'playlists_content_change' - playlists content change"
         ;
     }
 
