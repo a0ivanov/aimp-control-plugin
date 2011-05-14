@@ -356,8 +356,8 @@ void GetPlaylistEntries::fillRpcValueEntriesFromEntriesList(const EntriesListTyp
     rpcvalue_entries.setSize(entries_count);
 
     size_t entry_rpcvalue_index = 0;
-    BOOST_FOREACH (const EntriesListType::value_type& entry_id_obj_pair, entries_range) {
-        const PlaylistEntry* entry( entry_id_obj_pair.second.get() );
+    BOOST_FOREACH (const EntriesListType::value_type& entry_ptr, entries_range) {
+        const PlaylistEntry* entry( entry_ptr.get() );
         Rpc::Value& entry_rpcvalue = rpcvalue_entries[entry_rpcvalue_index];
         // fill all requested fields for entry.
         entry_fields_filler_.fillRpcArray(entry, entry_rpcvalue);
@@ -379,7 +379,7 @@ void GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs(const PlaylistEntryIDLi
 
     size_t entry_rpcvalue_index = 0;
     BOOST_FOREACH (const PlaylistEntryID entry_id, entry_ids_range) {
-        const PlaylistEntry* entry( entries.find(entry_id)->second.get() );
+        const PlaylistEntry* entry( entries[entry_id].get() );
         Rpc::Value& entry_rpcvalue = rpcvalue_entries[entry_rpcvalue_index];
         // fill all requested fields for entry.
         entry_fields_filler_.fillRpcArray(entry, entry_rpcvalue);
@@ -387,12 +387,32 @@ void GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs(const PlaylistEntryIDLi
     }
 }
 
-const PlaylistEntryIDList& GetPlaylistEntries::getEntriesFilteredByString(const std::wstring& search_string, const PlaylistEntryIDList& entry_to_filter_ids, const EntriesListType& entries)
+const PlaylistEntryIDList& GetPlaylistEntries::getEntriesIDsFilteredByStringFromEntriesList(const std::wstring& search_string,
+                                                                                            const EntriesListType& entries)
+{
+    filtered_entries_ids_.clear();
+    filtered_entries_ids_.reserve( entries.size() );
+
+    size_t entry_index = 0;
+    BOOST_FOREACH (const EntriesListType::value_type& entry_ptr, entries) {
+        const PlaylistEntry* entry( entry_ptr.get() );
+        if ( entry_contain_string_(entry, search_string) ) {
+            filtered_entries_ids_.push_back(entry_index);
+        }
+        ++entry_index;
+    }
+
+    return filtered_entries_ids_;
+}
+
+const PlaylistEntryIDList& GetPlaylistEntries::getEntriesIDsFilteredByStringFromEntryIDs(const std::wstring& search_string,
+                                                                                         const PlaylistEntryIDList& entry_to_filter_ids,
+                                                                                         const EntriesListType& entries)
 {
     filtered_entries_ids_.clear();
     filtered_entries_ids_.reserve( entry_to_filter_ids.size() );
     BOOST_FOREACH (const PlaylistEntryID entry_id, entry_to_filter_ids) {
-        const PlaylistEntry* entry( entries.find(entry_id)->second.get() );
+        const PlaylistEntry* entry( entries[entry_id].get() );
         if ( entry_contain_string_(entry, search_string) ) {
             filtered_entries_ids_.push_back(entry_id);
         }
@@ -400,6 +420,7 @@ const PlaylistEntryIDList& GetPlaylistEntries::getEntriesFilteredByString(const 
 
     return filtered_entries_ids_;
 }
+
 
 void GetPlaylistEntries::outputFilteredEntries(const PlaylistEntryIDList& filtered_entries_ids, const EntriesListType& entries, size_t start_entry_index, size_t entries_count, Rpc::Value& result, Rpc::Value& rpcvalue_entries)
 {
@@ -409,22 +430,6 @@ void GetPlaylistEntries::outputFilteredEntries(const PlaylistEntryIDList& filter
     const size_t filtered_start_entry_index = std::min(start_entry_index, filtered_entries_ids.size() == 0 ? 0 : filtered_entries_ids.size() - 1);
     const size_t filtered_entries_count = std::min(entries_count, filtered_entries_ids.size() - filtered_start_entry_index);
     fillRpcValueEntriesFromEntryIDs(filtered_entries_ids, entries, filtered_start_entry_index, filtered_entries_count, rpcvalue_entries);
-}
-
-const PlaylistEntryIDList& GetPlaylistEntries::getDefaultEntryIDs(const EntriesListType& entries)
-{
-    // update default_order_entries_ids_ according to entries.
-    if ( default_order_entries_ids_.size() != entries.size() ) {
-        default_order_entries_ids_.clear();
-        default_order_entries_ids_.reserve( entries.size() );
-        // fill vector of entry IDs.
-        std::transform( entries.begin(), entries.end(), // walk through all entries
-                        std::back_inserter(default_order_entries_ids_), // append entry IDs to vector
-                        boost::bind( &EntriesListType::value_type::first, _1 ) // return member "first" from pair, contained in entries map. It is ID of entry.
-                      );
-    }
-
-    return default_order_entries_ids_;
 }
 
 ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
@@ -465,24 +470,24 @@ ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rpc::Va
             ;
 
             if ( params.isMember("search_string") && getSearchStringFromRpcParam(params["search_string"]) ) { // return entries in specified order and filtered by search string.
-                outputFilteredEntries(  getEntriesFilteredByString(search_string_, sorted_entries_ids, entries),
-                                        entries,
-                                        start_entry_index,
-                                        entries_count,
-                                        rpc_result,
-                                        rpcvalue_entries
+                outputFilteredEntries( getEntriesIDsFilteredByStringFromEntryIDs(search_string_, sorted_entries_ids, entries),
+                                       entries,
+                                       start_entry_index,
+                                       entries_count,
+                                       rpc_result,
+                                       rpcvalue_entries
                                       );
             } else { // return entries in specified order.
                 fillRpcValueEntriesFromEntryIDs(sorted_entries_ids, entries, start_entry_index, entries_count, rpcvalue_entries);
             }
         } else { // return entries in default order.
             if ( params.isMember("search_string") && getSearchStringFromRpcParam(params["search_string"]) ) { // return entries in default order and filtered by search string.
-                outputFilteredEntries(  getEntriesFilteredByString(search_string_, getDefaultEntryIDs(entries), entries),
-                                        entries,
-                                        start_entry_index,
-                                        entries_count,
-                                        rpc_result,
-                                        rpcvalue_entries
+                outputFilteredEntries( getEntriesIDsFilteredByStringFromEntriesList(search_string_, entries),
+                                       entries,
+                                       start_entry_index,
+                                       entries_count,
+                                       rpc_result,
+                                       rpcvalue_entries
                                       );
             } else { // return entries in default order.
                 fillRpcValueEntriesFromEntriesList(entries, start_entry_index, entries_count, rpcvalue_entries);

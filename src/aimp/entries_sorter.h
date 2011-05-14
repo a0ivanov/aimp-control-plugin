@@ -24,7 +24,7 @@ struct CompareFields : std::binary_function<T, T, bool> {
 
 //! Specialization for alphabetical string comparison, case insensitive.
 template <>
-struct CompareFields<const std::wstring&> : std::binary_function<const std::wstring&, const std::wstring&, bool> {
+struct CompareFields<std::wstring> : std::binary_function<std::wstring, std::wstring, bool> {
     bool operator()(const std::wstring& left, const std::wstring& right) const
         { return boost::algorithm::ilexicographical_compare(left, right); }
 };
@@ -43,8 +43,8 @@ struct ComparatorAdaptorFromIDToEntryField : std::binary_function<PlaylistEntryI
 
     bool operator()(PlaylistEntryID id_left, PlaylistEntryID id_right) const
     {
-        const R& left_field_value = (entries_.find(id_left)->second.get()->*getter_)(); // find() always succesfull here since id_left and id_right are keys of entries_ map.
-        const R& right_field_value = (entries_.find(id_right)->second.get()->*getter_)();
+        const R& left_field_value = (entries_[id_left].get()->*getter_)();
+        const R& right_field_value = (entries_[id_right].get()->*getter_)();
         if (order_direction == ASCENDING) {
             return compare_less_functor_(left_field_value, right_field_value);
         } else {

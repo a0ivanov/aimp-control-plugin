@@ -25,10 +25,6 @@ public:
               PlaylistID id
             );
 
-    //! Returns map of internal Aimp entry index to plugin entry's ID.
-    const EntryIdListInAimpOrder& getAimpOrderedEntriesIDs() const;
-    EntryIdListInAimpOrder& getAimpOrderedEntriesIDs();
-
     //! Returns entries in default order: id ascendence.
     const EntriesListType& getEntries() const;
     void swapEntries(EntriesListType& new_entries);
@@ -70,7 +66,6 @@ private:
     INT64 size_of_all_entries_in_bytes_; //!< summary size of all entries in bytes.
     PlaylistID id_; //!< playlist indentificator.
     EntriesListType entries_; //!< list of tracks in playlist.
-    EntryIdListInAimpOrder entries_id_list_; //!< list of entries IDs in Aimp internal order. Used to determine changes in playlist.
 
     mutable EntriesSortUtil::EntriesSorter entries_sorter_; //!< util to get sorted entries by multiple fields. Main idea: we always have entries list in original order, but have lists of entries IDs sorted for each field.
 };

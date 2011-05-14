@@ -42,11 +42,14 @@ void syncronizeOrderedEntryIDsCacheWithEntriesList(OrderedEntryIDsCache& sorted_
     if ( entry_ids.size() != entries.size() ) {
         entry_ids.clear();
         entry_ids.reserve( entries.size() );
-        // fill vector of entry IDs.
-        std::transform(entries.begin(), entries.end(), // walk through all entries
-                       std::back_inserter(entry_ids), // append entry IDs to vector
-                       boost::bind( &EntriesListType::value_type::first, _1 ) // returns member "first" from pair, contained in entries map. It is ID of entry.
-                       );
+
+        struct IndexGenerator {
+            PlaylistEntryID index_;
+            IndexGenerator() : index_(0) {}
+            PlaylistEntryID operator()() { return index_++; }
+        };
+
+        std::generate_n( std::back_inserter(entry_ids), entries.size(), IndexGenerator() );
 
         // reset order state flag to be sure that new sequence will be sorted.
         sorted_cache.order_state_ = UNORDERED;

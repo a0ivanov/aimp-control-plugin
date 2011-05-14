@@ -16,11 +16,8 @@ typedef HPLS PlaylistID; //! playlist handle
 
 class PlaylistEntry;
 
-//! list of entries. Map entry ID to PlaylistEntry oblect.
-typedef std::map<PlaylistEntryID, boost::shared_ptr<PlaylistEntry> > EntriesListType;
-
-//! Map of internal Aimp entry index to plugin PlaylistEntry ID. Used to easy determine of change in playlists.
-typedef std::vector<PlaylistEntryID> EntryIdListInAimpOrder;
+//! list of entries. Entry ID is index of PlaylistEntry oblect in vector.
+typedef std::vector< boost::shared_ptr<PlaylistEntry> > EntriesListType;
 
 //! list of entry IDs.
 typedef std::vector<PlaylistEntryID> PlaylistEntryIDList;

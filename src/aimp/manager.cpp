@@ -288,14 +288,17 @@ void AIMPManager::loadEntries(Playlist& playlist) // throws std::runtime_error
 
     // temp objects to prevent partial change state of passed objects when error occurs.
     EntriesListType entries;
-    EntryIdListInAimpOrder entries_id_list;
-    entries_id_list.reserve(entries_count);
-
+    entries.reserve(entries_count);
+    
     for (int entry_index = 0; entry_index < entries_count; ++entry_index) {
         // aimp_playlist_manager_->AIMP_PLS_Entry_ReloadInfo(id_, entry_index); // try to make AIMP update track info: this takes significant time and some tracks are not updated anyway.
-        if ( aimp_playlist_manager_->AIMP_PLS_Entry_InfoGet( playlist_id, entry_index, &file_info_helper.getEmptyFileInfo() ) ) {
-            entries[entry_index] = file_info_helper.getPlaylistEntry(entry_index);
-            entries_id_list.push_back(entry_index);
+        if ( aimp_playlist_manager_->AIMP_PLS_Entry_InfoGet(playlist_id,
+                                                            entry_index,
+                                                            &file_info_helper.getEmptyFileInfo()
+                                                            )
+            )
+        {
+            entries.push_back( file_info_helper.getPlaylistEntry(entry_index) );
         } else {
             BOOST_LOG_SEV(logger(), error) << "Error occured while getting entry info ¹" << entry_index << " from playlist with ID = " << playlist_id;
             throw std::runtime_error("Error occured while getting playlist entries.");
@@ -304,7 +307,6 @@ void AIMPManager::loadEntries(Playlist& playlist) // throws std::runtime_error
 
     // we got list, save result
     playlist.swapEntries(entries);
-    playlist.getAimpOrderedEntriesIDs().swap(entries_id_list);
 }
 
 #ifdef MANUAL_PLAYLISTS_CONTENT_CHANGES_DETERMINATION
@@ -360,10 +362,9 @@ bool AIMPManager::isLoadedPlaylistEqualsAimpPlaylist(PlaylistID playlist_id) con
 
     const Playlist& playlist = getPlaylist(playlist_id);
     const EntriesListType& loaded_entries = playlist.getEntries();
-    const EntryIdListInAimpOrder& entries_id_list = playlist.getAimpOrderedEntriesIDs();
-    const int entries_count = aimp_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
 
-    assert( entries_count >= 0 && entries_id_list.size() == static_cast<size_t>(entries_count) ); // function can compare only entries lists of equal sizes.
+    const int entries_count = aimp_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
+    assert( entries_count >= 0 && static_cast<size_t>(entries_count) == loaded_entries.size() ); // function returns correct result only if entries count in loaded and actual playlists are equal.
 
     AIMP2FileInfoHelper file_info_helper; // used for get entries from AIMP conviniently.
 
@@ -374,11 +375,9 @@ bool AIMPManager::isLoadedPlaylistEqualsAimpPlaylist(PlaylistID playlist_id) con
                                                            )
            )
         {
-            const PlaylistEntryID entry_id = entries_id_list[entry_index];
-            const PlaylistEntry& loaded_entry = *(loaded_entries.find(entry_id)->second); // search will always be successfull, since entry ID exists.
             // need to compare loaded_entry with file_info_helper.info_;
             const AIMP2SDK::AIMP2FileInfo& aimp_entry = file_info_helper.getFileInfoWithCorrectStringLengths();
-            if ( loaded_entry.getCRC32() != Utilities::crc32(aimp_entry) ) {
+            if ( loaded_entries[entry_index]->getCRC32() != Utilities::crc32(aimp_entry) ) {
                 return false;
             }
         } else {
@@ -936,14 +935,13 @@ const PlaylistEntry& AIMPManager::getEntry(TrackDescription track_desc) const
 {
     const Playlist& playlist = getPlaylist(track_desc.playlist_id);
     const EntriesListType& entries = playlist.getEntries();
-    EntriesListType::const_iterator entry_iterator( entries.find(track_desc.track_id) );
-    if ( entry_iterator == entries.end() ) {
+    if ( track_desc.track_id < 0 || static_cast<size_t>(track_desc.track_id) >= entries.size() ) {
         std::ostringstream msg;
         msg << "Error in "__FUNCTION__ << ". Entry " << track_desc << " does not exist";
         throw std::runtime_error( msg.str() );
     }
 
-    return *(entry_iterator->second);
+    return *entries[track_desc.track_id]; // currently track ID is simple index in entries list.
 }
 
 void AIMPManager::notifyAboutInternalEvent(INTERNAL_EVENTS internal_event)

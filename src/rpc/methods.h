@@ -479,9 +479,12 @@ private:
     */
     bool getSearchStringFromRpcParam(const std::string& search_string_utf8);
     FindStringOccurenceInEntryFieldsFunctor entry_contain_string_;
-    const PlaylistEntryIDList& getEntriesFilteredByString(const std::wstring& search_string, const PlaylistEntryIDList& entry_to_filter_ids, const EntriesListType& entries);
+    const PlaylistEntryIDList& getEntriesIDsFilteredByStringFromEntriesList(const std::wstring& search_string,
+                                                                            const EntriesListType& entries);
+    const PlaylistEntryIDList& getEntriesIDsFilteredByStringFromEntryIDs(const std::wstring& search_string,
+                                                                         const PlaylistEntryIDList& entry_to_filter_ids,
+                                                                         const EntriesListType& entries);
     void outputFilteredEntries(const PlaylistEntryIDList& filtered_entries_ids, const EntriesListType& entries, size_t start_entry_index, size_t entries_count, Rpc::Value& result, Rpc::Value& rpcvalue_entries);
-    const PlaylistEntryIDList& getDefaultEntryIDs(const EntriesListType& entries);
 
     // entries output
 
