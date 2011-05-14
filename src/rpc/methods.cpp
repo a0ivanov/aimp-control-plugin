@@ -336,8 +336,8 @@ void GetPlaylistEntries::fillFieldToOrderDescriptors(const Rpc::Value& entry_fie
                 // TODO: avoid duplicates
                 field_to_order_descriptors_.push_back( FieldToOrderDescriptor( fields_to_order_[ entry_fields_filler_.setters_required_[field_to_order_index]->first ],
                                                                                (field_desc[kORDER_DIRECTION_RPCVALUE] == kDESCENDING_ORDER_RPCVALUE) ? DESCENDING : ASCENDING
-                                                                             )
-                                                     );
+                                                                              )
+                                                      );
             }
         } catch (Rpc::Exception&) {
             // just ignore wrong order field description, ordering is not necessary.
@@ -349,13 +349,13 @@ void GetPlaylistEntries::fillRpcValueEntriesFromEntriesList(const EntriesListTyp
 {
     EntriesListType::const_iterator entries_iterator_begin( entries.begin() );
     std::advance(entries_iterator_begin, start_entry_index); // go to first requested entry.
-    EntriesListType::const_iterator entries_iterator_end( entries_iterator_begin );
+    EntriesListType::const_iterator entries_iterator_end(entries_iterator_begin);
     std::advance(entries_iterator_end, entries_count); // go to entry next to last requested.
     boost::sub_range<const EntriesListType> entries_range(entries_iterator_begin, entries_iterator_end);
-    size_t entry_rpcvalue_index = 0;
-
+    
     rpcvalue_entries.setSize(entries_count);
 
+    size_t entry_rpcvalue_index = 0;
     BOOST_FOREACH (const EntriesListType::value_type& entry_id_obj_pair, entries_range) {
         const PlaylistEntry* entry( entry_id_obj_pair.second.get() );
         Rpc::Value& entry_rpcvalue = rpcvalue_entries[entry_rpcvalue_index];
@@ -374,10 +374,10 @@ void GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs(const PlaylistEntryIDLi
     PlaylistEntryIDList::const_iterator entry_id_iter_end(entry_id_iter_begin);
     std::advance(entry_id_iter_end, entries_count); // go to entry next to last requested.
     boost::sub_range<const PlaylistEntryIDList> entry_ids_range(entry_id_iter_begin, entry_id_iter_end);
-    size_t entry_rpcvalue_index = 0;
-
+    
     rpcvalue_entries.setSize(entries_count);
 
+    size_t entry_rpcvalue_index = 0;
     BOOST_FOREACH (const PlaylistEntryID entry_id, entry_ids_range) {
         const PlaylistEntry* entry( entries.find(entry_id)->second.get() );
         Rpc::Value& entry_rpcvalue = rpcvalue_entries[entry_rpcvalue_index];

@@ -64,7 +64,7 @@ const PlaylistEntryIDList& EntriesSorter::getEntriesSortedByField(FieldToOrderDe
     if ( order_descriptor.direction_ != sorted_cache.order_state_ ) {
         sorted_cache.comparator_->sortIDsByField(sorted_entry_ids, order_descriptor.direction_);
         sorted_cache.order_state_ = (order_descriptor.direction_ == ASCENDING) ? ASCENDING_ORDER
-                                                                                 : DESCENDING_ORDER;
+                                                                               : DESCENDING_ORDER;
     }
 
     assert( sorted_entry_ids.size() == entries_.size() );
@@ -123,7 +123,7 @@ const PlaylistEntryIDList& EntriesSorter::getEntriesSortedByMultipleFields(const
     std::sort( sorted_entry_ids.begin(), sorted_entry_ids.end(), SortByMultipleFieldsFunctor(field_to_order_descriptors, ordered_caches_) );
 
     sorted_cache.order_state_ = (field_to_order_descriptors[0].direction_ == ASCENDING) ? ASCENDING_ORDER
-                                                                                       : DESCENDING_ORDER;
+                                                                                        : DESCENDING_ORDER;
     assert( sorted_entry_ids.size() == entries_.size() );
     return sorted_entry_ids;
 }

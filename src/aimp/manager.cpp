@@ -209,7 +209,7 @@ public:
 
     boost::shared_ptr<PlaylistEntry> getPlaylistEntry(DWORD entry_id, crc32_t crc32 = 0)
     {
-        getFileInfoCorrectStringLengths();
+        getFileInfoWithCorrectStringLengths();
 
         return boost::shared_ptr<PlaylistEntry>(
             new PlaylistEntry(  info_.sAlbum,    info_.nAlbumLen,
@@ -236,7 +236,7 @@ public:
     DWORD getTrackID() const
         { return info_.nTrackID; }
 
-    AIMP2SDK::AIMP2FileInfo& getFileInfoCorrectStringLengths()
+    AIMP2SDK::AIMP2FileInfo& getFileInfoWithCorrectStringLengths()
     {
         // fill string lengths if Aimp do not do this.
         if (info_.nAlbumLen == kFIELDBUFFERSIZE) {
@@ -292,7 +292,7 @@ void AIMPManager::loadEntries(Playlist& playlist) // throws std::runtime_error
     entries_id_list.reserve(entries_count);
 
     for (int entry_index = 0; entry_index < entries_count; ++entry_index) {
-        // aimp_playlist_manager_->AIMP_PLS_Entry_ReloadInfo(id_, entry_index); // try to make AIMP update track info: this take significant time and some tracks are not updated anyway.
+        // aimp_playlist_manager_->AIMP_PLS_Entry_ReloadInfo(id_, entry_index); // try to make AIMP update track info: this takes significant time and some tracks are not updated anyway.
         if ( aimp_playlist_manager_->AIMP_PLS_Entry_InfoGet( playlist_id, entry_index, &file_info_helper.getEmptyFileInfo() ) ) {
             entries[entry_index] = file_info_helper.getPlaylistEntry(entry_index);
             entries_id_list.push_back(entry_index);
@@ -377,7 +377,7 @@ bool AIMPManager::isLoadedPlaylistEqualsAimpPlaylist(PlaylistID playlist_id) con
             const PlaylistEntryID entry_id = entries_id_list[entry_index];
             const PlaylistEntry& loaded_entry = *(loaded_entries.find(entry_id)->second); // search will always be successfull, since entry ID exists.
             // need to compare loaded_entry with file_info_helper.info_;
-            const AIMP2SDK::AIMP2FileInfo& aimp_entry = file_info_helper.getFileInfoCorrectStringLengths();
+            const AIMP2SDK::AIMP2FileInfo& aimp_entry = file_info_helper.getFileInfoWithCorrectStringLengths();
             if ( loaded_entry.getCRC32() != Utilities::crc32(aimp_entry) ) {
                 return false;
             }
