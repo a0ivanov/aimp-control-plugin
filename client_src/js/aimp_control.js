@@ -58,15 +58,6 @@ function createEntriesControl(index, $tab_ui)
     $table = $table_with_playlist_id.dataTable( {
         bStateSave : true, // save state in cookies.
         aoColumns : getDataTablesColumnsDescriptors(),
-
-        //fnRowCallback : function( nRow, aData, iDisplayIndex ) {
-        //    // Append the grade to the default row class name
-        //    if ( aData[4] == "A" ) {
-        //        $('td:eq(4)', nRow).html( '<b>A</b>' );
-        //    }
-        //    return nRow;
-        //},
-
         fnDrawCallback : addControlMenuToEachEntry,
         oLanguage : {
             sUrl : getLocalizationDirectory() + '/datatables.txt'
@@ -82,7 +73,7 @@ function createEntriesControl(index, $tab_ui)
             };
 
             function fnGetKey(aoData, sKey) {
-                for ( var i = 0, iLen = aoData.length; i < iLen; ++i) {
+                for (var i = 0, iLen = aoData.length; i < iLen; ++i) {
                     if (aoData[i].name == sKey) {
                         return aoData[i].value;
                     }
@@ -142,17 +133,17 @@ function createEntriesControl(index, $tab_ui)
             }
 
             aimp_manager.getPlaylistEntries(
-                                      { playlist_id : parseInt(playlist_id),
-                                        fields : fnGetKey(aoData, 'sColumns').split(','),
-                                        order_fields : order_fields,
-                                        start_index : fnGetKey(aoData, 'iDisplayStart'),
+                                      { playlist_id   : parseInt(playlist_id),
+                                        fields        : fnGetKey(aoData, 'sColumns').split(','),
+                                        order_fields  : order_fields,
+                                        start_index   : fnGetKey(aoData, 'iDisplayStart'),
                                         entries_count : fnGetKey(aoData, 'iDisplayLength'),
                                         search_string : fnGetKey(aoData, 'sSearch')
                                       },
                                       {
-                                        on_success : on_success(fnCallback),
+                                        on_success   : on_success(fnCallback),
                                         on_exception : on_error,
-                                        on_complete : undefined
+                                        on_complete  : undefined
                                       }
             );
 

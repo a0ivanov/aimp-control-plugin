@@ -304,7 +304,8 @@ const size_t GetPlaylistEntries::getEntriesCountFromRpcParam(int entries_count, 
         throw Rpc::Exception("Wrong argument: entries_count should be positive value.", WRONG_ARGUMENT);
     }
 
-    return static_cast<size_t>(static_cast<size_t>(entries_count) < max_value ? entries_count : max_value);
+    return static_cast<size_t>(entries_count) < max_value ? static_cast<size_t>(entries_count)
+                                                          : max_value;
 }
 
 bool GetPlaylistEntries::getSearchStringFromRpcParam(const std::string& search_string_utf8)
@@ -439,13 +440,19 @@ ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rpc::Va
     const Playlist& playlist = getPlayListFromRpcParam(aimp_manager_, params["playlist_id"]);
     const EntriesListType& entries = playlist.getEntries();
 
-    const size_t start_entry_index = params.isMember("start_index") ? getStartFromIndexFromRpcParam(params["start_index"], (entries.size() == 0) ? 0 : entries.size() - 1)
+    const size_t start_entry_index = params.isMember("start_index") ? getStartFromIndexFromRpcParam(params["start_index"],
+                                                                                                    (entries.size() == 0) ? 0
+                                                                                                                          : entries.size() - 1
+                                                                                                    )
                                                                     : 0; // by default return entries from start.
-    const size_t entries_count = params.isMember("entries_count") ? getEntriesCountFromRpcParam(params["entries_count"], entries.size() - start_entry_index)
+    const size_t entries_count = params.isMember("entries_count") ? getEntriesCountFromRpcParam(params["entries_count"],
+                                                                                                entries.size() - start_entry_index
+                                                                                                )
                                                                   : entries.size() - start_entry_index; // by default return entries from start_entry_index to end of entries list.
 
-    root_response["result"][kTOTAL_ENTRIES_COUNT_RPCVALUE_KEY] = entries.size(); // add total entries count to result.
-    Rpc::Value& rpcvalue_entries = root_response["result"][kENTRIES_RPCVALUE_KEY];
+    Rpc::Value& rpc_result = root_response["result"];
+    rpc_result[kTOTAL_ENTRIES_COUNT_RPCVALUE_KEY] = entries.size(); // add total entries count to result.
+    Rpc::Value& rpcvalue_entries = rpc_result[kENTRIES_RPCVALUE_KEY];
 
     if ( !( params.isMember("order_fields") && params.isMember("search_string")  ) ) { // return entries in default order.
         fillRpcValueEntriesFromEntriesList(entries, start_entry_index, entries_count, rpcvalue_entries);
@@ -462,9 +469,9 @@ ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rpc::Va
                                         entries,
                                         start_entry_index,
                                         entries_count,
-                                        root_response["result"],
+                                        rpc_result,
                                         rpcvalue_entries
-                                    );
+                                      );
             } else { // return entries in specified order.
                 fillRpcValueEntriesFromEntryIDs(sorted_entries_ids, entries, start_entry_index, entries_count, rpcvalue_entries);
             }
@@ -474,9 +481,9 @@ ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rpc::Va
                                         entries,
                                         start_entry_index,
                                         entries_count,
-                                        root_response["result"],
+                                        rpc_result,
                                         rpcvalue_entries
-                                     );
+                                      );
             } else { // return entries in default order.
                 fillRpcValueEntriesFromEntriesList(entries, start_entry_index, entries_count, rpcvalue_entries);
             }

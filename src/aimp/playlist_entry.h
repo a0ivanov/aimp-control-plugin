@@ -16,20 +16,20 @@ public:
     //! Identificators of playlist entry fields. FIELDS_COUNT is special value(not field ID), used to determine fields count.
     enum FIELD_IDs { ID = 0, TITLE, ARTIST, ALBUM, DATE, GENRE, BITRATE, DURATION, FILENAME, FILESIZE, RATING, INTERNAL_AIMP_ID, ACTIVITY_FLAG, FIELDS_COUNT };
 
-    PlaylistEntry(  const WCHAR* album, std::size_t album_len,
-                    const WCHAR* artist, std::size_t artist_len,
-                    const WCHAR* date, std::size_t date_len,
+    PlaylistEntry(  const WCHAR* album,    std::size_t album_len,
+                    const WCHAR* artist,   std::size_t artist_len,
+                    const WCHAR* date,     std::size_t date_len,
                     const WCHAR* filename, std::size_t filename_len,
-                    const WCHAR* genre, std::size_t genre_len,
-                    const WCHAR* title, std::size_t title_len,
+                    const WCHAR* genre,    std::size_t genre_len,
+                    const WCHAR* title,    std::size_t title_len,
                     DWORD bitrate,
                     DWORD channels_count,
                     DWORD duration,
                     INT64 filesize,
                     DWORD rating,
                     DWORD samplerate,
-                    DWORD track_id,
-                    DWORD entry_id,
+                    DWORD track_id_aimp_internal,
+                    DWORD id,
                     crc32_t crc32 = 0
                  )
         :
@@ -45,8 +45,8 @@ public:
         filesize_(filesize),
         rating_(rating),
         samplerate_(samplerate),
-        track_id_aimp_internal_(track_id),
-        id_(entry_id),
+        track_id_aimp_internal_(track_id_aimp_internal),
+        id_(id),
         crc32_(crc32)
     {}
 
