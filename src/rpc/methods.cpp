@@ -536,12 +536,14 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
     Rpc::Value& rpcvalue_entries = rpc_result[kENTRIES_RPCVALUE_KEY];
 
     struct SetEntriesCount {
-        mutable Rpc::Value& entries_count_;
-        SetEntriesCount(Rpc::Value& entries_count)
-            : entries_count_(entries_count)
+        mutable Rpc::Value& value_;
+        const std::string& member_name_;
+        SetEntriesCount(Rpc::Value& value, const std::string& member_name)
+            : value_(value),
+              member_name_(member_name)
         {}
         void operator()(size_t count) const {
-            entries_count_ = count;
+            value_[member_name_] = count;
         }
     };
 
@@ -552,8 +554,8 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
                                                                                     boost::bind(&GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs,
                                                                                                 this, _1, _2, _3, _4, boost::ref(rpcvalue_entries)
                                                                                                 ),
-                                                                                    boost::bind<void>(SetEntriesCount(rpc_result[kTOTAL_ENTRIES_COUNT_RPCVALUE_KEY]), _1),
-                                                                                    boost::bind<void>(SetEntriesCount(rpc_result[kCOUNT_OF_FOUND_ENTRIES_RPCVALUE_KEY]), _1)
+                                                                                    boost::bind<void>(SetEntriesCount(rpc_result, kTOTAL_ENTRIES_COUNT_RPCVALUE_KEY), _1),
+                                                                                    boost::bind<void>(SetEntriesCount(rpc_result, kCOUNT_OF_FOUND_ENTRIES_RPCVALUE_KEY), _1)
                                                                                    );
     current_root_response_ = NULL;
     return response_type;
