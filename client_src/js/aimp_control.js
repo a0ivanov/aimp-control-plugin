@@ -23,6 +23,19 @@ function getPlaylistDataTable(playlist_id) {
 	return $playlists_tables['entries_table_' + playlist_id];
 }
 
+function removeHighlightFromAllRows($table) {
+	$($table.fnSettings().aoData).each(
+		function () {
+			$(this.nTr).removeClass('row_selected');
+		}
+	);
+}
+
+function highlightCurrentRow($table, nRow) {
+	removeHighlightFromAllRows($table);
+	$(nRow).addClass('row_selected');			
+}
+
 /* create DataTable control(jQuery plugin) for list of entries. */
 function createEntriesControl(index, $tab_ui)
 {
@@ -43,14 +56,9 @@ function createEntriesControl(index, $tab_ui)
 
     /* Add a click handler to the rows - this could be used as a callback */
     $('#entries_table_' + playlist_id + ' tbody').click(
-        function(event) {
-            $($table.fnSettings().aoData).each(
-                function () {
-                    $(this.nTr).removeClass('row_selected');
-                }
-            );
-            $(event.target.parentNode).addClass('row_selected');
-			
+        function(event) {			
+			highlightCurrentRow($table, event.target.parentNode);
+
 			var track_desc = getDescriptionTrackOfRow(event.target.parentNode);
 			aimp_manager.play(track_desc,
 							  { on_exception : function(error, localized_message) {
@@ -174,11 +182,18 @@ function gotoCurrentTrackInPlaylist()
 		aimp_manager.getEntryPageInDatatable(request_params,
 									 		 { on_success   : function (result) {
 															      if (result.page_number >= 0 && result.track_index_on_page >= 0) {
-																      tryToLoCurrentTrackInPlaylist(result.page_number, result.track_index_on_page);
+																      tryToLocateCurrentTrackInPlaylist(result.page_number, result.track_index_on_page);
+																  } else {
+																	  if ( control_panel_state.hasOwnProperty('playlist_id') ) {
+																		  removeHighlightFromAllRows( getPlaylistDataTable(control_panel_state.playlist_id) );
+																	  }
 																  }
 															  },
 											   on_exception : function(error, localized_message) {
-   															      alert(localized_message);
+   															      //alert(localized_message);
+																  if ( control_panel_state.hasOwnProperty('playlist_id') ) {
+																      removeHighlightFromAllRows( getPlaylistDataTable(control_panel_state.playlist_id) );
+																  }
 														      },
 											   on_complete  : undefined
 											 }
@@ -186,13 +201,22 @@ function gotoCurrentTrackInPlaylist()
 	}
 }
 
-function tryToLoCurrentTrackInPlaylist(entry_page_number, entry_index_on_page)
+function tryToLocateCurrentTrackInPlaylist(entry_page_number, entry_index_on_page)
 {
 	var $playlist_table = getPlaylistDataTable(control_panel_state.playlist_id);
 	var oSettings = $playlist_table.fnSettings();
-	oSettings._iDisplayStart = entry_page_number * oSettings._iDisplayLength;
-	oSettings._iDisplayEnd = oSettings._iDisplayStart + oSettings._iDisplayLength;
-	$playlist_table.fnDraw(false);
+	var index_of_first_entry_on_page = entry_page_number * oSettings._iDisplayLength;
+	if (oSettings._iDisplayStart != index_of_first_entry_on_page) {
+		// move to page where current track is visible.
+		oSettings._iDisplayStart = index_of_first_entry_on_page;
+		oSettings._iDisplayEnd = oSettings._iDisplayStart + oSettings._iDisplayLength;
+		$playlist_table.fnDraw(false);
+	} else {
+		// highlight current track.
+		var dt_row = $(oSettings.aoData).get(entry_index_on_page);
+		var nRow = dt_row.nTr;
+		highlightCurrentRow($playlist_table, nRow);
+	}
 }
 
 /* Add control menu switcher and menu itself to all entries. */
