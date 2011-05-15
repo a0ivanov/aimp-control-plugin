@@ -376,8 +376,11 @@ typedef std::set<std::string> SupportedFieldNames;
 typedef std::vector<SupportedFieldNames::const_iterator> RequiredFieldNames;
 }
 
-typedef boost::function<void(boost::sub_range<const EntriesListType>)> EntriesHandler;
-typedef boost::function<void(boost::sub_range<const PlaylistEntryIDList>, const EntriesListType&)> EntryIDsHandler;
+typedef boost::sub_range<const EntriesListType> EntriesRange;
+typedef boost::sub_range<const PlaylistEntryIDList> EntriesIDsRange;
+
+typedef boost::function<void(EntriesRange)> EntriesHandler;
+typedef boost::function<void(EntriesIDsRange, const EntriesListType&)> EntryIDsHandler;
 typedef boost::function<void(size_t)> EntriesCountHandler;
 
 /*! 
@@ -390,9 +393,12 @@ public:
     GetPlaylistEntriesTemplateMethod(AIMPManager& aimp_manager)
         :
         aimp_manager_(aimp_manager),
-        kFIELD_INDEX_RPCVALUE("field_index"),
-        kDESCENDING_ORDER_RPCVALUE("desc"),
-        kORDER_DIRECTION_RPCVALUE("dir")
+        kENTRIES_COUNT_STRING("entries_count"),
+        kFIELD_INDEX_STRING("field_index"),
+        kDESCENDING_ORDER_STRING("desc"),
+        kORDER_DIRECTION_STRING("dir"),
+        kORDER_FIELDS_STRING("order_fields"),
+        kSEARCH_STRING_STRING("search_string")
     {
         using namespace RpcResultUtils;
 
@@ -433,10 +439,15 @@ public:
     }
 
     Rpc::ResponseType execute(const Rpc::Value& params,
+                              // following needed by only by GetPlaylistEntries
                               EntriesHandler entries_handler,
                               EntryIDsHandler entry_ids_handler,
                               EntriesCountHandler total_entries_count_handler,
-                              EntriesCountHandler filtered_entries_count_handler
+                              EntriesCountHandler filtered_entries_count_handler,
+                              // following needed by only by GetEntryPageInDataTable
+                              EntriesHandler full_entries_list_handler,
+                              EntryIDsHandler full_entry_ids_list_handler,
+                              EntriesCountHandler page_size_handler
                               );
 
     void setSupportedFieldNames(const PlaylistEntries::SupportedFieldNames& supported_fields_names)
@@ -457,25 +468,24 @@ private:
 
     //! \return count of entries to process.
     const size_t getEntriesCountFromRpcParam(int entries_count, size_t max_value); // throws Rpc::Exception
+    const std::string kENTRIES_COUNT_STRING;
 
     // entries ordering
-    const std::string kFIELD_INDEX_RPCVALUE;
-    const std::string kDESCENDING_ORDER_RPCVALUE;
-    const std::string kORDER_DIRECTION_RPCVALUE;
+    const std::string kFIELD_INDEX_STRING,
+                      kDESCENDING_ORDER_STRING,
+                      kORDER_DIRECTION_STRING,
+                      kORDER_FIELDS_STRING;
     typedef std::map<std::string, ENTRY_FIELDS_ORDERABLE> FieldsToOrderMap;
     FieldsToOrderMap fields_to_order_;
     EntriesSortUtil::FieldToOrderDescriptors field_to_order_descriptors_;
     void fillFieldToOrderDescriptors(const Rpc::Value& entry_fields_to_order);
 
     // entries filtering
+    const std::string kSEARCH_STRING_STRING;
     PlaylistEntryIDList filtered_entries_ids_;
-    PlaylistEntryIDList default_order_entries_ids_;
     std::wstring search_string_;
 
-    /*
-        Get search string from Rpc param.
-        \return true if search string is not empty.
-    */
+    //!\return true if search string is not empty.
     bool getSearchStringFromRpcParam(const std::string& search_string_utf8);
     FindStringOccurenceInEntryFieldsFunctor entry_contain_string_;
     const PlaylistEntryIDList& getEntriesIDsFilteredByStringFromEntriesList(const std::wstring& search_string,
@@ -488,14 +498,17 @@ private:
     void handleFilteredEntryIDs(const PlaylistEntryIDList& filtered_entries_ids, const EntriesListType& entries,
                                size_t start_entry_index, size_t entries_count,
                                EntryIDsHandler entry_ids_handler,
+                               EntryIDsHandler full_entry_ids_list_handler,
                                EntriesCountHandler filtered_entries_count_handler);
 
     void handleEntries(const EntriesListType& entries, size_t start_entry_index, size_t entries_count,
-                       EntriesHandler entries_handler);
+                       EntriesHandler entries_handler,
+                       EntriesHandler full_entries_list_handler);
 
     void handleEntryIDs(const PlaylistEntryIDList& entries_ids, const EntriesListType& entries,
                         size_t start_entry_index, size_t entries_count,
-                        EntryIDsHandler entry_ids_handler
+                        EntryIDsHandler entry_ids_handler,
+                        EntryIDsHandler full_entry_ids_list_handler
                         );
 };
 
@@ -516,8 +529,7 @@ public:
         entry_fields_filler_("entry"),
         kTOTAL_ENTRIES_COUNT_RPCVALUE_KEY("total_entries_count"),
         kENTRIES_RPCVALUE_KEY("entries"),
-        kCOUNT_OF_FOUND_ENTRIES_RPCVALUE_KEY("count_of_found_entries"),
-        current_root_response_(NULL)
+        kCOUNT_OF_FOUND_ENTRIES_RPCVALUE_KEY("count_of_found_entries")
     {
 
         using namespace RpcValueSetHelpers;
@@ -559,6 +571,10 @@ public:
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 
+    // we must share this object with GetEntryPageInDataTable method.
+    GetPlaylistEntriesTemplateMethod& getPlaylistEntriesTemplateMethod()
+        { return get_playlist_entries_templatemethod_; };
+
 private:
 
     GetPlaylistEntriesTemplateMethod get_playlist_entries_templatemethod_;
@@ -571,15 +587,50 @@ private:
     const std::string kTOTAL_ENTRIES_COUNT_RPCVALUE_KEY; // key for total entries count.
     const std::string kCOUNT_OF_FOUND_ENTRIES_RPCVALUE_KEY;
 
-    Rpc::Value* current_root_response_; // valid only while execute() method is running.
-
     //! Fills rpcvalue array of entries from entries objects.
-    void fillRpcValueEntriesFromEntriesList(boost::sub_range<const EntriesListType> entries_range,
+    void fillRpcValueEntriesFromEntriesList(EntriesRange entries_range,
                                             Rpc::Value& rpcvalue_entries);
 
     //! Fills rpcvalue array of entries from entries IDs.
-    void fillRpcValueEntriesFromEntryIDs(boost::sub_range<const PlaylistEntryIDList> entries_ids_range, const EntriesListType& entries,
+    void fillRpcValueEntriesFromEntryIDs(EntriesIDsRange entries_ids_range, const EntriesListType& entries,
                                          Rpc::Value& rpcvalue_entries);
+};
+
+class GetEntryPageInDataTable : public AIMPRPCMethod
+{
+public:
+    GetEntryPageInDataTable(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager,
+                            Rpc::RequestHandler& rpc_request_handler,
+                            GetPlaylistEntries& getplaylistentries_method
+                           )
+        :
+        AIMPRPCMethod("get_entry_page_in_datatable", aimp_manager, multi_user_mode_manager, rpc_request_handler),
+        get_playlist_entries_templatemethod_( getplaylistentries_method.getPlaylistEntriesTemplateMethod() )
+    {
+
+    }
+
+    std::string help()
+    {
+        return "";
+    }
+
+    Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
+
+private:
+
+    GetPlaylistEntriesTemplateMethod& get_playlist_entries_templatemethod_;
+
+    // following members are valid only while execute() method is running after calling getplaylistentries_method_.execute().
+    size_t entries_on_page_;
+    int entry_index_in_current_representation_; // index of entry in reperesentation(concrete filtering and sorting) of playlist entries.
+
+    void setEntryPageInDataTableFromEntriesList(EntriesRange entries_range,
+                                                PlaylistEntryID entry_id
+                                                );
+
+    void setEntryPageInDataTableFromEntryIDs(EntriesIDsRange entries_ids_range, const EntriesListType& /*entries*/,
+                                             PlaylistEntryID entry_id);
 };
 
 /*!

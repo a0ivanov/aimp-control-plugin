@@ -328,6 +328,27 @@ void AIMPControlPluginHeader::createRpcMethods()
     REGISTER_AIMP_RPC_METHOD(GetPlaylists);
     // tracks
     REGISTER_AIMP_RPC_METHOD(GetPlaylistEntries);
+
+    { // register this way since GetEntryPageInDataTable depends from GetPlaylistEntries 
+    std::auto_ptr<GetPlaylistEntries> method_getplaylistentries(new GetPlaylistEntries(*aimp_manager_,
+                                                                                       *multi_user_mode_manager_,
+                                                                                       *rpc_request_handler_
+                                                                                       )
+                                                                );
+
+    std::auto_ptr<Rpc::Method> method_getentrypageindatatable(new GetEntryPageInDataTable(*aimp_manager_,
+                                                                                     *multi_user_mode_manager_,
+                                                                                     *rpc_request_handler_,
+                                                                                     *method_getplaylistentries
+                                                                                     )
+                                                         );
+    { // auto_ptr can not be implicitly casted to ptr to object of base class.
+    std::auto_ptr<Rpc::Method> method( method_getplaylistentries.release() );
+    rpc_request_handler_->addMethod(method);
+    }
+    rpc_request_handler_->addMethod(method_getentrypageindatatable);
+    }
+
     REGISTER_AIMP_RPC_METHOD(GetPlaylistEntriesCount);
     REGISTER_AIMP_RPC_METHOD(GetFormattedEntryTitle);
     REGISTER_AIMP_RPC_METHOD(GetPlaylistEntryInfo);
