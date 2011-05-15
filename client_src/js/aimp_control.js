@@ -4,6 +4,7 @@
 */
 
 // Global data
+var $playlists_tabs = null;
 var $playlists_tables = {}; // maps entries table id to datatable object.
 var aimp_manager = new AimpManager();
 var control_panel_state = {};
@@ -36,10 +37,14 @@ function highlightCurrentRow($table, nRow) {
 	$(nRow).addClass('row_selected');			
 }
 
+function getPlaylistID(tab_id) {
+	return tab_id.split('_')[1];
+}
+
 /* create DataTable control(jQuery plugin) for list of entries. */
 function createEntriesControl(index, $tab_ui)
 {
-    var playlist_id = $tab_ui.id.split('_')[1];
+    var playlist_id = getPlaylistID($tab_ui.id);
     var $table_with_playlist_id = $('#entries_table_' + playlist_id);
 
     var $table;
@@ -182,23 +187,36 @@ function gotoCurrentTrackInPlaylist()
 		aimp_manager.getEntryPageInDatatable(request_params,
 									 		 { on_success   : function (result) {
 															      if (result.page_number >= 0 && result.track_index_on_page >= 0) {
+																      gotoCurrentPlaylist(control_panel_state.playlist_id);
 																      tryToLocateCurrentTrackInPlaylist(result.page_number, result.track_index_on_page);
 																  } else {
-																	  if ( control_panel_state.hasOwnProperty('playlist_id') ) {
-																		  removeHighlightFromAllRows( getPlaylistDataTable(control_panel_state.playlist_id) );
-																	  }
+																	  //if ( control_panel_state.hasOwnProperty('playlist_id') ) {
+																      removeHighlightFromAllRows( getPlaylistDataTable(control_panel_state.playlist_id) );
+																	  //}
 																  }
 															  },
 											   on_exception : function(error, localized_message) {
    															      //alert(localized_message);
-																  if ( control_panel_state.hasOwnProperty('playlist_id') ) {
-																      removeHighlightFromAllRows( getPlaylistDataTable(control_panel_state.playlist_id) );
-																  }
+																  //if ( control_panel_state.hasOwnProperty('playlist_id') ) {
+																  removeHighlightFromAllRows( getPlaylistDataTable(control_panel_state.playlist_id) );
+																  //}
 														      },
 											   on_complete  : undefined
 											 }
 											 );
 	}
+}
+
+function gotoCurrentPlaylist(playlist_id)
+{
+	$('div[id*=playlist]', $playlists_tabs).each(function(index, tab_ui) {
+		var tab_playlist_id = getPlaylistID(tab_ui.id);
+		if (playlist_id == tab_playlist_id) {
+			$playlists_tabs.tabs('select', index);
+			return false;
+		}
+		return true;
+	});
 }
 
 function tryToLocateCurrentTrackInPlaylist(entry_page_number, entry_index_on_page)
@@ -445,21 +463,19 @@ function initBitrateField(field_settings) {
 /* Deletes all playlists controls(jQuery UI Tabs) */
 function deletePlaylistsControls()
 {
-    var $playlists_obj = $('#playlists');
-    if ($playlists_obj.className != '') {
+    if ($playlists_tabs !== null) {
         $playlists_tables = {}; // clear
         $('#playlists > div').remove();
-        $playlists_obj.tabs('destroy'); // if tabs control is already created - destroy all tabs.
+        $playlists_tabs.tabs('destroy'); // if tabs control is already created - destroy all tabs.
+		$playlists_tabs = null;
     }
 }
 
 /* create controls(jQuery UI Tabs) for list of playlists. */
 function createPlaylistsControls(playlists)
 {
-    var $playlists_obj = $('#playlists');
-
-    if ($playlists_obj.className != '') {
-        $playlists_obj.tabs({
+    if ($playlists_tabs === null) {
+        $playlists_tabs = $('#playlists').tabs({
             cookie: { expires: 1 } // store cookie for a day, without, it would be a session cookie
         }); // necessary initialization of Tabs control.
     }
@@ -470,10 +486,10 @@ function createPlaylistsControls(playlists)
         // we need to have unique ID to attach div to tab.
         var div_html = '<div id="' + playlist_id_name + '">' + createTemplateEntriesTable(playlists[i].id) + '</div>';
         $(div_html).appendTo('body');
-        $playlists_obj.tabs('add',
-                            '#' + playlist_id_name,
-                            playlists[i].title
-                            );
+        $playlists_tabs.tabs('add',
+                             '#' + playlist_id_name,
+                             playlists[i].title
+                             );
     }
 
     // select all created playlists and init them.
