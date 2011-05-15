@@ -4,11 +4,12 @@
 */
 
 // Global data
-var $data_tables = {}; // maps entries table id to datatable object.
+var $playlists_tables = {}; // maps entries table id to datatable object.
 var aimp_manager = new AimpManager();
 var control_panel_state = {};
-var control_menu_state_updaters = {}; // map menu unique ID to notifier descriptor - object with following members: notifier - function (entry_control_menu_descriptor), control_menu_descriptor - control menu descritor.
+var control_menu_state_updaters = {}; // map unique ID of context menu to notifier descriptor(object with following members: notifier - function (entry_control_menu_descriptor), control_menu_descriptor - control menu descritor).
 var track_progress_timer = null;
+var entries_requests = {}; // contains latest entry list requests to server for each playlist. Need for automatic displaying current track in playlist.
 
 /* Invoke notifiers for all control menus. */
 function syncronizeControlMenus() {
@@ -16,6 +17,10 @@ function syncronizeControlMenus() {
         var notifier_desc = control_menu_state_updaters[key];
         notifier_desc.notifier(notifier_desc.control_menu_descriptor);
     }
+}
+
+function getPlaylistDataTable(playlist_id) {
+	return $playlists_tables['entries_table_' + playlist_id];
 }
 
 /* create DataTable control(jQuery plugin) for list of entries. */
@@ -132,19 +137,20 @@ function createEntriesControl(index, $tab_ui)
                 }
             }
 
-            aimp_manager.getPlaylistEntries(
-                                      { playlist_id   : parseInt(playlist_id),
-                                        fields        : fnGetKey(aoData, 'sColumns').split(','),
-                                        order_fields  : order_fields,
-                                        start_index   : fnGetKey(aoData, 'iDisplayStart'),
-                                        entries_count : fnGetKey(aoData, 'iDisplayLength'),
-                                        search_string : fnGetKey(aoData, 'sSearch')
-                                      },
-                                      {
-                                        on_success   : on_success(fnCallback),
-                                        on_exception : on_error,
-                                        on_complete  : undefined
-                                      }
+			var request_params = {  playlist_id   : parseInt(playlist_id),
+									fields        : fnGetKey(aoData, 'sColumns').split(','),
+									order_fields  : order_fields,
+									start_index   : fnGetKey(aoData, 'iDisplayStart'),
+									entries_count : fnGetKey(aoData, 'iDisplayLength'),
+									search_string : fnGetKey(aoData, 'sSearch')
+								 };
+			entries_requests[request_params.playlist_id] = request_params;
+            aimp_manager.getPlaylistEntries(request_params,
+											{
+											  on_success   : on_success(fnCallback),
+											  on_exception : on_error,
+											  on_complete  : undefined
+											}
             );
 
         },
@@ -157,7 +163,36 @@ function createEntriesControl(index, $tab_ui)
 
     $table.fnSettings().aaSorting = []; // disable sorting by 0 column.
 
-    $data_tables['entries_table_' + playlist_id] = $table;
+    $playlists_tables['entries_table_' + playlist_id] = $table;
+}
+
+function gotoCurrentTrackInPlaylist()
+{
+	if (entries_requests.hasOwnProperty(control_panel_state.playlist_id) ) {
+		var request_params = entries_requests[control_panel_state.playlist_id]; // maybe we need copy this
+		request_params['track_id'] = control_panel_state.track_id;
+		aimp_manager.getEntryPageInDatatable(request_params,
+									 		 { on_success   : function (result) {
+															      if (result.page_number >= 0 && result.track_index_on_page >= 0) {
+																      tryToLoCurrentTrackInPlaylist(result.page_number, result.track_index_on_page);
+																  }
+															  },
+											   on_exception : function(error, localized_message) {
+   															      alert(localized_message);
+														      },
+											   on_complete  : undefined
+											 }
+											 );
+	}
+}
+
+function tryToLoCurrentTrackInPlaylist(entry_page_number, entry_index_on_page)
+{
+	var $playlist_table = getPlaylistDataTable(control_panel_state.playlist_id);
+	var oSettings = $playlist_table.fnSettings();
+	oSettings._iDisplayStart = entry_page_number * oSettings._iDisplayLength;
+	oSettings._iDisplayEnd = oSettings._iDisplayStart + oSettings._iDisplayLength;
+	$playlist_table.fnDraw(false);
 }
 
 /* Add control menu switcher and menu itself to all entries. */
@@ -165,7 +200,7 @@ function addControlMenuToEachEntry(oSettings)
 {
     if (oSettings.aoData.length > 0) { // add control to entry if we have some data. DataTables add string "Nothing found" if there is no data.
         var oTable = $('#' + oSettings.sTableId);
-        var $table = $data_tables[oSettings.sTableId];
+        var $table = $playlists_tables[oSettings.sTableId];
 
         if ( $('#playcontrol', oTable).length == 0) {
             /*
@@ -388,7 +423,7 @@ function deletePlaylistsControls()
 {
     var $playlists_obj = $('#playlists');
     if ($playlists_obj.className != '') {
-        $data_tables = {}; // clear
+        $playlists_tables = {}; // clear
         $('#playlists > div').remove();
         $playlists_obj.tabs('destroy'); // if tabs control is already created - destroy all tabs.
     }
@@ -608,6 +643,7 @@ function updateControlPanelState(result) {
     control_panel_state = result; // update global variable.
     updateControlPanel();
     syncronizeControlMenus();
+	gotoCurrentTrackInPlaylist();
 };
 
 /* Updates state of Playback(current playback state and scrolling track info) Panel controls to be sync with Aimp. */
