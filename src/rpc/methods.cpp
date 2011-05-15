@@ -597,7 +597,7 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
         }
     };
 
-    Rpc::ResponseType response_type = get_playlist_entries_templatemethod_.execute( rpc_params, 
+    Rpc::ResponseType response_type = get_playlist_entries_templatemethod_->execute(rpc_params, 
                                                                                     boost::bind(&GetPlaylistEntries::fillRpcValueEntriesFromEntriesList,
                                                                                                 this, _1, boost::ref(rpcvalue_entries)
                                                                                                 ),
@@ -656,21 +656,21 @@ Rpc::ResponseType GetEntryPageInDataTable::execute(const Rpc::Value& root_reques
     entries_on_page_ = 0;
     entry_index_in_current_representation_ = -1;
 
-    get_playlist_entries_templatemethod_.execute(rpc_params, 
-                                                 // use stubs instead not used callbacks.
-                                                 boost::bind<void>(EntriesHandlerStub(), _1),
-                                                 boost::bind<void>(EntryIDsHandlerStub(), _1, _2),
-                                                 boost::bind<void>(EntriesCountHandlerStub(), _1),
-                                                 boost::bind<void>(EntriesCountHandlerStub(), _1),
+    get_playlist_entries_templatemethod_->execute(rpc_params, 
+                                                  // use stubs instead not used callbacks.
+                                                  boost::bind<void>(EntriesHandlerStub(), _1),
+                                                  boost::bind<void>(EntryIDsHandlerStub(), _1, _2),
+                                                  boost::bind<void>(EntriesCountHandlerStub(), _1),
+                                                  boost::bind<void>(EntriesCountHandlerStub(), _1),
 
-                                                 boost::bind(&GetEntryPageInDataTable::setEntryPageInDataTableFromEntriesList,
-                                                             this, _1, track_id
-                                                             ),
-                                                 boost::bind(&GetEntryPageInDataTable::setEntryPageInDataTableFromEntryIDs,
-                                                             this, _1, _2, track_id
-                                                             ),
-                                                 boost::bind<void>(SetEntriesCount(&entries_on_page_), _1)
-                                                 );
+                                                  boost::bind(&GetEntryPageInDataTable::setEntryPageInDataTableFromEntriesList,
+                                                              this, _1, track_id
+                                                              ),
+                                                  boost::bind(&GetEntryPageInDataTable::setEntryPageInDataTableFromEntryIDs,
+                                                              this, _1, _2, track_id
+                                                              ),
+                                                  boost::bind<void>(SetEntriesCount(&entries_on_page_), _1)
+                                                  );
 
     //const size_t entries_count_in_representation = current_filtered_entries_count_ != 0 ? current_filtered_entries_count_ : current_total_entries_count_;
     Rpc::Value& rpc_result = root_response["result"];

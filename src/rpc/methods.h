@@ -525,7 +525,7 @@ public:
                        )
         :
         AIMPRPCMethod("get_playlist_entries", aimp_manager, multi_user_mode_manager, rpc_request_handler),
-        get_playlist_entries_templatemethod_(aimp_manager),
+        get_playlist_entries_templatemethod_( new GetPlaylistEntriesTemplateMethod(aimp_manager) ),
         entry_fields_filler_("entry"),
         kTOTAL_ENTRIES_COUNT_RPCVALUE_KEY("total_entries_count"),
         kENTRIES_RPCVALUE_KEY("entries"),
@@ -552,7 +552,7 @@ public:
         BOOST_FOREACH(HelperFillRpcFields<PlaylistEntry>::RpcValueSetters::value_type& setter_it, entry_fields_filler_.setters_) {
             fields_names.insert(setter_it.first);
         }
-        get_playlist_entries_templatemethod_.setSupportedFieldNames(fields_names);
+        get_playlist_entries_templatemethod_->setSupportedFieldNames(fields_names);
     }
 
     std::string help()
@@ -572,12 +572,12 @@ public:
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 
     // we must share this object with GetEntryPageInDataTable method.
-    GetPlaylistEntriesTemplateMethod& getPlaylistEntriesTemplateMethod()
+    boost::shared_ptr<GetPlaylistEntriesTemplateMethod> getPlaylistEntriesTemplateMethod()
         { return get_playlist_entries_templatemethod_; };
 
 private:
 
-    GetPlaylistEntriesTemplateMethod get_playlist_entries_templatemethod_;
+    boost::shared_ptr<GetPlaylistEntriesTemplateMethod> get_playlist_entries_templatemethod_;
 
     // See HelperFillRpcFields class commentaries.
     RpcValueSetHelpers::HelperFillRpcFields<PlaylistEntry> entry_fields_filler_;
@@ -619,7 +619,7 @@ public:
 
 private:
 
-    GetPlaylistEntriesTemplateMethod& get_playlist_entries_templatemethod_;
+    boost::shared_ptr<GetPlaylistEntriesTemplateMethod> get_playlist_entries_templatemethod_;
 
     // following members are valid only while execute() method is running after calling getplaylistentries_method_.execute().
     size_t entries_on_page_;
