@@ -376,8 +376,8 @@ typedef std::set<std::string> SupportedFieldNames;
 typedef std::vector<SupportedFieldNames::const_iterator> RequiredFieldNames;
 }
 
-typedef boost::function<void(const EntriesListType&, size_t, size_t)> EntriesHandler;
-typedef boost::function<void(const PlaylistEntryIDList&, const EntriesListType&, size_t, size_t)> EntryIDsHandler;
+typedef boost::function<void(boost::sub_range<const EntriesListType>)> EntriesHandler;
+typedef boost::function<void(boost::sub_range<const PlaylistEntryIDList>, const EntriesListType&)> EntryIDsHandler;
 typedef boost::function<void(size_t)> EntriesCountHandler;
 
 /*! 
@@ -484,11 +484,19 @@ private:
                                                                          const PlaylistEntryIDList& entry_to_filter_ids,
                                                                          const EntriesListType& entries);
 
-    // entries output
-    void outputFilteredEntries(const PlaylistEntryIDList& filtered_entries_ids, const EntriesListType& entries,
+    // entries handling
+    void handleFilteredEntryIDs(const PlaylistEntryIDList& filtered_entries_ids, const EntriesListType& entries,
                                size_t start_entry_index, size_t entries_count,
                                EntryIDsHandler entry_ids_handler,
                                EntriesCountHandler filtered_entries_count_handler);
+
+    void handleEntries(const EntriesListType& entries, size_t start_entry_index, size_t entries_count,
+                       EntriesHandler entries_handler);
+
+    void handleEntryIDs(const PlaylistEntryIDList& entries_ids, const EntriesListType& entries,
+                        size_t start_entry_index, size_t entries_count,
+                        EntryIDsHandler entry_ids_handler
+                        );
 };
 
 /*! TODO: add description here
@@ -552,6 +560,7 @@ public:
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 
 private:
+
     GetPlaylistEntriesTemplateMethod get_playlist_entries_templatemethod_;
 
     // See HelperFillRpcFields class commentaries.
@@ -565,13 +574,11 @@ private:
     Rpc::Value* current_root_response_; // valid only while execute() method is running.
 
     //! Fills rpcvalue array of entries from entries objects.
-    void fillRpcValueEntriesFromEntriesList(const EntriesListType& entries,
-                                            size_t start_entry_index, size_t entries_count,
+    void fillRpcValueEntriesFromEntriesList(boost::sub_range<const EntriesListType> entries_range,
                                             Rpc::Value& rpcvalue_entries);
 
     //! Fills rpcvalue array of entries from entries IDs.
-    void fillRpcValueEntriesFromEntryIDs(const PlaylistEntryIDList& entries_ids, const EntriesListType& entries,
-                                         size_t start_entry_index, size_t entries_count,
+    void fillRpcValueEntriesFromEntryIDs(boost::sub_range<const PlaylistEntryIDList> entries_ids_range, const EntriesListType& entries,
                                          Rpc::Value& rpcvalue_entries);
 };
 

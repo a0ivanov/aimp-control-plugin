@@ -397,7 +397,7 @@ const PlaylistEntryIDList& GetPlaylistEntriesTemplateMethod::getEntriesIDsFilter
     return filtered_entries_ids_;
 }
 
-void GetPlaylistEntriesTemplateMethod::outputFilteredEntries(const PlaylistEntryIDList& filtered_entries_ids, const EntriesListType& entries,
+void GetPlaylistEntriesTemplateMethod::handleFilteredEntryIDs(const PlaylistEntryIDList& filtered_entries_ids, const EntriesListType& entries,
                                                              size_t start_entry_index, size_t entries_count,
                                                              EntryIDsHandler entry_ids_handler,
                                                              EntriesCountHandler filtered_entries_count_handler)
@@ -410,7 +410,37 @@ void GetPlaylistEntriesTemplateMethod::outputFilteredEntries(const PlaylistEntry
                                                        );
     const size_t filtered_entries_count = std::min(entries_count,
                                                    filtered_entries_ids.size() - filtered_start_entry_index);
-    entry_ids_handler(filtered_entries_ids, entries, filtered_start_entry_index, filtered_entries_count);
+    handleEntryIDs(filtered_entries_ids, entries,
+                   filtered_start_entry_index, filtered_entries_count,
+                   entry_ids_handler);
+}
+
+void GetPlaylistEntriesTemplateMethod::handleEntries(const EntriesListType& entries, size_t start_entry_index, size_t entries_count,
+                                                     EntriesHandler entries_handler)
+{
+    EntriesListType::const_iterator entries_iterator_begin( entries.begin() );
+    std::advance(entries_iterator_begin, start_entry_index); // go to first requested entry.
+    EntriesListType::const_iterator entries_iterator_end(entries_iterator_begin);
+    std::advance(entries_iterator_end, entries_count); // go to entry next to last requested.
+    boost::sub_range<const EntriesListType> entries_range(entries_iterator_begin, entries_iterator_end);
+    
+    entries_handler(entries_range);
+}
+
+void GetPlaylistEntriesTemplateMethod::handleEntryIDs(const PlaylistEntryIDList& entries_ids, const EntriesListType& entries,
+                                                      size_t start_entry_index, size_t entries_count,
+                                                      EntryIDsHandler entry_ids_handler
+                                                      )
+{
+    assert(entries_ids.size() >= start_entry_index + entries_count);
+
+    PlaylistEntryIDList::const_iterator entry_id_iter_begin( entries_ids.begin() );
+    std::advance(entry_id_iter_begin, start_entry_index); // go to first requested entry.
+    PlaylistEntryIDList::const_iterator entry_id_iter_end(entry_id_iter_begin);
+    std::advance(entry_id_iter_end, entries_count); // go to entry next to last requested.
+    boost::sub_range<const PlaylistEntryIDList> entry_ids_range(entry_id_iter_begin, entry_id_iter_end);
+    
+    entry_ids_handler(entry_ids_range, entries);
 }
 
 ResponseType GetPlaylistEntriesTemplateMethod::execute(const Rpc::Value& params,
@@ -443,7 +473,7 @@ ResponseType GetPlaylistEntriesTemplateMethod::execute(const Rpc::Value& params,
                                                                   : entries.size() - start_entry_index; // by default return entries from start_entry_index to end of entries list.
 
     if ( !( params.isMember("order_fields") && params.isMember("search_string")  ) ) { // return entries in default order.
-        entries_handler(entries, start_entry_index, entries_count);
+        handleEntries(entries, start_entry_index, entries_count, entries_handler);
     } else if ( params.isMember("order_fields") ) { // return entries in specified order if order descriptors are valid.
         fillFieldToOrderDescriptors(params["order_fields"]);
         if ( !field_to_order_descriptors_.empty() ) { // return entries in specified order.
@@ -453,7 +483,7 @@ ResponseType GetPlaylistEntriesTemplateMethod::execute(const Rpc::Value& params,
             ;
 
             if ( params.isMember("search_string") && getSearchStringFromRpcParam(params["search_string"]) ) { // return entries in specified order and filtered by search string.
-                outputFilteredEntries( getEntriesIDsFilteredByStringFromEntryIDs(search_string_, sorted_entries_ids, entries),
+                handleFilteredEntryIDs(getEntriesIDsFilteredByStringFromEntryIDs(search_string_, sorted_entries_ids, entries),
                                        entries,
                                        start_entry_index,
                                        entries_count,
@@ -461,11 +491,11 @@ ResponseType GetPlaylistEntriesTemplateMethod::execute(const Rpc::Value& params,
                                        filtered_entries_count_handler
                                       );
             } else { // return entries in specified order.
-                entry_ids_handler(sorted_entries_ids, entries, start_entry_index, entries_count);
+                handleEntryIDs(sorted_entries_ids, entries, start_entry_index, entries_count, entry_ids_handler);
             }
         } else { // return entries in default order.
             if ( params.isMember("search_string") && getSearchStringFromRpcParam(params["search_string"]) ) { // return entries in default order and filtered by search string.
-                outputFilteredEntries( getEntriesIDsFilteredByStringFromEntriesList(search_string_, entries),
+                handleFilteredEntryIDs(getEntriesIDsFilteredByStringFromEntriesList(search_string_, entries),
                                        entries,
                                        start_entry_index,
                                        entries_count,
@@ -473,23 +503,17 @@ ResponseType GetPlaylistEntriesTemplateMethod::execute(const Rpc::Value& params,
                                        filtered_entries_count_handler
                                       );
             } else { // return entries in default order.
-                entries_handler(entries, start_entry_index, entries_count);
+                handleEntries(entries, start_entry_index, entries_count, entries_handler);
             }
         }
     }
     return RESPONSE_IMMEDIATE;
 }
 
-void GetPlaylistEntries::fillRpcValueEntriesFromEntriesList(const EntriesListType& entries, size_t start_entry_index, size_t entries_count,
+void GetPlaylistEntries::fillRpcValueEntriesFromEntriesList(boost::sub_range<const EntriesListType> entries_range,
                                                             Rpc::Value& rpcvalue_entries)
 {
-    EntriesListType::const_iterator entries_iterator_begin( entries.begin() );
-    std::advance(entries_iterator_begin, start_entry_index); // go to first requested entry.
-    EntriesListType::const_iterator entries_iterator_end(entries_iterator_begin);
-    std::advance(entries_iterator_end, entries_count); // go to entry next to last requested.
-    boost::sub_range<const EntriesListType> entries_range(entries_iterator_begin, entries_iterator_end);
-    
-    rpcvalue_entries.setSize(entries_count);
+    rpcvalue_entries.setSize( entries_range.size() );
 
     size_t entry_rpcvalue_index = 0;
     BOOST_FOREACH (const EntriesListType::value_type& entry_ptr, entries_range) {
@@ -501,22 +525,13 @@ void GetPlaylistEntries::fillRpcValueEntriesFromEntriesList(const EntriesListTyp
     }
 }
 
-void GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs(const PlaylistEntryIDList& entries_ids, const EntriesListType& entries,
-                                                         size_t start_entry_index, size_t entries_count,
+void GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs(boost::sub_range<const PlaylistEntryIDList> entries_ids_range, const EntriesListType& entries,
                                                          Rpc::Value& rpcvalue_entries)
 {
-    assert(entries_ids.size() >= start_entry_index + entries_count);
-
-    PlaylistEntryIDList::const_iterator entry_id_iter_begin( entries_ids.begin() );
-    std::advance(entry_id_iter_begin, start_entry_index); // go to first requested entry.
-    PlaylistEntryIDList::const_iterator entry_id_iter_end(entry_id_iter_begin);
-    std::advance(entry_id_iter_end, entries_count); // go to entry next to last requested.
-    boost::sub_range<const PlaylistEntryIDList> entry_ids_range(entry_id_iter_begin, entry_id_iter_end);
-    
-    rpcvalue_entries.setSize(entries_count);
+    rpcvalue_entries.setSize( entries_ids_range.size() );
 
     size_t entry_rpcvalue_index = 0;
-    BOOST_FOREACH (const PlaylistEntryID entry_id, entry_ids_range) {
+    BOOST_FOREACH (const PlaylistEntryID entry_id, entries_ids_range) {
         const PlaylistEntry* entry( entries[entry_id].get() );
         Rpc::Value& entry_rpcvalue = rpcvalue_entries[entry_rpcvalue_index];
         // fill all requested fields for entry.
@@ -549,10 +564,10 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
 
     Rpc::ResponseType response_type = get_playlist_entries_templatemethod_.execute( rpc_params, 
                                                                                     boost::bind(&GetPlaylistEntries::fillRpcValueEntriesFromEntriesList,
-                                                                                                this, _1, _2, _3, boost::ref(rpcvalue_entries)
+                                                                                                this, _1, boost::ref(rpcvalue_entries)
                                                                                                 ),
                                                                                     boost::bind(&GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs,
-                                                                                                this, _1, _2, _3, _4, boost::ref(rpcvalue_entries)
+                                                                                                this, _1, _2, boost::ref(rpcvalue_entries)
                                                                                                 ),
                                                                                     boost::bind<void>(SetEntriesCount(rpc_result, kTOTAL_ENTRIES_COUNT_RPCVALUE_KEY), _1),
                                                                                     boost::bind<void>(SetEntriesCount(rpc_result, kCOUNT_OF_FOUND_ENTRIES_RPCVALUE_KEY), _1)
