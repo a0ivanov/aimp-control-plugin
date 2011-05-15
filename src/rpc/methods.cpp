@@ -289,7 +289,25 @@ ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& r
     return RESPONSE_IMMEDIATE;
 }
 
-const size_t GetPlaylistEntries::getStartFromIndexFromRpcParam(int start_from_index, size_t max_value) // throws Rpc::Exception
+void GetPlaylistEntriesTemplateMethod::initRequiredFieldsList(const Rpc::Value& requested_fields) // throws Rpc::Exception
+{
+    const size_t requested_fields_count = requested_fields.size();
+    names_of_required_fields_.clear();
+    names_of_required_fields_.reserve(requested_fields_count);
+
+    for (size_t field_index = 0; field_index < requested_fields_count; ++field_index) {
+        const std::string& field = requested_fields[field_index];
+        PlaylistEntries::SupportedFieldNames::const_iterator supported_field_it = supported_fields_names_.find(field);
+        if ( supported_field_it == supported_fields_names_.end() ) {
+            std::ostringstream msg;
+            msg << "Wrong argument: field " << field << " is not supported.";
+            throw Rpc::Exception(msg.str(), WRONG_ARGUMENT);
+        }
+        names_of_required_fields_.push_back(supported_field_it);
+    }
+}
+
+const size_t GetPlaylistEntriesTemplateMethod::getStartFromIndexFromRpcParam(int start_from_index, size_t max_value) // throws Rpc::Exception
 {
     if (start_from_index < 0 || static_cast<size_t>(start_from_index) > max_value) {
         throw Rpc::Exception("Wrong argument: start_index out of bound.", WRONG_ARGUMENT);
@@ -298,7 +316,7 @@ const size_t GetPlaylistEntries::getStartFromIndexFromRpcParam(int start_from_in
     return static_cast<size_t>(start_from_index);
 }
 
-const size_t GetPlaylistEntries::getEntriesCountFromRpcParam(int entries_count, size_t max_value) // throws Rpc::Exception
+const size_t GetPlaylistEntriesTemplateMethod::getEntriesCountFromRpcParam(int entries_count, size_t max_value) // throws Rpc::Exception
 {
     if (entries_count < 0) {
         throw Rpc::Exception("Wrong argument: entries_count should be positive value.", WRONG_ARGUMENT);
@@ -308,7 +326,7 @@ const size_t GetPlaylistEntries::getEntriesCountFromRpcParam(int entries_count, 
                                                           : max_value;
 }
 
-bool GetPlaylistEntries::getSearchStringFromRpcParam(const std::string& search_string_utf8)
+bool GetPlaylistEntriesTemplateMethod::getSearchStringFromRpcParam(const std::string& search_string_utf8)
 {
     using namespace StringEncoding;
     try {
@@ -321,12 +339,12 @@ bool GetPlaylistEntries::getSearchStringFromRpcParam(const std::string& search_s
     return !search_string_.empty();
 }
 
-void GetPlaylistEntries::fillFieldToOrderDescriptors(const Rpc::Value& entry_fields_to_order)
+void GetPlaylistEntriesTemplateMethod::fillFieldToOrderDescriptors(const Rpc::Value& entry_fields_to_order)
 {
     using namespace EntriesSortUtil;
     field_to_order_descriptors_.clear();
     const size_t fields_count = entry_fields_to_order.size();
-    const size_t required_fields_count = entry_fields_filler_.setters_required_.size();
+    const size_t required_fields_count = names_of_required_fields_.size();
 
     for (size_t field_index = 0; field_index < fields_count; ++field_index) {
        const Rpc::Value& field_desc = entry_fields_to_order[field_index];
@@ -334,7 +352,7 @@ void GetPlaylistEntries::fillFieldToOrderDescriptors(const Rpc::Value& entry_fie
             const int field_to_order_index = field_desc[kFIELD_INDEX_RPCVALUE];
             if (0 <= field_to_order_index && static_cast<size_t>(field_to_order_index) < required_fields_count) {
                 // TODO: avoid duplicates
-                field_to_order_descriptors_.push_back( FieldToOrderDescriptor( fields_to_order_[ entry_fields_filler_.setters_required_[field_to_order_index]->first ],
+                field_to_order_descriptors_.push_back( FieldToOrderDescriptor( fields_to_order_[ *names_of_required_fields_[field_to_order_index] ],
                                                                                (field_desc[kORDER_DIRECTION_RPCVALUE] == kDESCENDING_ORDER_RPCVALUE) ? DESCENDING : ASCENDING
                                                                               )
                                                       );
@@ -345,7 +363,125 @@ void GetPlaylistEntries::fillFieldToOrderDescriptors(const Rpc::Value& entry_fie
     }
 }
 
-void GetPlaylistEntries::fillRpcValueEntriesFromEntriesList(const EntriesListType& entries, size_t start_entry_index, size_t entries_count, Rpc::Value& rpcvalue_entries)
+const PlaylistEntryIDList& GetPlaylistEntriesTemplateMethod::getEntriesIDsFilteredByStringFromEntriesList(const std::wstring& search_string,
+                                                                                                          const EntriesListType& entries)
+{
+    filtered_entries_ids_.clear();
+    filtered_entries_ids_.reserve( entries.size() );
+
+    size_t entry_index = 0;
+    BOOST_FOREACH (const EntriesListType::value_type& entry_ptr, entries) {
+        const PlaylistEntry* entry( entry_ptr.get() );
+        if ( entry_contain_string_(entry, search_string) ) {
+            filtered_entries_ids_.push_back(entry_index);
+        }
+        ++entry_index;
+    }
+
+    return filtered_entries_ids_;
+}
+
+const PlaylistEntryIDList& GetPlaylistEntriesTemplateMethod::getEntriesIDsFilteredByStringFromEntryIDs(const std::wstring& search_string,
+                                                                                                       const PlaylistEntryIDList& entry_to_filter_ids,
+                                                                                                       const EntriesListType& entries)
+{
+    filtered_entries_ids_.clear();
+    filtered_entries_ids_.reserve( entry_to_filter_ids.size() );
+    BOOST_FOREACH (const PlaylistEntryID entry_id, entry_to_filter_ids) {
+        const PlaylistEntry* entry( entries[entry_id].get() );
+        if ( entry_contain_string_(entry, search_string) ) {
+            filtered_entries_ids_.push_back(entry_id);
+        }
+    }
+
+    return filtered_entries_ids_;
+}
+
+void GetPlaylistEntriesTemplateMethod::outputFilteredEntries(const PlaylistEntryIDList& filtered_entries_ids, const EntriesListType& entries,
+                                                             size_t start_entry_index, size_t entries_count,
+                                                             EntryIDsHandler entry_ids_handler,
+                                                             EntriesCountHandler filtered_entries_count_handler)
+{
+    filtered_entries_count_handler( filtered_entries_ids.size() );
+
+    const size_t filtered_start_entry_index = std::min(start_entry_index,
+                                                       filtered_entries_ids.empty() ? 0 
+                                                                                    : filtered_entries_ids.size() - 1
+                                                       );
+    const size_t filtered_entries_count = std::min(entries_count,
+                                                   filtered_entries_ids.size() - filtered_start_entry_index);
+    entry_ids_handler(filtered_entries_ids, entries, filtered_start_entry_index, filtered_entries_count);
+}
+
+ResponseType GetPlaylistEntriesTemplateMethod::execute(const Rpc::Value& params,
+                                                       EntriesHandler entries_handler,
+                                                       EntryIDsHandler entry_ids_handler,
+                                                       EntriesCountHandler total_entries_count_handler,
+                                                       EntriesCountHandler filtered_entries_count_handler
+                                                       )
+{
+    // ensure we got obligatory arguments: playlist id and array of entry fields to fill.
+    if (params.size() < 2) {
+        throw Rpc::Exception("Wrong arguments count. Wait at least two arguments: int value(playlist ID) and array of strings(entry fields to fill).", WRONG_ARGUMENT);
+    }
+
+    initRequiredFieldsList(params["fields"]);
+
+    const Playlist& playlist = getPlayListFromRpcParam(aimp_manager_, params["playlist_id"]);
+    const EntriesListType& entries = playlist.getEntries();
+
+    total_entries_count_handler( entries.size() );
+
+    const size_t start_entry_index = params.isMember("start_index") ? getStartFromIndexFromRpcParam(params["start_index"],
+                                                                                                    (entries.size() == 0) ? 0
+                                                                                                                          : entries.size() - 1
+                                                                                                    )
+                                                                    : 0; // by default return entries from start.
+    const size_t entries_count = params.isMember("entries_count") ? getEntriesCountFromRpcParam(params["entries_count"],
+                                                                                                entries.size() - start_entry_index
+                                                                                                )
+                                                                  : entries.size() - start_entry_index; // by default return entries from start_entry_index to end of entries list.
+
+    if ( !( params.isMember("order_fields") && params.isMember("search_string")  ) ) { // return entries in default order.
+        entries_handler(entries, start_entry_index, entries_count);
+    } else if ( params.isMember("order_fields") ) { // return entries in specified order if order descriptors are valid.
+        fillFieldToOrderDescriptors(params["order_fields"]);
+        if ( !field_to_order_descriptors_.empty() ) { // return entries in specified order.
+            // get entries ids in specified ordering.
+            const PlaylistEntryIDList& sorted_entries_ids = (field_to_order_descriptors_.size() == 1) ? playlist.getEntriesSortedByField(field_to_order_descriptors_[0])
+                                                                                                      : playlist.getEntriesSortedByMultipleFields(field_to_order_descriptors_)
+            ;
+
+            if ( params.isMember("search_string") && getSearchStringFromRpcParam(params["search_string"]) ) { // return entries in specified order and filtered by search string.
+                outputFilteredEntries( getEntriesIDsFilteredByStringFromEntryIDs(search_string_, sorted_entries_ids, entries),
+                                       entries,
+                                       start_entry_index,
+                                       entries_count,
+                                       entry_ids_handler,
+                                       filtered_entries_count_handler
+                                      );
+            } else { // return entries in specified order.
+                entry_ids_handler(sorted_entries_ids, entries, start_entry_index, entries_count);
+            }
+        } else { // return entries in default order.
+            if ( params.isMember("search_string") && getSearchStringFromRpcParam(params["search_string"]) ) { // return entries in default order and filtered by search string.
+                outputFilteredEntries( getEntriesIDsFilteredByStringFromEntriesList(search_string_, entries),
+                                       entries,
+                                       start_entry_index,
+                                       entries_count,
+                                       entry_ids_handler,
+                                       filtered_entries_count_handler
+                                      );
+            } else { // return entries in default order.
+                entries_handler(entries, start_entry_index, entries_count);
+            }
+        }
+    }
+    return RESPONSE_IMMEDIATE;
+}
+
+void GetPlaylistEntries::fillRpcValueEntriesFromEntriesList(const EntriesListType& entries, size_t start_entry_index, size_t entries_count,
+                                                            Rpc::Value& rpcvalue_entries)
 {
     EntriesListType::const_iterator entries_iterator_begin( entries.begin() );
     std::advance(entries_iterator_begin, start_entry_index); // go to first requested entry.
@@ -365,7 +501,9 @@ void GetPlaylistEntries::fillRpcValueEntriesFromEntriesList(const EntriesListTyp
     }
 }
 
-void GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs(const PlaylistEntryIDList& entries_ids, const EntriesListType& entries, size_t start_entry_index, size_t entries_count, Rpc::Value& rpcvalue_entries)
+void GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs(const PlaylistEntryIDList& entries_ids, const EntriesListType& entries,
+                                                         size_t start_entry_index, size_t entries_count,
+                                                         Rpc::Value& rpcvalue_entries)
 {
     assert(entries_ids.size() >= start_entry_index + entries_count);
 
@@ -387,114 +525,38 @@ void GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs(const PlaylistEntryIDLi
     }
 }
 
-const PlaylistEntryIDList& GetPlaylistEntries::getEntriesIDsFilteredByStringFromEntriesList(const std::wstring& search_string,
-                                                                                            const EntriesListType& entries)
+Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
-    filtered_entries_ids_.clear();
-    filtered_entries_ids_.reserve( entries.size() );
+    current_root_response_ = &root_response;
+    const Rpc::Value& rpc_params = root_request["params"];
 
-    size_t entry_index = 0;
-    BOOST_FOREACH (const EntriesListType::value_type& entry_ptr, entries) {
-        const PlaylistEntry* entry( entry_ptr.get() );
-        if ( entry_contain_string_(entry, search_string) ) {
-            filtered_entries_ids_.push_back(entry_index);
-        }
-        ++entry_index;
-    }
-
-    return filtered_entries_ids_;
-}
-
-const PlaylistEntryIDList& GetPlaylistEntries::getEntriesIDsFilteredByStringFromEntryIDs(const std::wstring& search_string,
-                                                                                         const PlaylistEntryIDList& entry_to_filter_ids,
-                                                                                         const EntriesListType& entries)
-{
-    filtered_entries_ids_.clear();
-    filtered_entries_ids_.reserve( entry_to_filter_ids.size() );
-    BOOST_FOREACH (const PlaylistEntryID entry_id, entry_to_filter_ids) {
-        const PlaylistEntry* entry( entries[entry_id].get() );
-        if ( entry_contain_string_(entry, search_string) ) {
-            filtered_entries_ids_.push_back(entry_id);
-        }
-    }
-
-    return filtered_entries_ids_;
-}
-
-
-void GetPlaylistEntries::outputFilteredEntries(const PlaylistEntryIDList& filtered_entries_ids, const EntriesListType& entries, size_t start_entry_index, size_t entries_count, Rpc::Value& result, Rpc::Value& rpcvalue_entries)
-{
-    Rpc::Value& count_of_found_entries = result[kCOUNT_OF_FOUND_ENTRIES_RPCVALUE_KEY];
-    count_of_found_entries = filtered_entries_ids.size();
-
-    const size_t filtered_start_entry_index = std::min(start_entry_index, filtered_entries_ids.size() == 0 ? 0 : filtered_entries_ids.size() - 1);
-    const size_t filtered_entries_count = std::min(entries_count, filtered_entries_ids.size() - filtered_start_entry_index);
-    fillRpcValueEntriesFromEntryIDs(filtered_entries_ids, entries, filtered_start_entry_index, filtered_entries_count, rpcvalue_entries);
-}
-
-ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
-{
-    const Rpc::Value& params = root_request["params"];
-    // ensure we got obligatory arguments: playlist id and array of entry fields to fill.
-    if (params.size() < 2) {
-        throw Rpc::Exception("Wrong arguments count. Wait at least two arguments: int value(playlist ID) and array of strings(entry fields to fill).", WRONG_ARGUMENT);
-    }
-
-    entry_fields_filler_.initRequiredFieldsHandlersList(params["fields"]);
-
-    const Playlist& playlist = getPlayListFromRpcParam(aimp_manager_, params["playlist_id"]);
-    const EntriesListType& entries = playlist.getEntries();
-
-    const size_t start_entry_index = params.isMember("start_index") ? getStartFromIndexFromRpcParam(params["start_index"],
-                                                                                                    (entries.size() == 0) ? 0
-                                                                                                                          : entries.size() - 1
-                                                                                                    )
-                                                                    : 0; // by default return entries from start.
-    const size_t entries_count = params.isMember("entries_count") ? getEntriesCountFromRpcParam(params["entries_count"],
-                                                                                                entries.size() - start_entry_index
-                                                                                                )
-                                                                  : entries.size() - start_entry_index; // by default return entries from start_entry_index to end of entries list.
+    entry_fields_filler_.initRequiredFieldsHandlersList(rpc_params["fields"]);
 
     Rpc::Value& rpc_result = root_response["result"];
-    rpc_result[kTOTAL_ENTRIES_COUNT_RPCVALUE_KEY] = entries.size(); // add total entries count to result.
     Rpc::Value& rpcvalue_entries = rpc_result[kENTRIES_RPCVALUE_KEY];
 
-    if ( !( params.isMember("order_fields") && params.isMember("search_string")  ) ) { // return entries in default order.
-        fillRpcValueEntriesFromEntriesList(entries, start_entry_index, entries_count, rpcvalue_entries);
-    } else if ( params.isMember("order_fields") ) { // return entries in specified order if order descriptors are valid.
-        fillFieldToOrderDescriptors(params["order_fields"]);
-        if ( !field_to_order_descriptors_.empty() ) { // return entries in specified order.
-            // get entries ids in specified ordering.
-            const PlaylistEntryIDList& sorted_entries_ids = (field_to_order_descriptors_.size() == 1) ? playlist.getEntriesSortedByField(field_to_order_descriptors_[0])
-                                                                                                      : playlist.getEntriesSortedByMultipleFields(field_to_order_descriptors_)
-            ;
-
-            if ( params.isMember("search_string") && getSearchStringFromRpcParam(params["search_string"]) ) { // return entries in specified order and filtered by search string.
-                outputFilteredEntries( getEntriesIDsFilteredByStringFromEntryIDs(search_string_, sorted_entries_ids, entries),
-                                       entries,
-                                       start_entry_index,
-                                       entries_count,
-                                       rpc_result,
-                                       rpcvalue_entries
-                                      );
-            } else { // return entries in specified order.
-                fillRpcValueEntriesFromEntryIDs(sorted_entries_ids, entries, start_entry_index, entries_count, rpcvalue_entries);
-            }
-        } else { // return entries in default order.
-            if ( params.isMember("search_string") && getSearchStringFromRpcParam(params["search_string"]) ) { // return entries in default order and filtered by search string.
-                outputFilteredEntries( getEntriesIDsFilteredByStringFromEntriesList(search_string_, entries),
-                                       entries,
-                                       start_entry_index,
-                                       entries_count,
-                                       rpc_result,
-                                       rpcvalue_entries
-                                      );
-            } else { // return entries in default order.
-                fillRpcValueEntriesFromEntriesList(entries, start_entry_index, entries_count, rpcvalue_entries);
-            }
+    struct SetEntriesCount {
+        mutable Rpc::Value& entries_count_;
+        SetEntriesCount(Rpc::Value& entries_count)
+            : entries_count_(entries_count)
+        {}
+        void operator()(size_t count) const {
+            entries_count_ = count;
         }
-    }
-    return RESPONSE_IMMEDIATE;
+    };
+
+    Rpc::ResponseType response_type = get_playlist_entries_templatemethod_.execute( rpc_params, 
+                                                                                    boost::bind(&GetPlaylistEntries::fillRpcValueEntriesFromEntriesList,
+                                                                                                this, _1, _2, _3, boost::ref(rpcvalue_entries)
+                                                                                                ),
+                                                                                    boost::bind(&GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs,
+                                                                                                this, _1, _2, _3, _4, boost::ref(rpcvalue_entries)
+                                                                                                ),
+                                                                                    boost::bind<void>(SetEntriesCount(rpc_result[kTOTAL_ENTRIES_COUNT_RPCVALUE_KEY]), _1),
+                                                                                    boost::bind<void>(SetEntriesCount(rpc_result[kCOUNT_OF_FOUND_ENTRIES_RPCVALUE_KEY]), _1)
+                                                                                   );
+    current_root_response_ = NULL;
+    return response_type;
 }
 
 ResponseType GetPlaylistEntriesCount::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
