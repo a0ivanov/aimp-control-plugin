@@ -490,7 +490,8 @@ ResponseType GetPlaylistEntriesTemplateMethod::execute(const Rpc::Value& params,
                                                                         : entries.size() - start_entry_index; // by default return entries from start_entry_index to end of entries list.
 
     if ( params.isMember(kENTRIES_COUNT_STRING) ) {
-        page_size_handler(params[kENTRIES_COUNT_STRING]);
+        const int entries_count = params[kENTRIES_COUNT_STRING];
+        page_size_handler( static_cast<size_t>(entries_count) );
     }
 
     if ( !( params.isMember(kORDER_FIELDS_STRING) && params.isMember(kSEARCH_STRING_STRING)  ) ) { // return entries in default order.
