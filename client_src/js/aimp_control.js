@@ -134,6 +134,13 @@ function createEntriesControl(index, $tab_ui)
                                 iTotalDisplayRecords : (result.count_of_found_entries !== undefined) ? result.count_of_found_entries : result.total_entries_count,
                                 aaData : adata
                     });
+					
+					if ( $table.hasOwnProperty('entry_index_on_page_to_highlight_on_update') ) {
+						highlightCurrentRow($table,
+										    $table.fnGetNodes($table.entry_index_on_page_to_highlight_on_update)
+											);
+						delete $table.entry_index_on_page_to_highlight_on_update;
+					}
                 };
             }
 
@@ -228,6 +235,7 @@ function tryToLocateCurrentTrackInPlaylist(entry_page_number, entry_index_on_pag
 		// move to page where current track is visible.
 		oSettings._iDisplayStart = index_of_first_entry_on_page;
 		oSettings._iDisplayEnd = oSettings._iDisplayStart + oSettings._iDisplayLength;
+		$playlist_table.entry_index_on_page_to_highlight_on_update = entry_index_on_page;
 		$playlist_table.fnDraw(false);
 	} else {
 		// highlight current track.
