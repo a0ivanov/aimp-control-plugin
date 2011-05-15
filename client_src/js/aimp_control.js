@@ -65,11 +65,16 @@ function createEntriesControl(index, $tab_ui)
 			highlightCurrentRow($table, event.target.parentNode);
 
 			var track_desc = getDescriptionTrackOfRow(event.target.parentNode);
-			aimp_manager.play(track_desc,
-							  { on_exception : function(error, localized_message) {
-												   alert(localized_message);
-											   }
-							  }); // start playback.
+			if (   track_desc.track_id !== control_panel_state.track_id
+			    || track_desc.playlist_id !== control_panel_state.playlist_id
+				)
+			{
+				aimp_manager.play(track_desc,
+								  { on_exception : function(error, localized_message) {
+													   alert(localized_message);
+												   }
+								  }); // start playback.
+			}
         }
     );
 
