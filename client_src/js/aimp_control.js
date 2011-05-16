@@ -160,8 +160,6 @@ function createEntriesControl(index, $tab_ui)
 						initStarRatingControl(rating_div.id,
 											  {track_id : track_id, playlist_id : playlist_id}
 											  );
-						var aimp_rating = parseInt(parts[4]);
-						setRatingControl(rating_div.id, aimp_rating - 1);
 					});
                 };
             }
@@ -497,13 +495,14 @@ function initRatingField(field_settings) {
         var aimp_rating = oObj.aData[oObj.iDataColumn];
         var playlist_id = getPlaylistIdFromTableId(oObj.oSettings.sTableId);
 		var track_id = oObj.aData[0];
-	    var html = '<div id="track_rating_' + playlist_id + '_' + track_id + '_' + aimp_rating + '"> \
-						<input type="radio" class="rating_star" value="1"/> \
-						<input type="radio" class="rating_star" value="2"/> \
-						<input type="radio" class="rating_star" value="3"/> \
-						<input type="radio" class="rating_star" value="4"/> \
-						<input type="radio" class="rating_star" value="5"/> \
-					</div>';
+	    var html = '<div id="track_rating_' + playlist_id + '_' + track_id + '">';
+		for (var i = 1; i <= 5; i++) {
+			html += '<input type="radio" class="rating_star" value="'
+			        + i + '" '
+					+ (i == aimp_rating ? 'checked="true"' : '')
+					+ '"/>';
+		}
+		html += '</div>';
 		return html;
     }
     // align in cell center.
