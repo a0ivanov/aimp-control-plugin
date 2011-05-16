@@ -66,19 +66,21 @@ function createEntriesControl(index, $tab_ui)
 
     /* Add a click handler to the rows - this could be used as a callback */
     $('#entries_table_' + playlist_id + ' tbody').click(
-        function(event) {			
-			highlightCurrentRow($table, event.target.parentNode);
-
-			var track_desc = getDescriptionTrackOfRow(event.target.parentNode);
-			if (   track_desc.track_id !== control_panel_state.track_id
-			    || track_desc.playlist_id !== control_panel_state.playlist_id
-				)
-			{
-				aimp_manager.play(track_desc,
-								  { on_exception : function(error, localized_message) {
-													   alert(localized_message);
-												   }
-								  }); // start playback.
+        function(event) {
+			if (event.target.parentNode !== null && event.target.parentNode.nodeName === 'TR') {
+				highlightCurrentRow($table, event.target.parentNode);
+	
+				var track_desc = getDescriptionTrackOfRow(event.target.parentNode);
+				if (   track_desc.track_id !== control_panel_state.track_id
+					|| track_desc.playlist_id !== control_panel_state.playlist_id
+					)
+				{
+					aimp_manager.play(track_desc,
+									  { on_exception : function(error, localized_message) {
+														   alert(localized_message);
+													   }
+									  }); // start playback.
+				}	
 			}
         }
     );
@@ -154,12 +156,7 @@ function createEntriesControl(index, $tab_ui)
 					
 					// init all rating widgets in table
 					$('div[id^="track_rating_"]', $table).each(function(index, rating_div) {
-						var parts = rating_div.id.split('_');
-						var playlist_id = parts[2];
-						var track_id = parts[3];
-						initStarRatingControl(rating_div.id,
-											  {track_id : track_id, playlist_id : playlist_id}
-											  );
+						initStarRatingWidget(rating_div.id);
 					});
                 };
             }
@@ -963,48 +960,52 @@ function initTrackInfoDialog()
         return false;
     });
 	
-	initStarRatingControl('track_info_rating', null);
+	initStarRatingWidget('track_info_rating');
+}
+
+function onRatingWidgetClick(value, link) {
+	var rating_div = this.parentNode;
+	var parts = rating_div.id.split('_');
+	var playlist_id = parts.length > 2 ? parseInt(parts[2]) : control_panel_state.playlist_id;
+	var track_id = parts.length > 3 ? parseInt(parts[3]) : track_desc.playlist_id;
+	
+	aimp_manager.setTrackRating({
+								  track_id: track_id,
+								  playlist_id: playlist_id,
+								  rating: (value !== undefined ? parseInt(value) // value range is [1, 5].
+															   : 0 // set 0 rating, for AIMP it means "rating is not set".
+										  )
+								},
+								{
+								  on_success : undefined,
+								  on_exception : undefined,
+								  on_complete : undefined
+								}
+	);
 }
 
 /*
 	Init star rating widget.
-	Params:
-		track_desc(object {track_id, playlist_id}) - track which rating widget will control.
-		If track_desc is not specified, widget will control active track rating.
 	Returns rating widget.
 */
-function initStarRatingControl(div_name, track_desc)
+function initStarRatingWidget(div_name)
 {
     return $('#' + div_name + ' .rating_star').rating({
-        callback: function(value, link) {
-            aimp_manager.setTrackRating({
-                                          track_id: track_desc !== null ? track_desc.track_id : control_panel_state.track_id,
-                                          playlist_id: track_desc !== null ? track_desc.playlist_id : control_panel_state.playlist_id,
-                                          rating: (value !== undefined ? parseInt(value) // value range is [1, 5].
-                                                                       : 0 // set 0 rating, for AIMP it means "rating is not set".
-                                                  )
-                                        },
-                                        {
-                                          on_success : undefined,
-                                          on_exception : undefined,
-                                          on_complete : undefined
-                                        }
-            );
-        },
+        callback: onRatingWidgetClick,
         cancel: getText('track_info_dialog_cancel_rating')
         //cancelValue: '0'
     });
 }
 
-function setRatingControl(div_name, value)
+function setRatingWidgetValue(div_name, value)
 {
 	$('#' + div_name + ' .rating_star').rating('select',
-														   value,
-														   false // do not invoke callback on 'select'
+											   value,
+											   false // do not invoke callback on 'select'
 	);
 }
 
-function resetRatingControl(div_name)
+function resetRatingWidgetValue(div_name)
 {
 	$('#' + div_name + ' .rating_star').rating('drain');
 }
@@ -1065,9 +1066,9 @@ function fillTrackInfoTable(track_info)
     if (0 <= rating_value && rating_value <= 5) {
         if (rating_value > 0) {
             // set rating.
-			setRatingControl('track_info_rating', rating_value - 1); // AIMP rating is in range [0(not set), 5(max rating)]. But we must use range [0, 4] for this control.
+			setRatingWidgetValue('track_info_rating', rating_value - 1); // AIMP rating is in range [0(not set), 5(max rating)]. But we must use range [0, 4] for this control.
         } else {
-			resetRatingControl('track_info_rating');
+			resetRatingWidgetValue('track_info_rating');
         }
     }
 
