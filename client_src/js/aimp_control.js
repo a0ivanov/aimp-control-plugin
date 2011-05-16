@@ -37,21 +37,26 @@ function highlightCurrentRow($table, nRow) {
 	$(nRow).addClass('row_selected');			
 }
 
-function getPlaylistID(tab_id) {
+function getPlaylistIdFromTabId(tab_id) {
 	return tab_id.split('_')[1];
+}
+
+function getPlaylistIdFromTableId(table_id)
+{
+	return table_id.split('_')[2]; // get id of playlist HTML table.(Ex.: id = 123 from string like this "entries_table_123" )
 }
 
 /* create DataTable control(jQuery plugin) for list of entries. */
 function createEntriesControl(index, $tab_ui)
 {
-    var playlist_id = getPlaylistID($tab_ui.id);
+    var playlist_id = getPlaylistIdFromTabId($tab_ui.id);
     var $table_with_playlist_id = $('#entries_table_' + playlist_id);
 
     var $table;
 
 	// Return track desc which linked with string.
 	function getDescriptionTrackOfRow(node_table_row) {
-		var playlist_id = node_table_row.parentNode.parentNode.id.split('_')[2]; // get id of playlist HTML table.(Ex.: id = 123 from string like this "entries_table_123" )
+		var playlist_id = getPlaylistIdFromTableId(node_table_row.parentNode.parentNode.id);
 		var aData = $table.fnGetData(node_table_row);
 		var track_id = aData[0];
 		return { playlist_id : parseInt(playlist_id),
@@ -146,6 +151,18 @@ function createEntriesControl(index, $tab_ui)
 											);
 						delete $table.entry_index_on_page_to_highlight_on_update;
 					}
+					
+					// init all rating widgets in table
+					$('div[id^="track_rating_"]', $table).each(function(index, rating_div) {
+						var parts = rating_div.id.split('_');
+						var playlist_id = parts[2];
+						var track_id = parts[3];
+						initStarRatingControl(rating_div.id,
+											  {track_id : track_id, playlist_id : playlist_id}
+											  );
+						var aimp_rating = parseInt(parts[4]);
+						setRatingControl(rating_div.id, aimp_rating - 1);
+					});
                 };
             }
 
@@ -222,7 +239,7 @@ function gotoCurrentTrackInPlaylist()
 function gotoCurrentPlaylist(playlist_id)
 {
 	$('div[id*=playlist]', $playlists_tabs).each(function(index, tab_ui) {
-		var tab_playlist_id = getPlaylistID(tab_ui.id);
+		var tab_playlist_id = getPlaylistIdFromTabId(tab_ui.id);
 		if (playlist_id == tab_playlist_id) {
 			$playlists_tabs.tabs('select', index);
 			return false;
@@ -283,7 +300,7 @@ function addControlMenuToEachEntry(oSettings)
 
         function getControlMenuDescriptor(node_table_row)
         {
-            var playlist_id = node_table_row.parentNode.parentNode.id.split('_')[2]; // get id of playlist HTML table.(Ex.: id = 123 from string like this "entries_table_123" )
+            var playlist_id = getPlaylistIdFromTableId(node_table_row.parentNode.parentNode.id);
             var aData = $table.fnGetData(node_table_row);
             var entry_id = aData[0];
 
@@ -438,7 +455,9 @@ function getDataTablesColumnsDescriptors()
             initFileSizeField(field_settings);
         } else if (entry_fields[field_index] == 'bitrate') {
             initBitrateField(field_settings);
-        }
+        } else if (entry_fields[field_index] == 'rating') {
+            initRatingField(field_settings);
+		}
         columns_desc.push( field_settings );
     }
     return columns_desc;
@@ -469,6 +488,24 @@ function initBitrateField(field_settings) {
     //}
     field_settings.sTitle = field_settings.sTitle + ', ' + getText('kilobits_per_second');
 
+    // align in cell center.
+    field_settings.sClass = 'center';
+}
+
+function initRatingField(field_settings) {
+    field_settings.fnRender = function ( oObj ) {
+        var aimp_rating = oObj.aData[oObj.iDataColumn];
+        var playlist_id = getPlaylistIdFromTableId(oObj.oSettings.sTableId);
+		var track_id = oObj.aData[0];
+	    var html = '<div id="track_rating_' + playlist_id + '_' + track_id + '_' + aimp_rating + '"> \
+						<input type="radio" class="rating_star" value="1"/> \
+						<input type="radio" class="rating_star" value="2"/> \
+						<input type="radio" class="rating_star" value="3"/> \
+						<input type="radio" class="rating_star" value="4"/> \
+						<input type="radio" class="rating_star" value="5"/> \
+					</div>';
+		return html;
+    }
     // align in cell center.
     field_settings.sClass = 'center';
 }
@@ -934,11 +971,12 @@ function initTrackInfoDialog()
 	Init star rating widget.
 	Params:
 		track_desc(object {track_id, playlist_id}) - track which rating widget will control.
-	If track_desc is not specified, widget will control active track rating.
+		If track_desc is not specified, widget will control active track rating.
+	Returns rating widget.
 */
 function initStarRatingControl(div_name, track_desc)
 {
-    $('#' + div_name + ' .rating_star').rating({
+    return $('#' + div_name + ' .rating_star').rating({
         callback: function(value, link) {
             aimp_manager.setTrackRating({
                                           track_id: track_desc !== null ? track_desc.track_id : control_panel_state.track_id,
@@ -1177,8 +1215,8 @@ function formatTime(input_time_ms) {
 function formatFileSize(size_in_bytes) {
     var megabyte = 1048576;
     if (size_in_bytes > megabyte) {
-        return (size_in_bytes / megabyte).toFixed(2) + ' MB'
+        return (size_in_bytes / megabyte).toFixed(2) + ' MB';
     } else {
-        return (size_in_bytes / 1024).toFixed(2) + ' KB'
+        return (size_in_bytes / 1024).toFixed(2) + ' KB';
     }
 }
