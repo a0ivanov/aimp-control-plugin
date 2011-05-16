@@ -926,13 +926,23 @@ function initTrackInfoDialog()
         );
         return false;
     });
+	
+	initStarRatingControl('track_info_rating', null);
+}
 
-    // init rating star control
-    $('#track_info_rating .track_info_rating_star').rating({
+/*
+	Init star rating widget.
+	Params:
+		track_desc(object {track_id, playlist_id}) - track which rating widget will control.
+	If track_desc is not specified, widget will control active track rating.
+*/
+function initStarRatingControl(div_name, track_desc)
+{
+    $('#' + div_name + ' .rating_star').rating({
         callback: function(value, link) {
             aimp_manager.setTrackRating({
-                                          track_id: control_panel_state.track_id,
-                                          playlist_id: control_panel_state.playlist_id,
+                                          track_id: track_desc !== null ? track_desc.track_id : control_panel_state.track_id,
+                                          playlist_id: track_desc !== null ? track_desc.playlist_id : control_panel_state.playlist_id,
                                           rating: (value !== undefined ? parseInt(value) // value range is [1, 5].
                                                                        : 0 // set 0 rating, for AIMP it means "rating is not set".
                                                   )
@@ -947,6 +957,19 @@ function initTrackInfoDialog()
         cancel: getText('track_info_dialog_cancel_rating')
         //cancelValue: '0'
     });
+}
+
+function setRatingControl(div_name, value)
+{
+	$('#' + div_name + ' .rating_star').rating('select',
+														   value,
+														   false // do not invoke callback on 'select'
+	);
+}
+
+function resetRatingControl(div_name)
+{
+	$('#' + div_name + ' .rating_star').rating('drain');
 }
 
 /* Shows dialog in position (coordX, coordY) on page. */
@@ -1005,13 +1028,9 @@ function fillTrackInfoTable(track_info)
     if (0 <= rating_value && rating_value <= 5) {
         if (rating_value > 0) {
             // set rating.
-            $('#track_info_rating .track_info_rating_star').rating('select',
-                                                                   rating_value - 1, // AIMP rating is in range [0(not set), 5(max rating)]. But we must use range [0, 4] for this control.
-                                                                   false // do not invoke callback on 'select'
-            );
+			setRatingControl('track_info_rating', rating_value - 1); // AIMP rating is in range [0(not set), 5(max rating)]. But we must use range [0, 4] for this control.
         } else {
-            // reset rating.
-            $('#track_info_rating .track_info_rating_star').rating('drain');
+			resetRatingControl('track_info_rating');
         }
     }
 
