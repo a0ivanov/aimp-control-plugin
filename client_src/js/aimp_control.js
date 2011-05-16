@@ -55,31 +55,37 @@ function createEntriesControl(index, $tab_ui)
     var $table;
 
 	// Return track desc which linked with string.
-	function getDescriptionTrackOfRow(node_table_row) {
-		var playlist_id = getPlaylistIdFromTableId(node_table_row.parentNode.parentNode.id);
-		var aData = $table.fnGetData(node_table_row);
-		var track_id = aData[0];
-		return { playlist_id : parseInt(playlist_id),
-				 track_id : track_id
-			   };
+	function getDescriptionTrackOfRow(nTr) {
+		var playlist_id = getPlaylistIdFromTableId(nTr.parentNode.parentNode.id);
+		var row_index = $table.fnGetPosition(nTr);
+		if (row_index !== null) {
+			var aData = $table.fnGetData(row_index);
+			var track_id = aData[0];
+			return { playlist_id : parseInt(playlist_id),
+					 track_id : track_id
+				   };	
+		}
+		return null;
 	}
 
     /* Add a click handler to the rows - this could be used as a callback */
     $('#entries_table_' + playlist_id + ' tbody').click(
         function(event) {
+			// need to filter out invalid type and non track rows(context menu rows)
 			if (event.target.parentNode !== null && event.target.parentNode.nodeName === 'TR') {
 				highlightCurrentRow($table, event.target.parentNode);
-	
-				var track_desc = getDescriptionTrackOfRow(event.target.parentNode);
-				if (   track_desc.track_id !== control_panel_state.track_id
-					|| track_desc.playlist_id !== control_panel_state.playlist_id
-					)
-				{
-					aimp_manager.play(track_desc,
-									  { on_exception : function(error, localized_message) {
-														   alert(localized_message);
-													   }
-									  }); // start playback.
+    			var track_desc = getDescriptionTrackOfRow(event.target.parentNode);
+				if (track_desc !== null) {
+					if (   track_desc.track_id !== control_panel_state.track_id
+						|| track_desc.playlist_id !== control_panel_state.playlist_id
+						)
+					{
+						aimp_manager.play(track_desc,
+										  { on_exception : function(error, localized_message) {
+															   alert(localized_message);
+														   }
+										  }); // start playback.
+					}
 				}	
 			}
         }
@@ -293,10 +299,10 @@ function addControlMenuToEachEntry(oSettings)
             this.insertBefore(nCloneTd.cloneNode(true), this.childNodes[0]);
         });
 
-        function getControlMenuDescriptor(node_table_row)
+        function getControlMenuDescriptor(nTr)
         {
-            var playlist_id = getPlaylistIdFromTableId(node_table_row.parentNode.parentNode.id);
-            var aData = $table.fnGetData(node_table_row);
+            var playlist_id = getPlaylistIdFromTableId(nTr.parentNode.parentNode.id);
+            var aData = $table.fnGetData(nTr);
             var entry_id = aData[0];
 
             var play_button_id = 'play_entry_' + entry_id;
@@ -308,7 +314,7 @@ function addControlMenuToEachEntry(oSettings)
                 html : control_menu_html,
                 entry_id : entry_id,
                 playlist_id : playlist_id,
-                node_table_row : null,
+                nTr : null,
                 play_button_id : play_button_id
             };
         }
@@ -328,8 +334,8 @@ function addControlMenuToEachEntry(oSettings)
                 },
                 label: getText('track_contol_menu_open')
             }).click( function () {
-                var node_table_row = this.parentNode.parentNode;
-                var entry_control_menu_descriptor = getControlMenuDescriptor(node_table_row);
+                var nTr = this.parentNode.parentNode;
+                var entry_control_menu_descriptor = getControlMenuDescriptor(nTr);
                 if ( $(this).button('option', 'icons').primary == icon_menu_indicator_opened ) {
                     // remove menu updater from global list.
                     var notifier_id = entry_control_menu_descriptor.entry_id + '_' + entry_control_menu_descriptor.playlist_id;
@@ -341,7 +347,7 @@ function addControlMenuToEachEntry(oSettings)
                                                label: getText('track_contol_menu_open')
                                              }
                     );
-                    $table.fnClose(node_table_row);
+                    $table.fnClose(nTr);
                 } else {
                     /* Open control menu for this entry */
                     $(this).button('option', {
@@ -349,7 +355,7 @@ function addControlMenuToEachEntry(oSettings)
                                                label: getText('track_contol_menu_close')
                                              }
                     );
-                    entry_control_menu_descriptor.node_table_row = $table.fnOpen(node_table_row, entry_control_menu_descriptor.html, 'entry_control_menu');
+                    entry_control_menu_descriptor.nTr = $table.fnOpen(nTr, entry_control_menu_descriptor.html, 'entry_control_menu');
 
                     initTrackControlMenu(entry_control_menu_descriptor);
                     updateTrackControlMenu(entry_control_menu_descriptor);
@@ -358,8 +364,8 @@ function addControlMenuToEachEntry(oSettings)
                         if DataTable bServerSide flag is set, $table.fnOpen() will not add new row in aoOpenRows array.
                     */
                     $table.fnSettings().aoOpenRows.push({
-                        'nTr': entry_control_menu_descriptor.node_table_row,
-                        'nParent': node_table_row
+                        'nTr': entry_control_menu_descriptor.nTr,
+                        'nParent': nTr
                     });
                 }
             });
@@ -396,7 +402,7 @@ function initTrackControlMenu(control_menu_descriptor)
         alert(localized_message);
     };
 
-    var play_button = $('#' + control_menu_descriptor.play_button_id, control_menu_descriptor.node_table_row);
+    var play_button = $('#' + control_menu_descriptor.play_button_id, control_menu_descriptor.nTr);
     play_button.button({
         text : false
     }).click(function() {
@@ -422,7 +428,7 @@ function initTrackControlMenu(control_menu_descriptor)
 
 function updateTrackControlMenu(control_menu_descriptor) {
     // play/pause button
-    var play_button = $('#' + control_menu_descriptor.play_button_id, control_menu_descriptor.node_table_row);
+    var play_button = $('#' + control_menu_descriptor.play_button_id, control_menu_descriptor.nTr);
     var current_track_active = isCurrentTrackPlaying(control_menu_descriptor);
     $(play_button).button('option', {
                                         icons: {
@@ -965,6 +971,9 @@ function initTrackInfoDialog()
 
 function onRatingWidgetClick(value, link) {
 	var rating_div = this.parentNode;
+	if (rating_div === undefined) {
+		return;
+	}
 	var parts = rating_div.id.split('_');
 	var playlist_id = parts.length > 2 ? parseInt(parts[2]) : control_panel_state.playlist_id;
 	var track_id = parts.length > 3 ? parseInt(parts[3]) : track_desc.playlist_id;
