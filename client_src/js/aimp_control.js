@@ -72,7 +72,11 @@ function createEntriesControl(index, $tab_ui)
     $('#entries_table_' + playlist_id + ' tbody').click(
         function(event) {
 			// need to filter out invalid type and non track rows(context menu rows)
-			if (event.target.parentNode !== null && event.target.parentNode.nodeName === 'TR') {
+			if (   event.target.parentNode !== null
+				&& event.target.parentNode.nodeName === 'TR'
+				&& $table.fnSettings().aoData.length > 0
+				)
+			{
 				highlightCurrentRow($table, event.target.parentNode);
     			var track_desc = getDescriptionTrackOfRow(event.target.parentNode);
 				if (track_desc !== null) {
