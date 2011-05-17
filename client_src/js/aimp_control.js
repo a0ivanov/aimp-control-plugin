@@ -94,7 +94,7 @@ function createEntriesControl(index, $tab_ui)
     $table = $table_with_playlist_id.dataTable( {
         bStateSave : true, // save state in cookies.
         aoColumns : getDataTablesColumnsDescriptors(),
-        fnDrawCallback : addControlMenuToEachEntry,
+        fnDrawCallback : onPlaylistTableDraw,
         oLanguage : {
             sUrl : getLocalizationDirectory() + '/datatables.txt'
         },
@@ -128,18 +128,6 @@ function createEntriesControl(index, $tab_ui)
                                 iTotalDisplayRecords : (result.count_of_found_entries !== undefined) ? result.count_of_found_entries : result.total_entries_count,
                                 aaData : result.entries
                     });
-					
-					if ( $table.hasOwnProperty('entry_index_on_page_to_highlight_on_update') ) {
-						highlightCurrentRow($table,
-										    $table.fnGetNodes($table.entry_index_on_page_to_highlight_on_update)
-											);
-						delete $table.entry_index_on_page_to_highlight_on_update;
-					}
-					
-					//// init all rating widgets in table
-					//$('div[id^="track_rating_"]', $table).each(function(index, rating_div) {
-					//	initStarRatingWidget(rating_div.id);
-					//});
                 };
             }
 
@@ -242,6 +230,25 @@ function tryToLocateCurrentTrackInPlaylist(entry_page_number, entry_index_on_pag
 		var nRow = dt_row.nTr;
 		highlightCurrentRow($playlist_table, nRow);
 	}
+}
+
+function onPlaylistTableDraw(oSettings) {
+	addControlMenuToEachEntry(oSettings);
+	
+	//var $table = oSettings.nTable;
+	var $table = getPlaylistDataTable( getPlaylistIdFromTableId(oSettings.nTable.id) );
+	
+	if ( $table.hasOwnProperty('entry_index_on_page_to_highlight_on_update') ) {
+		highlightCurrentRow($table,
+							$table.fnGetNodes($table.entry_index_on_page_to_highlight_on_update)
+							);
+		delete $table.entry_index_on_page_to_highlight_on_update;
+	}
+	
+	//// init all rating widgets in table
+	//$('div[id^="track_rating_"]', $table).each(function(index, rating_div) {
+	//	initStarRatingWidget(rating_div.id);
+	//});
 }
 
 /* Add control menu switcher and menu itself to all entries. */
