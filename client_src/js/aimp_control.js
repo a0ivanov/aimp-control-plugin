@@ -12,6 +12,9 @@ var control_menu_state_updaters = {}; // map unique ID of context menu to notifi
 var track_progress_timer = null;
 var entries_requests = {}; // contains latest entry list requests to server for each playlist. Need for automatic displaying current track in playlist.
 
+var icon_menu_indicator_opened = 'ui-icon-minus',
+	icon_menu_indicator_closed = 'ui-icon-plus';
+
 /* Invoke notifiers for all control menus. */
 function syncronizeControlMenus() {
     for (key in control_menu_state_updaters) {
@@ -239,7 +242,6 @@ function tryToLocateCurrentTrackInPlaylist(entry_page_number, entry_index_on_pag
 function onPlaylistTableDraw(oSettings) {
 	addControlMenuToEachEntry(oSettings);
 	
-	//var $table = oSettings.nTable;
 	var $table = getPlaylistDataTable( getPlaylistIdFromTableId(oSettings.nTable.id) );
 	
 	if ( $table.hasOwnProperty('entry_index_on_page_to_highlight_on_update') ) {
@@ -278,7 +280,7 @@ function addControlMenuToEachEntry(oSettings)
             });
         }
 
-        var nCloneTd = document.createElement('td');
+        var nCloneTd = document.createElement('td'); // $('<button class="entry_control_menu_toggle"></button>')
         nCloneTd.innerHTML = '<button class="entry_control_menu_toggle"></button>';
         //nCloneTd.className = "center";
 
@@ -286,33 +288,11 @@ function addControlMenuToEachEntry(oSettings)
             this.insertBefore(nCloneTd.cloneNode(true), this.childNodes[0]);
         });
 
-        function getControlMenuDescriptor(nTr)
-        {
-            var playlist_id = getPlaylistIdFromTableId(nTr.parentNode.parentNode.id);
-            var aData = $table.fnGetData(nTr);
-            var entry_id = aData[0];
-
-            var play_button_id = 'play_entry_' + entry_id;
-            var control_menu_html =   '<table cellpadding="5" cellspacing="0" border="0">'
-                                    + '<tr><td><button id="' + play_button_id + '"></button></td></tr>';
-                                    + '</table>';
-
-            return {
-                html : control_menu_html,
-                entry_id : entry_id,
-                playlist_id : playlist_id,
-                nTr : null,
-                play_button_id : play_button_id
-            };
-        }
-
         /*
             Add event listener for opening and closing entry control menu.
             Note that the indicator for showing which row is open is not controlled by DataTables,
             rather it is done here
         */
-        var icon_menu_indicator_opened = 'ui-icon-minus',
-            icon_menu_indicator_closed = 'ui-icon-plus';
         $('td .entry_control_menu_toggle', $table.fnGetNodes() ).each( function () {
             $(this).button({
                 text: false,
@@ -320,44 +300,71 @@ function addControlMenuToEachEntry(oSettings)
                     primary: icon_menu_indicator_closed
                 },
                 label: getText('track_contol_menu_open')
-            }).click( function () {
-                var nTr = this.parentNode.parentNode;
-                var entry_control_menu_descriptor = getControlMenuDescriptor(nTr);
-                if ( $(this).button('option', 'icons').primary == icon_menu_indicator_opened ) {
-                    // remove menu updater from global list.
-                    var notifier_id = entry_control_menu_descriptor.entry_id + '_' + entry_control_menu_descriptor.playlist_id;
-                    delete control_menu_state_updaters[notifier_id]; // entry_control_menu_descriptor was initialized on menu open.
-
-                    /* Control menu for this entry is already open - close it */
-                    $(this).button('option', {
-                                               icons: { primary: icon_menu_indicator_closed },
-                                               label: getText('track_contol_menu_open')
-                                             }
-                    );
-                    $table.fnClose(nTr);
-                } else {
-                    /* Open control menu for this entry */
-                    $(this).button('option', {
-                                               icons: { primary: icon_menu_indicator_opened },
-                                               label: getText('track_contol_menu_close')
-                                             }
-                    );
-                    entry_control_menu_descriptor.nTr = $table.fnOpen(nTr, entry_control_menu_descriptor.html, 'entry_control_menu');
-
-                    initTrackControlMenu(entry_control_menu_descriptor);
-                    updateTrackControlMenu(entry_control_menu_descriptor);
-                    /*
-                        Use details of DataTables implementation to correct work of $table.fnClose() function:
-                        if DataTable bServerSide flag is set, $table.fnOpen() will not add new row in aoOpenRows array.
-                    */
-                    $table.fnSettings().aoOpenRows.push({
-                        'nTr': entry_control_menu_descriptor.nTr,
-                        'nParent': nTr
-                    });
-                }
-            });
+            }).click(onContextMenuButtonClick);
         });
     }
+}
+
+function getControlMenuDescriptor(nTr)
+{
+	var playlist_id = getPlaylistIdFromTableId(nTr.parentNode.parentNode.id);
+	var $table = getPlaylistDataTable(playlist_id);
+	var aData = $table.fnGetData(nTr);
+	var entry_id = aData[0];
+
+	var play_button_id = 'play_entry_' + entry_id;
+	var control_menu_html =   '<table cellpadding="5" cellspacing="0" border="0">'
+							+ '<tr><td><button id="' + play_button_id + '"></button></td></tr>';
+							+ '</table>';
+
+	return {
+		html : control_menu_html,
+		entry_id : entry_id,
+		playlist_id : playlist_id,
+		nTr : null,
+		play_button_id : play_button_id
+	};
+}
+
+function onContextMenuButtonClick() {
+	var nTr = this.parentNode.parentNode;
+	var entry_control_menu_descriptor = getControlMenuDescriptor(nTr);
+	
+	var playlist_id = getPlaylistIdFromTableId(nTr.parentNode.parentNode.id);
+	var $table = getPlaylistDataTable(playlist_id);
+	
+	if ( $(this).button('option', 'icons').primary == icon_menu_indicator_opened ) {
+		// remove menu updater from global list.
+		var notifier_id = entry_control_menu_descriptor.entry_id + '_' + entry_control_menu_descriptor.playlist_id;
+		delete control_menu_state_updaters[notifier_id]; // entry_control_menu_descriptor was initialized on menu open.
+
+		/* Control menu for this entry is already open - close it */
+		$(this).button('option', {
+								   icons: { primary: icon_menu_indicator_closed },
+								   label: getText('track_contol_menu_open')
+								 }
+		);
+		$table.fnClose(nTr);
+	} else {
+		/* Open control menu for this entry */
+		$(this).button('option', {
+								   icons: { primary: icon_menu_indicator_opened },
+								   label: getText('track_contol_menu_close')
+								 }
+		);
+		entry_control_menu_descriptor.nTr = $table.fnOpen(nTr, entry_control_menu_descriptor.html, 'entry_control_menu');
+
+		initTrackControlMenu(entry_control_menu_descriptor);
+		updateTrackControlMenu(entry_control_menu_descriptor);
+		/*
+			Use details of DataTables implementation to correct work of $table.fnClose() function:
+			if DataTable bServerSide flag is set, $table.fnOpen() will not add new row in aoOpenRows array.
+		*/
+		$table.fnSettings().aoOpenRows.push({
+			'nTr': entry_control_menu_descriptor.nTr,
+			'nParent': nTr
+		});
+	}
 }
 
 /* Returns true if playback is active now. */
