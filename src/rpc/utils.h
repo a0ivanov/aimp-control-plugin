@@ -145,8 +145,8 @@ struct HelperFillRpcFields
         }
     }
 
-    //! Walks through all required field setters and fills correspond rpc field.
-    void fillRpcArray(const T* data_provider_object, Rpc::Value& fields)
+     //! Walks through all required field setters and fills correspond rpc field.
+    void fillRpcArrayOfObjects(const T* data_provider_object, Rpc::Value& fields)
     {
         BOOST_FOREACH (const RpcValueSetters::const_iterator& setter, setters_required_) {
             const std::string& field_id = setter->first;
@@ -157,6 +157,25 @@ struct HelperFillRpcFields
                 assert(!"Error occured while filling field in"__FUNCTION__);
                 fields[field_id] = std::string();
             }
+        }
+    }
+
+    //! Walks through all required field setters and fills correspond rpc field.
+    void fillRpcArrayOfArrays(const T* data_provider_object, Rpc::Value& fields)
+    {
+        int index = 0;
+        fields.setSize( setters_required_.size() );
+        BOOST_FOREACH (const RpcValueSetters::const_iterator& setter, setters_required_) {
+            try {
+                setter->second(*data_provider_object, fields[index]); // invoke functor, that will assign value to fields[field_id].
+            } catch (std::exception& e) {
+                BOOST_LOG_SEV(logger(), error) << "Error occured while filling AIMP " << logger_msg_id_
+                                               << " field " << setter->first << ", field index " << index
+                                               << ". Reason: " << e.what();
+                assert(!"Error occured while filling field in"__FUNCTION__);
+                fields[index] = std::string();
+            }
+            ++index;
         }
     }
 

@@ -283,7 +283,7 @@ ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& r
         const Playlist* playlist = playlist_id_obj_pair.second.get();
         Rpc::Value& playlist_rpcvalue = playlists_rpcvalue[playlist_index];
         // fill all requested fields for playlist.
-        playlist_fields_filler_.fillRpcArray(playlist, playlist_rpcvalue);
+        playlist_fields_filler_.fillRpcArrayOfObjects(playlist, playlist_rpcvalue);
         ++playlist_index;
     }
     return RESPONSE_IMMEDIATE;
@@ -544,7 +544,7 @@ void GetPlaylistEntries::fillRpcValueEntriesFromEntriesList(EntriesRange entries
         const PlaylistEntry* entry( entry_ptr.get() );
         Rpc::Value& entry_rpcvalue = rpcvalue_entries[entry_rpcvalue_index];
         // fill all requested fields for entry.
-        entry_fields_filler_.fillRpcArray(entry, entry_rpcvalue);
+        entry_fields_filler_.fillRpcArrayOfArrays(entry, entry_rpcvalue);
         ++entry_rpcvalue_index;
     }
 }
@@ -571,7 +571,7 @@ void GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs(EntriesIDsRange entries
         const PlaylistEntry* entry( entries[entry_id].get() );
         Rpc::Value& entry_rpcvalue = rpcvalue_entries[entry_rpcvalue_index];
         // fill all requested fields for entry.
-        entry_fields_filler_.fillRpcArray(entry, entry_rpcvalue);
+        entry_fields_filler_.fillRpcArrayOfArrays(entry, entry_rpcvalue);
         ++entry_rpcvalue_index;
     }
 }

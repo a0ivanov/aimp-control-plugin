@@ -121,36 +121,12 @@ function createEntriesControl(index, $tab_ui)
 
             var on_success = function(fnCallback) {
                 return function(result) {
-                    /* Columns order */
-                    // fill columns ordering array(contain entry fields).
-                    var columns_order = fnGetKey(aoData, 'sColumns').split(',');
-                    if (result.entries.length >= 1) {
-                        columns_order = [];
-                        var entry = result.entries[0];
-                        for (field in entry) {
-                            columns_order.push(field);
-                        }
-                    }
-
-                    /* Entries data convertion */
-                    // convert result.entries from array of objects(entry is object) to array of arrays(entry is array)
-                    var adata = [];
-                    for (entry_index in result.entries) {
-                        var entry = result.entries[entry_index];
-                        var entry_array = [];
-                        for (field in entry) {
-                              entry_array.push(entry[field]);
-                        }
-                        adata.push(entry_array);
-                    }
-
                     // call DataTables function - data getter.
                     fnCallback({
                                 sEcho : sEcho,
-                                sColumns : columns_order.join(','),
                                 iTotalRecords : result.total_entries_count,
                                 iTotalDisplayRecords : (result.count_of_found_entries !== undefined) ? result.count_of_found_entries : result.total_entries_count,
-                                aaData : adata
+                                aaData : result.entries
                     });
 					
 					if ( $table.hasOwnProperty('entry_index_on_page_to_highlight_on_update') ) {
