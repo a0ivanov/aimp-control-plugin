@@ -9,6 +9,7 @@
 #include "rpc/frontend.h"
 #include "rpc/request_parser.h"
 #include "rpc/response_serializer.h"
+#include "utils/util.h"
 #include <boost/foreach.hpp>
 
 namespace Rpc
@@ -97,6 +98,8 @@ boost::tribool RequestHandler::callMethod(const Value& root_request,
 
     // execute method
     try {
+        //PROFILE_EXECUTION_TIME( method_name.c_str() );
+
         active_delayed_response_sender_ = delayed_response_sender; // save current http request handler ref in weak ptr to use in delayed response.
         active_response_serializer_ = &response_serializer;
 

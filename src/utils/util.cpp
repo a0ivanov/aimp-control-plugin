@@ -8,7 +8,7 @@
 namespace {
 using namespace AIMPControlPlugin::PluginLogger;
 ModuleLoggerType& logger()
-    { return getLogManager().getModuleLogger<AIMPPlayer::AIMPManager>(); }
+    { return getLogManager().getModuleLogger<AIMPControlPlugin::AIMPControlPluginHeader>(); }
 }
 
 namespace Utilities
