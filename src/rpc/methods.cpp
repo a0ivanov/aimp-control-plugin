@@ -578,6 +578,8 @@ void GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs(EntriesIDsRange entries
 
 Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
+    PROFILE_EXECUTION_TIME(__FUNCTION__);
+
     const Rpc::Value& rpc_params = root_request["params"];
 
     entry_fields_filler_.initRequiredFieldsHandlersList(rpc_params["fields"]);
@@ -592,9 +594,8 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
             : value_(value),
               member_name_(member_name)
         {}
-        void operator()(size_t count) const {
-            value_[member_name_] = count;
-        }
+        void operator()(size_t count) const
+            { value_[member_name_] = count; }
     };
 
     Rpc::ResponseType response_type = get_playlist_entries_templatemethod_->execute(rpc_params, 
@@ -648,9 +649,8 @@ Rpc::ResponseType GetEntryPageInDataTable::execute(const Rpc::Value& root_reques
         SetEntriesCount(size_t* entries_count)
             : entries_count_(entries_count)
         {}
-        void operator()(size_t count) const {
-            *entries_count_ = count;
-        }
+        void operator()(size_t count) const
+            { *entries_count_ = count; }
     };
 
     entries_on_page_ = 0;
