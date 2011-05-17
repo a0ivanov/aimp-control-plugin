@@ -160,10 +160,10 @@ function createEntriesControl(index, $tab_ui)
 						delete $table.entry_index_on_page_to_highlight_on_update;
 					}
 					
-					// init all rating widgets in table
-					$('div[id^="track_rating_"]', $table).each(function(index, rating_div) {
-						initStarRatingWidget(rating_div.id);
-					});
+					//// init all rating widgets in table
+					//$('div[id^="track_rating_"]', $table).each(function(index, rating_div) {
+					//	initStarRatingWidget(rating_div.id);
+					//});
                 };
             }
 
@@ -493,20 +493,36 @@ function initBitrateField(field_settings) {
     field_settings.sClass = 'center';
 }
 
+var track_rating_dom_element = null;
 function initRatingField(field_settings) {
     field_settings.fnRender = function ( oObj ) {
         var aimp_rating = oObj.aData[oObj.iDataColumn];
         var playlist_id = getPlaylistIdFromTableId(oObj.oSettings.sTableId);
 		var track_id = oObj.aData[0];
-	    var html = '<div id="track_rating_' + playlist_id + '_' + track_id + '">';
-		for (var i = 1; i <= 5; i++) {
-			html += '<input type="radio" class="rating_star" value="'
-			        + i + '" '
-					+ (i == aimp_rating ? 'checked="true"' : '')
-					+ '"/>';
+		var div_id = 'track_rating_' + playlist_id + '_' + track_id;
+		
+		if (track_rating_dom_element == null) {
+			var html = '<div><div id="' + div_id + '">';
+			for (var i = 1; i <= 5; i++) {
+				html += '<input type="radio" class="rating_star" value="' + i + '"'
+						+ (i == aimp_rating ? ' checked="true"' : '')
+						+ '/>';
+			}
+			html += '</div></div>';
+			track_rating_dom_element = $(html);
+			$('#' + div_id + ' .rating_star', track_rating_dom_element).rating({
+				callback: onRatingWidgetClick,
+				cancel: getText('track_info_dialog_cancel_rating')
+				//cancelValue: '0'
+			});
+		} else {			
+			$('div', track_rating_dom_element).first().attr('id', div_id);
+			if (aimp_rating > 0) {
+				setRatingWidgetValue(div_id, aimp_rating - 1);
+			}
 		}
-		html += '</div>';
-		return html;
+
+		return track_rating_dom_element.get(0).innerHTML;
     }
     // align in cell center.
     field_settings.sClass = 'center';
@@ -997,26 +1013,26 @@ function onRatingWidgetClick(value, link) {
 	Init star rating widget.
 	Returns rating widget.
 */
-function initStarRatingWidget(div_name)
+function initStarRatingWidget(div_id)
 {
-    return $('#' + div_name + ' .rating_star').rating({
+    return $('#' + div_id + ' .rating_star').rating({
         callback: onRatingWidgetClick,
         cancel: getText('track_info_dialog_cancel_rating')
         //cancelValue: '0'
     });
 }
 
-function setRatingWidgetValue(div_name, value)
+function setRatingWidgetValue(div_id, value)
 {
-	$('#' + div_name + ' .rating_star').rating('select',
+	$('#' + div_id + ' .rating_star').rating('select',
 											   value,
 											   false // do not invoke callback on 'select'
 	);
 }
 
-function resetRatingWidgetValue(div_name)
+function resetRatingWidgetValue(div_id)
 {
-	$('#' + div_name + ' .rating_star').rating('drain');
+	$('#' + div_id + ' .rating_star').rating('drain');
 }
 
 /* Shows dialog in position (coordX, coordY) on page. */
