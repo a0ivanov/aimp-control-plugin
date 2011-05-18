@@ -66,5 +66,7 @@ track_contol_menu_play : 'Play this track',
 track_contol_menu_pause : 'Pause this track',
 
 track_info_dialog_caption : 'Track info',
-track_info_dialog_cancel_rating : 'Not rated'
+track_info_dialog_cancel_rating : 'Not rated',
+
+all_entries : 'All'
 }

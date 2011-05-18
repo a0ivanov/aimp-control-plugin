@@ -67,5 +67,7 @@ track_contol_menu_play : 'Воспроизвести этот трек',
 track_contol_menu_pause : 'Приостановить',
 
 track_info_dialog_caption : 'Информация о треке',
-track_info_dialog_cancel_rating : 'Без оценки'
+track_info_dialog_cancel_rating : 'Без оценки',
+
+all_entries : 'Все'
 }
