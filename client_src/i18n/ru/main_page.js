@@ -49,6 +49,9 @@ settings_dialog_playlist_view_tab_hide_fields : 'Скрыть поля',
 settings_dialog_playlist_view_tab_entry_field_warning : 'Должно быть выбрано хотя бы одно поле для отображения.',
 // tab 'language'
 settings_dialog_language_tab_title : 'Язык',
+// tab track info
+settings_dialog_trackinfo_tab_title : 'Панель информации о треке',
+settings_dialog_trackinfo_format : 'Формат бегущей строки',
 
 entry_field_caption_title : 'Заголовок',
 entry_field_caption_artist : 'Исполнитель',

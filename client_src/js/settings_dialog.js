@@ -72,6 +72,22 @@ function createTabLanguage() {
     return saveTabData; 
 }
 
+function createTabTrackInfo() {
+    var $format_input = $('#track-format-input');
+    $format_input.val( getFormatOfTrackInfoFromCookies() );
+
+    var saveTabData = function () {
+        var new_format = $format_input.val();
+        // save cookie here
+        $.cookie('track-info-format-string',
+                 new_format,
+                 { expires: 365 /*in days*/ }
+                 );
+    }
+    
+    return saveTabData; 
+}
+
 // Creates settings dialog.
 function initSettingsDialog()
 {
@@ -81,6 +97,7 @@ function initSettingsDialog()
     var tabsSaveFunctions = [];
     tabsSaveFunctions.push( createTabPlaylistView() );
     tabsSaveFunctions.push( createTabLanguage() );
+    tabsSaveFunctions.push( createTabTrackInfo() );
     
     // create dialog.
     var dialog_form = $("#settings-dialog-form").dialog({

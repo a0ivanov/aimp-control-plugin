@@ -751,6 +751,15 @@ function updateControlPanelState(result) {
 	gotoCurrentTrackInPlaylist();
 };
 
+function getFormatOfTrackInfoFromCookies()
+{
+    var track_info_format_string = $.cookie('track-info-format-string');
+    if (track_info_format_string !== null) {
+        return track_info_format_string;
+    }
+	return '%IF(%a,%a - %T,%T)';
+}
+
 /* Updates state of Playback(current playback state and scrolling track info) Panel controls to be sync with Aimp. */
 function updatePlaybackPanelState(control_panel_state)
 {
@@ -761,7 +770,7 @@ function updatePlaybackPanelState(control_panel_state)
         aimp_manager.getFormattedTrackTitle({
                                               track_id : control_panel_state.track_id,
                                               playlist_id : control_panel_state.playlist_id,
-                                              format_string : '%IF(%a,%a - %T,%T)'
+                                              format_string : getFormatOfTrackInfoFromCookies()
                                             },
                                             { on_success : function (result) {
                                                             //alert(result.formatted_string);
@@ -1110,9 +1119,12 @@ function localizePage()
     $('#settings-dialog-form').attr( 'title', getText('settings_dialog_title') );
     $('#settings-dialog-tab-playlistview-label').text( getText('settings_dialog_playlist_view_tab_title') );
     $('#settings-dialog-tab-language-label').text( getText('settings_dialog_language_tab_title') );
+	$('#settings-dialog-tab-trackinfo-label').text( getText('settings_dialog_trackinfo_tab_title') );
 
     $('#entry_fields_label_show').text( getText('settings_dialog_playlist_view_tab_show_fields') );
     $('#entry_fields_label_hide').text( getText('settings_dialog_playlist_view_tab_hide_fields') );
+
+	$('#track-title-format').text( getText('settings_dialog_trackinfo_format') );
 
     localizeTrackInfoDialog();
 }

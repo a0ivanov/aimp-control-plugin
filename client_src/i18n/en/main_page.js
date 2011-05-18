@@ -48,6 +48,9 @@ settings_dialog_playlist_view_tab_hide_fields : 'Hide fields',
 settings_dialog_playlist_view_tab_entry_field_warning : 'You need to select at least one field to be shown.',
 // tab 'language'
 settings_dialog_language_tab_title : 'Language',
+// tab track info
+settings_dialog_trackinfo_tab_title : 'Track info panel',
+settings_dialog_trackinfo_format : 'Track title format',
 
 entry_field_caption_title : 'Title',
 entry_field_caption_artist : 'Artist',
