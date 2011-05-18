@@ -65,7 +65,7 @@ function createEntriesControl(index, $tab_ui)
 			var aData = $table.fnGetData(row_index);
 			var track_id = aData[0];
 			return { playlist_id : parseInt(playlist_id),
-					 track_id : track_id
+					 track_id : parseInt(track_id)
 				   };	
 		}
 		return null;
@@ -171,7 +171,8 @@ function createEntriesControl(index, $tab_ui)
         bProcessing : true,
         bJQueryUI : true,
         sPaginationType : 'full_numbers',
-        bAutoWidth : false
+        bAutoWidth : false,
+		aLengthMenu : [10, 25, 50, 100] // [[10, 25, 50, -1], [10, 25, 50, getText('all_entries')]]
     } );
 
 
@@ -547,6 +548,18 @@ function createPlaylistsControls(playlists)
         }); // necessary initialization of Tabs control.
     }
 
+	/*
+	$('<div id="q11"><p>Proin elit arcu</p></div><div id="q22">trttr</div>').appendTo('body');
+	$playlists_tabs.tabs('add',
+						 '#q11',
+						 'tab1'
+						 );
+	$playlists_tabs.tabs('add',
+						 '#q22',
+						 'tab2'
+						 );
+	return;
+*/
     // create tabs for each playlist.
     for(i = 0; i < playlists.length; ++i) {
         var playlist_id_name = 'playlist_' + playlists[i].id;
