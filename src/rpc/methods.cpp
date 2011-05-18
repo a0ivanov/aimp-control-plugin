@@ -318,8 +318,11 @@ const size_t GetPlaylistEntriesTemplateMethod::getStartFromIndexFromRpcParam(int
 
 const size_t GetPlaylistEntriesTemplateMethod::getEntriesCountFromRpcParam(int entries_count, size_t max_value) // throws Rpc::Exception
 {
-    if (entries_count < 0) {
-        throw Rpc::Exception("Wrong argument: entries_count should be positive value.", WRONG_ARGUMENT);
+    if (entries_count == -1) {
+        // -1 is special value which means "all available items". Included to support jQuery Datatables 1.7.6.
+        entries_count = max_value;
+    } else if (entries_count < 0) {
+        throw Rpc::Exception("Wrong argument: entries_count should be positive value or -1(for request all entries).", WRONG_ARGUMENT);
     }
 
     return static_cast<size_t>(entries_count) < max_value ? static_cast<size_t>(entries_count)
