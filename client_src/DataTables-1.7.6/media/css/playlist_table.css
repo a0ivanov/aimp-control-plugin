@@ -152,7 +152,12 @@ td.details {
 .paging_full_numbers {
 	width: 400px;
 	height: 22px;
-	line-height: 22px;
+	line-height: 20px;
+}
+
+/* Prevent using of value -0.3em of ".ui-buttonset .ui-button" from jquery-ui-1.8.2.custom.css */
+.dataTables_paginate .ui-button  {
+    margin-right: 0.0em
 }
 
 .paging_full_numbers span.paginate_button,
