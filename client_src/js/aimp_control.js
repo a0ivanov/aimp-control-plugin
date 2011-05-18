@@ -459,6 +459,13 @@ function getDataTablesColumnsDescriptors()
 }
 
 function initDurationField(field_settings) {
+	/*
+		oObj members:
+			"iDataRow": iRow,
+			"iDataColumn": iColumn,
+			"aData": oSettings.aoData[iRow]._aData,
+			"oSettings": oSettings
+	*/
     field_settings.fnRender = function ( oObj ) {
         var time_ms = oObj.aData[oObj.iDataColumn];
         return formatTime(time_ms);
@@ -477,10 +484,7 @@ function initFileSizeField(field_settings) {
 }
 
 function initBitrateField(field_settings) {
-    //field_settings.fnRender = function ( oObj ) {
-    //    bitrate_in_kbit_per_sec = oObj.aData[oObj.iDataColumn];
-    //    return bitrate_in_kbit_per_sec + ' ' + getText('kilobits_per_second');
-    //}
+	// display units only in table header.
     field_settings.sTitle = field_settings.sTitle + ', ' + getText('kilobits_per_second');
 
     // align in cell center.
@@ -509,7 +513,7 @@ function initRatingField(field_settings) {
 				cancel: getText('track_info_dialog_cancel_rating')
 				//cancelValue: '0'
 			});
-		} else {			
+		} else {
 			$('div', track_rating_dom_element).first().attr('id', div_id);
 			if (aimp_rating > 0) {
 				setRatingWidgetValue(div_id, aimp_rating - 1);
@@ -520,6 +524,7 @@ function initRatingField(field_settings) {
     }
     // align in cell center.
     field_settings.sClass = 'center';
+	field_settings.sWidth = (16 * 6) + 'px';
 }
 
 /* Deletes all playlists controls(jQuery UI Tabs) */
