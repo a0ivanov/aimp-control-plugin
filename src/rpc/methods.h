@@ -496,10 +496,10 @@ private:
 
     // entries handling
     void handleFilteredEntryIDs(const PlaylistEntryIDList& filtered_entries_ids, const EntriesListType& entries,
-                               size_t start_entry_index, size_t entries_count,
-                               EntryIDsHandler entry_ids_handler,
-                               EntryIDsHandler full_entry_ids_list_handler,
-                               EntriesCountHandler filtered_entries_count_handler);
+                                size_t start_entry_index, size_t entries_count,
+                                EntryIDsHandler entry_ids_handler,
+                                EntryIDsHandler full_entry_ids_list_handler,
+                                EntriesCountHandler filtered_entries_count_handler);
 
     void handleEntries(const EntriesListType& entries, size_t start_entry_index, size_t entries_count,
                        EntriesHandler entries_handler,
@@ -508,8 +508,7 @@ private:
     void handleEntryIDs(const PlaylistEntryIDList& entries_ids, const EntriesListType& entries,
                         size_t start_entry_index, size_t entries_count,
                         EntryIDsHandler entry_ids_handler,
-                        EntryIDsHandler full_entry_ids_list_handler
-                        );
+                        EntryIDsHandler full_entry_ids_list_handler);
 };
 
 /*! TODO: add description here
@@ -522,38 +521,7 @@ class GetPlaylistEntries : public AIMPRPCMethod
 public:
     GetPlaylistEntries(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager,
                        Rpc::RequestHandler& rpc_request_handler
-                       )
-        :
-        AIMPRPCMethod("get_playlist_entries", aimp_manager, multi_user_mode_manager, rpc_request_handler),
-        get_playlist_entries_templatemethod_( new GetPlaylistEntriesTemplateMethod(aimp_manager) ),
-        entry_fields_filler_("entry"),
-        kTOTAL_ENTRIES_COUNT_RPCVALUE_KEY("total_entries_count"),
-        kENTRIES_RPCVALUE_KEY("entries"),
-        kCOUNT_OF_FOUND_ENTRIES_RPCVALUE_KEY("count_of_found_entries")
-    {
-
-        using namespace RpcValueSetHelpers;
-        using namespace RpcResultUtils;
-        boost::assign::insert(entry_fields_filler_.setters_)
-            ( getStringFieldID(PlaylistEntry::ID),       boost::bind( createSetter(&PlaylistEntry::getID),       _1, _2 ) )  // Use plugin id of entry instead Aimp internal id( PlaylistEntry::getTrackID() ).
-            ( getStringFieldID(PlaylistEntry::TITLE),    boost::bind( createSetter(&PlaylistEntry::getTitle),    _1, _2 ) )
-            ( getStringFieldID(PlaylistEntry::ARTIST),   boost::bind( createSetter(&PlaylistEntry::getArtist),   _1, _2 ) )
-            ( getStringFieldID(PlaylistEntry::ALBUM),    boost::bind( createSetter(&PlaylistEntry::getAlbum),    _1, _2 ) )
-            ( getStringFieldID(PlaylistEntry::DATE),     boost::bind( createSetter(&PlaylistEntry::getDate),     _1, _2 ) )
-            ( getStringFieldID(PlaylistEntry::GENRE),    boost::bind( createSetter(&PlaylistEntry::getGenre),    _1, _2 ) )
-            ( getStringFieldID(PlaylistEntry::BITRATE),  boost::bind( createSetter(&PlaylistEntry::getBitrate),  _1, _2 ) )
-            ( getStringFieldID(PlaylistEntry::DURATION), boost::bind( createSetter(&PlaylistEntry::getDuration), _1, _2 ) )
-            ( getStringFieldID(PlaylistEntry::FILESIZE), boost::bind( createSetter(&PlaylistEntry::getFileSize), _1, _2 ) )
-            ( getStringFieldID(PlaylistEntry::RATING),   boost::bind( createSetter(&PlaylistEntry::getRating),   _1, _2 ) )
-        ;
-        
-        // fill supported field names.
-        PlaylistEntries::SupportedFieldNames fields_names;
-        BOOST_FOREACH(HelperFillRpcFields<PlaylistEntry>::RpcValueSetters::value_type& setter_it, entry_fields_filler_.setters_) {
-            fields_names.insert(setter_it.first);
-        }
-        get_playlist_entries_templatemethod_->setSupportedFieldNames(fields_names);
-    }
+                       );
 
     std::string help()
     {
@@ -594,6 +562,10 @@ private:
     //! Fills rpcvalue array of entries from entries IDs.
     void fillRpcValueEntriesFromEntryIDs(EntriesIDsRange entries_ids_range, const EntriesListType& entries,
                                          Rpc::Value& rpcvalue_entries);
+    
+    EntriesHandler entries_handler_stub_;
+    EntryIDsHandler enties_ids_handler_stub_;
+    EntriesCountHandler entries_count_handler_stub_;
 };
 
 class GetEntryPageInDataTable : public AIMPRPCMethod
@@ -602,13 +574,7 @@ public:
     GetEntryPageInDataTable(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager,
                             Rpc::RequestHandler& rpc_request_handler,
                             GetPlaylistEntries& getplaylistentries_method
-                           )
-        :
-        AIMPRPCMethod("get_entry_page_in_datatable", aimp_manager, multi_user_mode_manager, rpc_request_handler),
-        get_playlist_entries_templatemethod_( getplaylistentries_method.getPlaylistEntriesTemplateMethod() )
-    {
-
-    }
+                           );
 
     std::string help()
     {
@@ -631,6 +597,11 @@ private:
 
     void setEntryPageInDataTableFromEntryIDs(EntriesIDsRange entries_ids_range, const EntriesListType& /*entries*/,
                                              PlaylistEntryID entry_id);
+
+    EntriesHandler entries_handler_stub_;
+    EntryIDsHandler enties_ids_handler_stub_;
+    EntriesCountHandler entries_count_handler_stub_;
+    EntriesCountHandler entries_on_page_count_handler_;
 };
 
 /*!

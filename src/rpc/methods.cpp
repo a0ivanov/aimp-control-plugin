@@ -537,6 +537,58 @@ ResponseType GetPlaylistEntriesTemplateMethod::execute(const Rpc::Value& params,
     return RESPONSE_IMMEDIATE;
 }
 
+struct EntriesHandlerStub {
+    void operator()(const EntriesRange& /*range*/) const {}
+};
+
+struct EntryIDsHandlerStub {
+    void operator()(const EntriesIDsRange& /*range*/, const EntriesListType& /*entries*/) const {}
+};
+
+struct EntriesCountHandlerStub {
+    void operator()(size_t /*count*/) const {}
+};
+
+GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager,
+                                       Rpc::RequestHandler& rpc_request_handler
+                                       )
+    :
+    AIMPRPCMethod("get_playlist_entries", aimp_manager, multi_user_mode_manager, rpc_request_handler),
+    get_playlist_entries_templatemethod_( new GetPlaylistEntriesTemplateMethod(aimp_manager) ),
+    entry_fields_filler_("entry"),
+    kTOTAL_ENTRIES_COUNT_RPCVALUE_KEY("total_entries_count"),
+    kENTRIES_RPCVALUE_KEY("entries"),
+    kCOUNT_OF_FOUND_ENTRIES_RPCVALUE_KEY("count_of_found_entries")
+{
+
+    using namespace RpcValueSetHelpers;
+    using namespace RpcResultUtils;
+    boost::assign::insert(entry_fields_filler_.setters_)
+        ( getStringFieldID(PlaylistEntry::ID),       boost::bind( createSetter(&PlaylistEntry::getID),       _1, _2 ) )  // Use plugin id of entry instead Aimp internal id( PlaylistEntry::getTrackID() ).
+        ( getStringFieldID(PlaylistEntry::TITLE),    boost::bind( createSetter(&PlaylistEntry::getTitle),    _1, _2 ) )
+        ( getStringFieldID(PlaylistEntry::ARTIST),   boost::bind( createSetter(&PlaylistEntry::getArtist),   _1, _2 ) )
+        ( getStringFieldID(PlaylistEntry::ALBUM),    boost::bind( createSetter(&PlaylistEntry::getAlbum),    _1, _2 ) )
+        ( getStringFieldID(PlaylistEntry::DATE),     boost::bind( createSetter(&PlaylistEntry::getDate),     _1, _2 ) )
+        ( getStringFieldID(PlaylistEntry::GENRE),    boost::bind( createSetter(&PlaylistEntry::getGenre),    _1, _2 ) )
+        ( getStringFieldID(PlaylistEntry::BITRATE),  boost::bind( createSetter(&PlaylistEntry::getBitrate),  _1, _2 ) )
+        ( getStringFieldID(PlaylistEntry::DURATION), boost::bind( createSetter(&PlaylistEntry::getDuration), _1, _2 ) )
+        ( getStringFieldID(PlaylistEntry::FILESIZE), boost::bind( createSetter(&PlaylistEntry::getFileSize), _1, _2 ) )
+        ( getStringFieldID(PlaylistEntry::RATING),   boost::bind( createSetter(&PlaylistEntry::getRating),   _1, _2 ) )
+    ;
+        
+    // fill supported field names.
+    PlaylistEntries::SupportedFieldNames fields_names;
+    BOOST_FOREACH(HelperFillRpcFields<PlaylistEntry>::RpcValueSetters::value_type& setter_it, entry_fields_filler_.setters_) {
+        fields_names.insert(setter_it.first);
+    }
+    get_playlist_entries_templatemethod_->setSupportedFieldNames(fields_names);
+
+    // create handlers for passing into get_playlist_entries_templatemethod_'s execute().
+    entries_handler_stub_       = boost::bind<void>(EntriesHandlerStub(), _1);
+    enties_ids_handler_stub_    = boost::bind<void>(EntryIDsHandlerStub(), _1, _2);
+    entries_count_handler_stub_ = boost::bind<void>(EntriesCountHandlerStub(), _1);
+}
+
 void GetPlaylistEntries::fillRpcValueEntriesFromEntriesList(EntriesRange entries_range,
                                                             Rpc::Value& rpcvalue_entries)
 {
@@ -551,18 +603,6 @@ void GetPlaylistEntries::fillRpcValueEntriesFromEntriesList(EntriesRange entries
         ++entry_rpcvalue_index;
     }
 }
-
-struct EntriesHandlerStub {
-    void operator()(const EntriesRange& /*range*/) const {}
-};
-
-struct EntryIDsHandlerStub {
-    void operator()(const EntriesIDsRange& /*range*/, const EntriesListType& /*entries*/) const {}
-};
-
-struct EntriesCountHandlerStub {
-    void operator()(size_t /*count*/) const {}
-};
 
 void GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs(EntriesIDsRange entries_ids_range, const EntriesListType& entries,
                                                          Rpc::Value& rpcvalue_entries)
@@ -611,11 +651,34 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
                                                                                     boost::bind<void>(SetEntriesCount(rpc_result, kTOTAL_ENTRIES_COUNT_RPCVALUE_KEY), _1),
                                                                                     boost::bind<void>(SetEntriesCount(rpc_result, kCOUNT_OF_FOUND_ENTRIES_RPCVALUE_KEY), _1),
                                                                                     // use stubs instead not used callbacks.
-                                                                                    boost::bind<void>(EntriesHandlerStub(), _1),
-                                                                                    boost::bind<void>(EntryIDsHandlerStub(), _1, _2),
-                                                                                    boost::bind<void>(EntriesCountHandlerStub(), _1)
-                                                                                   );
+                                                                                    entries_handler_stub_,
+                                                                                    enties_ids_handler_stub_,
+                                                                                    entries_count_handler_stub_
+                                                                                    );
     return response_type;
+}
+
+GetEntryPageInDataTable::GetEntryPageInDataTable(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager,
+                                                 Rpc::RequestHandler& rpc_request_handler,
+                                                 GetPlaylistEntries& getplaylistentries_method
+                                                 )
+    :
+    AIMPRPCMethod("get_entry_page_in_datatable", aimp_manager, multi_user_mode_manager, rpc_request_handler),
+    get_playlist_entries_templatemethod_( getplaylistentries_method.getPlaylistEntriesTemplateMethod() )
+{
+    // create handlers for passing into get_playlist_entries_templatemethod_'s execute().
+    entries_handler_stub_          = boost::bind<void>(EntriesHandlerStub(), _1);
+    enties_ids_handler_stub_       = boost::bind<void>(EntryIDsHandlerStub(), _1, _2);
+    entries_count_handler_stub_    = boost::bind<void>(EntriesCountHandlerStub(), _1);
+    struct SetEntriesCount {
+        mutable size_t* entries_count_;
+        SetEntriesCount(size_t* entries_count)
+            : entries_count_(entries_count)
+        {}
+        void operator()(size_t count) const
+            { *entries_count_ = count; }
+    };
+    entries_on_page_count_handler_ = boost::bind<void>(SetEntriesCount(&entries_on_page_), _1);
 }
 
 void GetEntryPageInDataTable::setEntryPageInDataTableFromEntriesList(EntriesRange entries_range,
@@ -647,24 +710,15 @@ Rpc::ResponseType GetEntryPageInDataTable::execute(const Rpc::Value& root_reques
     const Rpc::Value& rpc_params = root_request["params"];
     const PlaylistEntryID track_id(rpc_params["track_id"]);
 
-    struct SetEntriesCount {
-        mutable size_t* entries_count_;
-        SetEntriesCount(size_t* entries_count)
-            : entries_count_(entries_count)
-        {}
-        void operator()(size_t count) const
-            { *entries_count_ = count; }
-    };
-
     entries_on_page_ = 0;
     entry_index_in_current_representation_ = -1;
 
     get_playlist_entries_templatemethod_->execute(rpc_params, 
                                                   // use stubs instead not used callbacks.
-                                                  boost::bind<void>(EntriesHandlerStub(), _1),
-                                                  boost::bind<void>(EntryIDsHandlerStub(), _1, _2),
-                                                  boost::bind<void>(EntriesCountHandlerStub(), _1),
-                                                  boost::bind<void>(EntriesCountHandlerStub(), _1),
+                                                  entries_handler_stub_,
+                                                  enties_ids_handler_stub_,
+                                                  entries_count_handler_stub_,
+                                                  entries_count_handler_stub_,
 
                                                   boost::bind(&GetEntryPageInDataTable::setEntryPageInDataTableFromEntriesList,
                                                               this, _1, track_id
@@ -672,13 +726,13 @@ Rpc::ResponseType GetEntryPageInDataTable::execute(const Rpc::Value& root_reques
                                                   boost::bind(&GetEntryPageInDataTable::setEntryPageInDataTableFromEntryIDs,
                                                               this, _1, _2, track_id
                                                               ),
-                                                  boost::bind<void>(SetEntriesCount(&entries_on_page_), _1)
+                                                  entries_on_page_count_handler_
                                                   );
 
     //const size_t entries_count_in_representation = current_filtered_entries_count_ != 0 ? current_filtered_entries_count_ : current_total_entries_count_;
     Rpc::Value& rpc_result = root_response["result"];
     if (entries_on_page_ > 0 && entry_index_in_current_representation_ >= 0) {
-        rpc_result["page_number"] = static_cast<size_t>(entry_index_in_current_representation_ / entries_on_page_);
+        rpc_result["page_number"]         = static_cast<size_t>(entry_index_in_current_representation_ / entries_on_page_);
         rpc_result["track_index_on_page"] = static_cast<size_t>(entry_index_in_current_representation_ % entries_on_page_);
     } else {
         rpc_result["page_number"] = -1; ///??? maybe return null here or nothing.
