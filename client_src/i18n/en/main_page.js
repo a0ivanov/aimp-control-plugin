@@ -38,7 +38,7 @@ control_panel_mute : 'Mute',
 control_panel_mute_on : 'Mute on',
 control_panel_mute_off : 'Mute off',
 
-settings_dialog_title : 'Playlist',
+settings_dialog_title : 'Settings',
 settings_dialog_save_button : 'Save settings',
 settings_dialog_cancel_button : 'Cancel',
 // tab 'playlist view'
