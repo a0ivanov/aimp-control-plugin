@@ -1048,6 +1048,34 @@ void AIMPManager::unRegisterListener(AIMPManager::EventsListenerID listener_id)
 namespace
 {
 
+struct BitrateFormatter {
+    std::wstring operator()(const PlaylistEntry& entry) const { 
+        std::wostringstream os;
+        os << entry.getBitrate() << " kbps";
+        return os.str();
+    }
+};
+
+struct ChannelsCountFormatter {
+    std::wstring operator()(const PlaylistEntry& entry) const { 
+        std::wostringstream os;
+        switch ( entry.getChannelsCount() ) {
+        case 0:
+            break;
+        case 1:
+            os << L"Mono";
+            break;
+        case 2:
+            os << L"Stereo";
+            break;
+        default:
+            os << entry.getChannelsCount() << L" channels";
+            break;
+        }
+        return os.str();
+    }
+};
+
 struct DurationFormatter
 {
     std::wstring operator()(const PlaylistEntry& entry) const {
@@ -1094,6 +1122,36 @@ struct FileNameExtentionFormatter {
     }
 };
 
+struct SampleRateFormatter {
+    std::wstring operator()(const PlaylistEntry& entry) const { 
+        const DWORD rate_in_hertz = entry.getSampleRate();
+        std::wostringstream os;
+        os << (rate_in_hertz / 1000)
+           << " kHz";
+        return os.str();
+    }
+};
+
+struct FileSizeFormatter
+{
+    std::wstring operator()(const PlaylistEntry& entry) const {
+        std::wostringstream os;
+        //os.seekp(0, std::ios_base::beg);
+        formatSize( os, entry.getFileSize() );
+        return os.str();
+    }
+
+    static void formatSize(std::wostringstream& os, INT64 size_in_bytes) {
+        const INT64 bytes_in_megabyte = 1024 * 1024;
+        os.precision(3);
+        if (size_in_bytes >= bytes_in_megabyte) {
+            os << size_in_bytes / double(bytes_in_megabyte) << " Mb";
+        } else {
+            os << size_in_bytes / 1024.0 << " kb";
+        }
+    }
+};
+
 /*!
     \brief Helper class for AIMPManager::getFormattedEntryTitle() function.
            Implementation of AIMP title format analog.
@@ -1108,15 +1166,19 @@ public:
         insert(formatters_)
             ( 'A', _MAKE_FUNC_(PlaylistEntry::getAlbum) )
             ( 'a', _MAKE_FUNC_(PlaylistEntry::getArtist) )
-            ( 'B', _MAKE_FUNC_(PlaylistEntry::getBitrate) )
-            ( 'C', _MAKE_FUNC_(PlaylistEntry::getChannelsCount) )
+            //( 'B', _MAKE_FUNC_(PlaylistEntry::getBitrate) ) // use BitrateFormatter which add units(ex.: kbps)
+            ( 'B', boost::bind<std::wstring>(BitrateFormatter(), _1) )
+            //( 'C', _MAKE_FUNC_(PlaylistEntry::getChannelsCount) ) // use ChannelsCountFormatter which uses string representation (ex.: Mono/Stereo)
+            ( 'C', boost::bind<std::wstring>(ChannelsCountFormatter(), _1) )
             ( 'E', boost::bind<std::wstring>(FileNameExtentionFormatter(), _1) )
             //( 'F', _MAKE_FUNC_(PlaylistEntry::getFilename) ) getting filename is disabled.
             ( 'G', _MAKE_FUNC_(PlaylistEntry::getGenre) )
-            ( 'H', _MAKE_FUNC_(PlaylistEntry::getSampleRate) )
+            //( 'H', _MAKE_FUNC_(PlaylistEntry::getSampleRate) ) // this returns rate in Hertz, so use adequate SampleRateFormatter.
+            ( 'H', boost::bind<std::wstring>(SampleRateFormatter(), _1) )
             //( 'L', _MAKE_FUNC_(PlaylistEntry::getDuration) ) // this returns milliseconds, so use adequate DurationFormatter.
             ( 'L', boost::bind<std::wstring>(DurationFormatter(), _1) )
-            ( 'S', _MAKE_FUNC_(PlaylistEntry::getFileSize) )
+            //( 'S', _MAKE_FUNC_(PlaylistEntry::getFileSize) ) // this returns size in bytes, so use adequate FileSizeFormatter.
+            ( 'S', boost::bind<std::wstring>(FileSizeFormatter(), _1) )
             ( 'T', _MAKE_FUNC_(PlaylistEntry::getTitle) )
             ( 'Y', _MAKE_FUNC_(PlaylistEntry::getDate) )
             ( 'M', _MAKE_FUNC_(PlaylistEntry::getRating) )
