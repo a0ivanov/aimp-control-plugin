@@ -273,6 +273,14 @@ ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& r
 
     // get list of required pairs(field id, field getter function).
     playlist_fields_filler_.initRequiredFieldsHandlersList(params["fields"]);
+    if ( playlist_fields_filler_.setters_required_.empty() ) {
+        // if 'fields' param is empty, treat it as we got id and title fields.
+        Rpc::Value fields;
+        fields.setSize(2);
+        fields[0] = "id";
+        fields[1] = "title";
+        playlist_fields_filler_.initRequiredFieldsHandlersList(fields);
+    }
 
     Rpc::Value& playlists_rpcvalue = root_response["result"];
     playlists_rpcvalue.setSize( playlists.size() );
