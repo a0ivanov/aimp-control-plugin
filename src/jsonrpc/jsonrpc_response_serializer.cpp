@@ -11,7 +11,7 @@
 namespace JsonRpc
 {
 
-const std::string kMIME_TYPE = "text/json";
+const std::string kMIME_TYPE = "application/json";
 
 struct ResponseSerializerImpl {
     Json::FastWriter writer;
