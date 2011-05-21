@@ -537,13 +537,16 @@ private:
 
     // See HelperFillRpcFields class commentaries.
     RpcValueSetHelpers::HelperFillRpcFields<PlaylistEntry> entry_fields_filler_;
+    void initEntriesFiller(const Rpc::Value& params);
 
     const std::string kFORMAT_STRING_STRING;
 
+    const std::string kFIELDS_STRING;
+
     // rpc result struct keys.
-    const std::string kENTRIES_RPCVALUE_KEY; // key for entries array.
-    const std::string kTOTAL_ENTRIES_COUNT_RPCVALUE_KEY; // key for total entries count.
-    const std::string kCOUNT_OF_FOUND_ENTRIES_RPCVALUE_KEY;
+    const std::string kENTRIES_STRING; // key for entries array.
+    const std::string kTOTAL_ENTRIES_COUNT_STRING; // key for total entries count.
+    const std::string kCOUNT_OF_FOUND_ENTRIES_STRING;
 
     //! Fills rpcvalue array of entries from entries objects.
     void fillRpcValueEntriesFromEntriesList(EntriesRange entries_range,

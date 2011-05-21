@@ -586,9 +586,10 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager, MultiUserModeM
     get_playlist_entries_templatemethod_( new GetPlaylistEntriesTemplateMethod(aimp_manager) ),
     entry_fields_filler_("entry"),
     kFORMAT_STRING_STRING("format_string"),
-    kTOTAL_ENTRIES_COUNT_RPCVALUE_KEY("total_entries_count"),
-    kENTRIES_RPCVALUE_KEY("entries"),
-    kCOUNT_OF_FOUND_ENTRIES_RPCVALUE_KEY("count_of_found_entries")
+    kFIELDS_STRING("fields"),
+    kTOTAL_ENTRIES_COUNT_STRING("total_entries_count"),
+    kENTRIES_STRING("entries"),
+    kCOUNT_OF_FOUND_ENTRIES_STRING("count_of_found_entries")
 {
 
     using namespace RpcValueSetHelpers;
@@ -649,35 +650,28 @@ void GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs(EntriesIDsRange entries
     }
 }
 
-Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+void GetPlaylistEntries::initEntriesFiller(const Rpc::Value& params)
 {
-    PROFILE_EXECUTION_TIME(__FUNCTION__);
-
-    const Rpc::Value& rpc_params = root_request["params"];
-
-    // get list of required pairs(field id, field getter function).
-    if ( rpc_params.isMember(kFORMAT_STRING_STRING) ) {        
-        // 'format_string' param has priority over 'fields' param.
-
-        const std::string& format_string = rpc_params[kFORMAT_STRING_STRING];
-
+    if ( params.isMember(kFORMAT_STRING_STRING) ) { // 'format_string' param has priority over 'fields' param.
         typedef RpcValueSetHelpers::HelperFillRpcFields<PlaylistEntry>::RpcValueSetters RpcValueSetters;
         RpcValueSetters::iterator setter_it = entry_fields_filler_.setters_.find(kFORMAT_STRING_STRING);
         if ( setter_it == entry_fields_filler_.setters_.end() ) {
+            // add filler if it does not exist yet.
             setter_it = entry_fields_filler_.setters_.insert( std::make_pair(kFORMAT_STRING_STRING,
                                                               RpcValueSetHelpers::HelperFillRpcFields<PlaylistEntry>::RpcValueSetter()
                                                                              )
                                                              ).first;
         }
         
+        const std::string& format_string = params[kFORMAT_STRING_STRING];
         setter_it->second = boost::bind<void>(Formatter(&aimp_manager_, &format_string),
                                               _1, _2
                                               );
         entry_fields_filler_.setters_required_.clear();
         entry_fields_filler_.setters_required_.push_back(setter_it);
     } else {
-        if ( rpc_params.isMember("fields") ) {
-            entry_fields_filler_.initRequiredFieldsHandlersList(rpc_params["fields"]);
+        if ( params.isMember(kFIELDS_STRING) ) {
+            entry_fields_filler_.initRequiredFieldsHandlersList(params[kFIELDS_STRING]);
         } else {
             // set default fields
             Rpc::Value fields;
@@ -687,9 +681,18 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
             entry_fields_filler_.initRequiredFieldsHandlersList(fields);
         }
     }
+}
+
+Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+{
+    PROFILE_EXECUTION_TIME(__FUNCTION__);
+
+    const Rpc::Value& rpc_params = root_request["params"];
+
+    initEntriesFiller(rpc_params);
 
     Rpc::Value& rpc_result = root_response["result"];
-    Rpc::Value& rpcvalue_entries = rpc_result[kENTRIES_RPCVALUE_KEY];
+    Rpc::Value& rpcvalue_entries = rpc_result[kENTRIES_STRING];
 
     struct SetEntriesCount {
         mutable Rpc::Value& value_;
@@ -709,8 +712,8 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
                                                                                     boost::bind(&GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs,
                                                                                                 this, _1, _2, boost::ref(rpcvalue_entries)
                                                                                                 ),
-                                                                                    boost::bind<void>(SetEntriesCount(rpc_result, kTOTAL_ENTRIES_COUNT_RPCVALUE_KEY), _1),
-                                                                                    boost::bind<void>(SetEntriesCount(rpc_result, kCOUNT_OF_FOUND_ENTRIES_RPCVALUE_KEY), _1),
+                                                                                    boost::bind<void>(SetEntriesCount(rpc_result, kTOTAL_ENTRIES_COUNT_STRING), _1),
+                                                                                    boost::bind<void>(SetEntriesCount(rpc_result, kCOUNT_OF_FOUND_ENTRIES_STRING), _1),
                                                                                     // use stubs instead not used callbacks.
                                                                                     entries_handler_stub_,
                                                                                     enties_ids_handler_stub_,
