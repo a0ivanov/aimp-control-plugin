@@ -15,6 +15,7 @@
 #include <sstream>
 #include <iomanip>
 #include <boost/filesystem.hpp>
+#include <algorithm>
 
 namespace {
 using namespace AIMPControlPlugin::PluginLogger;
@@ -1056,7 +1057,8 @@ struct DurationFormatter
         return os.str();
     }
 
-    static void formatTime(std::wostringstream& os, DWORD input_time_ms) {
+    static void formatTime(std::wostringstream& os, DWORD input_time_ms)
+    {
         const DWORD input_time_sec = input_time_ms / 1000;
         const DWORD time_hour = input_time_sec / 3600;
         const DWORD time_min = (input_time_sec % 3600) / 60;
@@ -1080,8 +1082,16 @@ struct DurationFormatter
 };
 
 struct FileNameExtentionFormatter {
-    std::wstring operator()(const PlaylistEntry& entry) const
-        { return boost::filesystem::extension( entry.getFilename() ); }
+    std::wstring operator()(const PlaylistEntry& entry) const { 
+        std::wstring ext = boost::filesystem::extension( entry.getFilename() );
+        if ( !ext.empty() ) {
+            if (ext[0] == L'.') {
+                ext.erase( ext.begin() );
+            }
+        }
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::toupper);
+        return ext;
+    }
 };
 
 /*!
