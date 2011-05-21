@@ -13,6 +13,8 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>
 #include <sstream>
+#include <iomanip>
+#include <boost/filesystem.hpp>
 
 namespace {
 using namespace AIMPControlPlugin::PluginLogger;
@@ -1045,6 +1047,43 @@ void AIMPManager::unRegisterListener(AIMPManager::EventsListenerID listener_id)
 namespace
 {
 
+struct DurationFormatter
+{
+    std::wstring operator()(const PlaylistEntry& entry) const {
+        std::wostringstream os;
+        //os.seekp(0, std::ios_base::beg);
+        formatTime( os, entry.getDuration() );
+        return os.str();
+    }
+
+    static void formatTime(std::wostringstream& os, DWORD input_time_ms) {
+        const DWORD input_time_sec = input_time_ms / 1000;
+        const DWORD time_hour = input_time_sec / 3600;
+        const DWORD time_min = (input_time_sec % 3600) / 60;
+        const DWORD time_sec = input_time_sec % 60;
+
+        const wchar_t delimeter = L':';
+
+        using namespace std;
+
+        if (time_hour > 0) {
+            os << setfill(L'0') << setw(2) << time_hour;
+            os << delimeter;
+        }
+        os << setfill(L'0') << setw(2) << time_min;
+        os << delimeter;
+        os << setfill(L'0') << setw(2) << time_sec;
+    }
+//private:
+//    DurationFormatter(const DurationFormatter&);
+//    DurationFormatter& operator=(const DurationFormatter&);
+};
+
+struct FileNameExtentionFormatter {
+    std::wstring operator()(const PlaylistEntry& entry) const
+        { return boost::filesystem::extension( entry.getFilename() ); }
+};
+
 /*!
     \brief Helper class for AIMPManager::getFormattedEntryTitle() function.
            Implementation of AIMP title format analog.
@@ -1054,17 +1093,19 @@ class PlaylistEntryTitleFormatter
 public:
     PlaylistEntryTitleFormatter()
     {
-#define _MAKE_FUNC_(function) boost::bind( createMakeStringFunctor(&function), boost::bind(&function,    _1) )
+#define _MAKE_FUNC_(function) boost::bind( createStringMakerFunctor(&function), boost::bind(&function,    _1) )
         using namespace boost::assign;
         insert(formatters_)
             ( 'A', _MAKE_FUNC_(PlaylistEntry::getAlbum) )
             ( 'a', _MAKE_FUNC_(PlaylistEntry::getArtist) )
             ( 'B', _MAKE_FUNC_(PlaylistEntry::getBitrate) )
             ( 'C', _MAKE_FUNC_(PlaylistEntry::getChannelsCount) )
+            ( 'E', boost::bind<std::wstring>(FileNameExtentionFormatter(), _1) )
             //( 'F', _MAKE_FUNC_(PlaylistEntry::getFilename) ) getting filename is disabled.
             ( 'G', _MAKE_FUNC_(PlaylistEntry::getGenre) )
             ( 'H', _MAKE_FUNC_(PlaylistEntry::getSampleRate) )
-            ( 'L', _MAKE_FUNC_(PlaylistEntry::getDuration) )
+            //( 'L', _MAKE_FUNC_(PlaylistEntry::getDuration) ) // this returns milliseconds, so use adequate DurationFormatter.
+            ( 'L', boost::bind<std::wstring>(DurationFormatter(), _1) )
             ( 'S', _MAKE_FUNC_(PlaylistEntry::getFileSize) )
             ( 'T', _MAKE_FUNC_(PlaylistEntry::getTitle) )
             ( 'Y', _MAKE_FUNC_(PlaylistEntry::getDate) )
@@ -1074,10 +1115,10 @@ public:
 #undef _MAKE_FUNC_
     }
 
-    bool endOfFormatString(std::string::const_iterator curr_char,
-                           std::string::const_iterator end,
-                           char end_of_string
-                           ) const
+    static bool endOfFormatString(std::string::const_iterator curr_char,
+                                  std::string::const_iterator end,
+                                  char end_of_string
+                                  )
     {
         return curr_char == end || *curr_char == end_of_string;
     }
@@ -1155,16 +1196,17 @@ public:
 private:
 
     template<class T>
-    struct MakeWString : std::unary_function<const T&, std::wstring> {
+    struct WStringMaker : std::unary_function<const T&, std::wstring> {
         std::wstring operator()(const T& arg) const
             { return boost::lexical_cast<std::wstring>(arg); }
     };
 
     template<class T, class R>
-    MakeWString<R> createMakeStringFunctor( R (T::*)() const )
-        { return MakeWString<R>(); }
+    WStringMaker<R> createStringMakerFunctor( R (T::*)() const )
+        { return WStringMaker<R>(); }
 
-    typedef std::map<char, boost::function<std::wstring(const PlaylistEntry&)> > Formatters;
+    typedef boost::function<std::wstring(const PlaylistEntry&)> EntryFieldStringGetter;
+    typedef std::map<char, EntryFieldStringGetter> Formatters;
     Formatters formatters_;
     Formatters::const_iterator formatters_end_;
 
