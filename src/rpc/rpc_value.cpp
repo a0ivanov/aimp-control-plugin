@@ -423,6 +423,11 @@ void Value::assertIndexIsInRange(int index) const
 
 Value& Value::operator[](int index)
 {
+    if (type_ == TYPE_NONE) {
+        // create array with 1 element if type is none.
+        ensureTypeIsNoneOrEquals(TYPE_ARRAY);
+        setSize(1);
+    }
     assertIndexIsInRange(index);
     return (*value_.array_)[index];
 }
