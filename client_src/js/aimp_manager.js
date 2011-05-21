@@ -146,6 +146,7 @@ callRpc : function(method, params, callbacks) {
     Returns array of playlists.
         Param params.fields - array of strings represents field IDs.
             Available field IDs: 'id', 'title', 'duration', 'entries_count', 'size_of_entries'.
+            If param fields is not specified, following fields will be filled: id, title.
         Param callbacks - see description in AimpManager comments.
     Result is array of objects with members specified by params.fields param.
 */
@@ -158,6 +159,7 @@ getPlaylists : function(params, callbacks) {
         Param params.playlist_id - playlist ID.
         Param params.fields - array of fields each playlist entry will contain.
             Available fields are: 'id', 'title', 'artist', 'album', 'date', 'genre', 'bitrate', 'duration', 'filesize', 'rating'.
+            If param fields is not specified, following fields will be filled: id, title.
         Param params.start_index - index of first entry. Default: 0.
         Param params.entries_count - count of entries. Default: all entries.
         Param params.order_fields - array of field descriptions, used to order entries by multiple fields.
