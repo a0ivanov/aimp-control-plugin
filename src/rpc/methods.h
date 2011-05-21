@@ -517,7 +517,7 @@ public:
 
     std::string help()
     {
-        return "get_playlist_entries(int playlist_id, string fields[], int start_index, int entries_count, struct order_fields[], string search_string) "
+        return "get_playlist_entries(int playlist_id, string fields[], int start_index, int entries_count, struct order_fields[], string search_string, string format_string) "
                "returns struct with following members: "
                "    'count_of_found_entries' - (optional value. Defined if params.search_string is not empty) - count of entries "
                                                "which match params.search_string. See params.search_string param description for details. "
@@ -537,6 +537,8 @@ private:
 
     // See HelperFillRpcFields class commentaries.
     RpcValueSetHelpers::HelperFillRpcFields<PlaylistEntry> entry_fields_filler_;
+
+    const std::string kFORMAT_STRING_STRING;
 
     // rpc result struct keys.
     const std::string kENTRIES_RPCVALUE_KEY; // key for entries array.

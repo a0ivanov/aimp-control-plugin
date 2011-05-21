@@ -160,6 +160,8 @@ getPlaylists : function(params, callbacks) {
         Param params.fields - array of fields each playlist entry will contain.
             Available fields are: 'id', 'title', 'artist', 'album', 'date', 'genre', 'bitrate', 'duration', 'filesize', 'rating'.
             If param fields is not specified, following fields will be filled: id, title.
+        Param params.format_string - optional. If it is specified params.fields are ignored and all entries will represented by array [getFormattedTrackTitle(params.format_string)].
+			See docs about getFormattedTrackTitle() method for details.
         Param params.start_index - index of first entry. Default: 0.
         Param params.entries_count - count of entries. Default: all entries.
         Param params.order_fields - array of field descriptions, used to order entries by multiple fields.

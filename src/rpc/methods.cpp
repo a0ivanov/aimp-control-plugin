@@ -562,6 +562,22 @@ struct EntriesCountHandlerStub {
     void operator()(size_t /*count*/) const {}
 };
 
+struct Formatter {
+    const AIMPManager* aimp_manager_;
+    const std::string* format_string_;
+    Formatter(const AIMPManager* aimp_manager, const std::string* format_string)
+        :
+        aimp_manager_(aimp_manager),
+        format_string_(format_string)
+    {}
+
+    void operator()(const PlaylistEntry& entry, Rpc::Value& rpc_value) const { 
+        rpc_value = StringEncoding::utf16_to_utf8( aimp_manager_->getFormattedEntryTitle(entry, 
+                                                                                         *format_string_)
+                                                  );
+    }
+};
+
 GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager,
                                        Rpc::RequestHandler& rpc_request_handler
                                        )
@@ -569,6 +585,7 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager, MultiUserModeM
     AIMPRPCMethod("get_playlist_entries", aimp_manager, multi_user_mode_manager, rpc_request_handler),
     get_playlist_entries_templatemethod_( new GetPlaylistEntriesTemplateMethod(aimp_manager) ),
     entry_fields_filler_("entry"),
+    kFORMAT_STRING_STRING("format_string"),
     kTOTAL_ENTRIES_COUNT_RPCVALUE_KEY("total_entries_count"),
     kENTRIES_RPCVALUE_KEY("entries"),
     kCOUNT_OF_FOUND_ENTRIES_RPCVALUE_KEY("count_of_found_entries")
@@ -588,7 +605,7 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager, MultiUserModeM
         ( getStringFieldID(PlaylistEntry::FILESIZE), boost::bind( createSetter(&PlaylistEntry::getFileSize), _1, _2 ) )
         ( getStringFieldID(PlaylistEntry::RATING),   boost::bind( createSetter(&PlaylistEntry::getRating),   _1, _2 ) )
     ;
-        
+
     // fill supported field names.
     PlaylistEntries::SupportedFieldNames fields_names;
     BOOST_FOREACH(HelperFillRpcFields<PlaylistEntry>::RpcValueSetters::value_type& setter_it, entry_fields_filler_.setters_) {
@@ -639,15 +656,36 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
     const Rpc::Value& rpc_params = root_request["params"];
 
     // get list of required pairs(field id, field getter function).
-    if ( rpc_params.isMember("fields") ) {
-        entry_fields_filler_.initRequiredFieldsHandlersList(rpc_params["fields"]);
+    if ( rpc_params.isMember(kFORMAT_STRING_STRING) ) {        
+        // 'format_string' param has priority over 'fields' param.
+
+        const std::string& format_string = rpc_params[kFORMAT_STRING_STRING];
+
+        typedef RpcValueSetHelpers::HelperFillRpcFields<PlaylistEntry>::RpcValueSetters RpcValueSetters;
+        RpcValueSetters::iterator setter_it = entry_fields_filler_.setters_.find(kFORMAT_STRING_STRING);
+        if ( setter_it == entry_fields_filler_.setters_.end() ) {
+            setter_it = entry_fields_filler_.setters_.insert( std::make_pair(kFORMAT_STRING_STRING,
+                                                              RpcValueSetHelpers::HelperFillRpcFields<PlaylistEntry>::RpcValueSetter()
+                                                                             )
+                                                             ).first;
+        }
+        
+        setter_it->second = boost::bind<void>(Formatter(&aimp_manager_, &format_string),
+                                              _1, _2
+                                              );
+        entry_fields_filler_.setters_required_.clear();
+        entry_fields_filler_.setters_required_.push_back(setter_it);
     } else {
-        // set default fields
-        Rpc::Value fields;
-        fields.setSize(2);
-        fields[0] = "id";
-        fields[1] = "title";
-        entry_fields_filler_.initRequiredFieldsHandlersList(fields);
+        if ( rpc_params.isMember("fields") ) {
+            entry_fields_filler_.initRequiredFieldsHandlersList(rpc_params["fields"]);
+        } else {
+            // set default fields
+            Rpc::Value fields;
+            fields.setSize(2);
+            fields[0] = "id";
+            fields[1] = "title";
+            entry_fields_filler_.initRequiredFieldsHandlersList(fields);
+        }
     }
 
     Rpc::Value& rpc_result = root_response["result"];
