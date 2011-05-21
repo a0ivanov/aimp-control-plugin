@@ -393,6 +393,7 @@ public:
     GetPlaylistEntriesTemplateMethod(AIMPManager& aimp_manager)
         :
         aimp_manager_(aimp_manager),
+        kFIELDS_STRING("fields"),
         kENTRIES_COUNT_STRING("entries_count"),
         kFIELD_INDEX_STRING("field_index"),
         kDESCENDING_ORDER_STRING("desc"),
@@ -462,6 +463,7 @@ private:
     PlaylistEntries::RequiredFieldNames names_of_required_fields_; // list of fields requested by client.
 
     void initRequiredFieldsList(const Rpc::Value& requested_fields); // throws Rpc::Exception
+    const std::string kFIELDS_STRING;
 
     //! \return start entry index.
     const size_t getStartFromIndexFromRpcParam(int start_from_index, size_t max_value); // throws Rpc::Exception

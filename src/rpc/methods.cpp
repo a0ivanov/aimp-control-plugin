@@ -271,10 +271,11 @@ ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& r
     const Rpc::Value& params = root_request["params"];
     const AIMPManager::PlaylistsListType& playlists = aimp_manager_.getPlayLists();
 
-    // get list of required pairs(field id, field getter function).
-    playlist_fields_filler_.initRequiredFieldsHandlersList(params["fields"]);
-    if ( playlist_fields_filler_.setters_required_.empty() ) {
-        // if 'fields' param is empty, treat it as we got id and title fields.
+    // get list of required pairs(field id, field getter function).    
+    if ( params.isMember("fields") ) {
+        playlist_fields_filler_.initRequiredFieldsHandlersList(params["fields"]);
+    } else {
+        // set default fields
         Rpc::Value fields;
         fields.setSize(2);
         fields[0] = "id";
@@ -477,12 +478,16 @@ ResponseType GetPlaylistEntriesTemplateMethod::execute(const Rpc::Value& params,
                                                        EntriesCountHandler page_size_handler
                                                        )
 {
-    // ensure we got obligatory arguments: playlist id and array of entry fields to fill.
-    if (params.size() < 2) {
-        throw Rpc::Exception("Wrong arguments count. Wait at least two arguments: int value(playlist ID) and array of strings(entry fields to fill).", WRONG_ARGUMENT);
+    // ensure we got obligatory argument: playlist id.
+    if (params.size() < 1) {
+        throw Rpc::Exception("Wrong arguments count. Wait at least int 'playlist_id' argument.", WRONG_ARGUMENT);
     }
 
-    initRequiredFieldsList(params["fields"]);
+    if ( params.isMember(kFIELDS_STRING) ) {
+        initRequiredFieldsList(params[kFIELDS_STRING]);
+    } else {
+        names_of_required_fields_.clear();
+    }
 
     const Playlist& playlist = getPlayListFromRpcParam(aimp_manager_, params["playlist_id"]);
     const EntriesListType& entries = playlist.getEntries();
@@ -633,7 +638,17 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
 
     const Rpc::Value& rpc_params = root_request["params"];
 
-    entry_fields_filler_.initRequiredFieldsHandlersList(rpc_params["fields"]);
+    // get list of required pairs(field id, field getter function).
+    if ( rpc_params.isMember("fields") ) {
+        entry_fields_filler_.initRequiredFieldsHandlersList(rpc_params["fields"]);
+    } else {
+        // set default fields
+        Rpc::Value fields;
+        fields.setSize(2);
+        fields[0] = "id";
+        fields[1] = "title";
+        entry_fields_filler_.initRequiredFieldsHandlersList(fields);
+    }
 
     Rpc::Value& rpc_result = root_response["result"];
     Rpc::Value& rpcvalue_entries = rpc_result[kENTRIES_RPCVALUE_KEY];
