@@ -88,16 +88,16 @@ boost::tribool RequestHandler::callMethod(const Value& root_request,
 {
     assert(response);
 
-
-    const std::string& method_name = root_request["method"];
-    Method* method = getMethodByName(method_name);
-    if (method == NULL) {
-        response_serializer.serializeFault(root_request, method_name + ": method not found", METHOD_NOT_FOUND_ERROR, response);
-        return false;
-    }
-
-    // execute method
     try {
+        const std::string& method_name = root_request["method"];
+        Method* method = getMethodByName(method_name);
+        if (method == NULL) {
+            response_serializer.serializeFault(root_request, method_name + ": method not found", METHOD_NOT_FOUND_ERROR, response);
+            return false;
+        }
+
+        
+        { // execute method
         //PROFILE_EXECUTION_TIME( method_name.c_str() );
 
         active_delayed_response_sender_ = delayed_response_sender; // save current http request handler ref in weak ptr to use in delayed response.
@@ -116,6 +116,7 @@ boost::tribool RequestHandler::callMethod(const Value& root_request,
 
             response_serializer.serializeSuccess(root_response, response);
             return true;
+        }
         }
     } catch (const Exception& e) {
         response_serializer.serializeFault(root_request, e.message(), e.code(), response);
