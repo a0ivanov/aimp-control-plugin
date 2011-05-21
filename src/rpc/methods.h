@@ -393,9 +393,8 @@ public:
     GetPlaylistEntriesTemplateMethod(AIMPManager& aimp_manager)
         :
         aimp_manager_(aimp_manager),
-        kFIELDS_STRING("fields"),
         kENTRIES_COUNT_STRING("entries_count"),
-        kFIELD_INDEX_STRING("field_index"),
+        kFIELD_STRING("field"),
         kDESCENDING_ORDER_STRING("desc"),
         kORDER_DIRECTION_STRING("dir"),
         kORDER_FIELDS_STRING("order_fields"),
@@ -404,6 +403,7 @@ public:
         using namespace RpcResultUtils;
 
         // initialization of fields available to order.
+        fields_to_order_[ getStringFieldID(PlaylistEntry::ID)       ] = AIMPPlayer::ID;
         fields_to_order_[ getStringFieldID(PlaylistEntry::TITLE)    ] = AIMPPlayer::TITLE;
         fields_to_order_[ getStringFieldID(PlaylistEntry::ARTIST)   ] = AIMPPlayer::ARTIST;
         fields_to_order_[ getStringFieldID(PlaylistEntry::ALBUM)    ] = AIMPPlayer::ALBUM;
@@ -427,15 +427,10 @@ public:
 
     std::string help()
     {
-        return "get_playlist_entries(int playlist_id, string fields[], int start_index, int entries_count, struct order_fields[], string search_string) "
-               "returns struct with following members: "
-               "    'count_of_found_entries' - (optional value. Defined if params.search_string is not empty) - count of entries "
-                                               "which match params.search_string. See params.search_string param description for details. "
-               "    'entries' - array of entries. Entry is object with members specified by params.fields. "
-               "Get sub range of entries: start_index and entries_count used to get part of entries instead whole playlist. "
+        return "Get sub range of entries: start_index and entries_count used to get part of entries instead whole playlist. "
                "Ordering: order_fields is array of field descriptions, used to order entries by multiple fields. Each descriptor is associative array with keys: "
-               "    'field_index' - index of field to order in entry_fields[] array; "
-               "    'dir' - order('asc' - ascending, 'desc' - descending). "
+               "    'field' - field to order name. Available fields are: id, title, artist, album, date, genre, bitrate, duration, filename, rating; "
+               "    'dir'   - order('asc' - ascending, 'desc' - descending); "
                "Filtering: only those entries will be returned which have at least one occurence of search_string in one of entry string field (title, artist, album, data, genre).";
     }
 
@@ -460,11 +455,6 @@ private:
 
     PlaylistEntries::SupportedFieldNames supported_fields_names_; // list of entry field names which can be handled.
     
-    PlaylistEntries::RequiredFieldNames names_of_required_fields_; // list of fields requested by client.
-
-    void initRequiredFieldsList(const Rpc::Value& requested_fields); // throws Rpc::Exception
-    const std::string kFIELDS_STRING;
-
     //! \return start entry index.
     const size_t getStartFromIndexFromRpcParam(int start_from_index, size_t max_value); // throws Rpc::Exception
 
@@ -473,7 +463,7 @@ private:
     const std::string kENTRIES_COUNT_STRING;
 
     // entries ordering
-    const std::string kFIELD_INDEX_STRING,
+    const std::string kFIELD_STRING,
                       kDESCENDING_ORDER_STRING,
                       kORDER_DIRECTION_STRING,
                       kORDER_FIELDS_STRING;
@@ -532,11 +522,7 @@ public:
                "    'count_of_found_entries' - (optional value. Defined if params.search_string is not empty) - count of entries "
                                                "which match params.search_string. See params.search_string param description for details. "
                "    'entries' - array of entries. Entry is object with members specified by params.fields. "
-               "Get sub range of entries: start_index and entries_count used to get part of entries instead whole playlist. "
-               "Ordering: order_fields is array of field descriptions, used to order entries by multiple fields. Each descriptor is associative array with keys: "
-               "    'field_index' - index of field to order in entry_fields[] array; "
-               "    'dir' - order('asc' - ascending, 'desc' - descending). "
-               "Filtering: only those entries will be returned which have at least one occurence of search_string in one of entry string field (title, artist, album, data, genre).";
+               + get_playlist_entries_templatemethod_->help();
     }
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
@@ -580,7 +566,11 @@ public:
 
     std::string help()
     {
-        return "";
+        return "get_entry_page_in_datatable() requires the same args as get_playlist_entries() method + int track_id argument. "
+               "Result is object with following members:"
+		               "int page_number - if track is not found this value is -1. "
+                       "int track_index_on_page - if track is not found this value is -1. "
+        ;
     }
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);

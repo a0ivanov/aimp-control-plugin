@@ -14,6 +14,7 @@ EntriesSorter::EntriesSorter(const EntriesListType& entries)
     entries_(entries)
 {
 #define MAKE_CACHE_FOR_FIELD(field_name) OrderedEntryIDsCache( createComparatorPlaylistEntryIDs(entries_, &PlaylistEntry::get##field_name) )
+    ordered_caches_.insert(std::make_pair(ID,       MAKE_CACHE_FOR_FIELD(ID) ) );
     ordered_caches_.insert(std::make_pair(TITLE,    MAKE_CACHE_FOR_FIELD(Title) ) );
     ordered_caches_.insert(std::make_pair(ARTIST,   MAKE_CACHE_FOR_FIELD(Artist) ) );
     ordered_caches_.insert(std::make_pair(ALBUM,    MAKE_CACHE_FOR_FIELD(Album) ) );

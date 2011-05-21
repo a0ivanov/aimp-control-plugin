@@ -298,23 +298,23 @@ ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& r
     return RESPONSE_IMMEDIATE;
 }
 
-void GetPlaylistEntriesTemplateMethod::initRequiredFieldsList(const Rpc::Value& requested_fields) // throws Rpc::Exception
-{
-    const size_t requested_fields_count = requested_fields.size();
-    names_of_required_fields_.clear();
-    names_of_required_fields_.reserve(requested_fields_count);
-
-    for (size_t field_index = 0; field_index < requested_fields_count; ++field_index) {
-        const std::string& field = requested_fields[field_index];
-        PlaylistEntries::SupportedFieldNames::const_iterator supported_field_it = supported_fields_names_.find(field);
-        if ( supported_field_it == supported_fields_names_.end() ) {
-            std::ostringstream msg;
-            msg << "Wrong argument: field " << field << " is not supported.";
-            throw Rpc::Exception(msg.str(), WRONG_ARGUMENT);
-        }
-        names_of_required_fields_.push_back(supported_field_it);
-    }
-}
+//void GetPlaylistEntriesTemplateMethod::initRequiredFieldsList(const Rpc::Value& requested_fields) // throws Rpc::Exception
+//{
+//    const size_t requested_fields_count = requested_fields.size();
+//    names_of_required_fields_.clear();
+//    names_of_required_fields_.reserve(requested_fields_count);
+//
+//    for (size_t field_index = 0; field_index < requested_fields_count; ++field_index) {
+//        const std::string& field = requested_fields[field_index];
+//        PlaylistEntries::SupportedFieldNames::const_iterator supported_field_it = supported_fields_names_.find(field);
+//        if ( supported_field_it == supported_fields_names_.end() ) {
+//            std::ostringstream msg;
+//            msg << "Wrong argument: field " << field << " is not supported.";
+//            throw Rpc::Exception(msg.str(), WRONG_ARGUMENT);
+//        }
+//        names_of_required_fields_.push_back(supported_field_it);
+//    }
+//}
 
 const size_t GetPlaylistEntriesTemplateMethod::getStartFromIndexFromRpcParam(int start_from_index, size_t max_value) // throws Rpc::Exception
 {
@@ -356,18 +356,24 @@ void GetPlaylistEntriesTemplateMethod::fillFieldToOrderDescriptors(const Rpc::Va
     using namespace EntriesSortUtil;
     field_to_order_descriptors_.clear();
     const size_t fields_count = entry_fields_to_order.size();
-    const size_t required_fields_count = names_of_required_fields_.size();
-
+    
     for (size_t field_index = 0; field_index < fields_count; ++field_index) {
        const Rpc::Value& field_desc = entry_fields_to_order[field_index];
         try {
-            const int field_to_order_index = field_desc[kFIELD_INDEX_STRING];
-            if (0 <= field_to_order_index && static_cast<size_t>(field_to_order_index) < required_fields_count) {
+            const std::string& field_to_order = field_desc[kFIELD_STRING];
+            
+            FieldsToOrderMap::const_iterator supported_field_it = fields_to_order_.find(field_to_order);
+            if ( supported_field_it != fields_to_order_.end() ) {
                 // TODO: avoid duplicates
-                field_to_order_descriptors_.push_back( FieldToOrderDescriptor( fields_to_order_[ *names_of_required_fields_[field_to_order_index] ],
-                                                                               (field_desc[kORDER_DIRECTION_STRING] == kDESCENDING_ORDER_STRING) ? DESCENDING : ASCENDING
+                field_to_order_descriptors_.push_back( FieldToOrderDescriptor( supported_field_it->second,
+                                                                               (field_desc[kORDER_DIRECTION_STRING] == kDESCENDING_ORDER_STRING) ? DESCENDING 
+                                                                                                                                                 : ASCENDING
                                                                               )
                                                       );
+            } else {
+                std::ostringstream msg;
+                msg << "Wrong argument: ordering by field " << field_to_order << " is not supported.";
+                throw Rpc::Exception(msg.str(), WRONG_ARGUMENT);
             }
         } catch (Rpc::Exception&) {
             // just ignore wrong order field description, ordering is not necessary.
@@ -481,12 +487,6 @@ ResponseType GetPlaylistEntriesTemplateMethod::execute(const Rpc::Value& params,
     // ensure we got obligatory argument: playlist id.
     if (params.size() < 1) {
         throw Rpc::Exception("Wrong arguments count. Wait at least int 'playlist_id' argument.", WRONG_ARGUMENT);
-    }
-
-    if ( params.isMember(kFIELDS_STRING) ) {
-        initRequiredFieldsList(params[kFIELDS_STRING]);
-    } else {
-        names_of_required_fields_.clear();
     }
 
     const Playlist& playlist = getPlayListFromRpcParam(aimp_manager_, params["playlist_id"]);

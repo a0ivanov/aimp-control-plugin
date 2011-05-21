@@ -1201,11 +1201,11 @@ public:
             ( 'H', boost::bind<std::wstring>(SampleRateFormatter(), _1) )
             //( 'L', _MAKE_FUNC_(PlaylistEntry::getDuration) ) // this returns milliseconds, so use adequate DurationFormatter.
             ( 'L', boost::bind<std::wstring>(DurationFormatter(), _1) )
+            ( 'M', _MAKE_FUNC_(PlaylistEntry::getRating) )
             //( 'S', _MAKE_FUNC_(PlaylistEntry::getFileSize) ) // this returns size in bytes, so use adequate FileSizeFormatter.
             ( 'S', boost::bind<std::wstring>(FileSizeFormatter(), _1) )
             ( 'T', _MAKE_FUNC_(PlaylistEntry::getTitle) )
             ( 'Y', _MAKE_FUNC_(PlaylistEntry::getDate) )
-            ( 'M', _MAKE_FUNC_(PlaylistEntry::getRating) )
         ;
         formatters_end_ = formatters_.end();
 #undef _MAKE_FUNC_

@@ -164,7 +164,7 @@ getPlaylists : function(params, callbacks) {
         Param params.entries_count - count of entries. Default: all entries.
         Param params.order_fields - array of field descriptions, used to order entries by multiple fields.
                 Each descriptor is object with members:
-                    'field_index' - index of field to order in params.fields array.
+                    'field' - field to order. Available fields are: 'id', 'title', 'artist', 'album', 'date', 'genre', 'bitrate', 'duration', 'filesize', 'rating'..
                     'dir' - order('asc' - ascending, 'desc' - descending)
         Param params.search_string - only those entries will be returned which have at least
                      one occurence of params.search_string in one of entry string field (title, artist, album, data, genre).

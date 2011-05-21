@@ -138,6 +138,7 @@ function createEntriesControl(index, $tab_ui)
                 };
             }
 
+			var fields = fnGetKey(aoData, 'sColumns').split(',');
             /* Sort descriptors */
             var order_fields = [];
             var iSortingCols = fnGetKey(aoData, 'iSortingCols');
@@ -145,14 +146,14 @@ function createEntriesControl(index, $tab_ui)
                 var iSortColCurrent = fnGetKey(aoData, 'iSortCol_' + i);
                 if ( fnGetKey(aoData, 'bSortable_' + iSortColCurrent) === true) {
                     order_fields.push({
-                        field_index : iSortColCurrent,
+                        field : fields[iSortColCurrent],
                         dir :  fnGetKey(aoData, 'sSortDir_' + i)
                     });
                 }
             }
 
 			var request_params = {  playlist_id   : parseInt(playlist_id),
-									fields        : fnGetKey(aoData, 'sColumns').split(','),
+									fields        : fields,
 									order_fields  : order_fields,
 									start_index   : fnGetKey(aoData, 'iDisplayStart'),
 									entries_count : fnGetKey(aoData, 'iDisplayLength'),
