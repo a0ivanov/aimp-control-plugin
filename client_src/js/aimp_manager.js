@@ -299,7 +299,7 @@ playNext : function(params, callbacks) {
         Param params.value - status value, range depends on status ID.
         Param callbacks - see description in AimpManager comments.
     Supported status IDs and their values ranges:
-        status ID          value range
+        status ID         value range
         VOLUME      = 1,  [0,100]
         BALANCE     = 2,
         SPEED       = 3,
@@ -332,10 +332,10 @@ playNext : function(params, callbacks) {
 
         REPEAT      = 29,  [0, 1]
         ON_STOP     = 30,
-        POS         = 31,
+        POS         = 31,  [0, LENGTH)
         LENGTH      = 32,
-        REPEATPLS   = 33,
-        REP_PLS_1   = 34,
+        REPEATPLS   = 33,  [0, 1]
+        REP_PLS_1   = 34,  [0, 1]
         KBPS        = 35,
         KHZ         = 36,
         MODE        = 37,
