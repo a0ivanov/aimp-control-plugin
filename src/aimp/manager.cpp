@@ -1049,16 +1049,28 @@ namespace
 {
 
 struct BitrateFormatter {
+    mutable std::wostringstream os;
+
+    // need to define ctors since wostringstream has no copy ctor.
+    BitrateFormatter() {}
+    BitrateFormatter(const BitrateFormatter&) : os() {}
+
     std::wstring operator()(const PlaylistEntry& entry) const { 
-        std::wostringstream os;
+        os.seekp(0, std::ios_base::beg);
         os << entry.getBitrate() << " kbps";
         return os.str();
     }
 };
 
 struct ChannelsCountFormatter {
+    mutable std::wostringstream os;
+
+    // need to define ctors since wostringstream has no copy ctor.
+    ChannelsCountFormatter() {}
+    ChannelsCountFormatter(const ChannelsCountFormatter&) : os() {}
+
     std::wstring operator()(const PlaylistEntry& entry) const { 
-        std::wostringstream os;
+        os.seekp(0, std::ios_base::beg);
         switch ( entry.getChannelsCount() ) {
         case 0:
             break;
@@ -1078,9 +1090,14 @@ struct ChannelsCountFormatter {
 
 struct DurationFormatter
 {
+    mutable std::wostringstream os;
+
+    // need to define ctors since wostringstream has no copy ctor.
+    DurationFormatter() {}
+    DurationFormatter(const DurationFormatter&) : os() {}
+
     std::wstring operator()(const PlaylistEntry& entry) const {
-        std::wostringstream os;
-        //os.seekp(0, std::ios_base::beg);
+        os.seekp(0, std::ios_base::beg);
         formatTime( os, entry.getDuration() );
         return os.str();
     }
@@ -1104,9 +1121,6 @@ struct DurationFormatter
         os << delimeter;
         os << setfill(L'0') << setw(2) << time_sec;
     }
-//private:
-//    DurationFormatter(const DurationFormatter&);
-//    DurationFormatter& operator=(const DurationFormatter&);
 };
 
 struct FileNameExtentionFormatter {
@@ -1123,9 +1137,15 @@ struct FileNameExtentionFormatter {
 };
 
 struct SampleRateFormatter {
+    mutable std::wostringstream os;
+
+    // need to define ctors since wostringstream has no copy ctor.
+    SampleRateFormatter() {}
+    SampleRateFormatter(const SampleRateFormatter&) : os() {}
+
     std::wstring operator()(const PlaylistEntry& entry) const { 
         const DWORD rate_in_hertz = entry.getSampleRate();
-        std::wostringstream os;
+        os.seekp(0, std::ios_base::beg);
         os << (rate_in_hertz / 1000)
            << " kHz";
         return os.str();
@@ -1134,9 +1154,13 @@ struct SampleRateFormatter {
 
 struct FileSizeFormatter
 {
+    mutable std::wostringstream os;
+    // need to define ctors since wostringstream has no copy ctor.
+    FileSizeFormatter() {}
+    FileSizeFormatter(const FileSizeFormatter&) : os() {}
+
     std::wstring operator()(const PlaylistEntry& entry) const {
-        std::wostringstream os;
-        //os.seekp(0, std::ios_base::beg);
+        os.seekp(0, std::ios_base::beg);
         formatSize( os, entry.getFileSize() );
         return os.str();
     }
@@ -1166,7 +1190,7 @@ public:
         insert(formatters_)
             ( 'A', _MAKE_FUNC_(PlaylistEntry::getAlbum) )
             ( 'a', _MAKE_FUNC_(PlaylistEntry::getArtist) )
-            //( 'B', _MAKE_FUNC_(PlaylistEntry::getBitrate) ) // use BitrateFormatter which add units(ex.: kbps)
+            //( 'B', _MAKE_FUNC_(PlaylistEntry::getBitrate) ) // use BitrateFormatter which adds units(ex.: kbps)
             ( 'B', boost::bind<std::wstring>(BitrateFormatter(), _1) )
             //( 'C', _MAKE_FUNC_(PlaylistEntry::getChannelsCount) ) // use ChannelsCountFormatter which uses string representation (ex.: Mono/Stereo)
             ( 'C', boost::bind<std::wstring>(ChannelsCountFormatter(), _1) )
