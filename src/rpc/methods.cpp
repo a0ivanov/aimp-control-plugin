@@ -70,7 +70,7 @@ ResponseType GetFormattedEntryTitle::execute(const Rpc::Value& root_request, Rpc
 {
     const Rpc::Value& params = root_request["params"];
     if (params.type() == Rpc::Value::TYPE_OBJECT && params.size() != 3) {
-        throw Rpc::Exception("Wrong arguments count. Wait 3 arguments: int track ID, int playlist ID, string format string", WRONG_ARGUMENT);
+        throw Rpc::Exception("Wrong arguments count. Wait 3 arguments: int track_id, int playlist_id, string format_string", WRONG_ARGUMENT);
     }
 
     const TrackDescription track_desc(params["track_id"], params["playlist_id"]);
