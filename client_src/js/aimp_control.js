@@ -65,7 +65,7 @@ function createEntriesControl(index, $tab_ui)
 			var aData = $table.fnGetData(row_index);
 			var track_id = aData[0];
 			return { playlist_id : parseInt(playlist_id),
-					 track_id : parseInt(track_id)
+					 track_id    : parseInt(track_id)
 				   };	
 		}
 		return null;
@@ -406,12 +406,13 @@ function initTrackControlMenu(control_menu_descriptor)
             // if current track is active proceed playing, do not start track from beginning.
             var play_args = isCurrentTrackActive(control_menu_descriptor)
                             ? {}
-                            : { track_id : control_menu_descriptor.entry_id,
+                            : { track_id    : parseInt(control_menu_descriptor.entry_id),
                                 playlist_id : parseInt(control_menu_descriptor.playlist_id)
                               }
             ;
             aimp_manager.play(play_args,
-                              { on_exception : on_control_menu_command }); // start playback.
+                              { on_exception : on_control_menu_command }
+							  ); // start playback.
         } else {
             aimp_manager.pause({}, { on_exception : on_control_menu_command }); // pause playback
         }
