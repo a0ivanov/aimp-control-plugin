@@ -924,6 +924,10 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMPManager::getCoverImage(TrackDescri
 
 const Playlist& AIMPManager::getPlaylist(PlaylistID playlist_id) const
 {
+    if (playlist_id == -1) { // treat ID -1 as active playlist.
+        playlist_id = aimp_playlist_manager_->AIMP_PLS_ID_ActiveGet();
+    }
+
     PlaylistsListType::const_iterator playlist_iterator( playlists_.find(playlist_id) );
     if ( playlist_iterator == playlists_.end() ) {
         std::ostringstream msg;
