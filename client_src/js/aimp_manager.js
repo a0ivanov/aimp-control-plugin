@@ -46,7 +46,7 @@ function AimpManager() {
     );
 
     function initLocalizedErrorMessages() {
-        // syncronize RPC error codes to localized string IDs.
+        // synchronize RPC error codes to localized string IDs.
         // Codes in range [1-1000] for RPC methods errors.
         /*
         enum ERROR_CODES { REQUEST_PARSING_ERROR = 1, METHOD_NOT_FOUND_ERROR,
@@ -157,7 +157,7 @@ getPlaylists : function(params, callbacks) {
 /*
     Returns array of playlist entries.
         Param params.playlist_id - playlist ID.
-        Param params.fields - array of fields each playlist entry will contain.
+        Param params.fields - array of fields each playlist entry will contain. Optional param.
             Available fields are: 'id', 'title', 'artist', 'album', 'date', 'genre', 'bitrate', 'duration', 'filesize', 'rating'.
             If param fields is not specified, following fields will be filled: id, title.
         Param params.format_string - optional. If it is specified params.fields are ignored and all entries will represented by array [getFormattedTrackTitle(params.format_string)].
@@ -219,7 +219,7 @@ getPlaylistEntriesCount : function(params, callbacks) {
             %T - title
             %Y - date
             %M - rating
-            %IF(A, B, C) - if A is empty use C else use B.
+            %IF(A,B,C) - if A is empty use C else use B.
         Example: format_string = "%a - %T", result = "artist - title".
         Param callbacks - see description in AimpManager comments.
     Result - is object with member 'formatted_string', string.
