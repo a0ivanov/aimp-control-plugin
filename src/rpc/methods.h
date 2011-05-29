@@ -1,5 +1,8 @@
 // Copyright (c) 2011, Alexey Ivanov
-
+/*! 
+    \file
+    \mainpage AIMP Control RPC functionality
+*/
 #ifndef RPC_METHODS_H
 #define RPC_METHODS_H
 
@@ -19,13 +22,29 @@ namespace MultiUserMode { class MultiUserModeManager; }
 
 namespace Rpc { class DelayedResponseSender; }
 
-//! contains RPC methods definitions.
+// contains RPC methods definitions.
 namespace AimpRpcMethods
 {
 
-// Use codes in range [11-1000] for RPC methods errors. Rpc server uses range [1-10] for its errors.
-enum ERROR_CODES { WRONG_ARGUMENT = 11,
-                   PLAYBACK_FAILED, SHUFFLE_MODE_SET_FAILED, REPEAT_MODE_SET_FAILED,
+/*!
+    \page pg_common_errors Common errors
+    
+    Rpc::Value's and request parsing errors:
+        - REQUEST_PARSING_ERROR  = 1
+        - METHOD_NOT_FOUND_ERROR = 2
+        - TYPE_ERROR             = 3
+        - INDEX_RANGE_ERROR      = 4
+        - OBJECT_ACCESS_ERROR    = 5
+        - VALUE_RANGE_ERROR      = 6
+*/
+
+/*! 
+    \brief Error codes which RPC functions return.    
+    \internal Use codes in range [11-1000] for RPC methods errors. Rpc server uses range [1-10] for its errors. \endinternal
+*/
+enum ERROR_CODES { WRONG_ARGUMENT = 11, /*!< returned when arguments passed in function can't be processed. Reasons: missing required arg, wrong type. */
+                   PLAYBACK_FAILED, /*!< returned when AIMP can't start playback of requested track. */
+                   SHUFFLE_MODE_SET_FAILED, REPEAT_MODE_SET_FAILED,
                    VOLUME_OUT_OF_RANGE, VOLUME_SET_FAILED, MUTE_SET_FAILED,
                    ENQUEUE_TRACK_FAILED, DEQUEUE_TRACK_FAILED,
                    PLAYLIST_NOT_FOUND,
@@ -38,9 +57,9 @@ enum ERROR_CODES { WRONG_ARGUMENT = 11,
 using namespace AIMPPlayer;
 using namespace MultiUserMode;
 
-/*!
-    \brief Base class for all AIMP RPC methods.
-           Contains references to AIMPManager and MultiUserModeManager.
+/*
+    Base class for all AIMP RPC methods.
+    Contains references to AIMPManager and MultiUserModeManager.
 */
 class AIMPRPCMethod : public Rpc::Method
 {
@@ -71,8 +90,25 @@ private:
     AIMPRPCMethod();
 };
 
-
-//! Starts playback.
+/*! 
+    \brief Starts playback.
+    \param track_id - int
+    \param playlist_id - int
+    \remark If no params is specified, starts playback of current track in current playlist.
+    \return object which describes:
+                - success: current track.
+                  Example:
+\code
+{ "track_id" : 0, "playlist_id" : 2136855104 }
+\endcode
+                - failure: object which describes error. Can return error ::PLAYBACK_FAILED in addtion to \ref pg_common_errors.
+                  Example:
+\code
+{"error":{"code":12,
+          "message":"Playback specified track failed. Track does not exist or track's source is not available."}
+}
+\endcode
+*/
 class Play : public AIMPRPCMethod
 {
 public:
@@ -90,7 +126,11 @@ public:
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 };
 
-//! Pauses playback.
+/*! 
+    \brief Pauses playback.
+    \return object which describes current playback state.
+            Example: \code{ "playback_state" : "paused" }\endcode
+*/
 class Pause : public AIMPRPCMethod
 {
 public:
@@ -106,7 +146,11 @@ public:
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 };
 
-//! Stops playback.
+/*! 
+    \brief Stops playback.
+    \return object which describes current playback state.
+            Example:\code{ "playback_state" : "stopped" }\endcode
+*/
 class Stop : public AIMPRPCMethod
 {
 public:
@@ -122,7 +166,11 @@ public:
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 };
 
-//! Plays previous track.
+/*! 
+    \brief Plays previous track.
+    \return object which describes current track.
+            Example:\code{ "track_id" : 0, "playlist_id" : 2136855104 }\endcode
+*/
 class PlayPrevious : public AIMPRPCMethod
 {
 public:
@@ -138,7 +186,11 @@ public:
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 };
 
-//! Plays next track.
+/*! 
+    \brief Plays next track.
+    \return object which describes current track.
+            Example:\code{ "track_id" : 0, "playlist_id" : 2136855104 }\endcode
+*/
 class PlayNext : public AIMPRPCMethod
 {
 public:
@@ -154,7 +206,54 @@ public:
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 };
 
-//! Gets/sets AIMP status.
+/*! 
+    \brief Gets/sets AIMP status.
+    \param status_id - int: ID of required status. The following IDs are available(status ID, status value range):
+      - VOLUME      = 1,  [0,100]
+      - BALANCE     = 2,
+      - SPEED       = 3,
+      - Player      = 4,
+      - MUTE        = 5,  [0, 1]
+      - REVERB      = 6,
+      - ECHO        = 7,
+      - CHORUS      = 8,
+      - Flanger     = 9,
+      - EQ_STS      = 10,
+      - EQ_SLDR01   = 11,
+      - EQ_SLDR02   = 12,
+      - EQ_SLDR03   = 13,
+      - EQ_SLDR04   = 14,
+      - EQ_SLDR05   = 15,
+      - EQ_SLDR06   = 16,
+      - EQ_SLDR07   = 17,
+      - EQ_SLDR08   = 18,
+      - EQ_SLDR09   = 19,
+      - EQ_SLDR10   = 20,
+      - EQ_SLDR11   = 21,
+      - EQ_SLDR12   = 22,
+      - EQ_SLDR13   = 23,
+      - EQ_SLDR14   = 24,
+      - EQ_SLDR15   = 25,
+      - EQ_SLDR16   = 26,
+      - EQ_SLDR17   = 27,
+      - EQ_SLDR18   = 28,
+      - REPEAT      = 29,  [0, 1]
+      - ON_STOP     = 30,
+      - POS         = 31,  [0, LENGTH)
+      - LENGTH      = 32,
+      - REPEATPLS   = 33,  [0, 1]
+      - REP_PLS_1   = 34,  [0, 1]
+      - KBPS        = 35,
+      - KHZ         = 36,
+      - MODE        = 37,
+      - RADIO       = 38,
+      - STREAM_TYPE = 39,
+      - TIMER       = 40,
+      - SHUFFLE     = 41   [0, 1]
+    \param value - int, optional: new status value. Value range depends on status ID. If value is not specified, function returns current status.
+    \return object which describes current status value.
+            Example:\code{ "value" : 0 }\endcode
+*/
 class Status : public AIMPRPCMethod
 {
 public:
@@ -164,7 +263,7 @@ public:
 
     std::string help()
     {
-        return "int status(int statusID, int status_value) sets specified status of player to specified value. "
+        return "int status(int status_id, int value) sets specified status of player to specified value. "
                "If status_value is not specified returns current requested status.";
     }
 
@@ -175,7 +274,13 @@ private:
     bool statusGetSetSupported(AIMPManager::STATUS status) const;
 };
 
-//! Gets/sets shuffle playback mode.
+/*! 
+    \brief Gets/sets shuffle playback mode.
+    \param shuffle_on - boolean, optional.
+    \return object which describes current shuffle mode.
+            Example:\code{ "shuffle_mode_on" : false }\endcode
+    \remark it's equivalent to Status function called with status ID SHUFFLE.
+*/
 class ShufflePlaybackMode : public AIMPRPCMethod
 {
 public:
@@ -185,14 +290,20 @@ public:
 
     std::string help()
     {
-        return "bool shuffle_playback_mode(bool shuffle_playback_on) activates or deactivates shuffle playback mode. "
+        return "bool shuffle_playback_mode(bool shuffle_on) activates or deactivates shuffle playback mode. "
                "If no arguments are passed returns current state of shuffle mode.";
     }
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 };
 
-//! Gets/sets repeat playback mode.
+/*! 
+    \brief Gets/sets repeat playback mode.
+    \param repeat_on - boolean, optional.
+    \return object which describes current repeat mode.
+            Example:\code{ "repeat_mode_on" : false }\endcode
+    \remark it's equivalent to Status function called with status ID REPEAT.
+*/
 class RepeatPlaybackMode : public AIMPRPCMethod
 {
 public:
@@ -202,14 +313,20 @@ public:
 
     std::string help()
     {
-        return "bool repeat_playback_mode(bool repeat_playback_on) activates or deactivates repeat playlist playback mode. "
+        return "bool repeat_playback_mode(bool repeat_on) activates or deactivates repeat playlist playback mode. "
                "If no arguments are passed returns current state of repeat mode.";
     }
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 };
 
-//! Gets/sets volume level in percents.
+/*! 
+    \brief Gets/sets volume level.
+    \param level - int, optional. Volume level in percents. Must be in range [0, 100].
+    \return object which describes current volume level.
+            Example:\code{ "volume" : 100 }\endcode
+    \remark it's equivalent to Status function called with status ID VOLUME.
+*/
 class VolumeLevel : public AIMPRPCMethod
 {
 public:
@@ -225,7 +342,13 @@ public:
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 };
 
-//! Gets/sets mute mode.
+/*! 
+    \brief Gets/sets mute mode.
+    \param mute_on - boolean, optional.
+    \return object which describes current mute mode status.
+            Example:\code{ "mute_on" : false }\endcode
+    \remark it's equivalent to Status function called with status ID MUTE.
+*/
 class Mute : public AIMPRPCMethod
 {
 public:
@@ -243,7 +366,31 @@ public:
 };
 
 /*!
-    \return formatted string for specified entry. See AIMPManager::getFormattedEntryTitle() for details about format string.
+    \brief Returns formatted string for specified track.
+
+           Acts like printf() analog, see detailes below.
+    \param track_id - int.
+    \param playlist_id - int.
+    \param format_string - string, can contain following format arguments:
+    \verbatim
+    %A - album
+    %a - artist
+    %B - bitrate
+    %C - channels count
+    %G - genre
+    %H - sample rate
+    %L - duration
+    %S - filesize
+    %T - title
+    %Y - date
+    %M - rating
+    %IF(A,B,C) - if A is empty use C else use B.
+    \endverbatim
+
+    \return formatted_string - string, formatted string for entry.
+            Example:\code{"formatted_string":".:: 03:02 :: Stereophonics - A Thousand Trees :: MP3 :: 44 kHz, 320 kbps, 6.98 Mb ::."}\endcode
+            when format_string is \code".:: %L :: %IF(%a,%a - %T,%T) :: %E :: %H, %B, %S ::."\endcode
+    \remark You need to escape \verbatim characters %,) with '%' char. Example: "%IF(%a , %a %%%,%) %T, %T)" will be formatted as "Stereophonics %,) A Thousand Trees" \endverbatim
 */
 class GetFormattedEntryTitle : public AIMPRPCMethod
 {
@@ -270,15 +417,21 @@ public:
                 "    %Y - date"
                 "    %M - rating"
                 "Example: format_string = '%a - %T', result = 'artist - title'."
-                "Param callbacks - see description at AimpManager commentaries."
             "Result - is object with member 'formatted_string', string."
         ;
     }
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
-};
+} ;
+typedef GetFormattedEntryTitle get_formatted_entry_title;
 
-//! \return all info about entry.
+/*! 
+    \brief Returns info about track.
+    \param track_id - int
+    \param playlist_id - int.
+    \return object which describes specified track.
+            Example:\code{"album":"Word Gets Around","artist":"Stereophonics","bitrate":320,"date":"1997","duration":182961,"filesize":7318732,"genre":"","id":0,"rating":5,"title":"A Thousand Trees"}}\endcode
+*/
 class GetPlaylistEntryInfo : public AIMPRPCMethod
 {
 public:
@@ -296,7 +449,12 @@ public:
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 };
 
-//! Enqueues track with track_id in playlist with playlist_id for playing.
+/*! 
+    \brief Enqueues track for playing.
+    \param track_id - int
+    \param playlist_id - int
+    \param insert_at_queue_beginning - boolean, optional, default is false. If true enqueue at the beginning of queue.
+*/
 class EnqueueTrack : public AIMPRPCMethod
 {
 public:
@@ -313,7 +471,11 @@ public:
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 };
 
-//! Removes track with track_id in playlist with playlist_id from AIMP play queue.
+/*! 
+    \brief Removes track from AIMP play queue.
+    \param track_id - int
+    \param playlist_id - int
+*/
 class RemoveTrackFromPlayQueue : public AIMPRPCMethod
 {
 public:
@@ -330,9 +492,19 @@ public:
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 };
 
-/*! TODO: add description here
-    \return list of playlists. Set of fields for each playlist should be specified.
-    Available arguments are: 'id', 'title', 'duration', 'entries_count', 'size_of_entries'.
+/*! 
+    \brief Returns list of playlists.
+    \param fields - array of strings, optional. List of fields that need to be filled.
+           Available fields are:
+            - id
+            - title
+            - duration
+            - entries_count
+            - size_of_entries
+
+           If 'fields' param is not specified the function treats it equals "id, title".
+    \return object which describes playlists.
+            Example:\code{"id":2136854848,"title":"Default"},{"id":2136855104,"title":"stereophonics"}\endcode
 */
 class GetPlaylists : public AIMPRPCMethod
 {
@@ -383,9 +555,8 @@ typedef boost::function<void(EntriesRange)> EntriesHandler;
 typedef boost::function<void(EntriesIDsRange, const EntriesListType&)> EntryIDsHandler;
 typedef boost::function<void(size_t)> EntriesCountHandler;
 
-/*! 
-    Class used to get list of entries to further processing by GetPlaylistEntries and GetDataTablePageForEntry methods.
-*/
+
+// Fetches list of entries to further processing by GetPlaylistEntries and GetDataTablePageForEntry methods.
 class GetPlaylistEntriesTemplateMethod
 {
 public:
@@ -503,10 +674,41 @@ private:
                         EntryIDsHandler full_entry_ids_list_handler);
 };
 
-/*! TODO: add description here
-    \return list of entries in specified playlist. Set of fields for each entry should be specified after playlist id parameter.
-    Available arguments are: "id", "title", "artist", "album", "date", "genre", "bitrate", "duration", "filesize", "rating".
-    Field 'id' is key of entry in AIMPManager not real internal AIMP track ID.
+/*! 
+    \brief Returns list of playlist entries.
+    \param playlist_id - int
+    \param format_string - string, optional. If specified entry will be presented as string, instead set of fields. Mutual exclusive with 'fields' param.
+    \param fields - array of strings, optional. List of fields that need to be filled.
+           If 'fields' param is not specified the function treats it equals "id, title".
+           Mutual exclusive with 'format_string' param.
+           Available fields are:
+            - id
+            - title
+            - artist
+            - album
+            - date
+            - genre
+            - bitrate
+            - duration
+            - filesize
+            - rating
+    \param start_index - int, optional(Default is 0). Beginnig of required entries range.
+    \param entries_count - int, optional(Default is counnt of available entries). Required count of entries.
+    \param order_fields - array of field descriptions, optional. It is used to order entries by multiple fields.
+           Each descriptor is object with members:
+                - 'field' - field to order. Available fields are: 'id', 'title', 'artist', 'album', 'date', 'genre', 'bitrate', 'duration', 'filesize', 'rating'.
+                - 'dir' - order('asc' - ascending, 'desc' - descending)
+    \param search_string - string, optional. Only those entries will be returned which have at least
+                                             one occurence of 'search_string' value in one of entry string fields:
+                                                - title
+                                                - artist
+                                                - album
+                                                - data
+                                                - genre
+
+    \return object which describes playlist entry.
+            Example:\code{"count_of_found_entries":1,"entries":[[1,"Looks Like Chaplin"]],"total_entries_count":3}}\endcode
+            If params were \code{"playlist_id": 2136855360, "search_string":"Like"}}\endcode
 */
 class GetPlaylistEntries : public AIMPRPCMethod
 {
@@ -561,6 +763,19 @@ private:
     EntriesCountHandler entries_count_handler_stub_;
 };
 
+/*! 
+    \brief Returns page number and index of track on page.
+    \param track_id - int
+    \param playlist_id - int
+    \param start_index - the same as GetPlaylistEntries's param.
+    \param entries_count - the same as GetPlaylistEntries's param.
+    \param order_fields - the same as GetPlaylistEntries's param.
+    \param search_string - the same as GetPlaylistEntries's param.
+
+    \return object which describes entry location.
+            Example:\code{"page_number":0,"track_index_on_page":0}\endcode
+            If requested track exists but is not fetched with current request(for ex., does not contain search string), result will be \code{"page_number":-1,"track_index_on_page":-1}\endcode
+*/
 class GetEntryPageInDataTable : public AIMPRPCMethod
 {
 public:
@@ -601,9 +816,11 @@ private:
     EntriesCountHandler entries_on_page_count_handler_;
 };
 
-/*!
-    \return count of entries in specified playlist.
-    \param [0] int playlist ID.
+/*! 
+    \brief Returns count of entries in playlist.
+    \param playlist_id - int
+    \return count of entries.
+            Example:\code0\endcode            
 */
 class GetPlaylistEntriesCount : public AIMPRPCMethod
 {
@@ -620,12 +837,16 @@ public:
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 };
 
-/*!
-    \return cover of specified track in specified playlist.
-    \param [0] int track ID.
-    \param [1] int playlist ID.
-    \param [2] int cover width, optional.
-    \param [3] int cover height, optional.
+/*! 
+    \brief Cover of specified track in specified playlist.
+    \param playlist_id - int
+    \param track_id - int
+    \param cover_width - int, optional.
+    \param cover_height - int, optional.
+    
+    \return URI of cover.
+            Example:\code{"album_cover_uri":"tmp/cover_35_2136855104_0x0_99263.png"}\endcode 
+    \remark Function is available only if FreeImage.dll and FreeImagePlus.dll are available for loading by AIMP.
 */
 class GetCover : public AIMPRPCMethod
 {
@@ -642,7 +863,7 @@ public:
 
     std::string help()
     {
-        return "get_cover(int track_id, int playlist_id, int width, int height) "
+        return "get_cover(int track_id, int playlist_id, int cover_width, int cover_height) "
                "returns URI of PNG cover(size is determined by width and height arguments, pass zeros to get full size cover) "
                "of specified track in specified playlist.";
     }
@@ -674,7 +895,11 @@ private:
     const std::wstring* isCoverExistsInCoverDirectory(TrackDescription track_desc, std::size_t width, std::size_t height) const;
 };
 
-/*! \return current state of AIMP control panel. */
+/*! 
+    \brief Returns state of AIMP control panel.
+    \return object which describes state.
+            Example:\code{"mute_mode_on":false,"playback_state":"stopped","playlist_id":2136855104,"repeat_mode_on":false,"shuffle_mode_on":true,"track_id":25,"volume":45}\endcode            
+*/
 class GetPlayerControlPanelState : public AIMPRPCMethod
 {
 public:
@@ -695,18 +920,20 @@ public:
 };
 
 /*!
-    \brief Comet technique implementation.
+    \brief Notifies client about event.
+    
+    Comet technique implementation.
     This function returns result as soon as(not immediatelly) specified event occures.
-    \param  string event ID.
+    \param event - string. ID of event to subscribe.
             Supported events are:
-                1) 'play_state_change' - playback state change event (player switch to playing/paused/stopped state)
+                - 'play_state_change' - playback state change event (player switch to playing/paused/stopped state)
                 Response will contain following members:
                     'playback_state', string - playback state (playing, stopped, paused)
-                2) 'current_track_change' - current track change event (player switched track)
+                - 'current_track_change' - current track change event (player switched track)
                 Response will contain following members:
                     1) 'playlist_id', int - playlist ID
                     2) 'track_id', int - track ID
-                3) 'control_panel_state_change' - one of following events:
+                - 'control_panel_state_change' - one of following events:
                         playback state, mute, shuffle, repeat, volume level change
                 Response will be the same as get_control_panel_state() function.
 */

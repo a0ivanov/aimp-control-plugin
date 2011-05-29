@@ -52,7 +52,7 @@ ResponseType Play::execute(const Rpc::Value& root_request, Rpc::Value& root_resp
         try {
             aimp_manager_.startPlayback(track_desc);
         } catch (std::runtime_error&) {
-            throw Rpc::Exception("Playback specified track failed. Reason: internal AIMP error. Usually it means that track does not exists.", PLAYBACK_FAILED);
+            throw Rpc::Exception("Playback specified track failed. Track does not exist or track's source is not available.", PLAYBACK_FAILED);
         }
     } else {
         try {
@@ -236,11 +236,12 @@ ResponseType EnqueueTrack::execute(const Rpc::Value& root_request, Rpc::Value& r
 {
     const Rpc::Value& params = root_request["params"];
     if (params.type() != Rpc::Value::TYPE_OBJECT || params.size() < 2) {
-        throw Rpc::Exception("Wrong arguments count. Wait at least 2 int values: track ID, playlist ID.", WRONG_ARGUMENT);
+        throw Rpc::Exception("Wrong arguments count. Wait at least 2 int values: track_id, playlist_id.", WRONG_ARGUMENT);
     }
 
     const TrackDescription track_desc(params["track_id"], params["playlist_id"]);
-    const bool insert_at_queue_beginning = (params.size() == 3) ? bool(params["insert_at_queue_beginning"]) : false; // by default insert at the end of queue.
+    const bool insert_at_queue_beginning = params.isMember("insert_at_queue_beginning") ? bool(params["insert_at_queue_beginning"]) 
+                                                                                        : false; // by default insert at the end of queue.
 
     try {
         aimp_manager_.enqueueEntryForPlay(track_desc, insert_at_queue_beginning);
@@ -254,7 +255,7 @@ ResponseType RemoveTrackFromPlayQueue::execute(const Rpc::Value& root_request, R
 {
     const Rpc::Value& params = root_request["params"];
     if (params.type() != Rpc::Value::TYPE_OBJECT || params.size() != 2) {
-        throw Rpc::Exception("Wrong arguments count. Wait 2 int values: track ID, playlist ID.", WRONG_ARGUMENT);
+        throw Rpc::Exception("Wrong arguments count. Wait 2 int values: track_id, playlist_id.", WRONG_ARGUMENT);
     }
 
     const TrackDescription track_desc(params["track_id"], params["playlist_id"]);
@@ -510,7 +511,7 @@ ResponseType GetPlaylistEntriesTemplateMethod::execute(const Rpc::Value& params,
         page_size_handler( static_cast<size_t>(entries_count) );
     }
 
-    if ( !( params.isMember(kORDER_FIELDS_STRING) && params.isMember(kSEARCH_STRING_STRING)  ) ) { // return entries in default order.
+    if ( !params.isMember(kORDER_FIELDS_STRING) && !params.isMember(kSEARCH_STRING_STRING) ) { // return entries in default order.
         handleEntries(entries, start_entry_index, entries_count, entries_handler, full_entries_list_handler);
     } else if ( params.isMember(kORDER_FIELDS_STRING) ) { // return entries in specified order if order descriptors are valid.
         fillFieldToOrderDescriptors(params[kORDER_FIELDS_STRING]);
@@ -546,6 +547,15 @@ ResponseType GetPlaylistEntriesTemplateMethod::execute(const Rpc::Value& params,
                 handleEntries(entries, start_entry_index, entries_count, entries_handler, full_entries_list_handler);
             }
         }
+    } else if ( params.isMember(kSEARCH_STRING_STRING) && getSearchStringFromRpcParam(params[kSEARCH_STRING_STRING]) ) {
+        handleFilteredEntryIDs(getEntriesIDsFilteredByStringFromEntriesList(search_string_, entries),
+                               entries,
+                               start_entry_index,
+                               entries_count,
+                               entry_ids_handler,
+                               full_entry_ids_list_handler,
+                               filtered_entries_count_handler
+                               );
     }
     return RESPONSE_IMMEDIATE;
 }
@@ -809,7 +819,7 @@ ResponseType GetPlaylistEntriesCount::execute(const Rpc::Value& root_request, Rp
 {
     const Rpc::Value& params = root_request["params"];
     if (params.type() != Rpc::Value::TYPE_OBJECT || params.size() != 1) {
-        throw Rpc::Exception("Wrong arguments count. Wait one integer value: playlist ID.", WRONG_ARGUMENT);
+        throw Rpc::Exception("Wrong arguments count. Wait one integer value: playlist_id.", WRONG_ARGUMENT);
     }
 
     const Playlist& playlist = getPlayListFromRpcParam(aimp_manager_, params["playlist_id"]);
@@ -822,7 +832,7 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
 {
     const Rpc::Value& params = root_request["params"];
     if (params.type() != Rpc::Value::TYPE_OBJECT || params.size() < 2) {
-        throw Rpc::Exception("Wrong arguments count. Wait at least 2 int values: track ID, playlist ID.", WRONG_ARGUMENT);
+        throw Rpc::Exception("Wrong arguments count. Wait at least 2 int values: track_id, playlist_id.", WRONG_ARGUMENT);
     }
 
     const TrackDescription track_desc(params["track_id"], params["playlist_id"]);
@@ -882,7 +892,7 @@ ResponseType GetPlaylistEntryInfo::execute(const Rpc::Value& root_request, Rpc::
 {
     const Rpc::Value& params = root_request["params"];
     if (params.type() != Rpc::Value::TYPE_OBJECT || params.size() != 2) {
-        throw Rpc::Exception("Wrong arguments count. Wait 2 int values: track ID, playlist ID.", WRONG_ARGUMENT);
+        throw Rpc::Exception("Wrong arguments count. Wait 2 int values: track_id, playlist_id.", WRONG_ARGUMENT);
     }
 
     const TrackDescription track_desc(params["track_id"], params["playlist_id"]);
@@ -899,10 +909,10 @@ ResponseType GetPlaylistEntryInfo::execute(const Rpc::Value& root_request, Rpc::
         result[getStringFieldID(PlaylistEntry::ALBUM)   ] = utf16_to_utf8( entry.getAlbum() );
         result[getStringFieldID(PlaylistEntry::DATE)    ] = utf16_to_utf8( entry.getDate() );
         result[getStringFieldID(PlaylistEntry::GENRE)   ] = utf16_to_utf8( entry.getGenre() );
-        result[getStringFieldID(PlaylistEntry::BITRATE) ] = static_cast<int>( entry.getBitrate() );
-        result[getStringFieldID(PlaylistEntry::DURATION)] = static_cast<int>( entry.getDuration() );
-        result[getStringFieldID(PlaylistEntry::FILESIZE)] = static_cast<int>( entry.getFileSize() );
-        result[getStringFieldID(PlaylistEntry::RATING)  ] = static_cast<int>( entry.getRating() );
+        result[getStringFieldID(PlaylistEntry::BITRATE) ] = static_cast<unsigned int>( entry.getBitrate() );
+        result[getStringFieldID(PlaylistEntry::DURATION)] = static_cast<unsigned int>( entry.getDuration() );
+        result[getStringFieldID(PlaylistEntry::FILESIZE)] = static_cast<unsigned int>( entry.getFileSize() );
+        result[getStringFieldID(PlaylistEntry::RATING)  ] = static_cast<unsigned int>( entry.getRating() );
 
     } catch (std::runtime_error&) {
         throw Rpc::Exception("Getting info about track failed. Reason: track not found.", TRACK_NOT_FOUND);
@@ -914,8 +924,7 @@ const std::wstring* GetCover::isCoverExistsInCoverDirectory(TrackDescription tra
 {
     //! search first entry of string "widthxheight" in filename string.
     struct MatchSize {
-        MatchSize(std::size_t width, std::size_t height)
-        {
+        MatchSize(std::size_t width, std::size_t height) {
             std::wostringstream s;
             s << width << "x" << height;
             string_to_find_ = s.str();

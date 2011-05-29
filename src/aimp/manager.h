@@ -227,7 +227,7 @@ public:
     const PlaylistEntry& getEntry(TrackDescription track_desc) const; // throw std::runtime_error
 
     /*!
-        \brief Returns formatted entrie's descrition string. Acts like printf() analog, see detailes below.
+        \brief Returns formatted entry descrition string. Acts like printf() analog, see detailes below.
         \param entry - reference to entry.
         \param format_string - there are following format arguments:<BR>
         <PRE>
