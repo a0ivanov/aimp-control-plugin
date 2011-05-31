@@ -32,15 +32,15 @@ function AimpManager() {
                                 /*options*/
                                 protocol : 'JSON-RPC',
                                 //sanitize : false,
-                                methods: ['play', 'pause', 'stop', 'play_previous', 'play_next', // control panel utils
-                                          'shuffle_playback_mode', 'repeat_playback_mode',
-                                          'get_control_panel_state',
-                                          'volume', 'mute', // volume utils
-                                          'status', // get/set various aspects of player
-                                          //'enqueue_track', 'remove_track_from_play_queue', // queue tracks
-                                          'get_playlists', 'get_playlist_entries', 'get_entry_position_in_datatable', 'get_playlist_entries_count', 'get_formatted_entry_title', 'get_playlist_entry_info', 'set_track_rating', // playlists and tracks utils
-                                          'get_cover', // album cover getter
-                                          'subscribe' // subscribe for AIMP player state notifications
+                                methods: ['Play', 'Pause', 'Stop', 'PlayPrevious', 'PlayNext', // control panel utils
+                                          'ShufflePlaybackMode', 'RepeatPlaybackMode',
+                                          'GetPlayerControlPanelState',
+                                          'VolumeLevel', 'Mute', // volume utils
+                                          'Status', // get/set various aspects of player
+                                          //'EnqueueTrack', 'RemoveTrackFromPlayQueue', // queue tracks
+                                          'GetPlaylists', 'GetPlaylistEntries', 'GetEntryPositionInDataTable', 'GetPlaylistEntriesCount', 'GetFormattedEntryTitle', 'GetPlaylistEntryInfo', 'SetTrackRating', // playlists and tracks utils
+                                          'GetCover', // album cover getter
+                                          'SubscribeOnAIMPStateUpdateEvent' // subscribe for AIMP player state notifications
                                          ]
                                }
     );
@@ -151,7 +151,7 @@ callRpc : function(method, params, callbacks) {
     Result is array of objects with members specified by params.fields param.
 */
 getPlaylists : function(params, callbacks) {
-    this.callRpc(this.aimp_service.get_playlists, params, callbacks);
+    this.callRpc(this.aimp_service.GetPlaylists, params, callbacks);
 },
 
 /*
@@ -179,7 +179,7 @@ getPlaylists : function(params, callbacks) {
             which match params.search_string. See params.search_string param description for details.
 */
 getPlaylistEntries : function(params, callbacks) {
-    this.callRpc(this.aimp_service.get_playlist_entries, params, callbacks);
+    this.callRpc(this.aimp_service.GetPlaylistEntries, params, callbacks);
 },
 
 /*
@@ -191,7 +191,7 @@ getPlaylistEntries : function(params, callbacks) {
         track_index_on_page - if track is not found this value is -1.
 */
 getEntryPositionInDatatable : function(params, callbacks) {
-    this.callRpc(this.aimp_service.get_entry_position_in_datatable, params, callbacks);
+    this.callRpc(this.aimp_service.GetEntryPositionInDataTable, params, callbacks);
 },
 
 /*
@@ -200,7 +200,7 @@ getEntryPositionInDatatable : function(params, callbacks) {
         Param callbacks - see description in AimpManager comments.
 */
 getPlaylistEntriesCount : function(params, callbacks) {
-    this.callRpc(this.aimp_service.get_playlist_entries_count, params, callbacks);
+    this.callRpc(this.aimp_service.GetPlaylistEntriesCount, params, callbacks);
 },
 
 /*
@@ -225,7 +225,7 @@ getPlaylistEntriesCount : function(params, callbacks) {
     Result - is object with member 'formatted_string', string.
 */
 getFormattedTrackTitle : function(params, callbacks) {
-    this.callRpc(this.aimp_service.get_formatted_entry_title, params, callbacks);
+    this.callRpc(this.aimp_service.GetFormattedEntryTitle, params, callbacks);
 },
 
 /*
@@ -236,7 +236,7 @@ getFormattedTrackTitle : function(params, callbacks) {
     Result - is object with following members: 'id', 'title', 'artist', 'album', 'date', 'genre', 'bitrate', 'duration', 'filesize', 'rating'.
 */
 getTrackInfo : function(params, callbacks) {
-    this.callRpc(this.aimp_service.get_playlist_entry_info, params, callbacks);
+    this.callRpc(this.aimp_service.GetPlaylistEntryInfo, params, callbacks);
 },
 
 /*
@@ -247,7 +247,7 @@ getTrackInfo : function(params, callbacks) {
         Param callbacks - see description in AimpManager comments.
 */
 setTrackRating : function(params, callbacks) {
-    this.callRpc(this.aimp_service.set_track_rating, params, callbacks);
+    this.callRpc(this.aimp_service.SetTrackRating, params, callbacks);
 },
 
 /*
@@ -258,7 +258,7 @@ setTrackRating : function(params, callbacks) {
     By default start playback current track in current playlist.
 */
 play : function(params, callbacks) {
-    this.callRpc(this.aimp_service.play, params, callbacks);
+    this.callRpc(this.aimp_service.Play, params, callbacks);
 },
 
 /*
@@ -267,7 +267,7 @@ play : function(params, callbacks) {
         Param callbacks - see description in AimpManager comments.
 */
 stop : function(params, callbacks) {
-    this.callRpc(this.aimp_service.stop, params, callbacks);
+    this.callRpc(this.aimp_service.Stop, params, callbacks);
 },
 
 /*
@@ -276,7 +276,7 @@ stop : function(params, callbacks) {
         Param callbacks - see description in AimpManager comments.
 */
 pause : function(params, callbacks) {
-    this.callRpc(this.aimp_service.pause, params, callbacks);
+    this.callRpc(this.aimp_service.Pause, params, callbacks);
 },
 
 /*
@@ -285,7 +285,7 @@ pause : function(params, callbacks) {
         Param callbacks - see description in AimpManager comments.
 */
 playPrevious : function(params, callbacks) {
-    this.callRpc(this.aimp_service.play_previous, params, callbacks);
+    this.callRpc(this.aimp_service.PlayPrevious, params, callbacks);
 },
 
 /*
@@ -294,7 +294,7 @@ playPrevious : function(params, callbacks) {
         Param callbacks - see description in AimpManager comments.
 */
 playNext : function(params, callbacks) {
-    this.callRpc(this.aimp_service.play_next, params, callbacks);
+    this.callRpc(this.aimp_service.PlayNext, params, callbacks);
 },
 
 /*
@@ -350,7 +350,7 @@ playNext : function(params, callbacks) {
     Returns current value of status if params.value is not specified.
 */
 status : function(params, callbacks) {
-    this.callRpc(this.aimp_service.status, params, callbacks);
+    this.callRpc(this.aimp_service.Status, params, callbacks);
 },
 
 /*
@@ -364,7 +364,7 @@ trackPosition : function(params, callbacks) {
 														      value : params.position
 															}
 													      : {};
-    this.callRpc(this.aimp_service.status, status_params, callbacks);
+    this.callRpc(this.aimp_service.Status, status_params, callbacks);
 },
 
 /*
@@ -374,7 +374,7 @@ trackPosition : function(params, callbacks) {
     With empty params returns current mode.
 */
 shufflePlaybackMode : function(params, callbacks) {
-    this.callRpc(this.aimp_service.shuffle_playback_mode, params, callbacks);
+    this.callRpc(this.aimp_service.ShufflePlaybackMode, params, callbacks);
 },
 
 /*
@@ -384,7 +384,7 @@ shufflePlaybackMode : function(params, callbacks) {
     With empty params returns current mode.
 */
 repeatPlaybackMode : function(params, callbacks) {
-    this.callRpc(this.aimp_service.repeat_playback_mode, params, callbacks);
+    this.callRpc(this.aimp_service.RepeatPlaybackMode, params, callbacks);
 },
 
 /*
@@ -394,7 +394,7 @@ repeatPlaybackMode : function(params, callbacks) {
     With empty params returns current volume level.
 */
 volume : function(params, callbacks) {
-    this.callRpc(this.aimp_service.volume, params, callbacks);
+    this.callRpc(this.aimp_service.VolumeLevel, params, callbacks);
 },
 
 /*
@@ -404,7 +404,7 @@ volume : function(params, callbacks) {
     With empty params returns current mode.
 */
 mute : function(params, callbacks) {
-    this.callRpc(this.aimp_service.mute, params, callbacks);
+    this.callRpc(this.aimp_service.Mute, params, callbacks);
 },
 
 /*
@@ -423,7 +423,7 @@ mute : function(params, callbacks) {
         shuffle_mode_on - flag of shuffle mode;
 */
 getControlPanelState : function(params, callbacks) {
-    this.callRpc(this.aimp_service.get_control_panel_state, params, callbacks);
+    this.callRpc(this.aimp_service.GetPlayerControlPanelState, params, callbacks);
 },
 
 /*
@@ -441,12 +441,12 @@ getControlPanelState : function(params, callbacks) {
                 2) 'track_id', int - track ID
             3) 'control_panel_state_change' - one of following events:
                     "playback state, mute, shuffle, repeat, volume level change.
-                Response will be the same as get_control_panel_state() function.
+                Response will be the same as getControlPanelState() function.
             4) 'playlists_content_change' - playlists content change.
     Result is specific for each event.
 */
 subscribe : function(params, callbacks) {
-    this.callRpc(this.aimp_service.subscribe, params, callbacks);
+    this.callRpc(this.aimp_service.SubscribeOnAIMPStateUpdateEvent, params, callbacks);
 },
 
 /*
@@ -458,7 +458,7 @@ subscribe : function(params, callbacks) {
         Param callbacks - see description in AimpManager comments.
 */
 getCover : function(params, callbacks) {
-    this.callRpc(this.aimp_service.get_cover, params, callbacks);
+    this.callRpc(this.aimp_service.GetCover, params, callbacks);
 }
 
 }; // AimpManager.prototype

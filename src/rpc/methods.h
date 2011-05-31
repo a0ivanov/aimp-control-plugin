@@ -113,13 +113,13 @@ class Play : public AIMPRPCMethod
 {
 public:
     Play(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("play", aimp_manager, multi_user_mode_manager, rpc_request_handler)
+        : AIMPRPCMethod("Play", aimp_manager, multi_user_mode_manager, rpc_request_handler)
     {}
 
     std::string help()
     {
         return "There are two ways to use 'play' function: "
-               "play() plays current track in current playlist. "
+               "Play() plays current track in current playlist. "
                "play_track_in_playlist(int track_id, int playlist_id) plays specified track in specified playlist.";
     }
 
@@ -135,12 +135,12 @@ class Pause : public AIMPRPCMethod
 {
 public:
     Pause(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("pause", aimp_manager, multi_user_mode_manager, rpc_request_handler)
+        : AIMPRPCMethod("Pause", aimp_manager, multi_user_mode_manager, rpc_request_handler)
     {}
 
     std::string help()
     {
-        return "pause() pauses playback.";
+        return "Pause() pauses playback.";
     }
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
@@ -155,12 +155,12 @@ class Stop : public AIMPRPCMethod
 {
 public:
     Stop(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("stop", aimp_manager, multi_user_mode_manager, rpc_request_handler)
+        : AIMPRPCMethod("Stop", aimp_manager, multi_user_mode_manager, rpc_request_handler)
     {}
 
     std::string help()
     {
-        return "stop() stops playback.";
+        return "Stop() stops playback.";
     }
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
@@ -175,12 +175,12 @@ class PlayPrevious : public AIMPRPCMethod
 {
 public:
     PlayPrevious(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("play_previous", aimp_manager, multi_user_mode_manager, rpc_request_handler)
+        : AIMPRPCMethod("PlayPrevious", aimp_manager, multi_user_mode_manager, rpc_request_handler)
     {}
 
     std::string help()
     {
-        return "play_previous() plays previous track.";
+        return "PlayPrevious() plays previous track.";
     }
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
@@ -195,12 +195,12 @@ class PlayNext : public AIMPRPCMethod
 {
 public:
     PlayNext(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("play_next", aimp_manager, multi_user_mode_manager, rpc_request_handler)
+        : AIMPRPCMethod("PlayNext", aimp_manager, multi_user_mode_manager, rpc_request_handler)
     {}
 
     std::string help()
     {
-        return "play_next() plays next track.";
+        return "PlayNext() plays next track.";
     }
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
@@ -258,12 +258,12 @@ class Status : public AIMPRPCMethod
 {
 public:
     Status(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("status", aimp_manager, multi_user_mode_manager, rpc_request_handler)
+        : AIMPRPCMethod("Status", aimp_manager, multi_user_mode_manager, rpc_request_handler)
     {}
 
     std::string help()
     {
-        return "int status(int status_id, int value) sets specified status of player to specified value. "
+        return "int Status(int status_id, int value) sets specified status of player to specified value. "
                "If status_value is not specified returns current requested status.";
     }
 
@@ -285,12 +285,12 @@ class ShufflePlaybackMode : public AIMPRPCMethod
 {
 public:
     ShufflePlaybackMode(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("shuffle_playback_mode", aimp_manager, multi_user_mode_manager, rpc_request_handler)
+        : AIMPRPCMethod("ShufflePlaybackMode", aimp_manager, multi_user_mode_manager, rpc_request_handler)
     {}
 
     std::string help()
     {
-        return "bool shuffle_playback_mode(bool shuffle_on) activates or deactivates shuffle playback mode. "
+        return "bool ShufflePlaybackMode(bool shuffle_on) activates or deactivates shuffle playback mode. "
                "If no arguments are passed returns current state of shuffle mode.";
     }
 
@@ -308,12 +308,12 @@ class RepeatPlaybackMode : public AIMPRPCMethod
 {
 public:
     RepeatPlaybackMode(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("repeat_playback_mode", aimp_manager, multi_user_mode_manager, rpc_request_handler)
+        : AIMPRPCMethod("RepeatPlaybackMode", aimp_manager, multi_user_mode_manager, rpc_request_handler)
     {}
 
     std::string help()
     {
-        return "bool repeat_playback_mode(bool repeat_on) activates or deactivates repeat playlist playback mode. "
+        return "bool RepeatPlaybackMode(bool repeat_on) activates or deactivates repeat playlist playback mode. "
                "If no arguments are passed returns current state of repeat mode.";
     }
 
@@ -331,12 +331,12 @@ class VolumeLevel : public AIMPRPCMethod
 {
 public:
     VolumeLevel(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("volume", aimp_manager, multi_user_mode_manager, rpc_request_handler)
+        : AIMPRPCMethod("VolumeLevel", aimp_manager, multi_user_mode_manager, rpc_request_handler)
     {}
 
     std::string help()
     {
-        return "int volume(int level) sets volume level(in percents). By default returns current volume level.";
+        return "int VolumeLevel(int level) sets volume level(in percents). By default returns current volume level.";
     }
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
@@ -353,12 +353,12 @@ class Mute : public AIMPRPCMethod
 {
 public:
     Mute(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("mute", aimp_manager, multi_user_mode_manager, rpc_request_handler)
+        : AIMPRPCMethod("Mute", aimp_manager, multi_user_mode_manager, rpc_request_handler)
     {}
 
     std::string help()
     {
-        return "bool mute(bool mute_on) activates or deactivates mute mode. "
+        return "bool Mute(bool mute_on) activates or deactivates mute mode. "
                "If no arguments are passed returns current state of repeat mode.";
     }
 
@@ -396,7 +396,7 @@ class GetFormattedEntryTitle : public AIMPRPCMethod
 {
 public:
     GetFormattedEntryTitle(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("get_formatted_entry_title", aimp_manager, multi_user_mode_manager, rpc_request_handler)
+        : AIMPRPCMethod("GetFormattedEntryTitle", aimp_manager, multi_user_mode_manager, rpc_request_handler)
     {}
 
     std::string help()
@@ -436,12 +436,12 @@ class GetPlaylistEntryInfo : public AIMPRPCMethod
 {
 public:
     GetPlaylistEntryInfo(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("get_playlist_entry_info", aimp_manager, multi_user_mode_manager, rpc_request_handler)
+        : AIMPRPCMethod("GetPlaylistEntryInfo", aimp_manager, multi_user_mode_manager, rpc_request_handler)
     {}
 
     std::string help()
     {
-        return "get_playlist_entry_info(int playlist_id, int track_id) returns info about track represented as struct with following fields:"
+        return "GetPlaylistEntryInfo(int playlist_id, int track_id) returns info about track represented as struct with following fields:"
                " 'id', 'title', 'artist', 'album', 'date', 'genre', 'bitrate', 'duration', 'filesize', 'rating'."
         ;
     }
@@ -459,12 +459,12 @@ class EnqueueTrack : public AIMPRPCMethod
 {
 public:
     EnqueueTrack(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("enqueue_track", aimp_manager, multi_user_mode_manager, rpc_request_handler)
+        : AIMPRPCMethod("EnqueueTrack", aimp_manager, multi_user_mode_manager, rpc_request_handler)
     {}
 
     std::string help()
     {
-        return "enqueue_track(int track_id, int playlist_id, bool insert_at_queue_beginning = false) "
+        return "EnqueueTrack(int track_id, int playlist_id, bool insert_at_queue_beginning = false) "
                "enqueues for playing specified track in specified playlist.";
     }
 
@@ -480,12 +480,12 @@ class RemoveTrackFromPlayQueue : public AIMPRPCMethod
 {
 public:
     RemoveTrackFromPlayQueue(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("remove_track_from_play_queue", aimp_manager, multi_user_mode_manager, rpc_request_handler)
+        : AIMPRPCMethod("RemoveTrackFromPlayQueue", aimp_manager, multi_user_mode_manager, rpc_request_handler)
     {}
 
     std::string help()
     {
-        return "remove_track_from_play_queue(int track_id, int playlist_id) "
+        return "RemoveTrackFromPlayQueue(int track_id, int playlist_id) "
                "removes from AIMP play queue specified track in specified playlist.";
     }
 
@@ -512,7 +512,7 @@ public:
 
     GetPlaylists(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler)
         :
-        AIMPRPCMethod("get_playlists", aimp_manager, multi_user_mode_manager, rpc_request_handler),
+        AIMPRPCMethod("GetPlaylists", aimp_manager, multi_user_mode_manager, rpc_request_handler),
         playlist_fields_filler_("playlist")
     {
         using namespace RpcValueSetHelpers;
@@ -528,7 +528,7 @@ public:
 
     std::string help()
     {
-        return "get_playlists(string playlist_fields[]) returns array of playlists. "
+        return "GetPlaylists(string playlist_fields[]) returns array of playlists. "
                "Playlist can have following fields: "
                    "'id', 'title', 'duration', 'entries_count', 'size_of_entries'."
                "Required fields passed in playlist_fields string array."
@@ -826,19 +826,19 @@ class GetPlaylistEntriesCount : public AIMPRPCMethod
 {
 public:
     GetPlaylistEntriesCount(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("get_playlist_entries_count", aimp_manager, multi_user_mode_manager, rpc_request_handler)
+        : AIMPRPCMethod("GetPlaylistEntriesCount", aimp_manager, multi_user_mode_manager, rpc_request_handler)
     {}
 
     std::string help()
     {
-        return "int get_playlist_entries_count(int playlist_id) returns count of entries in specified playlist.";
+        return "int GetPlaylistEntriesCount(int playlist_id) returns count of entries in specified playlist.";
     }
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 };
 
 /*! 
-    \brief Cover of specified track in specified playlist.
+    \brief Returns URI of album cover.
     \param playlist_id - int
     \param track_id - int
     \param cover_width - int, optional.
@@ -853,7 +853,7 @@ class GetCover : public AIMPRPCMethod
 public:
     GetCover(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler, const std::wstring& document_root, const std::wstring& cover_directory)
         :
-        AIMPRPCMethod("get_cover", aimp_manager, multi_user_mode_manager, rpc_request_handler),
+        AIMPRPCMethod("GetCover", aimp_manager, multi_user_mode_manager, rpc_request_handler),
         document_root_(document_root),
         cover_directory_(cover_directory),
         die_( rng_engine_, random_range_ ) // init generator by range[0, 9]
@@ -863,7 +863,7 @@ public:
 
     std::string help()
     {
-        return "get_cover(int track_id, int playlist_id, int cover_width, int cover_height) "
+        return "GetCover(int track_id, int playlist_id, int cover_width, int cover_height) "
                "returns URI of PNG cover(size is determined by width and height arguments, pass zeros to get full size cover) "
                "of specified track in specified playlist.";
     }
@@ -904,12 +904,12 @@ class GetPlayerControlPanelState : public AIMPRPCMethod
 {
 public:
     GetPlayerControlPanelState(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("get_control_panel_state", aimp_manager, multi_user_mode_manager, rpc_request_handler)
+        : AIMPRPCMethod("GetPlayerControlPanelState", aimp_manager, multi_user_mode_manager, rpc_request_handler)
     {}
 
     std::string help()
     {
-        return "get_control_panel_state() returns current AIMP control panel state."
+        return "GetPlayerControlPanelState() returns current AIMP control panel state."
                "\return structure with following members:"
                "1) "
                // TODO: add description here
@@ -932,6 +932,7 @@ public:
                 Response example:\code{"playlist_id":2136855104,"track_id":84}\endcode
                 - 'control_panel_state_change' - one of following aspects is changed:
                         playback state, mute, shuffle, repeat, volume level.
+                - 'playlists_content_change' - change of: playlist's content, playlist count.
                 Response will be the same as GetPlayerControlPanelState function.
                 Response example:\code{"mute_mode_on":false,"playback_state":"playing","playlist_id":2136855104,"repeat_mode_on":false,"shuffle_mode_on":true,"track_id":13,"track_length":174,"track_position":0,"volume":49}\endcode
 */
@@ -939,7 +940,7 @@ class SubscribeOnAIMPStateUpdateEvent : public AIMPRPCMethod
 {
 public:
     SubscribeOnAIMPStateUpdateEvent(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("subscribe", aimp_manager, multi_user_mode_manager, rpc_request_handler)
+        : AIMPRPCMethod("SubscribeOnAIMPStateUpdateEvent", aimp_manager, multi_user_mode_manager, rpc_request_handler)
     {
         using namespace boost::assign;
         insert(event_types_)
@@ -961,7 +962,7 @@ public:
 
     std::string help()
     {
-        return "subscribe(string event_id) returns AIMP state descriptor when event (specified by id) occures."
+        return "SubscribeOnAIMPStateUpdateEvent(string event_id) returns AIMP state descriptor when event (specified by id) occures."
                "AIMP state descriptor is struct with members correspond to specified event type."
                "Supported events are:"
                    "1) 'play_state_change' - playback state change event (player switch to playing/paused/stopped state) and event when user forces change of track position."
@@ -1037,7 +1038,7 @@ class SetTrackRating : public AIMPRPCMethod
 {
 public:
     SetTrackRating(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler, const std::wstring& file_to_save_ratings)
-        : AIMPRPCMethod("set_track_rating", aimp_manager, multi_user_mode_manager, rpc_request_handler),
+        : AIMPRPCMethod("SetTrackRating", aimp_manager, multi_user_mode_manager, rpc_request_handler),
         file_to_save_ratings_(file_to_save_ratings)
     {}
 
@@ -1058,7 +1059,7 @@ class EmulationOfWebCtlPlugin : public AIMPRPCMethod
 {
 public:
     EmulationOfWebCtlPlugin(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("emulation_of_webctl_plugin", aimp_manager, multi_user_mode_manager, rpc_request_handler)
+        : AIMPRPCMethod("EmulationOfWebCtlPlugin", aimp_manager, multi_user_mode_manager, rpc_request_handler)
     {
         initMethodNamesMap();
     }

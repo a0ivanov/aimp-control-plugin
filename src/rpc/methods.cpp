@@ -592,7 +592,7 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager, MultiUserModeM
                                        Rpc::RequestHandler& rpc_request_handler
                                        )
     :
-    AIMPRPCMethod("get_playlist_entries", aimp_manager, multi_user_mode_manager, rpc_request_handler),
+    AIMPRPCMethod("GetPlaylistEntries", aimp_manager, multi_user_mode_manager, rpc_request_handler),
     get_playlist_entries_templatemethod_( new GetPlaylistEntriesTemplateMethod(aimp_manager) ),
     entry_fields_filler_("entry"),
     kFORMAT_STRING_STRING("format_string"),
@@ -737,7 +737,7 @@ GetEntryPositionInDataTable::GetEntryPositionInDataTable(AIMPManager& aimp_manag
                                                          GetPlaylistEntries& getplaylistentries_method
                                                          )
     :
-    AIMPRPCMethod("get_entry_position_in_datatable", aimp_manager, multi_user_mode_manager, rpc_request_handler),
+    AIMPRPCMethod("GetEntryPositionInDataTable", aimp_manager, multi_user_mode_manager, rpc_request_handler),
     get_playlist_entries_templatemethod_( getplaylistentries_method.getPlaylistEntriesTemplateMethod() )
 {
     // create handlers for passing into get_playlist_entries_templatemethod_'s execute().
