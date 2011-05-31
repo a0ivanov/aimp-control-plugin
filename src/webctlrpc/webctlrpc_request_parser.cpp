@@ -20,7 +20,7 @@ bool RequestParser::parse_(const std::string& request_uri,
 {
     Arguments args;
     if ( getArgs(request_uri, &args) ) {
-        (*root)["method"] = "emulation_of_webctl_plugin"; // use single RPC method for entire web_ctl plugin functionality.
+        (*root)["method"] = "EmulationOfWebCtlPlugin"; // use single RPC method for entire web_ctl plugin functionality.
         convertQueryArgumentsToRPCValueParams(args, (*root)["params"]);
         return true;
     }
