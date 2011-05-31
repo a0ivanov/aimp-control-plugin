@@ -38,7 +38,7 @@ function AimpManager() {
                                           'volume', 'mute', // volume utils
                                           'status', // get/set various aspects of player
                                           //'enqueue_track', 'remove_track_from_play_queue', // queue tracks
-                                          'get_playlists', 'get_playlist_entries', 'get_entry_page_in_datatable', 'get_playlist_entries_count', 'get_formatted_entry_title', 'get_playlist_entry_info', 'set_track_rating', // playlists and tracks utils
+                                          'get_playlists', 'get_playlist_entries', 'get_entry_position_in_datatable', 'get_playlist_entries_count', 'get_formatted_entry_title', 'get_playlist_entry_info', 'set_track_rating', // playlists and tracks utils
                                           'get_cover', // album cover getter
                                           'subscribe' // subscribe for AIMP player state notifications
                                          ]
@@ -190,8 +190,8 @@ getPlaylistEntries : function(params, callbacks) {
 		page_number - if track is not found this value is -1.
         track_index_on_page - if track is not found this value is -1.
 */
-getEntryPageInDatatable : function(params, callbacks) {
-    this.callRpc(this.aimp_service.get_entry_page_in_datatable, params, callbacks);
+getEntryPositionInDatatable : function(params, callbacks) {
+    this.callRpc(this.aimp_service.get_entry_position_in_datatable, params, callbacks);
 },
 
 /*

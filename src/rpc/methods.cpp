@@ -479,7 +479,7 @@ ResponseType GetPlaylistEntriesTemplateMethod::execute(const Rpc::Value& params,
                                                        EntryIDsHandler entry_ids_handler,
                                                        EntriesCountHandler total_entries_count_handler,
                                                        EntriesCountHandler filtered_entries_count_handler,
-                                                       // following needed by only by GetEntryPageInDataTable
+                                                       // following needed by only by GetEntryPositionInDataTable
                                                        EntriesHandler full_entries_list_handler,
                                                        EntryIDsHandler full_entry_ids_list_handler,
                                                        EntriesCountHandler page_size_handler
@@ -732,12 +732,12 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
     return response_type;
 }
 
-GetEntryPageInDataTable::GetEntryPageInDataTable(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager,
-                                                 Rpc::RequestHandler& rpc_request_handler,
-                                                 GetPlaylistEntries& getplaylistentries_method
-                                                 )
+GetEntryPositionInDataTable::GetEntryPositionInDataTable(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager,
+                                                         Rpc::RequestHandler& rpc_request_handler,
+                                                         GetPlaylistEntries& getplaylistentries_method
+                                                         )
     :
-    AIMPRPCMethod("get_entry_page_in_datatable", aimp_manager, multi_user_mode_manager, rpc_request_handler),
+    AIMPRPCMethod("get_entry_position_in_datatable", aimp_manager, multi_user_mode_manager, rpc_request_handler),
     get_playlist_entries_templatemethod_( getplaylistentries_method.getPlaylistEntriesTemplateMethod() )
 {
     // create handlers for passing into get_playlist_entries_templatemethod_'s execute().
@@ -755,9 +755,9 @@ GetEntryPageInDataTable::GetEntryPageInDataTable(AIMPManager& aimp_manager, Mult
     entries_on_page_count_handler_ = boost::bind<void>(SetEntriesCount(&entries_on_page_), _1);
 }
 
-void GetEntryPageInDataTable::setEntryPageInDataTableFromEntriesList(EntriesRange entries_range,
-                                                                     PlaylistEntryID entry_id
-                                                                     )
+void GetEntryPositionInDataTable::setEntryPageInDataTableFromEntriesList(EntriesRange entries_range,
+                                                                         PlaylistEntryID entry_id
+                                                                         )
 {
     // Note: entry_id is the same as index in entries list. Range entries_range contains full entries list.
     if ( 0 <= entry_id && entry_id < entries_range.size() ) {
@@ -767,8 +767,8 @@ void GetEntryPageInDataTable::setEntryPageInDataTableFromEntriesList(EntriesRang
     }
 }
 
-void  GetEntryPageInDataTable::setEntryPageInDataTableFromEntryIDs(EntriesIDsRange entries_ids_range, const EntriesListType& /*entries*/,
-                                                                   PlaylistEntryID entry_id)
+void  GetEntryPositionInDataTable::setEntryPageInDataTableFromEntryIDs(EntriesIDsRange entries_ids_range, const EntriesListType& /*entries*/,
+                                                                       PlaylistEntryID entry_id)
 {
     // Note: Range entries_ids_range contains full entries ids list for current representation(concrete filtering and sorting).
     EntriesIDsRange::const_iterator it = std::find(entries_ids_range.begin(), entries_ids_range.end(), entry_id);
@@ -779,7 +779,7 @@ void  GetEntryPageInDataTable::setEntryPageInDataTableFromEntryIDs(EntriesIDsRan
     }
 }
 
-Rpc::ResponseType GetEntryPageInDataTable::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+Rpc::ResponseType GetEntryPositionInDataTable::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
     const Rpc::Value& rpc_params = root_request["params"];
     const PlaylistEntryID track_id(rpc_params["track_id"]);
@@ -794,10 +794,10 @@ Rpc::ResponseType GetEntryPageInDataTable::execute(const Rpc::Value& root_reques
                                                   entries_count_handler_stub_,
                                                   entries_count_handler_stub_,
 
-                                                  boost::bind(&GetEntryPageInDataTable::setEntryPageInDataTableFromEntriesList,
+                                                  boost::bind(&GetEntryPositionInDataTable::setEntryPageInDataTableFromEntriesList,
                                                               this, _1, track_id
                                                               ),
-                                                  boost::bind(&GetEntryPageInDataTable::setEntryPageInDataTableFromEntryIDs,
+                                                  boost::bind(&GetEntryPositionInDataTable::setEntryPageInDataTableFromEntryIDs,
                                                               this, _1, _2, track_id
                                                               ),
                                                   entries_on_page_count_handler_

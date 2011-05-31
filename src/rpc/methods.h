@@ -611,7 +611,7 @@ public:
                               EntryIDsHandler entry_ids_handler,
                               EntriesCountHandler total_entries_count_handler,
                               EntriesCountHandler filtered_entries_count_handler,
-                              // following needed by only by GetEntryPageInDataTable
+                              // following needed by only by GetEntryPositionInDataTable
                               EntriesHandler full_entries_list_handler,
                               EntryIDsHandler full_entry_ids_list_handler,
                               EntriesCountHandler page_size_handler
@@ -729,7 +729,7 @@ public:
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 
-    // we must share this object with GetEntryPageInDataTable method.
+    // we must share this object with GetEntryPositionInDataTable method.
     boost::shared_ptr<GetPlaylistEntriesTemplateMethod> getPlaylistEntriesTemplateMethod()
         { return get_playlist_entries_templatemethod_; };
 
@@ -767,26 +767,26 @@ private:
     \brief Returns page number and index of track on page.
     \param track_id - int
     \param playlist_id - int
-    \param start_index - the same as GetPlaylistEntries's param.
-    \param entries_count - the same as GetPlaylistEntries's param.
-    \param order_fields - the same as GetPlaylistEntries's param.
-    \param search_string - the same as GetPlaylistEntries's param.
+    \param start_index - the same as GetPlaylistEntries 's param.
+    \param entries_count - the same as GetPlaylistEntries 's param.
+    \param order_fields - the same as GetPlaylistEntries 's param.
+    \param search_string - the same as GetPlaylistEntries 's param.
 
     \return object which describes entry location.
             Example:\code{"page_number":0,"track_index_on_page":0}\endcode
             If requested track exists but is not fetched with current request(for ex., does not contain search string), result will be \code{"page_number":-1,"track_index_on_page":-1}\endcode
 */
-class GetEntryPageInDataTable : public AIMPRPCMethod
+class GetEntryPositionInDataTable : public AIMPRPCMethod
 {
 public:
-    GetEntryPageInDataTable(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager,
-                            Rpc::RequestHandler& rpc_request_handler,
-                            GetPlaylistEntries& getplaylistentries_method
-                           );
+    GetEntryPositionInDataTable(AIMPManager& aimp_manager, MultiUserModeManager& multi_user_mode_manager,
+                                Rpc::RequestHandler& rpc_request_handler,
+                                GetPlaylistEntries& getplaylistentries_method
+                                );
 
     std::string help()
     {
-        return "get_entry_page_in_datatable() requires the same args as get_playlist_entries() method + int track_id argument. "
+        return "get_entry_position_in_datatable() requires the same args as get_playlist_entries() method + int track_id argument. "
                "Result is object with following members:"
 		               "int page_number - if track is not found this value is -1. "
                        "int track_index_on_page - if track is not found this value is -1. "
@@ -926,16 +926,14 @@ public:
     This function returns result as soon as(not immediatelly) specified event occures.
     \param event - string. ID of event to subscribe.
             Supported events are:
-                - 'play_state_change' - playback state change event (player switch to playing/paused/stopped state)
-                Response will contain following members:
-                    'playback_state', string - playback state (playing, stopped, paused)
+                - 'play_state_change' - playback state change event (player switched to playing/paused/stopped state)
+                Response example:\code{"playback_state":"playing","track_length":269,"track_position":0}\endcode
                 - 'current_track_change' - current track change event (player switched track)
-                Response will contain following members:
-                    1) 'playlist_id', int - playlist ID
-                    2) 'track_id', int - track ID
-                - 'control_panel_state_change' - one of following events:
-                        playback state, mute, shuffle, repeat, volume level change
-                Response will be the same as get_control_panel_state() function.
+                Response example:\code{"playlist_id":2136855104,"track_id":84}\endcode
+                - 'control_panel_state_change' - one of following aspects is changed:
+                        playback state, mute, shuffle, repeat, volume level.
+                Response will be the same as GetPlayerControlPanelState function.
+                Response example:\code{"mute_mode_on":false,"playback_state":"playing","playlist_id":2136855104,"repeat_mode_on":false,"shuffle_mode_on":true,"track_id":13,"track_length":174,"track_position":0,"volume":49}\endcode
 */
 class SubscribeOnAIMPStateUpdateEvent : public AIMPRPCMethod
 {
@@ -1029,10 +1027,11 @@ private:
     DelayedResponseSenderDescriptors delayed_response_sender_descriptors_;
 };
 
-//! Set track rating.
 /*!
-    Current implementation just save path to track and rating in text file since AIMP SDK does not suport rating set now.
-    No checks performed(ex. rating already exists for file and etc.) since it is just temporarily stub.
+    \brief Set track rating.
+
+    Current implementation just saves path to track and rating in text file since AIMP SDK does not support rating change now.
+    No checks are performed(ex. rating already exists for file and etc.) since it is temporarily stub.
 */
 class SetTrackRating : public AIMPRPCMethod
 {

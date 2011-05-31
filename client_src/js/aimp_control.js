@@ -187,7 +187,7 @@ function gotoCurrentTrackInPlaylist()
 	if (entries_requests.hasOwnProperty(control_panel_state.playlist_id) ) {
 		var request_params = entries_requests[control_panel_state.playlist_id]; // maybe we need copy this
 		request_params['track_id'] = control_panel_state.track_id;
-		aimp_manager.getEntryPageInDatatable(request_params,
+		aimp_manager.getEntryPositionInDatatable(request_params,
 									 		 { on_success   : function (result) {
 															      if (result.page_number >= 0 && result.track_index_on_page >= 0) {
 																      gotoCurrentPlaylist(control_panel_state.playlist_id);

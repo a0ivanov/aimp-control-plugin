@@ -329,14 +329,14 @@ void AIMPControlPluginHeader::createRpcMethods()
     // tracks
     REGISTER_AIMP_RPC_METHOD(GetPlaylistEntries);
 
-    { // register this way since GetEntryPageInDataTable depends from GetPlaylistEntries 
+    { // register this way since GetEntryPositionInDataTable depends from GetPlaylistEntries 
     std::auto_ptr<GetPlaylistEntries> method_getplaylistentries(new GetPlaylistEntries(*aimp_manager_,
                                                                                        *multi_user_mode_manager_,
                                                                                        *rpc_request_handler_
                                                                                        )
                                                                 );
 
-    std::auto_ptr<Rpc::Method> method_getentrypageindatatable(new GetEntryPageInDataTable(*aimp_manager_,
+    std::auto_ptr<Rpc::Method> method_GetEntryPositionInDataTable(new GetEntryPositionInDataTable(*aimp_manager_,
                                                                                      *multi_user_mode_manager_,
                                                                                      *rpc_request_handler_,
                                                                                      *method_getplaylistentries
@@ -346,7 +346,7 @@ void AIMPControlPluginHeader::createRpcMethods()
     std::auto_ptr<Rpc::Method> method( method_getplaylistentries.release() );
     rpc_request_handler_->addMethod(method);
     }
-    rpc_request_handler_->addMethod(method_getentrypageindatatable);
+    rpc_request_handler_->addMethod(method_GetEntryPositionInDataTable);
     }
 
     REGISTER_AIMP_RPC_METHOD(GetPlaylistEntriesCount);
