@@ -17,3 +17,7 @@ set SRCSRV_HOME=%DEBUG_TOOL_DIR%\srcsrv
 set SVN_CLIENT_DIR=c:\Program Files\Subversion\bin
 set PATH=%DEBUG_TOOL_DIR%;%SRCSRV_HOME%;%PERL_DIR%\bin;%SVN_CLIENT_DIR%\bin;%PATH%
 set SYMBOL_STORE=C:\Symbols
+
+:: following variables are used for documentation generation.
+set DOXYGEN_PATH=c:\Program Files\doxygen\bin
+set PATH=%DOXYGEN_PATH%;%PATH%
