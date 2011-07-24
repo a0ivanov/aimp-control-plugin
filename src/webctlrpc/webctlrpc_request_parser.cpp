@@ -27,13 +27,29 @@ bool RequestParser::parse_(const std::string& request_uri,
     return false;
 }
 
+void skipCharacter(std::istringstream& is, char char_to_skip)
+{
+    for (;;) {
+        int c = is.get();
+        if ( !is.good() ) {
+            break;
+        } else {
+            if (c != char_to_skip) {
+                is.unget();
+                break;
+            }
+        }
+    }
+}
+
 bool getArgs(const std::string& uri, Arguments* args)
 {
     assert(args);
 
     std::string arg_name;
     std::istringstream istream(uri);
-    istream.ignore(2); // skip '/?' characters.
+    skipCharacter(istream, '/');
+    skipCharacter(istream, '?'); // skip '/?' or '//?' characters. Aimp UControl sends '//?' for some reason - handle it.
     while ( istream.good() ) {
         getline(istream, arg_name, '=');
         if ( !istream.good() ) {
@@ -41,7 +57,7 @@ bool getArgs(const std::string& uri, Arguments* args)
         }
         getline(istream, (*args)[arg_name], '&');
     }
-    return istream.eof(); // treat operation successfull if we read till end of stream.
+    return istream.eof(); // treat operation successfull if we have read till end of stream.
 }
 
 void convertQueryArgumentsToRPCValueParams(const Arguments& args, Rpc::Value& params)
