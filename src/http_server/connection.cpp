@@ -10,15 +10,16 @@
 #include "http_server/request_handler.h"
 #include "plugin/logger.h"
 
-namespace {
-using namespace AIMPControlPlugin::PluginLogger;
-ModuleLoggerType& logger()
-    { return getLogManager().getModuleLogger<Http::Server>(); }
-}
+//namespace {
+//using namespace AIMPControlPlugin::PluginLogger;
+//ModuleLoggerType& logger()
+//    { return getLogManager().getModuleLogger<Http::Server>(); }
+//}
 
 namespace Http {
 
-Connection::Connection(boost::asio::io_service& io_service, RequestHandler& handler)
+template <typename SocketT>
+Connection<SocketT>::Connection(boost::asio::io_service& io_service, RequestHandler& handler)
     :
     strand_(io_service),
     socket_(io_service),
@@ -31,25 +32,33 @@ Connection::Connection(boost::asio::io_service& io_service, RequestHandler& hand
     }
 }
 
-Connection::~Connection()
+template <typename SocketT>
+Connection<SocketT>::~Connection()
 {
     try {
         BOOST_LOG_SEV(logger(), info) << "Destroying connection to host " << socket().remote_endpoint();
     } catch (boost::system::system_error&) {
         BOOST_LOG_SEV(logger(), info) << "Destroying connection.";
     }
-
 }
 
-boost::asio::ip::tcp::socket& Connection::socket()
+template <typename SocketT>
+SocketT& Connection<SocketT>::socket()
 {
     return socket_;
 }
 
-void Connection::start()
+template <typename SocketT>
+void Connection<SocketT>::start()
+{
+    read_some_to_buffer();
+}
+
+template <typename SocketT>
+void Connection<SocketT>::read_some_to_buffer()
 {
     socket_.async_read_some(boost::asio::buffer(buffer_),
-                            strand_.wrap(boost::bind(&Connection::handle_read,
+                            strand_.wrap(boost::bind(&Connection<SocketT>::handle_read,
                                                      shared_from_this(),
                                                      boost::asio::placeholders::error,
                                                      boost::asio::placeholders::bytes_transferred
@@ -58,7 +67,21 @@ void Connection::start()
                             );
 }
 
-void Connection::handle_read(const boost::system::error_code& e,
+template <typename SocketT>
+void Connection<SocketT>::write_reply_content()
+{
+    boost::asio::async_write(socket_,
+                             reply_.to_buffers(),
+                             strand_.wrap(boost::bind(&Connection<SocketT>::handle_write,
+                                                      shared_from_this(),
+                                                      boost::asio::placeholders::error
+                                                      )
+                                          )
+                             );
+}
+
+template <typename SocketT>
+void Connection<SocketT>::handle_read(const boost::system::error_code& e,
                              std::size_t bytes_transferred)
 {
     if (!e) {
@@ -66,40 +89,21 @@ void Connection::handle_read(const boost::system::error_code& e,
         boost::tie(result, boost::tuples::ignore) = request_parser_.parse(request_,
                                                                           buffer_.data(),
                                                                           buffer_.data() + bytes_transferred
-                                                                         );
+                                                                          );
         if (result) {
-            CometDelayedConnection_ptr comet_connection( new CometDelayedConnection( shared_from_this() ) );
+            ICometDelayedConnection_ptr comet_connection( new CometDelayedConnection<SocketT>( shared_from_this() ) );
             bool reply_immediately = request_handler_.handle_request(request_, reply_, comet_connection);
             if (reply_immediately) {
-                boost::asio::async_write(socket_,
-                                         reply_.to_buffers(),
-                                         strand_.wrap(boost::bind(&Connection::handle_write,
-                                                                  shared_from_this(),
-                                                                  boost::asio::placeholders::error
-                                                                  )
-                                                      )
-                                         );
+                write_reply_content();
             }
         } else if (!result) {
             reply_ = Reply::stock_reply(Reply::bad_request);
-            boost::asio::async_write(socket_,
-                                     reply_.to_buffers(),
-                                     strand_.wrap(boost::bind(&Connection::handle_write,
-                                                              shared_from_this(),
-                                                              boost::asio::placeholders::error
-                                                              )
-                                                  )
-                                     );
+            write_reply_content();
         } else {
-            socket_.async_read_some(boost::asio::buffer(buffer_),
-                                    strand_.wrap(boost::bind(&Connection::handle_read,
-                                                             shared_from_this(),
-                                                             boost::asio::placeholders::error,
-                                                             boost::asio::placeholders::bytes_transferred
-                                                             )
-                                                 )
-                                    );
+            read_some_to_buffer();
         }
+    } else {
+        // BOOST_LOG_SEV(logger(), debug) << "Connection<SocketT>::handle_read(): failed to read data. Reason: " << e.message();
     }
 
     // If an error occurs then no new asynchronous operations are started. This
@@ -108,12 +112,13 @@ void Connection::handle_read(const boost::system::error_code& e,
     // handler returns. The Connection class's destructor closes the socket.
 }
 
-void Connection::handle_write(const boost::system::error_code& e)
+template <typename SocketT>
+void Connection<SocketT>::handle_write(const boost::system::error_code& e)
 {
     if (!e) {
         // Initiate graceful connection closure.
         boost::system::error_code ignored_ec;
-        socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
+        socket_.shutdown(SocketT::shutdown_both, ignored_ec);
     }
 
     // No new asynchronous operations are started. This means that all shared_ptr
@@ -122,12 +127,13 @@ void Connection::handle_write(const boost::system::error_code& e)
     // destructor closes the socket.
 }
 
-void CometDelayedConnection::sendResponse(DelayedResponseSender_ptr comet_http_response_sender, const Reply& reply)
+template <typename SocketT>
+void CometDelayedConnection<SocketT>::sendResponse(DelayedResponseSender_ptr comet_http_response_sender)
 {
-    BOOST_LOG_SEV(logger(), debug) << "CometDelayedConnection::sendResponse to " << connection_->socket_.remote_endpoint();
-    boost::asio::async_write( connection_->socket_,
-                              reply.to_buffers(),
-                              connection_->strand_.wrap(boost::bind(&CometDelayedConnection::handle_write,
+    BOOST_LOG_SEV(logger(), debug) << "CometDelayedConnection::sendResponse to " << connection_->socket().remote_endpoint();
+    boost::asio::async_write( connection_->socket(),
+                              comet_http_response_sender->get_reply().to_buffers(),
+                              connection_->strand_.wrap(boost::bind(&CometDelayedConnection<SocketT>::handle_write,
                                                                     shared_from_this(),
                                                                     comet_http_response_sender,
                                                                     boost::asio::placeholders::error
@@ -136,13 +142,14 @@ void CometDelayedConnection::sendResponse(DelayedResponseSender_ptr comet_http_r
                              );
 }
 
-void CometDelayedConnection::handle_write(DelayedResponseSender_ptr comet_http_response_sender, const boost::system::error_code& e)
+template <typename SocketT>
+void CometDelayedConnection<SocketT>::handle_write(DelayedResponseSender_ptr comet_http_response_sender, const boost::system::error_code& e)
 {
     if (!e) {
-        BOOST_LOG_SEV(logger(), debug) << "CometDelayedConnection::success sending response to " << connection_->socket_.remote_endpoint();
+        BOOST_LOG_SEV(logger(), debug) << "CometDelayedConnection::success sending response to " << connection_->socket().remote_endpoint();
         // Initiate graceful connection closure.
         boost::system::error_code ignored_ec;
-        connection_->socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
+        connection_->socket().shutdown(SocketT::shutdown_both, ignored_ec);
     } else {
         BOOST_LOG_SEV(logger(), debug) << "CometDelayedConnection::fail to send response to "
                                        << connection_->socket_.remote_endpoint()
@@ -153,11 +160,6 @@ void CometDelayedConnection::handle_write(DelayedResponseSender_ptr comet_http_r
     // references to the CometDelayedConnection object will disappear and the object will be
     // destroyed automatically after this handler returns. The Connection class's
     // destructor closes the socket.
-}
-
-std::string CometDelayedConnection::getRemoteIP() const
-{
-    return connection_->socket_.remote_endpoint().address().to_string();
 }
 
 } // namespace Http

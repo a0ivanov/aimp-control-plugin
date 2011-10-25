@@ -23,7 +23,6 @@ namespace Http
 
 struct Reply;
 struct Request;
-class Connection;
 
 /// The common handler for all incoming requests.
 class RequestHandler : private boost::noncopyable
@@ -43,7 +42,7 @@ public:
         Handle a request and produce a reply.
         Return true if reply should be sent to client immediately, false if response sending must be delayed.
     */
-    bool handle_request(const Request& req, Reply& rep, CometDelayedConnection_ptr connection);
+    bool handle_request(const Request& req, Reply& rep, ICometDelayedConnection_ptr connection);
 
 private:
 
@@ -70,7 +69,7 @@ class ClientDescriptor;
 class DelayedResponseSender : public boost::enable_shared_from_this<DelayedResponseSender>, private boost::noncopyable
 {
 public:
-    DelayedResponseSender(CometDelayedConnection_ptr comet_connection,
+    DelayedResponseSender(ICometDelayedConnection_ptr comet_connection,
                           RequestHandler& http_request_handler)
         :
         comet_connection_(comet_connection),
@@ -79,11 +78,11 @@ public:
 
     void send(const std::string& response, const std::string& response_content_type);
 
-    std::auto_ptr<ClientDescriptor> getClientDescriptor() const;
+    const Reply& get_reply() const;
 
 private:
 
-    CometDelayedConnection_ptr comet_connection_;
+    ICometDelayedConnection_ptr comet_connection_;
     RequestHandler& http_request_handler_;
     Reply reply_; // Reply object is member since it should exist till connection send it to client.
 };

@@ -18,7 +18,7 @@
 
 namespace Http {
 
-bool RequestHandler::handle_request(const Request& req, Reply& rep, CometDelayedConnection_ptr connection)
+bool RequestHandler::handle_request(const Request& req, Reply& rep, ICometDelayedConnection_ptr connection)
 {
     if ( Rpc::Frontend* frontend = rpc_request_handler_.getFrontEnd(req.uri) ) {
         std::string response, response_content_type;
@@ -132,16 +132,16 @@ bool RequestHandler::url_decode(const std::string& in, std::string& out)
     return true;
 }
 
+const Reply& DelayedResponseSender::get_reply() const
+{ 
+    return reply_;
+}
+
 void DelayedResponseSender::send(const std::string& response, const std::string& response_content_type)
 {
     reply_.content = response;
     http_request_handler_.fillReplyWithContent(response_content_type, reply_);
-    comet_connection_->sendResponse(shared_from_this(), reply_);
-}
-
-std::auto_ptr<ClientDescriptor> DelayedResponseSender::getClientDescriptor() const
-{
-    return std::auto_ptr<ClientDescriptor>( new ClientDescriptor( comet_connection_->getRemoteIP() ) );
+    comet_connection_->sendResponse( shared_from_this() );
 }
 
 } // namespace Http

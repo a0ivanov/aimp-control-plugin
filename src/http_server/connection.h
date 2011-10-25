@@ -19,26 +19,32 @@ namespace Http {
 
 class RequestHandler;
 
-/// Represents a single connection from a client.
-class Connection : public boost::enable_shared_from_this<Connection>, private boost::noncopyable
+/// Represents a single tcp-ip connection from a client.
+template <typename SocketT>
+class Connection : /*public Connection, */public boost::enable_shared_from_this< Connection<SocketT> >, private boost::noncopyable
 {
+    template <typename T>
     friend class CometDelayedConnection;
 
 public:
 
     /// Construct a connection with the given io_service.
-    explicit Connection(boost::asio::io_service& io_service,
-                        RequestHandler& handler);
+    Connection(boost::asio::io_service& io_service,
+               RequestHandler& handler);
 
     ~Connection();
-
-    /// Get the socket associated with the connection.
-    boost::asio::ip::tcp::socket& socket();
-
+    
     /// Start the first asynchronous operation for the connection.
     void start();
 
+    /// Get the socket associated with the connection.
+    SocketT& socket();
+
 private:
+
+    void read_some_to_buffer();
+
+    void write_reply_content();
 
     /// Handle completion of a read operation.
     void handle_read(const boost::system::error_code& e, std::size_t bytes_transferred);
@@ -50,7 +56,7 @@ private:
     boost::asio::io_service::strand strand_;
 
     /// Socket for the connection.
-    boost::asio::ip::tcp::socket socket_;
+    SocketT socket_;
 
     /// The handler used to process the incoming request.
     RequestHandler& request_handler_;
@@ -68,31 +74,39 @@ private:
     Reply reply_;
 };
 
-typedef boost::shared_ptr<Connection> Connection_ptr;
-
 
 class DelayedResponseSender;
 
-class CometDelayedConnection : public boost::enable_shared_from_this<CometDelayedConnection>
+class ICometDelayedConnection
 {
 public:
-    CometDelayedConnection(Connection_ptr connection)
+    virtual ~ICometDelayedConnection() {}
+
+    virtual void sendResponse(boost::shared_ptr<Http::DelayedResponseSender> comet_http_response_sender) = 0;
+};
+
+typedef boost::shared_ptr<ICometDelayedConnection> ICometDelayedConnection_ptr;
+
+template<typename SocketT>
+class CometDelayedConnection : public ICometDelayedConnection, public boost::enable_shared_from_this< CometDelayedConnection<SocketT> >
+{
+    typedef Connection<SocketT> ConnectionType;
+    typedef boost::shared_ptr<ConnectionType> ConnectionType_ptr;
+
+public:
+    CometDelayedConnection(ConnectionType_ptr connection)
         :
         connection_(connection)
     {}
 
-    void sendResponse(boost::shared_ptr<Http::DelayedResponseSender> comet_http_response_sender, const Reply& reply);
-
-    std::string getRemoteIP() const;
+    virtual void sendResponse(boost::shared_ptr<Http::DelayedResponseSender> comet_http_response_sender);
 
 private:
 
     void handle_write(boost::shared_ptr<Http::DelayedResponseSender> comet_http_response_sender, const boost::system::error_code& e);
 
-    Connection_ptr connection_;
+    ConnectionType_ptr connection_;
 };
-
-typedef boost::shared_ptr<CometDelayedConnection> CometDelayedConnection_ptr;
 
 } // namespace Http
 
