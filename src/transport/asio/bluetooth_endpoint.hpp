@@ -153,6 +153,24 @@ public:
 	//	ba2str(&address_.btAddr, buf);
 	//}
 
+    std::string to_string() const
+    {
+      boost::system::error_code ec;
+      std::string addr = to_string(ec);
+      boost::asio::detail::throw_error(ec);
+      return addr;
+    }
+
+    std::string to_string(boost::system::error_code& ec) const {
+        const int max_addr_bth_str_len = 256;
+        char addr_str[max_addr_bth_str_len];
+        const char* addr = boost::asio::detail::socket_ops::inet_ntop(AF_BTH, &address_, addr_str,
+                                                                      max_addr_bth_str_len, 0, ec);
+        if (addr == 0)
+            return std::string();
+        return addr;
+    }
+
 	/// Compare two endpoints for equality.
 	friend bool operator==(const bluetooth_endpoint& e1,
 			const bluetooth_endpoint& e2) {
@@ -180,6 +198,26 @@ private:
 
 template<typename X>
 BTH_ADDR bluetooth_endpoint<X>::addr_any = 0UL;
+
+template<typename Elem, typename Traits, typename BluetoothProtocol>
+std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& os,
+                                             const bluetooth_endpoint<BluetoothProtocol>& endpoint)
+{
+    boost::system::error_code ec;
+    std::string s = endpoint.to_string(ec);
+    if (ec) {
+        if (os.exceptions() & std::basic_ostream<Elem, Traits>::failbit) {
+            boost::asio::detail::throw_error(ec);
+        } else {
+            os.setstate(std::basic_ostream<Elem, Traits>::failbit);
+        }
+    } else {
+        for (std::string::iterator i = s.begin(); i != s.end(); ++i) {
+            os << os.widen(*i);
+        }
+    }
+    return os;
+}
 
 }}} // namespace boost::asio::bluetooth
 

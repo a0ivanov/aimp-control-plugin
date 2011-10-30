@@ -41,12 +41,6 @@ public:
 
 };
 
-inline std::ostream& operator<<(std::ostream& os, const rfcomm::endpoint& endpoint)
-{
-    os << "TODO: implement";
-    return os;
-}
-
 }}} // namespace boost::asio::bluetooth
 
 #endif // #ifndef BOOST_ASIO_BLUETOOTH_RFCOMM_HPP__
