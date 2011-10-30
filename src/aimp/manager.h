@@ -382,7 +382,7 @@ struct IReleaseFunctor {
 
 /*!
     Track description.
-    Track's absolute coordinates are { playlist ID, track ID in playlist }.
+    Track's absolute coordinates are { track ID in playlist, playlist ID }.
 */
 struct TrackDescription
 {
