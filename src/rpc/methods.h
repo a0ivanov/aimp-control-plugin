@@ -1099,7 +1099,9 @@ private:
         player_next,
         playlist_sort,
         playlist_add_file,
-        playlist_del_file
+        playlist_del_file,
+        playlist_queue_add,
+        playlist_queue_remove
     };
 
     typedef std::map<std::string, METHOD_ID> MethodNamesMap;

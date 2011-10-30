@@ -1146,7 +1146,9 @@ void EmulationOfWebCtlPlugin::initMethodNamesMap()
         ("player_next",        player_next)
         ("playlist_sort",      playlist_sort)
         ("playlist_add_file",  playlist_add_file)
-        ("playlist_del_file",  playlist_del_file);
+        ("playlist_del_file",  playlist_del_file)
+        ("playlist_queue_add", playlist_queue_add)
+        ("playlist_queue_remove", playlist_queue_remove);
 }
 
 const EmulationOfWebCtlPlugin::METHOD_ID* EmulationOfWebCtlPlugin::getMethodID(const std::string& method_name) const
@@ -1159,8 +1161,8 @@ const EmulationOfWebCtlPlugin::METHOD_ID* EmulationOfWebCtlPlugin::getMethodID(c
 namespace WebCtl
 {
 
-const char * const kVERSION = "2.6.4.3";
-const unsigned int kVERSION_INT = 2643;
+const char * const kVERSION = "2.6.4.4";
+const unsigned int kVERSION_INT = 2644;
 unsigned int update_time = 10,
              cache_time = 60;
 
@@ -1416,11 +1418,15 @@ void EmulationOfWebCtlPlugin::addFile(int playlist_id, const std::string& filena
 ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
     const Rpc::Value& params = root_request["params"];
-    if (params.type() == Rpc::Value::TYPE_OBJECT && params.size() > 0) {
+    try {
+        if (params.type() != Rpc::Value::TYPE_OBJECT || params.size() == 0) {
+            throw std::runtime_error("arguments are missing");
+        }
         const METHOD_ID* method_id = getMethodID(params["action"]);
         if (method_id == NULL) {
-            root_response["result"] = "";
-            return RESPONSE_IMMEDIATE;
+            std::ostringstream msg;
+            msg << "Method " << params["action"] << " not found";
+            throw std::runtime_error( msg.str() );
         }
 
         std::ostringstream out(std::ios::in | std::ios::out | std::ios::binary);
@@ -1527,12 +1533,27 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
             calcPlaylistCRC(playlist_id);
             }
             break;
+        case playlist_queue_add:
+            {
+            const bool insert_at_queue_beginning = false;
+            const TrackDescription track_desc(params["song"], params["playlist"]);
+            aimp_manager_.enqueueEntryForPlay(track_desc, insert_at_queue_beginning);
+            }
+            break;
+        case playlist_queue_remove:
+            {
+            const TrackDescription track_desc(params["song"], params["playlist"]);
+            aimp_manager_.removeEntryFromPlayQueue(track_desc);
+            }
+            break;
         default:
             break;
         }
 
         root_response["result"] = out.str(); // result is simple string.
-    } else {
+    } catch (std::runtime_error& e) { // catch all exceptions of aimp manager here.
+        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__". Reason: " << e.what();
+
         root_response["result"] = "";
     }
     return RESPONSE_IMMEDIATE;
