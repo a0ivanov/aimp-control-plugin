@@ -82,7 +82,7 @@ void Connection<SocketT>::write_reply_content()
 
 template <typename SocketT>
 void Connection<SocketT>::handle_read(const boost::system::error_code& e,
-                             std::size_t bytes_transferred)
+                                      std::size_t bytes_transferred)
 {
     if (!e) {
         boost::tribool result;
