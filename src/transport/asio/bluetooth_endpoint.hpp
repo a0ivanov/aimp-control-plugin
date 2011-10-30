@@ -109,7 +109,7 @@ public:
 
 	/// Get the underlying size of the endpoint in the native type.
 	std::size_t size() const {
-        return sizeof(SOCKADDR_BTH);
+        return sizeof(address_);
 	}
 
 	/// Set the underlying size of the endpoint in the native type.
@@ -122,7 +122,7 @@ public:
 
 	/// Get the capacity of the endpoint in the native type.
 	std::size_t capacity() const {
-		return sizeof(SOCKADDR_BTH);
+		return sizeof(address_);
 	}
 
 	/// Get the port associated with the endpoint. The port number is always in
@@ -163,12 +163,32 @@ public:
 
     std::string to_string(boost::system::error_code& ec) const {
         const int max_addr_bth_str_len = 256;
-        char addr_str[max_addr_bth_str_len];
-        const char* addr = boost::asio::detail::socket_ops::inet_ntop(AF_BTH, &address_, addr_str,
-                                                                      max_addr_bth_str_len, 0, ec);
-        if (addr == 0)
+        char addr_str[max_addr_bth_str_len + 1];
+        //WSAPROTOCOL_INFOA protocol_info;
+        //size_t protocol_info_size = sizeof(protocol_info);
+        //boost::asio::detail::socket_ops(&address_, 0, SOL_SOCKET, SO_PROTOCOL_INFO, &protocol_info, &protocol_info_size, ec);
+        DWORD addr_str_length = max_addr_bth_str_len;
+        using namespace boost::asio::detail::socket_ops;
+        const INT result = error_wrapper(::WSAAddressToStringA(reinterpret_cast<LPSOCKADDR>(const_cast<SOCKADDR_BTH*>(&address_) ),
+                                                               size(),
+                                                               NULL, // &protocol_info,
+                                                               addr_str,
+                                                               &addr_str_length),
+                                          ec);
+        const int socket_error_retval = SOCKET_ERROR;
+        // Windows may set error code on success.
+        if (result != socket_error_retval) {
+            ec = boost::system::error_code();
+        // Windows may not set an error code on failure.
+        } else if (result == socket_error_retval && !ec) {
+            ec = boost::asio::error::invalid_argument;
+        }
+
+        if (result == socket_error_retval)  {
             return std::string();
-        return addr;
+        }        
+        
+        return addr_str;
     }
 
 	/// Compare two endpoints for equality.
