@@ -828,7 +828,7 @@ AIMPManager::PLAYBACK_STATE AIMPManager::getPlaybackState() const
 
 void AIMPManager::enqueueEntryForPlay(TrackDescription track_desc, bool insert_at_queue_beginning) // throws std::runtime_error
 {
-    if ( FALSE == aimp_playlist_manager_->AIMP_PLS_Entry_QueueSet(track_desc.playlist_id, track_desc.track_id, insert_at_queue_beginning) ) {
+    if ( S_OK != aimp_playlist_manager_->AIMP_PLS_Entry_QueueSet(track_desc.playlist_id, track_desc.track_id, insert_at_queue_beginning) ) {
         std::ostringstream msg;
         msg << "Error in "__FUNCTION__" with " << track_desc;
         throw std::runtime_error( msg.str() );
@@ -837,7 +837,7 @@ void AIMPManager::enqueueEntryForPlay(TrackDescription track_desc, bool insert_a
 
 void AIMPManager::removeEntryFromPlayQueue(TrackDescription track_desc) // throws std::runtime_error
 {
-    if ( FALSE == aimp_playlist_manager_->AIMP_PLS_Entry_QueueRemove(track_desc.playlist_id, track_desc.track_id) ) {
+    if ( S_OK != aimp_playlist_manager_->AIMP_PLS_Entry_QueueRemove(track_desc.playlist_id, track_desc.track_id) ) {
         std::ostringstream msg;
         msg << "Error in "__FUNCTION__" with " << track_desc;
         throw std::runtime_error( msg.str() );
