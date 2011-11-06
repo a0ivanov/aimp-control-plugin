@@ -167,8 +167,10 @@ function createEntriesControl(index, $tab_ui)
 											  on_complete  : undefined
 											}
             );
-			gotoCurrentTrackInPlaylist();
-
+			
+			if (control_panel_state.playlist_id === request_params.playlist_id) {
+				gotoCurrentTrackInPlaylist();
+			}
         },
         bProcessing : true,
         bJQueryUI : true,
@@ -527,27 +529,26 @@ function deletePlaylistsControls()
     }
 }
 
+function isPlaylistContentLoaded($tab_ui) {
+	var playlist_id = getPlaylistIdFromTabId($tab_ui.id);
+	return $playlists_tables['entries_table_' + playlist_id] !== undefined;
+}
+
 /* create controls(jQuery UI Tabs) for list of playlists. */
 function createPlaylistsControls(playlists)
 {
     if ($playlists_tabs === null) {
         $playlists_tabs = $('#playlists').tabs({
-            cookie: { expires: 1 } // store cookie for a day, without, it would be a session cookie
+            cookie: { expires: 1 }, // store cookie for a day, without, it would be a session cookie
+			select: function(event, $ui) { // load content of playlist on tab activation, if content is not loaded yet.
+						var $tab_ui = $ui.panel;
+						if ( !isPlaylistContentLoaded($tab_ui) ) {
+							createEntriesControl($tab_ui.index, $tab_ui);	
+						}
+					}
         }); // necessary initialization of Tabs control.
     }
 
-	/*
-	$('<div id="q11"><p>Proin elit arcu</p></div><div id="q22">trttr</div>').appendTo('body');
-	$playlists_tabs.tabs('add',
-						 '#q11',
-						 'tab1'
-						 );
-	$playlists_tabs.tabs('add',
-						 '#q22',
-						 'tab2'
-						 );
-	return;
-*/
     // create tabs for each playlist.
     for(i = 0; i < playlists.length; ++i) {
         var playlist_id_name = 'playlist_' + playlists[i].id;
@@ -555,18 +556,18 @@ function createPlaylistsControls(playlists)
         var div_html = '<div id="' + playlist_id_name + '">' + createTemplateEntriesTable(playlists[i].id) + '</div>';
         $(div_html).appendTo('body');
         $playlists_tabs.tabs('add',
-                             '#' + playlist_id_name,
-                             playlists[i].title
-                             );
+							 '#' + playlist_id_name,
+		 					 playlists[i].title
+							 );
     }
 	
-	
 	if ( control_panel_state.hasOwnProperty('playlist_id') ) {
-		gotoCurrentPlaylist(control_panel_state.playlist_id);	
+		// content will be loaded on selection.
+		gotoCurrentPlaylist(control_panel_state.playlist_id);
+	} else {
+	    // select all created playlists and init them.
+		$('#playlists > div').each(createEntriesControl);
 	}
-	
-    // select all created playlists and init them.
-    $('#playlists > div').each(createEntriesControl);
 }
 
 /*
