@@ -559,7 +559,12 @@ function createPlaylistsControls(playlists)
                              playlists[i].title
                              );
     }
-
+	
+	
+	if ( control_panel_state.hasOwnProperty('playlist_id') ) {
+		gotoCurrentPlaylist(control_panel_state.playlist_id);	
+	}
+	
     // select all created playlists and init them.
     $('#playlists > div').each(createEntriesControl);
 }
