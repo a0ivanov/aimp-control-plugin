@@ -3,7 +3,7 @@
 #include "stdafx.h"
 #include "image.h"
 #include <boost/noncopyable.hpp>
-#include <sstream>
+#include "utils/util.h"
 
 namespace ImageUtils
 {
@@ -213,11 +213,10 @@ void AIMPCoverImage::saveToVector(AIMPCoverImage::IMAGEFORMAT image_format, std:
 
     //FreeImage_SetOutputMessage(FreeImage::FreeImageErrorHandler); // set handler that fill FreeImage::free_library_last_error_message string in case of error.
     BOOL result = saveToHandle(cast<FREE_IMAGE_FORMAT>(image_format), &io, &memory_handle);
-    //FreeImage_SetOutputMessage(NULL); // remove error handler.
+    //FreeImage_SetOutputMessage(nullptr); // remove error handler.
     if (FALSE == result) {
-        std::ostringstream msg;
-        msg << "Error occured while saving image in vector. Reason: " << "unknown"; // << FreeImage::free_library_last_error_message;
-        throw std::runtime_error( msg.str() );
+        using namespace Utilities;
+        throw std::runtime_error(MakeString() << "Error occured while saving image in vector. Reason: " << "unknown"); // << FreeImage::free_library_last_error_message;
     }
 }
 
@@ -225,12 +224,11 @@ void AIMPCoverImage::saveToFile(AIMPCoverImage::IMAGEFORMAT image_format, const 
 {
     //FreeImage_SetOutputMessage(FreeImage::FreeImageErrorHandler); // set handler that fill FreeImage::free_library_last_error_message string in case of error.
     BOOL result = saveU(file_name.c_str(), 0); // 0 means default saving settings.
-    //FreeImage_SetOutputMessage(NULL); // remove error handler.
+    //FreeImage_SetOutputMessage(nullptr); // remove error handler.
 
     if (FALSE == result) {
-        std::ostringstream msg;
-        msg << "Error occured while saving image to file. Reason: " << "unknown"; // << FreeImage::free_library_last_error_message;
-        throw std::runtime_error( msg.str() );
+        using namespace Utilities;
+        throw std::runtime_error(MakeString() << "Error occured while saving image to file. Reason: " << "unknown"); // << FreeImage::free_library_last_error_message;
     }
 }
 

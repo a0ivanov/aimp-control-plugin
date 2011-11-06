@@ -16,6 +16,12 @@ ModuleLoggerType& logger()
 namespace AIMPPlayer
 {
 
+Playlist::Playlist()
+    : 
+    entries_( boost::make_shared<EntriesListType>() ),
+    entries_sorter_(entries_)
+{}
+
 Playlist::Playlist( const CHAR* title,
                     DWORD file_count,
                     DWORD duration,
@@ -28,21 +34,53 @@ Playlist::Playlist( const CHAR* title,
     duration_(duration),
     size_of_all_entries_in_bytes_(size_of_all_entries_in_bytes),
     id_(id),
-    entries_(),
+    entries_( boost::make_shared<EntriesListType>() ),
     entries_sorter_(entries_)
 {
 }
 
-const EntriesListType& Playlist::getEntries() const
+Playlist::Playlist(Playlist&& rhs)
+    :
+    title_( std::move(rhs.title_) ),
+    file_count_(rhs.file_count_),
+    duration_(rhs.duration_),
+    size_of_all_entries_in_bytes_(rhs.size_of_all_entries_in_bytes_),
+    id_(rhs.id_),
+    entries_( std::move(rhs.entries_) ),
+    entries_sorter_( std::move(rhs.entries_sorter_) )
+{}
+
+Playlist& Playlist::operator=(Playlist&& rhs)
 {
-    return entries_;
+    Playlist tmp( std::move(rhs) );
+    swap(tmp);
+    return *this;
 }
 
-void Playlist::swapEntries(EntriesListType& new_entries)
+void Playlist::swap(Playlist& rhs)
 {
-    entries_.swap(new_entries);
-    // every time when entry list is changed we need to reset sorter to be sure it does not use old cache.
+    using std::swap;
+    swap(title_, rhs.title_);
+    swap(file_count_, rhs.file_count_);
+    swap(duration_, rhs.duration_);
+    swap(size_of_all_entries_in_bytes_, rhs.size_of_all_entries_in_bytes_);
+    swap(id_, rhs.id_);
+    swap(entries_, rhs.entries_);
+    swap(entries_sorter_, rhs.entries_sorter_);
+}
+
+const EntriesListType& Playlist::getEntries() const
+{
+    assert(entries_);
+    return *entries_;
+}
+
+EntriesListType& Playlist::getEntries()
+{
+    // every time when entry list is changed we need to perform reset to be sure it does not use old cache.
     entries_sorter_.reset();
+    assert(entries_);
+    return *entries_;
 }
 
 const PlaylistEntryIDList& Playlist::getEntriesSortedByField(EntriesSortUtil::FieldToOrderDescriptor order_descriptor) const

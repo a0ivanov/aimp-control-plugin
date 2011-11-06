@@ -36,10 +36,10 @@ static std::string from_utf16_to(int code_page, const WCHAR* begin, const WCHAR*
                                                                         0, // __in   DWORD dwFlags,
                                                                         begin, // __in   LPCWSTR lpWideCharStr,
                                                                         utf16_string_size, // __in   int cchWideChar,
-                                                                        NULL, // __out  LPSTR lpMultiByteStr,
+                                                                        nullptr, // __out  LPSTR lpMultiByteStr,
                                                                         0, // __in   int cbMultiByte, // value 0 means request for converted converted buffer length
-                                                                        NULL, // __in   LPCSTR lpDefaultChar,
-                                                                        NULL // __out  LPBOOL lpUsedDefaultChar
+                                                                        nullptr, // __in   LPCSTR lpDefaultChar,
+                                                                        nullptr // __out  LPBOOL lpUsedDefaultChar
                                                                       );
     if (converted_buffer_length_calculated <= 0) {
         std::ostringstream s;
@@ -55,8 +55,8 @@ static std::string from_utf16_to(int code_page, const WCHAR* begin, const WCHAR*
                                                             utf16_string_size,
                                                             &converted_buffer[0],
                                                             converted_buffer_length_calculated,
-                                                            NULL,
-                                                            NULL
+                                                            nullptr,
+                                                            nullptr
                                                            );
     if (converted_buffer_length != converted_buffer_length_calculated) {
         std::ostringstream s;
@@ -96,7 +96,7 @@ static std::wstring to_utf16_from(int code_page, const CHAR* begin, const CHAR* 
                                                                         0,// __in   DWORD dwFlags,
                                                                         begin, // __in   LPCSTR lpMultiByteStr,
                                                                         string_size, //__in   int cbMultiByte,
-                                                                        NULL,// __out  LPWSTR lpWideCharStr,
+                                                                        nullptr,// __out  LPWSTR lpWideCharStr,
                                                                         0 //__in   int cchWideChar // value 0 means request for converted converted string length
                                                                       );
 

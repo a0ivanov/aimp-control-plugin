@@ -43,7 +43,7 @@ const std::wstring AIMPControlPluginHeader::kPLUGIN_SHORT_NAME        = L"Contro
 const std::wstring AIMPControlPluginHeader::kPLUGIN_AUTHOR            = L"Alexey Ivanov";
 const std::wstring AIMPControlPluginHeader::kPLUGIN_SETTINGS_FILENAME = L"settings.dat";
 
-AIMPControlPluginHeader* plugin_instance = NULL;
+AIMPControlPluginHeader* plugin_instance = nullptr;
 
 namespace PluginLogger
 {
@@ -93,10 +93,10 @@ boost::filesystem::wpath AIMPControlPluginHeader::makePluginWorkDirectory()
     boost::filesystem::wpath path_to_aimp_plugins_work_directory(kPLUGIN_SHORT_NAME);
 
     // get IAIMP2Extended interface.
-    IAIMP2Extended* extended = NULL;
+    IAIMP2Extended* extended = nullptr;
     if ( aimp_controller_->AIMP_QueryObject(IAIMP2ExtendedID, &extended) ) {
         boost::shared_ptr<IAIMP2Extended> aimp_extended( extended, AIMPPlayer::IReleaseFunctor() );
-        extended = NULL;
+        extended = nullptr;
 
         WCHAR buffer[MAX_PATH];
         const int buffer_length = aimp_extended->AIMP_GetPath(AIMP_CFG_DATA, buffer, MAX_PATH);
@@ -422,7 +422,7 @@ void freeImagePlusDllTest()
     fipWinImage img; // check fipWinImage::fipWinImage() availability.
     img.copyFromBitmap(0); // check fipWinImage::copyFromBitmap() availability.
     FreeImageIO io;
-    img.saveToHandle(FIF_PNG, &io, NULL); // check fipWinImage::saveToHandle() availability.
+    img.saveToHandle(FIF_PNG, &io, nullptr); // check fipWinImage::saveToHandle() availability.
 }
 
 void AIMPControlPluginHeader::checkFreeImageDLLAvailability()
@@ -446,9 +446,9 @@ boost::filesystem::wpath AIMPControlPluginHeader::getWebServerDocumentRoot() con
     }
 
     if ( !( fs::exists(document_root_path) && fs::is_directory(document_root_path) ) ) {
-        std::ostringstream os;
-        os << "Web-server document root directory does not exist: \"" << StringEncoding::utf16_to_system_ansi_encoding( document_root_path.string() ) << "\"";
-        throw std::runtime_error( os.str() );
+        throw std::runtime_error(Utilities::MakeString() << "Web-server document root directory does not exist: \"" 
+                                                         << StringEncoding::utf16_to_system_ansi_encoding( document_root_path.string() ) << "\""
+                                 );
     }
 
     return document_root_path;

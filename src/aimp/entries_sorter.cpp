@@ -9,11 +9,11 @@
 
 namespace AIMPPlayer { namespace EntriesSortUtil {
 
-EntriesSorter::EntriesSorter(const EntriesListType& entries)
+EntriesSorter::EntriesSorter(boost::shared_ptr<const EntriesListType> entries)
     :
     entries_(entries)
 {
-#define MAKE_CACHE_FOR_FIELD(field_name) OrderedEntryIDsCache( createComparatorPlaylistEntryIDs(entries_, &PlaylistEntry::get##field_name) )
+#define MAKE_CACHE_FOR_FIELD(field_name) OrderedEntryIDsCache( createComparatorPlaylistEntryIDs(*entries_, &PlaylistEntry::get##field_name) )
     ordered_caches_.insert(std::make_pair(ID,       MAKE_CACHE_FOR_FIELD(ID) ) );
     ordered_caches_.insert(std::make_pair(TITLE,    MAKE_CACHE_FOR_FIELD(Title) ) );
     ordered_caches_.insert(std::make_pair(ARTIST,   MAKE_CACHE_FOR_FIELD(Artist) ) );
@@ -26,6 +26,20 @@ EntriesSorter::EntriesSorter(const EntriesListType& entries)
     ordered_caches_.insert(std::make_pair(RATING,   MAKE_CACHE_FOR_FIELD(Rating) ) );
 #undef MAKE_CACHE_FOR_FIELD
     assert( FIELDS_ORDERABLE_SIZE == ordered_caches_.size() );
+}
+
+EntriesSorter::EntriesSorter(EntriesSorter&& rhs)
+    :
+    ordered_caches_( std::move(rhs.ordered_caches_) ),
+    entries_( std::move(rhs.entries_) )
+{
+}
+
+void EntriesSorter::swap(EntriesSorter& rhs)
+{
+    using std::swap;
+    swap(ordered_caches_, rhs.ordered_caches_);
+    swap(entries_, rhs.entries_);
 }
 
 bool operator!=(SEQUENCE_ORDER_STATE state, ORDER_DIRECTION direction)
@@ -44,13 +58,11 @@ void syncronizeOrderedEntryIDsCacheWithEntriesList(OrderedEntryIDsCache& sorted_
         entry_ids.clear();
         entry_ids.reserve( entries.size() );
 
-        struct IndexGenerator {
-            PlaylistEntryID index_;
-            IndexGenerator() : index_(0) {}
-            PlaylistEntryID operator()() { return index_++; }
-        };
-
-        std::generate_n( std::back_inserter(entry_ids), entries.size(), IndexGenerator() );
+        PlaylistEntryID index_ = 0;
+        std::generate_n( std::back_inserter(entry_ids),
+                         entries.size(),
+                         [&index_]() { return index_++; }
+                        );
 
         // reset order state flag to be sure that new sequence will be sorted.
         sorted_cache.order_state_ = UNORDERED;
@@ -60,7 +72,7 @@ void syncronizeOrderedEntryIDsCacheWithEntriesList(OrderedEntryIDsCache& sorted_
 const PlaylistEntryIDList& EntriesSorter::getEntriesSortedByField(FieldToOrderDescriptor order_descriptor)
 {
     OrderedEntryIDsCache& sorted_cache = ordered_caches_.find(order_descriptor.field_)->second; // search should always be successfull.
-    syncronizeOrderedEntryIDsCacheWithEntriesList(sorted_cache, entries_);
+    syncronizeOrderedEntryIDsCacheWithEntriesList(sorted_cache, *entries_);
 
     PlaylistEntryIDList& sorted_entry_ids = sorted_cache.sequence_;
 
@@ -71,7 +83,7 @@ const PlaylistEntryIDList& EntriesSorter::getEntriesSortedByField(FieldToOrderDe
                                                                                : DESCENDING_ORDER;
     }
 
-    assert( sorted_entry_ids.size() == entries_.size() );
+    assert( sorted_entry_ids.size() == entries_->size() );
     return sorted_entry_ids;
 }
 
@@ -83,7 +95,7 @@ const PlaylistEntryIDList& EntriesSorter::getEntriesSortedByMultipleFields(const
     }
 
     OrderedEntryIDsCache& sorted_cache = ordered_caches_.find(field_to_order_descriptors[0].field_)->second; // search should always be successfull.
-    syncronizeOrderedEntryIDsCacheWithEntriesList(sorted_cache, entries_);
+    syncronizeOrderedEntryIDsCacheWithEntriesList(sorted_cache, *entries_);
 
     PlaylistEntryIDList& sorted_entry_ids = sorted_cache.sequence_;
 
@@ -98,7 +110,7 @@ const PlaylistEntryIDList& EntriesSorter::getEntriesSortedByMultipleFields(const
 
         bool operator()(PlaylistEntryID id_left, PlaylistEntryID id_right) const
         {
-            size_t descriptors_size = field_to_order_descriptors_.size();
+            const size_t descriptors_size = field_to_order_descriptors_.size();
             for (size_t index = 0; index < descriptors_size; ++index) {
                 const FieldToOrderDescriptor& field_desc = field_to_order_descriptors_[index];
                 const ComparatorPlaylistEntryIDsBase* comparator = ordered_caches_.find(field_desc.field_)->second.comparator_.get();
@@ -116,7 +128,7 @@ const PlaylistEntryIDList& EntriesSorter::getEntriesSortedByMultipleFields(const
                 }
             }
 
-            // This point never will be riched since field_to_order_descriptors_ has at least one element.
+            assert(!"This point must not be riched since field_to_order_descriptors_ has at least one element.");
             return false; // avoid warning C4715: not all control paths return a value.
         }
 
@@ -128,13 +140,13 @@ const PlaylistEntryIDList& EntriesSorter::getEntriesSortedByMultipleFields(const
 
     sorted_cache.order_state_ = (field_to_order_descriptors[0].direction_ == ASCENDING) ? ASCENDING_ORDER
                                                                                         : DESCENDING_ORDER;
-    assert( sorted_entry_ids.size() == entries_.size() );
+    assert( sorted_entry_ids.size() == entries_->size() );
     return sorted_entry_ids;
 }
 
 void EntriesSorter::reset()
 {
-    BOOST_FOREACH(OrderedCachesList::value_type& helper_pair, ordered_caches_) {
+    BOOST_FOREACH(auto& helper_pair, ordered_caches_) {
         OrderedEntryIDsCache& ordered_entry_ids = helper_pair.second;
         ordered_entry_ids.reset();
     }

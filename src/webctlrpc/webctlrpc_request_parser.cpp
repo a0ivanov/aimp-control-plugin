@@ -62,10 +62,10 @@ bool getArgs(const std::string& uri, Arguments* args)
 
 void convertQueryArgumentsToRPCValueParams(const Arguments& args, Rpc::Value& params)
 {
-    for (Arguments::const_iterator arg_it = args.begin(),
-                                   end    = args.end();
-                                   arg_it != end;
-                                   ++arg_it
+    for (auto arg_it = args.begin(),
+              end    = args.end();
+              arg_it != end;
+              ++arg_it
          )
     {
         const std::string& value = arg_it->second;

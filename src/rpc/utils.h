@@ -135,7 +135,7 @@ struct HelperFillRpcFields
 
         for (size_t field_index = 0; field_index < requested_fields_count; ++field_index) {
             const std::string& field = requested_fields[field_index];
-            RpcValueSetters::const_iterator setter_iterator = setters_.find(field);
+            const auto setter_iterator = setters_.find(field);
             if ( setter_iterator == setters_.end() ) {
                 std::ostringstream msg;
                 msg << "Wrong argument(" << logger_msg_id_ << "): " << field;
@@ -145,13 +145,13 @@ struct HelperFillRpcFields
         }
     }
 
-     //! Walks through all required field setters and fills correspond rpc field.
-    void fillRpcArrayOfObjects(const T* data_provider_object, Rpc::Value& fields)
+    //! Walks through all required field setters and fills correspond rpc field.
+    void fillRpcArrayOfObjects(const T& data_provider_object, Rpc::Value& fields)
     {
-        BOOST_FOREACH (const RpcValueSetters::const_iterator& setter, setters_required_) {
+        BOOST_FOREACH (const auto& setter, setters_required_) {
             const std::string& field_id = setter->first;
             try {
-                setter->second(*data_provider_object, fields[field_id]); // invoke functor, that will assign value to fields[field_id].
+                setter->second(data_provider_object, fields[field_id]); // invoke functor, that will assign value to fields[field_id].
             } catch (std::exception& e) {
                 BOOST_LOG_SEV(logger(), error) << "Error occured while filling AIMP " << logger_msg_id_ << " field " << field_id << ". Reason: " << e.what();
                 assert(!"Error occured while filling field in"__FUNCTION__);
@@ -161,13 +161,13 @@ struct HelperFillRpcFields
     }
 
     //! Walks through all required field setters and fills correspond rpc field.
-    void fillRpcArrayOfArrays(const T* data_provider_object, Rpc::Value& fields)
+    void fillRpcArrayOfArrays(const T& data_provider_object, Rpc::Value& fields)
     {
         int index = 0;
         fields.setSize( setters_required_.size() );
-        BOOST_FOREACH (const RpcValueSetters::const_iterator& setter, setters_required_) {
+        BOOST_FOREACH (const auto& setter, setters_required_) {
             try {
-                setter->second(*data_provider_object, fields[index]); // invoke functor, that will assign value to fields[field_id].
+                setter->second(data_provider_object, fields[index]); // invoke functor, that will assign value to fields[field_id].
             } catch (std::exception& e) {
                 BOOST_LOG_SEV(logger(), error) << "Error occured while filling AIMP " << logger_msg_id_
                                                << " field " << setter->first << ", field index " << index
@@ -191,7 +191,7 @@ private:
 
 
 //! type of functor that returns string field of specified playlist object. Concrete field to return assinged by boost::bind() in GetPlaylistEntries() ctor.
-typedef boost::function<const std::wstring& (const AIMPPlayer::PlaylistEntry* entry)> GetterOfEntryStringField;
+typedef boost::function<const std::wstring& (const AIMPPlayer::PlaylistEntry& entry)> GetterOfEntryStringField;
 typedef std::vector<GetterOfEntryStringField> GettersOfEntryStringField;
 
 /*!
@@ -205,9 +205,9 @@ struct FindStringOccurenceInEntryFieldsFunctor
         \param search_string string for search.
         \return true if string was found otherwise false.
     */
-    bool operator()(const AIMPPlayer::PlaylistEntry* entry, const std::wstring& search_string) const
+    bool operator()(const AIMPPlayer::PlaylistEntry& entry, const std::wstring& search_string) const
     {
-        BOOST_FOREACH (const GetterOfEntryStringField& getter, field_getters_) {
+        BOOST_FOREACH (const auto& getter, field_getters_) {
             const std::wstring& string_to_check = getter(entry);
             boost::iterator_range<std::wstring::const_iterator> result = boost::ifind_first(string_to_check, search_string);
             if ( result.begin() != result.end() ) {

@@ -117,7 +117,7 @@ public:
     typedef boost::function<void (EVENTS)> EventsListener;
     typedef std::size_t EventsListenerID;
 
-    typedef std::map<PlaylistID, boost::shared_ptr<Playlist> > PlaylistsListType;
+    typedef std::map<PlaylistID, Playlist> PlaylistsListType;
 
     /*!
         \param aimp_controller - pointer to IAIMP2Controller object.
@@ -325,7 +325,7 @@ private:
     void loadEntries(Playlist& playlist); // throws std::runtime_error
 
     //! Loads playlist by AIMP internal index.
-    boost::shared_ptr<Playlist> loadPlaylist(int playlist_index); // throws std::runtime_error
+    Playlist loadPlaylist(int playlist_index); // throws std::runtime_error
 
     //! initializes all requiered for work AIMP SDK interfaces.
     void initializeAIMPObjects(); // throws std::runtime_error

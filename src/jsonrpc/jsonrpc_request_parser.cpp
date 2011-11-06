@@ -73,8 +73,8 @@ void convertJsonRpcValueToRpcValue(const Json::Value& json_rpc_value, Rpc::Value
         Rpc::Value::Object object;
 
         const Json::Value::Members& member_names = json_rpc_value.getMemberNames();
-        Json::Value::Members::const_iterator member_name_it = member_names.begin(),
-                                             end            = member_names.end();
+        auto member_name_it = member_names.begin(),
+             end            = member_names.end();
         for (; member_name_it != end; ++member_name_it) {
             const std::string& member_name = *member_name_it;
             convertJsonRpcValueToRpcValue(json_rpc_value[member_name], &object[member_name]);

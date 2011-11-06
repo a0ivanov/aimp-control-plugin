@@ -93,7 +93,7 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
     // child, it throws. Property tree iterator can be used in
     // the same way as standard container iterator. Category
     // is bidirectional_iterator.
-    BOOST_FOREACH( const wptree::value_type& v, pt.get_child(L"settings.logging.modules") ) {
+    BOOST_FOREACH( const auto& v, pt.get_child(L"settings.logging.modules") ) {
         modules_to_log.insert( utf16_to_system_ansi_encoding( v.second.data() ) );
     }
 

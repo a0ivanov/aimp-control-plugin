@@ -17,7 +17,7 @@ typedef HPLS PlaylistID; //! playlist handle
 class PlaylistEntry;
 
 //! list of entries. Entry ID is index of PlaylistEntry oblect in vector.
-typedef std::vector< boost::shared_ptr<PlaylistEntry> > EntriesListType;
+typedef std::vector<PlaylistEntry> EntriesListType;
 
 //! list of entry IDs.
 typedef std::vector<PlaylistEntryID> PlaylistEntryIDList;

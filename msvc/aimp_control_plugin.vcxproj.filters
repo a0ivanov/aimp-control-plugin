@@ -139,6 +139,9 @@
     <ClCompile Include="..\src\webctlrpc\webctlrpc_response_serializer.cpp">
       <Filter>src\rpc_server\webctl</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\aimp\playlist_entry.cpp">
+      <Filter>src\aimp_manager</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\stdafx.h">

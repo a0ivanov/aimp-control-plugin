@@ -96,8 +96,8 @@ void convertRpcValueToJsonRpcValue(const Rpc::Value& rpc_value, Json::Value* jso
     case Rpc::Value::TYPE_OBJECT:
         {
         *json_rpc_value = Json::Value();
-        Rpc::Value::Object::const_iterator member_it = rpc_value.getObjectMembersBegin(),
-                                           end       = rpc_value.getObjectMembersEnd();
+        auto member_it = rpc_value.getObjectMembersBegin(),
+             end       = rpc_value.getObjectMembersEnd();
         for (; member_it != end; ++member_it) {
             convertRpcValueToJsonRpcValue( member_it->second, &((*json_rpc_value)[member_it->first]) );
         }

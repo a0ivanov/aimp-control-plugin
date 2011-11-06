@@ -29,18 +29,18 @@ Frontend* RequestHandler::getFrontEnd(const std::string& uri)
             return &frontend;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 Method* RequestHandler::getMethodByName(const std::string& name)
 {
-    RPCMethodsMap::iterator method_iterator = rpc_methods_.find(name);
+    auto method_iterator = rpc_methods_.find(name);
 
     if ( method_iterator != rpc_methods_.end() ) {
         return method_iterator->second;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 void RequestHandler::addMethod(std::auto_ptr<Method> method)
@@ -91,7 +91,7 @@ boost::tribool RequestHandler::callMethod(const Value& root_request,
     try {
         const std::string& method_name = root_request["method"];
         Method* method = getMethodByName(method_name);
-        if (method == NULL) {
+        if (method == nullptr) {
             response_serializer.serializeFault(root_request, method_name + ": method not found", METHOD_NOT_FOUND_ERROR, response);
             return false;
         }
@@ -128,7 +128,7 @@ boost::shared_ptr<DelayedResponseSender> RequestHandler::getDelayedResponseSende
 {
     boost::shared_ptr<Http::DelayedResponseSender> ptr = active_delayed_response_sender_.lock();
     if (ptr) {
-        return boost::shared_ptr<DelayedResponseSender>( new DelayedResponseSender(ptr, *active_response_serializer_) );
+        return boost::make_shared<DelayedResponseSender>(ptr, *active_response_serializer_);
     } else {
         return boost::shared_ptr<DelayedResponseSender>();
     }

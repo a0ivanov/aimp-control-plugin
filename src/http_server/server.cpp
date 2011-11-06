@@ -7,6 +7,7 @@
 #include "http_server/server.h"
 #include "plugin/logger.h"
 #include "utils/string_encoding.h"
+#include "utils/util.h"
 #include <boost/bind.hpp>
 
 #include "connection.cpp"
@@ -28,6 +29,7 @@ namespace Http
 {
 
 using AIMPControlPlugin::PluginLogger::LogManager;
+using namespace Utilities;
 
 Server::Server( boost::asio::io_service& io_service,
                 const std::string& address,
@@ -44,9 +46,10 @@ Server::Server( boost::asio::io_service& io_service,
     try {
         open_specified_socket(address, port);
     } catch(std::exception& e) {
-        std::ostringstream msg;
-        msg << "Error in "__FUNCTION__": Failed to start server on '" << address << "':" << port << "' interface. Reason: " << e.what();
-        throw std::runtime_error( msg.str() );
+        using namespace Utilities;
+        throw std::runtime_error( MakeString() << "Error in "__FUNCTION__": Failed to start server on '"
+                                               << address << "':" << port << "' interface. Reason: " << e.what()
+                                 );
     }
     
     try {
@@ -94,9 +97,9 @@ void Server::open_specified_socket(const std::string& address, const std::string
             BOOST_LOG_SEV(logger(), debug) << ip::tcp::endpoint(*endpoint_iter);
         }
     } catch(std::exception& e) {
-        std::ostringstream msg;
-        msg << "Error in "__FUNCTION__": Failed to resolve endpoint for ip '" << address << "' and port '" << port << "'. Reason: " << e.what();
-        throw std::runtime_error( msg.str() );
+        throw std::runtime_error( MakeString() << "Error in "__FUNCTION__": Failed to resolve endpoint for ip '"
+                                               << address << "' and port '" << port << "'. Reason: " << e.what()
+                                 );
     }
 
     ip::tcp::endpoint endpoint;
@@ -118,13 +121,9 @@ void Server::open_specified_socket(const std::string& address, const std::string
                                             placeholders::error)
                               );
     } catch(std::exception& e) { // this also handles boost::system::system_error exceptions from acceptor_ methods.
-        std::ostringstream msg;
-        msg << "Error in "__FUNCTION__": Failed to start server on " << endpoint << " interface. Reason: " << e.what();
-        throw std::runtime_error( msg.str() );
+        throw std::runtime_error( MakeString() << "Error in "__FUNCTION__": Failed to start server on " << endpoint << " interface. Reason: " << e.what() );
     } catch(...) {
-        std::ostringstream msg;
-        msg << "Error in "__FUNCTION__": Failed to start server on " << endpoint << " interface. Reason: unknown";
-        throw std::runtime_error( msg.str() );
+        throw std::runtime_error(MakeString() << "Error in "__FUNCTION__": Failed to start server on " << endpoint << " interface. Reason: unknown");
     }
 }
 
@@ -225,9 +224,7 @@ void Server::register_bluetooth_service()
     service.lpcsaBuffer = &csAddr;
 
     if ( 0 != WSASetService(&service, RNRSERVICE_REGISTER, 0) ) {
-        std::ostringstream msg;
-        msg << "Service registration failed. Last error code: %d" << GetLastError(); // GetLastErrorMessage
-        throw std::runtime_error( msg.str() );
+        throw std::runtime_error( MakeString() << "Service registration failed. Last error code: %d" << GetLastError() ); // GetLastErrorMessage
     } else {
         BOOST_LOG_SEV(logger(), debug) << "Bluetooth service registration successful";
         BOOST_LOG_SEV(logger(), info) << "Bluetooth service UUID: " << service.lpServiceClassId;

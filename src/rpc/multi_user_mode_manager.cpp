@@ -77,7 +77,7 @@ const User& MultiUserModeManager::getTopUser() const
 {
     assert( 0 <= top_user_index_ && top_user_index_ < users_ordered_by_connection_moment_.size() ); // top_user_index_ is out of range.
 
-    UserList::const_iterator iter = users_.find(users_ordered_by_connection_moment_[top_user_index_]);
+    const auto iter = users_.find(users_ordered_by_connection_moment_[top_user_index_]);
     if ( iter == users_.end() ) {
         assert(!"user not found, "__FUNCTION__);
         throw std::logic_error("user not found in "__FUNCTION__);

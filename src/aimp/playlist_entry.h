@@ -31,24 +31,11 @@ public:
                     DWORD track_id_aimp_internal,
                     DWORD id,
                     crc32_t crc32 = 0
-                 )
-        :
-        album_(album, album_len),
-        artist_(artist, artist_len),
-        date_(date, date_len),
-        filename_(filename, filename_len),
-        genre_(genre, genre_len),
-        title_(title, title_len),
-        bitrate_(bitrate),
-        channels_count_(channels_count),
-        duration_(duration),
-        filesize_(filesize),
-        rating_(rating),
-        samplerate_(samplerate),
-        track_id_aimp_internal_(track_id_aimp_internal),
-        id_(id),
-        crc32_(crc32)
-    {}
+                 );
+
+    PlaylistEntry(PlaylistEntry&& rhs);
+
+    PlaylistEntry& operator=(PlaylistEntry&& rhs);
 
     //! Returns album.
     const std::wstring& getAlbum() const { return album_; }
@@ -93,7 +80,9 @@ public:
     PlaylistEntryID getID() const { return id_; }
 
     //! Returns crc32 of entry. Calculate only if value was not calculated earlier.
-    inline crc32_t getCRC32() const;
+    crc32_t getCRC32() const;
+
+    void swap(PlaylistEntry& rhs);
 
 private:
 
@@ -113,6 +102,10 @@ private:
     DWORD track_id_aimp_internal_; //! internal AIMP player's ID of track. It seems it is not unique. Not used.
     PlaylistEntryID id_; //! external unique PlaylistEntry's ID of track.
     mutable crc32_t crc32_; //! crc32 can be lazy calculated in const getCRC32() function, so make it mutable.
+
+    PlaylistEntry();
+    PlaylistEntry(const PlaylistEntry&);
+    PlaylistEntry& operator=(const PlaylistEntry&);
 };
 
 } // namespace AIMPPlayer
@@ -144,16 +137,6 @@ inline crc32_t Utilities::crc32<AIMPPlayer::PlaylistEntry>(const AIMPPlayer::Pla
     };
 
     return Utilities::crc32( &members_crc32_list[0], sizeof(members_crc32_list) );
-}
-
-// Define this method here since specialization of Utilities::crc32() for AIMP2SDK::AIMP2FileInfo should be defined first.
-inline crc32_t AIMPPlayer::PlaylistEntry::getCRC32() const
-{
-    if (crc32_ == 0) {
-        // if crc32 was not passed as parameter, calc it here
-        crc32_ = Utilities::crc32(*this);
-    }
-    return crc32_;
 }
 
 #endif // #ifndef AIMP_PLAYLIST_ENTRY_H

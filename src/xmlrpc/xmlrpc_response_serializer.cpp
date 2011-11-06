@@ -52,8 +52,8 @@ void convertRpcValueToXmlRpcValue(const Rpc::Value& rpc_value, Value* xml_rpc_va
     case Rpc::Value::TYPE_OBJECT:
         {
         Value::ValueStruct structValue;
-        Rpc::Value::Object::const_iterator member_it = rpc_value.getObjectMembersBegin(),
-                                           end       = rpc_value.getObjectMembersEnd();
+        auto member_it = rpc_value.getObjectMembersBegin(),
+             end       = rpc_value.getObjectMembersEnd();
         for (; member_it != end; ++member_it) {
             convertRpcValueToXmlRpcValue(member_it->second, &structValue[member_it->first]);
         }

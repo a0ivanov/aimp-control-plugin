@@ -76,8 +76,8 @@ void convertXmlRpcValueToRpcValue(const Value& xml_rpc_value, Rpc::Value* rpc_va
     case Value::TypeStruct:
         {
         Rpc::Value::Object object;
-        Value::ValueStruct::const_iterator member_it = xml_rpc_value.getStructMembersBegin(),
-                                           end       = xml_rpc_value.getStructMembersEnd();
+        auto member_it = xml_rpc_value.getStructMembersBegin(),
+             end       = xml_rpc_value.getStructMembersEnd();
         for (; member_it != end; ++member_it) {
             convertXmlRpcValueToRpcValue(member_it->second, &object[member_it->first]);
         }

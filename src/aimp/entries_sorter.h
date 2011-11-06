@@ -29,7 +29,7 @@ struct CompareFields<std::wstring> : std::binary_function<std::wstring, std::wst
         { return boost::algorithm::ilexicographical_compare(left, right); }
 };
 
-//! Adaptor to be able compare two fields with them IDs instead values.
+//! Adaptor to be able compare two fields with their IDs instead values.
 template <class R, ORDER_DIRECTION order_direction>
 struct ComparatorAdaptorFromIDToEntryField : std::binary_function<PlaylistEntryID, PlaylistEntryID, bool>
 {
@@ -43,8 +43,8 @@ struct ComparatorAdaptorFromIDToEntryField : std::binary_function<PlaylistEntryI
 
     bool operator()(PlaylistEntryID id_left, PlaylistEntryID id_right) const
     {
-        const R& left_field_value = (entries_[id_left].get()->*getter_)();
-        const R& right_field_value = (entries_[id_right].get()->*getter_)();
+        const R& left_field_value  = (entries_[id_left].*getter_)();
+        const R& right_field_value = (entries_[id_right].*getter_)();
         if (order_direction == ASCENDING) {
             return compare_less_functor_(left_field_value, right_field_value);
         } else {
@@ -153,7 +153,7 @@ struct OrderedEntryIDsCache
 
     std::vector<PlaylistEntryID> sequence_;
     SEQUENCE_ORDER_STATE order_state_;
-    std::auto_ptr<ComparatorPlaylistEntryIDsBase> comparator_;
+    std::shared_ptr<ComparatorPlaylistEntryIDsBase> comparator_;
 };
 
 
@@ -180,7 +180,12 @@ typedef std::map<ENTRY_FIELDS_ORDERABLE, OrderedEntryIDsCache> OrderedCachesList
 class EntriesSorter
 {
 public:
-    EntriesSorter(const EntriesListType& entries);
+
+    EntriesSorter(boost::shared_ptr<const EntriesListType> entries);
+
+    EntriesSorter(EntriesSorter&& rhs);
+
+    //EntriesSorter& operator=(EntriesSorter&& rhs);
 
     const PlaylistEntryIDList& getEntriesSortedByField(FieldToOrderDescriptor order_descriptor);
 
@@ -190,11 +195,22 @@ public:
     // Every time when entry list is changed we need to reset sorter to be sure it does not use old cache.
     void reset();
 
+    void swap(EntriesSorter& rhs);
+
 private:
 
     OrderedCachesList ordered_caches_;
-    const EntriesListType& entries_;
+    boost::shared_ptr<const EntriesListType> entries_;
+
+    EntriesSorter();
+    EntriesSorter(const EntriesSorter&);
+    EntriesSorter& operator=(const EntriesSorter&);
 };
+
+inline void swap(EntriesSorter& lhs, EntriesSorter& rhs)
+{
+    lhs.swap(rhs);
+}
 
 } } // namespace AIMPPlayer::EntriesSortUtil
 

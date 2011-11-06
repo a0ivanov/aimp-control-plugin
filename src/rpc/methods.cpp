@@ -289,8 +289,8 @@ ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& r
 
     // fill rpcvalue array of playlists.
     size_t playlist_index = 0;
-    BOOST_FOREACH(const PlaylistsListType::value_type& playlist_id_obj_pair, playlists) {
-        const Playlist* playlist = playlist_id_obj_pair.second.get();
+    BOOST_FOREACH(const auto& playlist_id_obj_pair, playlists) {
+        const Playlist& playlist = playlist_id_obj_pair.second;
         Rpc::Value& playlist_rpcvalue = playlists_rpcvalue[playlist_index];
         // fill all requested fields for playlist.
         playlist_fields_filler_.fillRpcArrayOfObjects(playlist, playlist_rpcvalue);
@@ -298,24 +298,6 @@ ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& r
     }
     return RESPONSE_IMMEDIATE;
 }
-
-//void GetPlaylistEntriesTemplateMethod::initRequiredFieldsList(const Rpc::Value& requested_fields) // throws Rpc::Exception
-//{
-//    const size_t requested_fields_count = requested_fields.size();
-//    names_of_required_fields_.clear();
-//    names_of_required_fields_.reserve(requested_fields_count);
-//
-//    for (size_t field_index = 0; field_index < requested_fields_count; ++field_index) {
-//        const std::string& field = requested_fields[field_index];
-//        PlaylistEntries::SupportedFieldNames::const_iterator supported_field_it = supported_fields_names_.find(field);
-//        if ( supported_field_it == supported_fields_names_.end() ) {
-//            std::ostringstream msg;
-//            msg << "Wrong argument: field " << field << " is not supported.";
-//            throw Rpc::Exception(msg.str(), WRONG_ARGUMENT);
-//        }
-//        names_of_required_fields_.push_back(supported_field_it);
-//    }
-//}
 
 const size_t GetPlaylistEntriesTemplateMethod::getStartFromIndexFromRpcParam(int start_from_index, size_t max_value) // throws Rpc::Exception
 {
@@ -363,7 +345,7 @@ void GetPlaylistEntriesTemplateMethod::fillFieldToOrderDescriptors(const Rpc::Va
         try {
             const std::string& field_to_order = field_desc[kFIELD_STRING];
             
-            FieldsToOrderMap::const_iterator supported_field_it = fields_to_order_.find(field_to_order);
+            const auto supported_field_it = fields_to_order_.find(field_to_order);
             if ( supported_field_it != fields_to_order_.end() ) {
                 // TODO: avoid duplicates
                 field_to_order_descriptors_.push_back( FieldToOrderDescriptor( supported_field_it->second,
@@ -389,8 +371,7 @@ const PlaylistEntryIDList& GetPlaylistEntriesTemplateMethod::getEntriesIDsFilter
     filtered_entries_ids_.reserve( entries.size() );
 
     size_t entry_index = 0;
-    BOOST_FOREACH (const EntriesListType::value_type& entry_ptr, entries) {
-        const PlaylistEntry* entry( entry_ptr.get() );
+    BOOST_FOREACH (const PlaylistEntry& entry, entries) {
         if ( entry_contain_string_(entry, search_string) ) {
             filtered_entries_ids_.push_back(entry_index);
         }
@@ -407,8 +388,7 @@ const PlaylistEntryIDList& GetPlaylistEntriesTemplateMethod::getEntriesIDsFilter
     filtered_entries_ids_.clear();
     filtered_entries_ids_.reserve( entry_to_filter_ids.size() );
     BOOST_FOREACH (const PlaylistEntryID entry_id, entry_to_filter_ids) {
-        const PlaylistEntry* entry( entries[entry_id].get() );
-        if ( entry_contain_string_(entry, search_string) ) {
+        if ( entry_contain_string_(entries[entry_id], search_string) ) {
             filtered_entries_ids_.push_back(entry_id);
         }
     }
@@ -619,7 +599,7 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager, MultiUserModeM
 
     // fill supported field names.
     PlaylistEntries::SupportedFieldNames fields_names;
-    BOOST_FOREACH(HelperFillRpcFields<PlaylistEntry>::RpcValueSetters::value_type& setter_it, entry_fields_filler_.setters_) {
+    BOOST_FOREACH(auto& setter_it, entry_fields_filler_.setters_) {
         fields_names.insert(setter_it.first);
     }
     get_playlist_entries_templatemethod_->setSupportedFieldNames(fields_names);
@@ -636,8 +616,7 @@ void GetPlaylistEntries::fillRpcValueEntriesFromEntriesList(EntriesRange entries
     rpcvalue_entries.setSize( entries_range.size() );
 
     size_t entry_rpcvalue_index = 0;
-    BOOST_FOREACH (const EntriesListType::value_type& entry_ptr, entries_range) {
-        const PlaylistEntry* entry( entry_ptr.get() );
+    BOOST_FOREACH (const PlaylistEntry& entry, entries_range) {
         Rpc::Value& entry_rpcvalue = rpcvalue_entries[entry_rpcvalue_index];
         // fill all requested fields for entry.
         entry_fields_filler_.fillRpcArrayOfArrays(entry, entry_rpcvalue);
@@ -652,10 +631,9 @@ void GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs(EntriesIDsRange entries
 
     size_t entry_rpcvalue_index = 0;
     BOOST_FOREACH (const PlaylistEntryID entry_id, entries_ids_range) {
-        const PlaylistEntry* entry( entries[entry_id].get() );
         Rpc::Value& entry_rpcvalue = rpcvalue_entries[entry_rpcvalue_index];
         // fill all requested fields for entry.
-        entry_fields_filler_.fillRpcArrayOfArrays(entry, entry_rpcvalue);
+        entry_fields_filler_.fillRpcArrayOfArrays(entries[entry_id], entry_rpcvalue);
         ++entry_rpcvalue_index;
     }
 }
@@ -771,7 +749,7 @@ void  GetEntryPositionInDataTable::setEntryPageInDataTableFromEntryIDs(EntriesID
                                                                        PlaylistEntryID entry_id)
 {
     // Note: Range entries_ids_range contains full entries ids list for current representation(concrete filtering and sorting).
-    EntriesIDsRange::const_iterator it = std::find(entries_ids_range.begin(), entries_ids_range.end(), entry_id);
+    const auto it = std::find(entries_ids_range.begin(), entries_ids_range.end(), entry_id);
     if ( it != entries_ids_range.end() ) {
         entry_index_in_current_representation_ = std::distance(entries_ids_range.begin(), it);
     } else {
@@ -936,17 +914,17 @@ const std::wstring* GetCover::isCoverExistsInCoverDirectory(TrackDescription tra
         std::wstring string_to_find_;
     };
     // search in map of filenames lists.
-    CoverFilenames::const_iterator iter = cover_filenames_.find(track_desc);
+    const auto iter = cover_filenames_.find(track_desc);
     if (cover_filenames_.end() != iter) {
         const FilenamesList& list = iter->second;
         // search in filenames.
-        FilenamesList::const_iterator filename_iter = std::find_if( list.begin(), list.end(), MatchSize(width, height) );
+        const auto filename_iter = std::find_if( list.begin(), list.end(), MatchSize(width, height) );
         if (list.end() != filename_iter) {
             // return pointer to found filename.
             return &(*filename_iter);
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 std::wstring GetCover::getTempFileNameForAlbumCover(TrackDescription track_desc, std::size_t width, std::size_t height)
@@ -976,7 +954,7 @@ SubscribeOnAIMPStateUpdateEvent::EVENTS SubscribeOnAIMPStateUpdateEvent::getEven
         throw Rpc::Exception("Wrong arguments count. Wait 1 string value: event ID.", WRONG_ARGUMENT);
     }
 
-    EventTypesMap::const_iterator iter = event_types_.find(params["event"]);
+    const auto iter = event_types_.find(params["event"]);
     if ( iter != event_types_.end() ) {
         return iter->second; // event ID.
     }
@@ -989,7 +967,7 @@ ResponseType SubscribeOnAIMPStateUpdateEvent::execute(const Rpc::Value& root_req
     EVENTS event_id = getEventFromRpcParams(root_request["params"]);
 
     DelayedResponseSender_ptr comet_delayed_response_sender = rpc_request_handler_.getDelayedResponseSender();
-    assert(comet_delayed_response_sender != NULL);
+    assert(comet_delayed_response_sender != nullptr);
     delayed_response_sender_descriptors_.insert( std::make_pair(event_id,
                                                                 ResponseSenderDescriptor(root_request, comet_delayed_response_sender)
                                                                 )
@@ -1064,6 +1042,7 @@ void SubscribeOnAIMPStateUpdateEvent::aimpEventHandler(AIMPManager::EVENTS event
 void SubscribeOnAIMPStateUpdateEvent::sendNotifications(EVENTS event_id)
 {
     std::pair<DelayedResponseSenderDescriptors::iterator, DelayedResponseSenderDescriptors::iterator> it_pair = delayed_response_sender_descriptors_.equal_range(event_id);
+    //auto it_pair = delayed_response_sender_descriptors_.equal_range(event_id);
     for (DelayedResponseSenderDescriptors::iterator sender_it = it_pair.first,
                                                     end       = it_pair.second;
                                                     sender_it != end;
@@ -1153,9 +1132,9 @@ void EmulationOfWebCtlPlugin::initMethodNamesMap()
 
 const EmulationOfWebCtlPlugin::METHOD_ID* EmulationOfWebCtlPlugin::getMethodID(const std::string& method_name) const
 {
-    MethodNamesMap::const_iterator it = method_names_.find(method_name);
+    const auto it = method_names_.find(method_name);
     return it != method_names_.end() ? &it->second
-                                     : NULL;
+                                     : nullptr;
 }
 
 namespace WebCtl
@@ -1180,7 +1159,7 @@ std::string urldecode(const std::string& url_src)
             }
             tmpstr[2] = url_src.at( ++i );
             tmpstr[3] = url_src.at( ++i );
-            ch = (char)strtol(tmpstr, NULL, 16);
+            ch = (char)strtol(tmpstr, nullptr, 16);
         }
         url_ret += ch;
     }
@@ -1411,7 +1390,7 @@ void EmulationOfWebCtlPlugin::addFile(int playlist_id, const std::string& filena
     AIMP2SDK::IPLSStrings* strings;
     aimp_manager_.aimp_controller_->AIMP_NewStrings(&strings);
     const std::wstring filename = StringEncoding::utf8_to_utf16( WebCtl::urldecode(filename_url) );
-    strings->AddFile(const_cast<PWCHAR>( filename.c_str() ), NULL);
+    strings->AddFile(const_cast<PWCHAR>( filename.c_str() ), nullptr);
     aimp_manager_.aimp_controller_->AIMP_PLS_AddFiles(playlist_id, strings);
 }
 
@@ -1423,7 +1402,7 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
             throw std::runtime_error("arguments are missing");
         }
         const METHOD_ID* method_id = getMethodID(params["action"]);
-        if (method_id == NULL) {
+        if (method_id == nullptr) {
             std::ostringstream msg;
             msg << "Method " << params["action"] << " not found";
             throw std::runtime_error( msg.str() );

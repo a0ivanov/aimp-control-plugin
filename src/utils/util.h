@@ -5,6 +5,7 @@
 
 #include "boost/timer.hpp"
 #include <string>
+#include <sstream>
 
 typedef unsigned long crc32_t;
 
@@ -70,6 +71,23 @@ private:
 };
 
 #define PROFILE_EXECUTION_TIME(msg) Utilities::Profiler profiler(msg)
+
+class MakeString {
+public:
+
+    template <typename T>
+    MakeString& operator<<(const T& object) {
+        os_ << object;
+        return *this;
+    }
+
+    operator std::string() const
+        { return os_.str(); }
+
+private:
+    std::ostringstream os_;
+};
+
 
 } // namespace Utilities
 

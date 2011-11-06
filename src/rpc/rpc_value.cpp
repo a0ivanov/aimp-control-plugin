@@ -18,7 +18,7 @@ void handleUnknownType()
 
 const char* toString(Value::TYPE type)
 {
-    const char* type_name = NULL;
+    const char* type_name = nullptr;
     switch (type) {
     case Value::TYPE_NONE:
         type_name = "none";
@@ -467,11 +467,11 @@ const Value* Value::lookup(const Value::String& name) const
     assert(type_ == TYPE_OBJECT);
 
     const Object& object = *value_.object_;
-    Object::const_iterator it = object.find(name);
+    const auto it = object.find(name);
     if ( it != object.end() ) {
         return &it->second;
     }
-    return NULL;
+    return nullptr;
 }
 
 Value& Value::operator[](const String& name)
@@ -518,7 +518,7 @@ Value::Object::const_iterator Value::getObjectMembersEnd() const
 bool Value::isMember(const String& name) const
 {
     if (type_ == TYPE_OBJECT) {
-        return (lookup(name) != NULL);
+        return (lookup(name) != nullptr);
     }
     return false;
 }
@@ -558,10 +558,10 @@ std::ostream& Value::toStream(std::ostream& os) const
         {
         os << '[';
         const Array& array = *value_.array_;
-        for (Array::const_iterator begin = array.begin(), end = array.end(),
-                                   it = begin;
-                                   it != end;
-                                   ++it
+        for (auto begin = array.begin(), end = array.end(),
+                  it = begin;
+                  it != end;
+                  ++it
              )
         {
             if (it != begin) {
@@ -576,10 +576,10 @@ std::ostream& Value::toStream(std::ostream& os) const
         {
         os << '{';
         const Object& object = *value_.object_;
-        for (Object::const_iterator begin = object.begin(), end = object.end(),
-                                    it = begin;
-                                    it != end;
-                                    ++it
+        for (auto begin = object.begin(), end = object.end(),
+                  it = begin;
+                  it != end;
+                  ++it
              )
         {
             if (it != begin) {

@@ -112,6 +112,7 @@
     <ClCompile Include="..\src\aimp\entries_sorter.cpp" />
     <ClCompile Include="..\src\aimp\manager.cpp" />
     <ClCompile Include="..\src\aimp\playlist.cpp" />
+    <ClCompile Include="..\src\aimp\playlist_entry.cpp" />
     <ClCompile Include="..\src\dllmain.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
