@@ -543,7 +543,7 @@ function createPlaylistsControls(playlists)
 			select: function(event, $ui) { // load content of playlist on tab activation, if content is not loaded yet.
 						var $tab_ui = $ui.panel;
 						if ( !isPlaylistContentLoaded($tab_ui) ) {
-							createEntriesControl($tab_ui.index, $tab_ui);	
+							createEntriesControl($ui.index, $tab_ui);	
 						}
 					}
         }); // necessary initialization of Tabs control.
