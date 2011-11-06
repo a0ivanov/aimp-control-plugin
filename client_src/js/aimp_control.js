@@ -218,6 +218,8 @@ function gotoCurrentPlaylist(playlist_id)
 	$('div[id*=playlist]', $playlists_tabs).each(function(index, tab_ui) {
 		var tab_playlist_id = getPlaylistIdFromTabId(tab_ui.id);
 		if (playlist_id == tab_playlist_id) {
+			$playlists_tabs.tabs('option', 'selected', -1); // mark all tabs as unselected to force trigger onselect event.
+															// Otherwise, in case if we select already selected tab, onselect event will not be triggered.
 			$playlists_tabs.tabs('select', index);
 			return false;
 		}
