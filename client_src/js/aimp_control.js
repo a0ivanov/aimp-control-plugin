@@ -563,7 +563,8 @@ function createPlaylistsControls(playlists)
 							 );
     }
 	
-	if ( control_panel_state.hasOwnProperty('playlist_id') ) {
+	if (   playlists.length > 1 // here we want trigger onselect event of playlist tab. But on 1 tab event will not be tringgered, so load playlist content manually
+		&& control_panel_state.hasOwnProperty('playlist_id') ) {
 		// content will be loaded on selection.
 		gotoCurrentPlaylist(control_panel_state.playlist_id);
 	} else {
