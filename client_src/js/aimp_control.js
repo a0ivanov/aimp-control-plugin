@@ -167,6 +167,7 @@ function createEntriesControl(index, $tab_ui)
 											  on_complete  : undefined
 											}
             );
+			gotoCurrentTrackInPlaylist();
 
         },
         bProcessing : true,
