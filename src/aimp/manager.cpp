@@ -914,7 +914,7 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMPManager::getCoverImage(TrackDescri
 const Playlist& AIMPManager::getPlaylist(PlaylistID playlist_id) const
 {
     if (playlist_id == -1) { // treat ID -1 as active playlist.
-        playlist_id = aimp_playlist_manager_->AIMP_PLS_ID_ActiveGet();
+        playlist_id = getActivePlaylist();
     }
 
     auto playlist_iterator( playlists_.find(playlist_id) );
@@ -930,11 +930,11 @@ const PlaylistEntry& AIMPManager::getEntry(TrackDescription track_desc) const
     const Playlist& playlist = getPlaylist(track_desc.playlist_id);
 
     if (track_desc.track_id == -1) { // treat ID -1 as active track.
-        if (   track_desc.playlist_id == -1 
-            || track_desc.playlist_id == aimp_playlist_manager_->AIMP_PLS_ID_ActiveGet()
+        if (   track_desc.playlist_id == -1
+            || track_desc.playlist_id == getActivePlaylist()
             )
         {
-            track_desc.track_id = aimp_playlist_manager_->AIMP_PLS_ID_PlayingGetTrackIndex( playlist.getID() );
+            track_desc.track_id = getActiveEntry();
         }
     }
     const EntriesListType& entries = playlist.getEntries();
