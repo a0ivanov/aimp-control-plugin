@@ -25,7 +25,7 @@ public:
 
     Playlist( const CHAR* title,
               DWORD file_count,
-              DWORD duration,
+              INT64 duration,
               INT64 size_of_all_entries_in_bytes,
               PlaylistID id
             );
@@ -62,7 +62,7 @@ public:
     DWORD getEntriesCount() const { return file_count_; }
 
     //! Returns summary duration of all entries.
-    DWORD getDuration() const { return duration_; }
+    INT64 getDuration() const { return duration_; }
 
     //! Returns summary size of all entries in bytes.
     INT64 getSizeOfAllEntriesInBytes() const { return size_of_all_entries_in_bytes_; }
@@ -73,7 +73,7 @@ private:
 
     std::wstring title_; //!< title.
     DWORD file_count_; //!< entries count.
-    DWORD duration_; //!< summary duration of all entries.
+    INT64 duration_; //!< summary duration of all entries.
     INT64 size_of_all_entries_in_bytes_; //!< summary size of all entries in bytes.
     PlaylistID id_; //!< playlist indentificator.
     EntriesList_ptr entries_; //!< list of tracks in playlist. This must be shared_ptr: entries sorter caches address of entry list.

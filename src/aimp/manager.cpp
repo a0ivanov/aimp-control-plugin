@@ -112,66 +112,35 @@ AIMPManager::~AIMPManager()
 #endif
 }
 
-
-namespace
-{
-
-/*
-    Helper for convinient load playlist data from AIMP.
-    Prepares AIMP2SDK::PLSInfo struct.
-    Contains necessary string buffers that always are in clear state.
-*/
-class PLSInfoHelper
-{
-public:
-    PLSInfoHelper(boost::shared_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager)
-        :
-        aimp_playlist_manager_(aimp_playlist_manager)
-    {}
-
-    AIMP2SDK::PLSInfo& getEmptyPLSInfo()
-    {
-        memset( &info_, 0, sizeof(info_) );
-        return info_;
-    }
-
-    AIMP2SDK::PLSInfo& getPLSInfo()
-        { return info_; }
-
-    Playlist getPlaylist() const
-    {
-        return Playlist( info_.PLSName,
-                         info_.FileCount,
-                         info_.PLSDuration,
-                         info_.PLSSize,
-                         info_.PlaylistID
-                        );
-    }
-
-    /* \return playlist ID. */
-    PlaylistID getPlaylistID() const
-        { return info_.PlaylistID; }
-
-    //! \return entries count.
-    DWORD getEntriesCount() const
-        { return info_.FileCount; }
-
-private:
-
-    AIMP2SDK::PLSInfo info_;
-    boost::shared_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager_;
-};
-
-} // namespace anonymous
-
 Playlist AIMPManager::loadPlaylist(int playlist_index)
 {
-    PLSInfoHelper playlist_info_helper(aimp_playlist_manager_);
-    if ( aimp_controller_->AIMP_PLS_Info( playlist_index, &(playlist_info_helper.getEmptyPLSInfo() ) ) ) {
-        return playlist_info_helper.getPlaylist();
-    } else {
-        throw std::runtime_error("Error occured while extracting playlist data with AIMP_PLS_Info");
+    const char * const error_prefix = "Error occured while extracting playlist data: ";
+    
+    int id;
+    if ( S_OK != aimp_playlist_manager_->AIMP_PLS_ID_By_Index(playlist_index, &id) ) {
+        throw std::runtime_error(MakeString() << error_prefix << "AIMP_PLS_ID_By_Index failed");
     }
+
+    INT64 duration, size;
+    if ( S_OK != aimp_playlist_manager_->AIMP_PLS_GetInfo(id, &duration, &size) ) {
+        throw std::runtime_error(MakeString() << error_prefix << "AIMP_PLS_GetInfo failed");
+    }
+
+    const size_t name_length = 256;
+    WCHAR name[name_length + 1] = {0};
+    if ( S_OK != aimp_playlist_manager_->AIMP_PLS_GetName(id, name, name_length) ) {    
+        throw std::runtime_error(MakeString() << error_prefix << "AIMP_PLS_GetName failed");
+    }
+
+    const int files_count = aimp_playlist_manager_->AIMP_PLS_GetFilesCount(id);
+
+    using namespace StringEncoding;
+    return Playlist(utf16_to_utf8(name).c_str(),
+                    files_count,
+                    duration,
+                    size,
+                    id
+                    );
 }
 
 /*
@@ -315,31 +284,28 @@ void AIMPManager::loadEntries(Playlist& playlist) // throws std::runtime_error
 void AIMPManager::checkIfPlaylistsChanged()
 {
     std::vector<PlaylistID> playlists_to_reload;
-    PLSInfoHelper playlist_info_helper(aimp_playlist_manager_);
 
     const short playlists_count = aimp_playlist_manager_->AIMP_PLS_Count();
     for (short playlist_index = 0; playlist_index < playlists_count; ++playlist_index) {
-        if ( aimp_controller_->AIMP_PLS_Info( playlist_index,
-                                              &playlist_info_helper.getEmptyPLSInfo()
-                                             )
-            )
-        {
-            const PlaylistID current_playlist_id = playlist_info_helper.getPlaylistID();
-            const auto loaded_playlist_iter = playlists_.find(current_playlist_id);
-            if (playlists_.end() == loaded_playlist_iter) {
-                // current playlist was not loaded yet, load it now without entries.
-                playlists_.insert( std::make_pair(current_playlist_id, loadPlaylist(playlist_index) ) );
-                playlists_to_reload.push_back(current_playlist_id);
-            } else if ( loaded_playlist_iter->second.getEntriesCount() != playlist_info_helper.getEntriesCount() ) {
-                // list loaded, but entries count is changed: load new playlist to update all internal fields.
-                playlists_[current_playlist_id] = loadPlaylist(playlist_index); // we must use map's operator[] instead insert() method, since insert is no-op for existing key.
-                playlists_to_reload.push_back(current_playlist_id);
-            } else if ( !isLoadedPlaylistEqualsAimpPlaylist(current_playlist_id) ) {
-                // contents of loaded playlist and current playlist are different.
-                playlists_to_reload.push_back(current_playlist_id);
-            }
-        } else {
-            throw std::runtime_error("Error occured while get playlists data in "__FUNCTION__);
+        int current_playlist_id;
+        if ( S_OK != aimp_playlist_manager_->AIMP_PLS_ID_By_Index(playlist_index, &current_playlist_id) ) {
+            throw std::runtime_error(MakeString() << "checkIfPlaylistsChanged() failed. Reason: AIMP_PLS_ID_By_Index failed");
+        }
+
+        const int entries_count = aimp_playlist_manager_->AIMP_PLS_GetFilesCount(current_playlist_id);
+
+        const auto loaded_playlist_iter = playlists_.find(current_playlist_id);
+        if (playlists_.end() == loaded_playlist_iter) {
+            // current playlist was not loaded yet, load it now without entries.
+            playlists_.insert( std::make_pair(current_playlist_id, loadPlaylist(playlist_index) ) );
+            playlists_to_reload.push_back(current_playlist_id);
+        } else if (loaded_playlist_iter->second.getEntriesCount() != entries_count) {
+            // list loaded, but entries count is changed: load new playlist to update all internal fields.
+            playlists_[current_playlist_id] = loadPlaylist(playlist_index); // we must use map's operator[] instead insert() method, since insert is no-op for existing key.
+            playlists_to_reload.push_back(current_playlist_id);
+        } else if ( !isLoadedPlaylistEqualsAimpPlaylist(current_playlist_id) ) {
+            // contents of loaded playlist and current playlist are different.
+            playlists_to_reload.push_back(current_playlist_id);
         }
     }
 

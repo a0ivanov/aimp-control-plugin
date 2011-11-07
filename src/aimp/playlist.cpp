@@ -24,7 +24,7 @@ Playlist::Playlist()
 
 Playlist::Playlist( const CHAR* title,
                     DWORD file_count,
-                    DWORD duration,
+                    INT64 duration,
                     INT64 size_of_all_entries_in_bytes,
                     PlaylistID id
                    )
