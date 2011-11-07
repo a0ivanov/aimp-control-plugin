@@ -92,7 +92,15 @@ public:
 private:
 
     // Runs the server's io_service loop.
-    void serverThread();
+    void OnTick();
+
+    static void CALLBACK OnTickTimerProc(HWND hwnd,
+                                         UINT uMsg,
+                                         UINT_PTR idEvent,
+                                         DWORD dwTime);
+
+    void StartTickTimer();
+    void StopTickTimer();
 
     /*! Asks AIMP about plugins working directory.
         \return full path to plugin work directory or (in case of error) current directory ".\$(short_plugin_name)"..
@@ -148,7 +156,6 @@ private:
     boost::shared_ptr<MultiUserMode::MultiUserModeManager> multi_user_mode_manager_; //!< TODO: add doc
     boost::shared_ptr<Rpc::RequestHandler> rpc_request_handler_; //!< XML/Json RPC request handler. Used by Http::RequestHandler object.
     boost::shared_ptr<Http::RequestHandler> http_request_handler_; //!< Http request handler, used by Http::Server object.
-    boost::shared_ptr<boost::thread> server_thread_; //!< thread for Http server routine.
     boost::asio::io_service server_io_service_;
     boost::shared_ptr<Http::Server> server_; //!< Simple Http server.
 
@@ -160,6 +167,8 @@ private:
     static const std::wstring kPLUGIN_SETTINGS_FILENAME; //<! default plugin settings filename.
 
     PluginSettings::Manager settings_manager_; //< plugin settings manager. Load/save settings to file.
+
+    UINT_PTR tick_timer_id_;
 };
 
 extern AIMPControlPluginHeader* plugin_instance;
