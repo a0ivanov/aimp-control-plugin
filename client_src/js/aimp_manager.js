@@ -37,7 +37,7 @@ function AimpManager() {
                                           'GetPlayerControlPanelState',
                                           'VolumeLevel', 'Mute', // volume utils
                                           'Status', // get/set various aspects of player
-                                          //'EnqueueTrack', 'RemoveTrackFromPlayQueue', // queue tracks
+                                          'EnqueueTrack', 'RemoveTrackFromPlayQueue', // queue tracks
                                           'GetPlaylists', 'GetPlaylistEntries', 'GetEntryPositionInDataTable', 'GetPlaylistEntriesCount', 'GetFormattedEntryTitle', 'GetPlaylistEntryInfo', 'SetTrackRating', // playlists and tracks utils
                                           'GetCover', // album cover getter
                                           'SubscribeOnAIMPStateUpdateEvent' // subscribe for AIMP player state notifications
@@ -295,6 +295,26 @@ playPrevious : function(params, callbacks) {
 */
 playNext : function(params, callbacks) {
     this.callRpc(this.aimp_service.PlayNext, params, callbacks);
+},
+
+/*
+    Enqueues track for playing.
+        Param params.track_id - track ID.
+        Param params.playlist_id - playlist ID.
+        Param callbacks - see description in AimpManager comments.
+*/
+enqueueTrack : function(params, callbacks) {
+    this.callRpc(this.aimp_service.EnqueueTrack, params, callbacks);
+},
+
+/*
+    Removes track from AIMP play queue.
+        Param params.track_id - track ID.
+        Param params.playlist_id - playlist ID.
+        Param callbacks - see description in AimpManager comments.
+*/
+removeTrackFromPlayQueue : function(params, callbacks) {
+    this.callRpc(this.aimp_service.RemoveTrackFromPlayQueue, params, callbacks);
 },
 
 /*

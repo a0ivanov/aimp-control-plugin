@@ -65,8 +65,10 @@ entry_field_caption_albumcover : 'Album cover',
 
 track_contol_menu_open : 'Open track control menu',
 track_contol_menu_close : 'Close track control menu',
-track_contol_menu_play : 'Play this track',
-track_contol_menu_pause : 'Pause this track',
+track_contol_menu_play : 'Play',
+track_contol_menu_pause : 'Pause',
+track_contol_menu_enqueue : 'Add to queue',
+track_contol_menu_remove_from_queue : 'Remove from queue',
 
 track_info_dialog_caption : 'Track info',
 track_info_dialog_cancel_rating : 'Not rated',

@@ -319,9 +319,15 @@ function getControlMenuDescriptor(nTr)
 	var aData = $table.fnGetData(nTr);
 	var entry_id = aData[0];
 
-	var play_button_id = 'play_entry_' + entry_id;
+	var play_button_id          = 'play_entry_' + entry_id;
+	var enqueue_entry_button_id = 'enqueue_entry_' + entry_id;
+	var remove_from_queue_entry_button_id = 'remove_from_queue_entry_' + entry_id;
 	var control_menu_html =   '<table cellpadding="5" cellspacing="0" border="0">'
-							+ '<tr><td><button id="' + play_button_id + '"></button></td></tr>';
+							+ '<tr>'
+							+ '<td><button id="' + play_button_id + '"></button></td>'
+							+ '<td><button id="' + enqueue_entry_button_id + '"></button></td>'
+							+ '<td><button id="' + remove_from_queue_entry_button_id + '"></button></td>'
+							+ '</tr>'
 							+ '</table>';
 
 	return {
@@ -329,7 +335,9 @@ function getControlMenuDescriptor(nTr)
 		entry_id : entry_id,
 		playlist_id : playlist_id,
 		nTr : null,
-		play_button_id : play_button_id
+		play_button_id : play_button_id,
+		enqueue_button_id : enqueue_entry_button_id,
+		remove_from_queue_button_id : remove_from_queue_entry_button_id
 	};
 }
 
@@ -421,6 +429,34 @@ function initTrackControlMenu(control_menu_descriptor)
         } else {
             aimp_manager.pause({}, { on_exception : on_control_menu_command }); // pause playback
         }
+    });
+
+    var enqueue_button = $('#' + control_menu_descriptor.enqueue_button_id, control_menu_descriptor.nTr);
+    enqueue_button.button({
+        text : false,
+		icons: { primary: 'ui-icon-circlesmall-plus' },
+		label : getText('track_contol_menu_enqueue')		
+    }).click(function() {
+		var args = { track_id    : parseInt(control_menu_descriptor.entry_id),
+					 playlist_id : parseInt(control_menu_descriptor.playlist_id)
+				   }
+		aimp_manager.enqueueTrack(args,
+								  { on_exception : on_control_menu_command }
+								  );
+    });
+
+    var remove_from_queue_button = $('#' + control_menu_descriptor.remove_from_queue_button_id , control_menu_descriptor.nTr);
+    remove_from_queue_button.button({
+        text : false,
+		icons: { primary: 'ui-icon-circlesmall-minus' },
+		label : getText('track_contol_menu_remove_from_queue')
+    }).click(function() {
+		var args = { track_id    : parseInt(control_menu_descriptor.entry_id),
+					 playlist_id : parseInt(control_menu_descriptor.playlist_id)
+				   }
+		aimp_manager.removeTrackFromPlayQueue(args,
+									          { on_exception : on_control_menu_command }
+											  );
     });
 
     // add updater to global list.

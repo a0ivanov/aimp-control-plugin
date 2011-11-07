@@ -66,8 +66,10 @@ entry_field_caption_albumcover : 'Обложка альбома',
 
 track_contol_menu_open : 'Открыть меню управления треком',
 track_contol_menu_close : 'Закрыть меню управления треком',
-track_contol_menu_play : 'Воспроизвести этот трек',
+track_contol_menu_play : 'Воспроизвести',
 track_contol_menu_pause : 'Приостановить',
+track_contol_menu_enqueue : 'Добавить в очередь',
+track_contol_menu_remove_from_queue : 'Удалить из очереди',
 
 track_info_dialog_caption : 'Информация о треке',
 track_info_dialog_cancel_rating : 'Без оценки',
