@@ -134,8 +134,7 @@ Playlist AIMPManager::loadPlaylist(int playlist_index)
 
     const int files_count = aimp_playlist_manager_->AIMP_PLS_GetFilesCount(id);
 
-    using namespace StringEncoding;
-    return Playlist(utf16_to_utf8(name).c_str(),
+    return Playlist(name,
                     files_count,
                     duration,
                     size,
@@ -749,7 +748,7 @@ std::string AIMPManager::getAIMPVersion() const
 PlaylistID AIMPManager::getActivePlaylist() const
 {
     // return AIMP internal playlist ID here since AIMPManager uses the same IDs.
-    return aimp_playlist_manager_->AIMP_PLS_ID_ActiveGet();
+    return aimp_playlist_manager_->AIMP_PLS_ID_PlayingGet();
 }
 
 PlaylistEntryID AIMPManager::getActiveEntry() const

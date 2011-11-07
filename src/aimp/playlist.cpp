@@ -22,14 +22,14 @@ Playlist::Playlist()
     entries_sorter_(entries_)
 {}
 
-Playlist::Playlist( const CHAR* title,
+Playlist::Playlist( const WCHAR* title,
                     DWORD file_count,
                     INT64 duration,
                     INT64 size_of_all_entries_in_bytes,
                     PlaylistID id
                    )
     :
-    title_( StringEncoding::system_ansi_encoding_to_utf16_safe( std::string(title) ) ),
+    title_(title),
     file_count_(file_count),
     duration_(duration),
     size_of_all_entries_in_bytes_(size_of_all_entries_in_bytes),

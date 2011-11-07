@@ -23,7 +23,7 @@ public:
 
     Playlist();
 
-    Playlist( const CHAR* title,
+    Playlist( const WCHAR* title,
               DWORD file_count,
               INT64 duration,
               INT64 size_of_all_entries_in_bytes,
