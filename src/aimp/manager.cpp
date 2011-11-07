@@ -928,6 +928,15 @@ const Playlist& AIMPManager::getPlaylist(PlaylistID playlist_id) const
 const PlaylistEntry& AIMPManager::getEntry(TrackDescription track_desc) const
 {
     const Playlist& playlist = getPlaylist(track_desc.playlist_id);
+
+    if (track_desc.track_id == -1) { // treat ID -1 as active track.
+        if (   track_desc.playlist_id == -1 
+            || track_desc.playlist_id == aimp_playlist_manager_->AIMP_PLS_ID_ActiveGet()
+            )
+        {
+            track_desc.track_id = aimp_playlist_manager_->AIMP_PLS_ID_PlayingGetTrackIndex( playlist.getID() );
+        }
+    }
     const EntriesListType& entries = playlist.getEntries();
     if ( track_desc.track_id < 0 || static_cast<size_t>(track_desc.track_id) >= entries.size() ) {
         throw std::runtime_error(MakeString() << "Error in "__FUNCTION__ << ". Entry " << track_desc << " does not exist");
