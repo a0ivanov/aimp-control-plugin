@@ -1011,6 +1011,12 @@ void AIMPManager::unRegisterListener(AIMPManager::EventsListenerID listener_id)
 namespace
 {
 
+void clear(std::wostringstream& os)
+{
+    os.clear();
+    os.str( std::wstring() );    
+}
+
 struct BitrateFormatter {
     mutable std::wostringstream os;
 
@@ -1019,8 +1025,8 @@ struct BitrateFormatter {
     BitrateFormatter(const BitrateFormatter&) : os() {}
 
     std::wstring operator()(const PlaylistEntry& entry) const { 
-        os.seekp(0, std::ios_base::beg);
-        os << entry.getBitrate() << " kbps";
+        clear(os);
+        os << entry.getBitrate() << L" kbps";
         return os.str();
     }
 };
@@ -1033,7 +1039,8 @@ struct ChannelsCountFormatter {
     ChannelsCountFormatter(const ChannelsCountFormatter&) : os() {}
 
     std::wstring operator()(const PlaylistEntry& entry) const { 
-        os.seekp(0, std::ios_base::beg);
+        clear(os);
+
         switch ( entry.getChannelsCount() ) {
         case 0:
             break;
@@ -1060,7 +1067,7 @@ struct DurationFormatter
     DurationFormatter(const DurationFormatter&) : os() {}
 
     std::wstring operator()(const PlaylistEntry& entry) const {
-        os.seekp(0, std::ios_base::beg);
+        clear(os);
         formatTime( os, entry.getDuration() );
         return os.str();
     }
@@ -1107,10 +1114,11 @@ struct SampleRateFormatter {
     SampleRateFormatter(const SampleRateFormatter&) : os() {}
 
     std::wstring operator()(const PlaylistEntry& entry) const { 
+        clear(os);
+
         const DWORD rate_in_hertz = entry.getSampleRate();
-        os.seekp(0, std::ios_base::beg);
         os << (rate_in_hertz / 1000)
-           << " kHz";
+           << L" kHz";
         return os.str();
     }
 };
@@ -1123,7 +1131,7 @@ struct FileSizeFormatter
     FileSizeFormatter(const FileSizeFormatter&) : os() {}
 
     std::wstring operator()(const PlaylistEntry& entry) const {
-        os.seekp(0, std::ios_base::beg);
+        clear(os);
         formatSize( os, entry.getFileSize() );
         return os.str();
     }
@@ -1132,9 +1140,9 @@ struct FileSizeFormatter
         const INT64 bytes_in_megabyte = 1024 * 1024;
         os.precision(3);
         if (size_in_bytes >= bytes_in_megabyte) {
-            os << size_in_bytes / double(bytes_in_megabyte) << " Mb";
+            os << size_in_bytes / double(bytes_in_megabyte) << L" Mb";
         } else {
-            os << size_in_bytes / 1024.0 << " kb";
+            os << size_in_bytes / 1024.0 << L" kb";
         }
     }
 };
