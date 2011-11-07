@@ -247,10 +247,10 @@ void WINAPI AIMPControlPluginHeader::Finalize()
     server_io_service_.stop();
     
     if (server_thread_) {
-        // wait for thread termintion.
+        // wait for thread termination.
         server_thread_->join();
 
-        // destroy server thread
+        // destroy server thread.
         server_thread_.reset();
     }
 
