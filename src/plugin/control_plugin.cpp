@@ -20,13 +20,25 @@
 #include <FreeImagePlus.h>
 #include <Delayimp.h>
 
-/* Plugin DLL export function that will be called by AIMP. */
+#include <Guiddef.h>
+
+/* Plugin DLL export function that will be called by AIMP(AIMP2 SDK). */
 BOOL WINAPI AIMP_QueryAddonEx(AIMP2SDK::IAIMPAddonHeader **newAddon)
 {
     using AIMPControlPlugin::plugin_instance;
     plugin_instance = new AIMPControlPlugin::AIMPControlPluginHeader();
     plugin_instance->AddRef();
     *newAddon = plugin_instance;
+    return TRUE;
+}
+
+/* Plugin DLL export function that will be called by AIMP(AIMP3 SDK). */
+BOOL WINAPI AIMP_QueryAddon3(AIMP3SDK::IAIMPAddonPlugin** newAddon)
+{
+    using AIMPControlPlugin::plugin3_instance;
+    plugin3_instance = new AIMPControlPlugin::AIMP3ControlPlugin();
+    plugin3_instance->AddRef();
+    *newAddon = plugin3_instance;
     return TRUE;
 }
 
@@ -46,7 +58,12 @@ const std::wstring AIMPControlPluginHeader::kPLUGIN_SETTINGS_FILENAME = L"settin
 const UINT_PTR kTickTimerEventID = 0x01020304;
 const UINT     kTickTimerElapse = 100; // 100 ms.
 
+const UINT_PTR kTickTimer3EventID = 0x01020305;
+const UINT     kTickTimer3Elapse = 100; // 100 ms.
+
 AIMPControlPluginHeader* plugin_instance = nullptr;
+
+AIMP3ControlPlugin* plugin3_instance = nullptr;
 
 namespace PluginLogger
 {
@@ -73,6 +90,180 @@ AIMPControlPluginHeader::AIMPControlPluginHeader()
 BOOL WINAPI AIMPControlPluginHeader::GetHasSettingsDialog()
 {
     return TRUE;
+}
+
+const std::wstring AIMP3ControlPlugin::kPLUGIN_AUTHOR     = L"Alexey Ivanov";
+const std::wstring AIMP3ControlPlugin::kPLUGIN_SHORT_NAME = L"Control Plugin";
+const std::wstring AIMP3ControlPlugin::kPLUGIN_INFO       = L"Provides network access to AIMP player";
+
+const PWCHAR WINAPI AIMP3ControlPlugin::GetPluginAuthor()
+{
+    return const_cast<const PWCHAR>( kPLUGIN_AUTHOR.c_str() );
+}
+
+const PWCHAR WINAPI AIMP3ControlPlugin::GetPluginInfo()
+{
+    return const_cast<const PWCHAR>( kPLUGIN_INFO.c_str() ); 
+}
+
+const PWCHAR WINAPI AIMP3ControlPlugin::GetPluginName()
+{
+    return const_cast<const PWCHAR>( kPLUGIN_SHORT_NAME.c_str() );     
+}
+
+DWORD WINAPI AIMP3ControlPlugin::GetPluginFlags()
+{
+    using namespace AIMP3SDK;
+    return AIMP_ADDON_FLAGS_HAS_DIALOG;
+}
+
+HRESULT WINAPI AIMP3ControlPlugin::Initialize(AIMP3SDK::IAIMPCoreUnit* coreUnit)
+{
+    using namespace AIMP3SDK;
+
+    aimp_core_unit_.reset(coreUnit);
+
+    IAIMPAddonsPlayerManager* player_manager;
+    if (S_OK == aimp_core_unit_->QueryInterface(SID_IAIMPAddonsPlayerManager, 
+                                                reinterpret_cast<void**>(&player_manager)
+                                                ) 
+        )
+    {
+        aimp_player_manager_.reset(player_manager);
+    }
+
+    IAIMPAddonsPlaylistManager* playlist_manager;
+    if (S_OK == aimp_core_unit_->QueryInterface(SID_IAIMPAddonsPlaylistManager, 
+                                                reinterpret_cast<void**>(&playlist_manager)
+                                                ) 
+        )
+    {
+        aimp_playlist_manager_.reset(playlist_manager);
+    }
+
+    assert(aimp_player_manager_ && aimp_playlist_manager_);
+
+    aimp_player_manager_->FileInfoRepository(this, true);
+
+    StartTickTimer();
+
+    return S_OK;
+}
+
+HRESULT WINAPI AIMP3ControlPlugin::Finalize()
+{
+    StopTickTimer();
+
+    aimp_playlist_manager_.reset();
+    if (aimp_player_manager_) {
+        aimp_player_manager_->FileInfoRepository(this, false);
+        aimp_player_manager_.reset();
+    }
+    aimp_core_unit_.reset();
+
+    return S_OK;
+}
+
+void AIMP3ControlPlugin::StartTickTimer()
+{
+    tick_timer_id_ = ::SetTimer(NULL, kTickTimer3EventID, kTickTimer3Elapse, &AIMP3ControlPlugin::OnTickTimerProc);
+    if (tick_timer_id_ == 0) {
+        //BOOST_LOG_SEV(logger(), critical) << "Plugin's service interrupted: SetTimer failed with error: " << GetLastError();
+    }
+}
+
+void AIMP3ControlPlugin::StopTickTimer()
+{
+    if (tick_timer_id_ != 0) {
+        if (::KillTimer(NULL, tick_timer_id_) == 0) {
+            //BOOST_LOG_SEV(logger(), warning) << "KillTimer failed with error: " << GetLastError();
+        }
+    }
+}
+
+void CALLBACK AIMP3ControlPlugin::OnTickTimerProc(HWND /*hwnd*/,
+                                                  UINT /*uMsg*/,
+                                                  UINT_PTR /*idEvent*/,
+                                                  DWORD /*dwTime*/)
+{
+    plugin3_instance->OnTick();
+}
+
+void AIMP3ControlPlugin::OnTick()
+{
+    using namespace AIMP3SDK;
+    HRESULT r;
+
+    TAIMPVersionInfo version_info;
+    if ( S_OK == aimp_core_unit_->GetVersion(&version_info) ) {
+        version_info = version_info;
+    }
+                     
+    {
+        const std::wstring tmpl(L"%A");
+        PWideChar AString = nullptr;
+        
+        if ( S_OK == (r = aimp_playlist_manager_->FormatString(const_cast<const PWideChar>( tmpl.c_str() ), tmpl.length(), AIMP_PLAYLIST_FORMAT_MODE_CURRENT,
+                                                               nullptr, &AString
+                                                               )
+                      )
+            )
+        {
+            AString = AString;
+        }
+
+        const HPLS playing_playlist_id = aimp_playlist_manager_->StoragePlayingGet();
+        IAIMPAddonsPlaylistStrings* files = nullptr;
+        if ( S_OK == (r = aimp_playlist_manager_->StorageGetFiles(playing_playlist_id, 0, &files) ) ) {
+            if ( const Integer files_count = files->ItemGetCount() ) {
+                TAIMPFileInfo file_info = {0};
+                file_info.StructSize = sizeof(file_info);
+                const DWORD title_length = 260;
+                WideChar Title[title_length + 1] = {0};
+                file_info.TitleLength = title_length;
+                file_info.Title = Title;
+
+                Integer entry_index = 0;
+                HPLSENTRY entry_id = aimp_playlist_manager_->StorageGetEntry(playing_playlist_id, entry_index);
+                
+                //r = aimp_playlist_manager_->EntryReloadInfo(entry_id);
+
+                if ( S_OK == files->ItemGetInfo(entry_index, &file_info) ) {
+                    file_info = file_info;
+                }
+                
+                //const Integer ABufferSizeInChars = 256;
+                //WideChar ABuffer[ABufferSizeInChars + 1];
+                //if ( S_OK == (r = files->ItemGetFileName(entry_index, ABuffer, ABufferSizeInChars) ) ) {
+                //    ABuffer[ABufferSizeInChars] = L'\0';
+                //}
+            }
+        }
+    }
+    
+    {
+        //TAIMPFileInfo file_info = {0};
+        //file_info.StructSize = sizeof(file_info);
+        //if ( S_OK == (r = aimp_player_manager_->FileInfoQuery(nullptr, &file_info) ) ) {
+        //    file_info = file_info;
+        //}
+    }
+}
+
+HRESULT WINAPI AIMP3ControlPlugin::GetInfo(const AIMP3SDK::PWideChar AFile, AIMP3SDK::PAIMPFileInfo AInfo)
+{
+    return E_FAIL;
+}
+
+HRESULT WINAPI AIMP3ControlPlugin::ShowSettingsDialog(HWND parentWindow)
+{
+    std::wostringstream message_body;
+    message_body << L"AIMP3 Control plugin settings can be found in configuration file " << "TODO"; // << getSettingsFilePath();
+    MessageBox( parentWindow,
+                message_body.str().c_str(),
+                L"Information about AIMP3 Control Plugin",
+                MB_ICONINFORMATION);
+    return S_OK;
 }
 
 PWCHAR WINAPI AIMPControlPluginHeader::GetPluginAuthor()

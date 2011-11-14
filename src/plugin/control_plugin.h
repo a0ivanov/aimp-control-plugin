@@ -4,10 +4,23 @@
 #define AIMP_CONTROL_PLUGIN_H
 
 #include "aimp/aimp2_sdk.h"
+#include "aimp/aimp3_sdk/aimp_addons.h"
 #include "settings.h"
 #include "logger.h"
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
+#include <boost/intrusive_ptr.hpp>
+
+// required for boost::intrusive_ptr support
+inline void intrusive_ptr_add_ref(IUnknown* po)
+{
+    po->AddRef();
+}
+
+inline void intrusive_ptr_release(IUnknown* po)
+{
+    po->Release();
+}
 
 namespace MultiUserMode { class MultiUserModeManager; }
 namespace Http { class RequestHandler; }
@@ -19,18 +32,18 @@ namespace AIMPControlPlugin
 {
 
 //! Class implements IUnknown interface.
-class IAIMPAddonHeaderIUnknownInterfaceImpl : public AIMP2SDK::IAIMPAddonHeader
+template <typename T>
+class IUnknownInterfaceImpl : public T
 {
 public:
 
-    IAIMPAddonHeaderIUnknownInterfaceImpl()
+    IUnknownInterfaceImpl()
         : reference_count_(0)
     {}
 
-    virtual ~IAIMPAddonHeaderIUnknownInterfaceImpl() {}
+    virtual ~IUnknownInterfaceImpl() {}
 
-    virtual HRESULT WINAPI QueryInterface(REFIID riid, LPVOID* ppvObj)
-    {
+    virtual HRESULT WINAPI QueryInterface(REFIID riid, LPVOID* ppvObj) {
         if (!ppvObj) {
             return E_POINTER;
         }
@@ -47,8 +60,7 @@ public:
     virtual ULONG WINAPI AddRef(void)
         { return ++reference_count_; }
 
-    virtual ULONG WINAPI Release(void)
-    {
+    virtual ULONG WINAPI Release(void) {
         ULONG reference_count = --reference_count_;
 
         if (reference_count == 0) {
@@ -68,7 +80,7 @@ private:
     \brief provide implementation AIMP2SDK::IAIMPAddonHeader interface.
     Manages all objects which are doing real job.
 */
-class AIMPControlPluginHeader : public IAIMPAddonHeaderIUnknownInterfaceImpl
+class AIMPControlPluginHeader : public IUnknownInterfaceImpl<AIMP2SDK::IAIMPAddonHeader>
 {
 public:
     static const std::wstring kPLUGIN_SHORT_NAME; //!< Plugin name which is displayed by AIMP player in plugin 'About' field.
@@ -172,6 +184,82 @@ private:
 };
 
 extern AIMPControlPluginHeader* plugin_instance;
+
+
+class AIMP3ControlPlugin : public AIMP3SDK::IAIMPAddonPlugin, public AIMP3SDK::IAIMPAddonsFileInfoRepository
+{
+    static const std::wstring kPLUGIN_AUTHOR;     //!< Plugin author name which is displayed by AIMP player in plugin 'About' field.
+    static const std::wstring kPLUGIN_INFO;       //!< Plugin info which is displayed by AIMP player in plugin 'About' field.
+    static const std::wstring kPLUGIN_SHORT_NAME; //!< Plugin name which is displayed by AIMP player in plugin 'About' field.
+
+public:
+
+    AIMP3ControlPlugin()
+        :
+        reference_count_(0)
+    {}
+
+    // IUnknown methods.
+    virtual HRESULT WINAPI QueryInterface(REFIID riid, LPVOID* ppvObj) {
+        if (!ppvObj) {
+            return E_POINTER;
+        }
+
+        if (IID_IUnknown == riid) {
+            *ppvObj = this;
+            AddRef();
+            return S_OK;
+        }
+
+        return E_NOINTERFACE;
+    }
+
+    virtual ULONG WINAPI AddRef(void)
+        { return ++reference_count_; }
+
+    virtual ULONG WINAPI Release(void) {
+        ULONG reference_count = --reference_count_;
+
+        if (reference_count == 0) {
+            delete this;
+        }
+
+        return reference_count;
+    }
+
+    // AIMP3SDK::IAIMPAddonPlugin methods.
+    virtual const PWCHAR WINAPI GetPluginAuthor();
+    virtual const PWCHAR WINAPI GetPluginInfo();
+    virtual const PWCHAR WINAPI GetPluginName();
+    virtual DWORD   WINAPI GetPluginFlags();
+    virtual HRESULT WINAPI Initialize(AIMP3SDK::IAIMPCoreUnit* coreUnit);
+    virtual HRESULT WINAPI Finalize();
+    virtual HRESULT WINAPI ShowSettingsDialog(HWND parentWindow);
+
+    // AIMP3SDK::IAIMPAddonsFileInfoRepository method.
+    virtual HRESULT WINAPI GetInfo(const AIMP3SDK::PWideChar AFile, AIMP3SDK::PAIMPFileInfo AInfo);
+
+private:
+
+    void OnTick();
+
+    static void CALLBACK OnTickTimerProc(HWND hwnd,
+                                         UINT uMsg,
+                                         UINT_PTR idEvent,
+                                         DWORD dwTime);
+
+    void StartTickTimer();
+    void StopTickTimer();
+
+    boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp_core_unit_;
+    boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlayerManager> aimp_player_manager_;
+    boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistManager> aimp_playlist_manager_;
+
+    ULONG reference_count_;
+    UINT_PTR tick_timer_id_;
+};
+
+extern AIMP3ControlPlugin* plugin3_instance;
 
 } // namespace AIMPControlPlugin
 

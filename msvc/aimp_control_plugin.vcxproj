@@ -205,7 +205,7 @@
     <ClInclude Include="..\src\xmlrpc\value.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\src\plugin\control_plugin.def" />
+    <None Include="..\src\control_plugin.def" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

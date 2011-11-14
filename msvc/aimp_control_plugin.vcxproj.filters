@@ -287,7 +287,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\src\plugin\control_plugin.def">
+    <None Include="..\src\control_plugin.def">
       <Filter>src\plugin</Filter>
     </None>
   </ItemGroup>
