@@ -96,6 +96,37 @@ const std::wstring AIMP3ControlPlugin::kPLUGIN_AUTHOR     = L"Alexey Ivanov";
 const std::wstring AIMP3ControlPlugin::kPLUGIN_SHORT_NAME = L"Control Plugin";
 const std::wstring AIMP3ControlPlugin::kPLUGIN_INFO       = L"Provides network access to AIMP player";
 
+HRESULT WINAPI AIMP3ControlPlugin::QueryInterface(REFIID riid, LPVOID* ppvObj)
+{
+    if (!ppvObj) {
+        return E_POINTER;
+    }
+
+    if (IID_IUnknown == riid) {
+        *ppvObj = this;
+        AddRef();
+        return S_OK;
+    }
+
+    return E_NOINTERFACE;
+}
+
+ULONG WINAPI AIMP3ControlPlugin::AddRef(void)
+{
+    return ++reference_count_;
+}
+
+ULONG WINAPI AIMP3ControlPlugin::Release(void)
+{
+    ULONG reference_count = --reference_count_;
+
+    if (reference_count == 0) {
+        delete this;
+    }
+
+    return reference_count;
+}
+
 PWCHAR WINAPI AIMP3ControlPlugin::GetPluginAuthor()
 {
     return const_cast<PWCHAR>( kPLUGIN_AUTHOR.c_str() ); // const cast is safe here since AIMP does not try to modify these data.
@@ -200,17 +231,17 @@ void AIMP3ControlPlugin::OnTick()
     }
                      
     {
-        const std::wstring tmpl(L"%A");
-        PWCHAR AString = nullptr;
-        
-        if ( S_OK == (r = aimp_playlist_manager_->FormatString(const_cast<PWCHAR>( tmpl.c_str() ), tmpl.length(), AIMP_PLAYLIST_FORMAT_MODE_CURRENT,
-                                                               nullptr, &AString
-                                                               )
-                      )
-            )
-        {
-            AString = AString;
-        }
+        //const std::wstring tmpl(L"%A");
+        //PWCHAR AString = nullptr;
+        //
+        //if ( S_OK == (r = aimp_playlist_manager_->FormatString(const_cast<PWCHAR>( tmpl.c_str() ), tmpl.length(), AIMP_PLAYLIST_FORMAT_MODE_CURRENT,
+        //                                                       nullptr, &AString
+        //                                                       )
+        //              )
+        //    )
+        //{
+        //    AString = AString;
+        //}
 
         const HPLS playing_playlist_id = aimp_playlist_manager_->StoragePlayingGet();
         IAIMPAddonsPlaylistStrings* files = nullptr;
@@ -225,7 +256,15 @@ void AIMP3ControlPlugin::OnTick()
 
                 int entry_index = 0;
                 HPLSENTRY entry_id = aimp_playlist_manager_->StorageGetEntry(playing_playlist_id, entry_index);
-                
+
+                DWORD mark;
+                if ( S_OK == (r = aimp_playlist_manager_->EntryPropertyGetValue( entry_id, AIMP_PLAYLIST_ENTRY_PROPERTY_MARK,
+                                                                                 &mark, sizeof(mark) ) ) 
+                    ) 
+                {
+                    mark = mark;
+                }
+
                 //r = aimp_playlist_manager_->EntryReloadInfo(entry_id);
 
                 if ( S_OK == files->ItemGetInfo(entry_index, &file_info) ) {
@@ -242,11 +281,15 @@ void AIMP3ControlPlugin::OnTick()
     }
     
     {
-        //TAIMPFileInfo file_info = {0};
-        //file_info.StructSize = sizeof(file_info);
-        //if ( S_OK == (r = aimp_player_manager_->FileInfoQuery(nullptr, &file_info) ) ) {
-        //    file_info = file_info;
-        //}
+        TAIMPFileInfo file_info = {0};
+        file_info.StructSize = sizeof(file_info);
+        const DWORD title_length = 260;
+        WCHAR Title[title_length + 1] = {0};
+        file_info.TitleLength = title_length;
+        file_info.Title = Title;
+        if ( S_OK == (r = aimp_player_manager_->FileInfoQuery(nullptr, &file_info) ) ) {
+            file_info = file_info;
+        }
     }
 }
 

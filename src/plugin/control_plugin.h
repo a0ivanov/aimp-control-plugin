@@ -77,7 +77,7 @@ private:
 
 
 /*!
-    \brief provide implementation AIMP2SDK::IAIMPAddonHeader interface.
+    \brief provides implementation AIMP2SDK::IAIMPAddonHeader interface.
     Manages all objects which are doing real job.
 */
 class AIMPControlPluginHeader : public IUnknownInterfaceImpl<AIMP2SDK::IAIMPAddonHeader>
@@ -200,32 +200,9 @@ public:
     {}
 
     // IUnknown methods.
-    virtual HRESULT WINAPI QueryInterface(REFIID riid, LPVOID* ppvObj) {
-        if (!ppvObj) {
-            return E_POINTER;
-        }
-
-        if (IID_IUnknown == riid) {
-            *ppvObj = this;
-            AddRef();
-            return S_OK;
-        }
-
-        return E_NOINTERFACE;
-    }
-
-    virtual ULONG WINAPI AddRef(void)
-        { return ++reference_count_; }
-
-    virtual ULONG WINAPI Release(void) {
-        ULONG reference_count = --reference_count_;
-
-        if (reference_count == 0) {
-            delete this;
-        }
-
-        return reference_count;
-    }
+    virtual HRESULT WINAPI QueryInterface(REFIID riid, LPVOID* ppvObj);
+    virtual ULONG WINAPI AddRef(void);
+    virtual ULONG WINAPI Release(void);
 
     // AIMP3SDK::IAIMPAddonPlugin methods.
     virtual PWCHAR WINAPI GetPluginAuthor();
