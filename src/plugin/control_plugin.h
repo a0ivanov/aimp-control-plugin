@@ -4,7 +4,7 @@
 #define AIMP_CONTROL_PLUGIN_H
 
 #include "aimp/aimp2_sdk.h"
-#include "aimp/aimp3_sdk/aimp_addons.h"
+#include "aimp/aimp3_sdk/aimp3_sdk.h"
 #include "settings.h"
 #include "logger.h"
 #include <boost/thread.hpp>
@@ -228,16 +228,16 @@ public:
     }
 
     // AIMP3SDK::IAIMPAddonPlugin methods.
-    virtual const PWCHAR WINAPI GetPluginAuthor();
-    virtual const PWCHAR WINAPI GetPluginInfo();
-    virtual const PWCHAR WINAPI GetPluginName();
-    virtual DWORD   WINAPI GetPluginFlags();
+    virtual PWCHAR WINAPI GetPluginAuthor();
+    virtual PWCHAR WINAPI GetPluginInfo();
+    virtual PWCHAR WINAPI GetPluginName();
+    virtual DWORD WINAPI GetPluginFlags();
     virtual HRESULT WINAPI Initialize(AIMP3SDK::IAIMPCoreUnit* coreUnit);
     virtual HRESULT WINAPI Finalize();
     virtual HRESULT WINAPI ShowSettingsDialog(HWND parentWindow);
 
     // AIMP3SDK::IAIMPAddonsFileInfoRepository method.
-    virtual HRESULT WINAPI GetInfo(const AIMP3SDK::PWideChar AFile, AIMP3SDK::PAIMPFileInfo AInfo);
+    virtual HRESULT WINAPI GetInfo(PWCHAR AFile, AIMP3SDK::TAIMPFileInfo* AInfo);
 
 private:
 

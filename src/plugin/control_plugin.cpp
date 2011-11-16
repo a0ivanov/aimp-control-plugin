@@ -96,19 +96,19 @@ const std::wstring AIMP3ControlPlugin::kPLUGIN_AUTHOR     = L"Alexey Ivanov";
 const std::wstring AIMP3ControlPlugin::kPLUGIN_SHORT_NAME = L"Control Plugin";
 const std::wstring AIMP3ControlPlugin::kPLUGIN_INFO       = L"Provides network access to AIMP player";
 
-const PWCHAR WINAPI AIMP3ControlPlugin::GetPluginAuthor()
+PWCHAR WINAPI AIMP3ControlPlugin::GetPluginAuthor()
 {
-    return const_cast<const PWCHAR>( kPLUGIN_AUTHOR.c_str() );
+    return const_cast<PWCHAR>( kPLUGIN_AUTHOR.c_str() ); // const cast is safe here since AIMP does not try to modify these data.
 }
 
-const PWCHAR WINAPI AIMP3ControlPlugin::GetPluginInfo()
+PWCHAR WINAPI AIMP3ControlPlugin::GetPluginInfo()
 {
-    return const_cast<const PWCHAR>( kPLUGIN_INFO.c_str() ); 
+    return const_cast<PWCHAR>( kPLUGIN_INFO.c_str() ); // const cast is safe here since AIMP does not try to modify these data.
 }
 
-const PWCHAR WINAPI AIMP3ControlPlugin::GetPluginName()
+PWCHAR WINAPI AIMP3ControlPlugin::GetPluginName()
 {
-    return const_cast<const PWCHAR>( kPLUGIN_SHORT_NAME.c_str() );     
+    return const_cast<PWCHAR>( kPLUGIN_SHORT_NAME.c_str() ); // const cast is safe here since AIMP does not try to modify these data.
 }
 
 DWORD WINAPI AIMP3ControlPlugin::GetPluginFlags()
@@ -124,7 +124,7 @@ HRESULT WINAPI AIMP3ControlPlugin::Initialize(AIMP3SDK::IAIMPCoreUnit* coreUnit)
     aimp_core_unit_.reset(coreUnit);
 
     IAIMPAddonsPlayerManager* player_manager;
-    if (S_OK == aimp_core_unit_->QueryInterface(SID_IAIMPAddonsPlayerManager, 
+    if (S_OK == aimp_core_unit_->QueryInterface(IID_IAIMPAddonsPlayerManager, 
                                                 reinterpret_cast<void**>(&player_manager)
                                                 ) 
         )
@@ -133,7 +133,7 @@ HRESULT WINAPI AIMP3ControlPlugin::Initialize(AIMP3SDK::IAIMPCoreUnit* coreUnit)
     }
 
     IAIMPAddonsPlaylistManager* playlist_manager;
-    if (S_OK == aimp_core_unit_->QueryInterface(SID_IAIMPAddonsPlaylistManager, 
+    if (S_OK == aimp_core_unit_->QueryInterface(IID_IAIMPAddonsPlaylistManager, 
                                                 reinterpret_cast<void**>(&playlist_manager)
                                                 ) 
         )
@@ -201,9 +201,9 @@ void AIMP3ControlPlugin::OnTick()
                      
     {
         const std::wstring tmpl(L"%A");
-        PWideChar AString = nullptr;
+        PWCHAR AString = nullptr;
         
-        if ( S_OK == (r = aimp_playlist_manager_->FormatString(const_cast<const PWideChar>( tmpl.c_str() ), tmpl.length(), AIMP_PLAYLIST_FORMAT_MODE_CURRENT,
+        if ( S_OK == (r = aimp_playlist_manager_->FormatString(const_cast<PWCHAR>( tmpl.c_str() ), tmpl.length(), AIMP_PLAYLIST_FORMAT_MODE_CURRENT,
                                                                nullptr, &AString
                                                                )
                       )
@@ -215,15 +215,15 @@ void AIMP3ControlPlugin::OnTick()
         const HPLS playing_playlist_id = aimp_playlist_manager_->StoragePlayingGet();
         IAIMPAddonsPlaylistStrings* files = nullptr;
         if ( S_OK == (r = aimp_playlist_manager_->StorageGetFiles(playing_playlist_id, 0, &files) ) ) {
-            if ( const Integer files_count = files->ItemGetCount() ) {
+            if ( const int files_count = files->ItemGetCount() ) {
                 TAIMPFileInfo file_info = {0};
                 file_info.StructSize = sizeof(file_info);
                 const DWORD title_length = 260;
-                WideChar Title[title_length + 1] = {0};
+                WCHAR Title[title_length + 1] = {0};
                 file_info.TitleLength = title_length;
                 file_info.Title = Title;
 
-                Integer entry_index = 0;
+                int entry_index = 0;
                 HPLSENTRY entry_id = aimp_playlist_manager_->StorageGetEntry(playing_playlist_id, entry_index);
                 
                 //r = aimp_playlist_manager_->EntryReloadInfo(entry_id);
@@ -250,7 +250,7 @@ void AIMP3ControlPlugin::OnTick()
     }
 }
 
-HRESULT WINAPI AIMP3ControlPlugin::GetInfo(const AIMP3SDK::PWideChar AFile, AIMP3SDK::PAIMPFileInfo AInfo)
+HRESULT WINAPI AIMP3ControlPlugin::GetInfo(const PWCHAR AFile, AIMP3SDK::TAIMPFileInfo* AInfo)
 {
     return E_FAIL;
 }

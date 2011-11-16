@@ -1,46 +1,28 @@
-#ifndef AIMP3_SDK_CORE_H
-#define AIMP3_SDK_CORE_H
+/* ******************************************** */
+/*                                              */
+/*                AIMP Plugins API              */
+/*             v3.00.943 (26.10.2011)           */
+/*                CoreUnit Objects              */
+/*                                              */
+/*              (c) Artem Izmaylov              */
+/*                 www.aimp.ru                  */
+/*             Mail: artem@aimp.ru              */
+/*              ICQ: 345-908-513                */
+/*                                              */
+/* ******************************************** */
 
-/* 
-    AIMP SDK is ported by Alexey Ivanov, 2011
-    Email: ivanbl4.geeks@gmail.com
-*/
-//{************************************************}
-//{*                                              *}
-//{*               AIMP Core Unit API             *}
-//{*             v3.00.923 (18.09.2011)           *}
-//{*                                              *}
-//{*              (c) Artem Izmaylov              *}
-//{*                 www.aimp.ru                  *}
-//{*             Mail: artem@aimp.ru              *}
-//{*              ICQ: 345-908-513                *}
-//{*                                              *}
-//{************************************************}
+#ifndef AIMPSDKCoreH
+#define AIMPSDKCoreH
 
 #include <windows.h>
 #include <unknwn.h>
-
-namespace AIMP3SDK
-{
-
-typedef unsigned char Byte;
-typedef DWORD Cardinal;
-typedef int Integer;
-typedef Integer* PInteger;
-typedef void* Pointer;
-typedef WCHAR WideChar;
-typedef WideChar* PWideChar;
-typedef BOOL LongBool;
-typedef __int64 Int64;
-typedef double TDateTime;
-typedef RECT TRect;
-typedef SIZE TSize;
 
 //==============================================================================
 // Commands
 //==============================================================================
 
 const int AIMP_MSG_CMD_BASE = 0;
+
 // AParam1: Command ID (see AIMP_MSG_CMD_XXX)
 // Result: S_OK, if enabled
 const int AIMP_MSG_CMD_STATE_GET = AIMP_MSG_CMD_BASE + 1;
@@ -324,7 +306,7 @@ const int AIMP_MSG_PROPERTY_PREAMP = AIMP_MSG_PROPERTY_BASE + 13;
 // AParam1: AIMP_MSG_PROPVALUE_GET / AIMP_MSG_PROPVALUE_SET
 // AParam2: Pointer to LongBool (32-bit boolean value) variable
 //          Default: False (switched off)
-const int AIMP_MSG_PROPERTY_EQUALIZER =  AIMP_MSG_PROPERTY_BASE + 14;
+const int AIMP_MSG_PROPERTY_EQUALIZER = AIMP_MSG_PROPERTY_BASE + 14;
 
 // AParam1: LoWord: AIMP_MSG_PROPVALUE_GET / AIMP_MSG_PROPVALUE_SET
 //          HiWord: Slider Index [0..17]
@@ -373,11 +355,11 @@ const int AIMP_MSG_PROPERTY_SHUFFLE = AIMP_MSG_PROPERTY_BASE + 21;
 // AParam1: One of AIMP_MPH_XXX flags
 // AParam2: Pointer to HWND
 const int AIMP_MSG_PROPERTY_HWND = AIMP_MSG_PROPERTY_BASE + 22;
-const int AIMP_MPH_MAINFORM      = 0;
-const int AIMP_MPH_APPLICATION   = 1;
-const int AIMP_MPH_TRAYCONTROL   = 2;
-const int AIMP_MPH_PLAYLISTFORM  = 3;
-const int AIMP_MPH_EQUALIZERFORM = 4;
+	const int AIMP_MPH_MAINFORM      = 0;
+    const int AIMP_MPH_APPLICATION   = 1;
+    const int AIMP_MPH_TRAYCONTROL   = 2;
+    const int AIMP_MPH_PLAYLISTFORM  = 3;
+    const int AIMP_MPH_EQUALIZERFORM = 4;
 
 // AParam1: AIMP_MSG_PROPVALUE_GET / AIMP_MSG_PROPVALUE_SET
 // AParam2: Pointer to LongBool (32-bit boolean value) variable
@@ -429,9 +411,9 @@ const int AIMP_MSG_EVENT_STREAM_START = AIMP_MSG_EVENT_BASE + 3;
 const int AIMP_MSG_EVENT_STREAM_START_SUBTRACK = AIMP_MSG_EVENT_BASE + 4;
 // Called, when audio stream has been finished
 const int AIMP_MSG_EVENT_STREAM_END = AIMP_MSG_EVENT_BASE + 5;
-// AParam1 contains combination of next flags:
-const int AIMP_MES_END_OF_QUEUE    = 1;
-const int AIMP_MES_END_OF_PLAYLIST = 2;
+  // AParam1 contains combination of next flags:
+    const int AIMP_MES_END_OF_QUEUE    = 1;
+    const int AIMP_MES_END_OF_PLAYLIST = 2;
 
 // Called, when player state has been changed (Played / Paused / Stopped)
 // AParam1: 0 = Stopped; 1 = Paused; 2 = Playing
@@ -485,36 +467,41 @@ const int AIMP_MSG_EVENT_PLAYER_UPDATE_POSITION = AIMP_MSG_EVENT_BASE + 16;
 // AParam1, AParam2: unused
 const int AIMP_MSG_EVENT_LANGUAGE = AIMP_MSG_EVENT_BASE + 17;
 
-DEFINE_GUID(SID_IAIMPCoreUnitMessageHook, 0xFC6FB524, 0xA959, 0x4089, 0xAA, 0x0A, 0xEA, 0x40, 0xAB, 0x73, 0x74, 0xCD);
+//==============================================================================
+
+DEFINE_GUID(IID_IAIMPCoreUnitMessageHook, 0xFC6FB524, 0xA959, 0x4089, 0xAA, 0x0A, 0xEA, 0x40, 0xAB, 0x73, 0x74, 0xCD);
 
 #pragma pack(push, 1)
+
+/* TAIMPVersionInfo */
 struct TAIMPVersionInfo
 {
-    Integer ID;
-    Integer BuildNumber;
-    Integer BuildDate; // OS date-and-time format
-    PWideChar BuildSuffix; // can be nil!
+	int ID;
+	int BuildNumber;
+	int BuildDate; // OS date-and-time format
+	PWCHAR BuildSuffix; // can be nil!
 };
+
 #pragma pack(pop)
 
-class IAIMPCoreUnitMessageHook : public IUnknown
+/* IAIMPCoreUnitMessageHook */
+  
+class IAIMPCoreUnitMessageHook: public IUnknown
 {
-public:
-  //[SID_IAIMPCoreUnitMessageHook]
-
-  virtual void WINAPI CoreMessage(Cardinal AMessage, Integer AParam1, Pointer AParam2, HRESULT* AResult) = 0;
+	public:
+		virtual void WINAPI CoreMessage(DWORD AMessage, int AParam1, void *AParam2, HRESULT *AResult);
 };
 
-class IAIMPCoreUnit : public IUnknown
+/* IAIMPCoreUnit */
+
+class IAIMPCoreUnit: public IUnknown
 {
-public:
-    virtual HRESULT WINAPI GetVersion(TAIMPVersionInfo* AVersion) = 0;
-    virtual HRESULT WINAPI MessageHook(IAIMPCoreUnitMessageHook* AHook) = 0;
-    virtual Cardinal WINAPI MessageRegister(PWideChar* AMessageName) = 0;
-    virtual HRESULT WINAPI MessageSend(Cardinal AMessage, Integer AParam1, Pointer AParam2) = 0;
-    virtual HRESULT WINAPI MessageUnhook(IAIMPCoreUnitMessageHook* AHook) = 0;
+	public:
+		virtual HRESULT WINAPI GetVersion(TAIMPVersionInfo *AVersion);
+		virtual HRESULT WINAPI MessageHook(IAIMPCoreUnitMessageHook *AHook);
+		virtual DWORD   WINAPI MessageRegister(PWCHAR AMessageName);
+		virtual HRESULT WINAPI MessageSend(DWORD AMessage, int AParam1, void *AParam2);
+		virtual HRESULT WINAPI MessageUnhook(IAIMPCoreUnitMessageHook *AHook);
 };
 
-} // namespace AIMP3SDK
-
-#endif // #ifndef AIMP3_SDK_CORE_H
+#endif
