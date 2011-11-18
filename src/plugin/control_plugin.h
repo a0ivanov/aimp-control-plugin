@@ -7,6 +7,7 @@
 #include "aimp/aimp3_sdk/aimp3_sdk.h"
 #include "settings.h"
 #include "logger.h"
+#include "utils/iunknown_impl.h"
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
 #include <boost/intrusive_ptr.hpp>
@@ -30,51 +31,6 @@ namespace AIMP2SDK { class IAIMP2Controller; }
 //! contains class which implements AIMP SDK interfaces and interacts with AIMP player.
 namespace AIMPControlPlugin
 {
-
-//! Class implements IUnknown interface.
-template <typename T>
-class IUnknownInterfaceImpl : public T
-{
-public:
-
-    IUnknownInterfaceImpl()
-        : reference_count_(0)
-    {}
-
-    virtual ~IUnknownInterfaceImpl() {}
-
-    virtual HRESULT WINAPI QueryInterface(REFIID riid, LPVOID* ppvObj) {
-        if (!ppvObj) {
-            return E_POINTER;
-        }
-
-        if (IID_IUnknown == riid) {
-            *ppvObj = this;
-            AddRef();
-            return S_OK;
-        }
-
-        return E_NOINTERFACE;
-    }
-
-    virtual ULONG WINAPI AddRef(void)
-        { return ++reference_count_; }
-
-    virtual ULONG WINAPI Release(void) {
-        ULONG reference_count = --reference_count_;
-
-        if (reference_count == 0) {
-            delete this;
-        }
-
-        return reference_count;
-    }
-
-private:
-
-    ULONG reference_count_;
-};
-
 
 /*!
     \brief provides implementation AIMP2SDK::IAIMPAddonHeader interface.
