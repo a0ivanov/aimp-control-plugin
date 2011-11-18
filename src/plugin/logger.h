@@ -41,11 +41,11 @@ typedef log::sources::severity_channel_logger<SEVERITY_LEVELS> ModuleLoggerType;
            Each module should use his own getModuleLogger() function specialization to logger access.<br>
            Function logger() is implemented by following example code in each module:
            <PRE>
-               // for AIMPControlPlugin::AIMPControlPluginHeader module
+               // for AIMPControlPlugin::AIMP2ControlPlugin module
                namespace {
                     using namespace AIMPControlPlugin::PluginLogger;
                     ModuleLoggerType& logger()
-                        { return getLogManager().getModuleLogger<AIMPControlPlugin::AIMPControlPluginHeader>(); }
+                        { return getLogManager().getModuleLogger<AIMPControlPlugin::AIMP2ControlPlugin>(); }
                }
            </PRE>
 */
@@ -128,7 +128,7 @@ LogManager& getLogManager();
 } } // namespace AIMPControlPlugin::PluginLogger
 
 /* Forward declarations for LogManager::getModuleLogger() specialization. */
-namespace AIMPControlPlugin { class AIMPControlPluginHeader; }
+namespace AIMPControlPlugin { class AIMP2ControlPlugin; }
 namespace AIMPPlayer { class AIMPManager; }
 namespace Rpc { class RequestHandler; }
 namespace Http { class Server; }
@@ -141,7 +141,7 @@ ModuleLoggerType& LogManager::getModuleLogger()
 }
 
 template<>
-ModuleLoggerType& LogManager::getModuleLogger<AIMPControlPlugin::AIMPControlPluginHeader>();
+ModuleLoggerType& LogManager::getModuleLogger<AIMPControlPlugin::AIMP2ControlPlugin>();
 
 template<>
 ModuleLoggerType& LogManager::getModuleLogger<AIMPPlayer::AIMPManager>();

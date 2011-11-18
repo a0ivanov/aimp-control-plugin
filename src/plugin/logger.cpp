@@ -236,7 +236,7 @@ inline std::basic_ostream< CharT, TraitsT >& operator<< (
 }
 
 template<>
-ModuleLoggerType& LogManager::getModuleLogger<AIMPControlPlugin::AIMPControlPluginHeader>()
+ModuleLoggerType& LogManager::getModuleLogger<AIMPControlPlugin::AIMP2ControlPlugin>()
 {
     return plugin_lg_;
 }

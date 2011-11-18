@@ -24,13 +24,13 @@ namespace AIMPControlPlugin
     \brief provides implementation AIMP2SDK::IAIMPAddonHeader interface.
     Manages all objects which are doing real job.
 */
-class AIMPControlPluginHeader : public IUnknownInterfaceImpl<AIMP2SDK::IAIMPAddonHeader>
+class AIMP2ControlPlugin : public IUnknownInterfaceImpl<AIMP2SDK::IAIMPAddonHeader>
 {
 public:
     static const std::wstring kPLUGIN_SHORT_NAME; //!< Plugin name which is displayed by AIMP player in plugin 'About' field.
     static const std::wstring kPLUGIN_AUTHOR; //!< Plugin author name which is displayed by AIMP player in plugin 'About' field.
 
-    AIMPControlPluginHeader();
+    AIMP2ControlPlugin();
 
     //@{
     //! Implementation of AIMP2SDK::IAIMPAddonHeader interface.
@@ -127,8 +127,6 @@ private:
     UINT_PTR tick_timer_id_;
 };
 
-extern AIMPControlPluginHeader* plugin_instance;
-
 
 class AIMP3ControlPlugin : public AIMP3SDK::IAIMPAddonPlugin, public AIMP3SDK::IAIMPAddonsFileInfoRepository
 {
@@ -179,8 +177,6 @@ private:
     ULONG reference_count_;
     UINT_PTR tick_timer_id_;
 };
-
-extern AIMP3ControlPlugin* plugin3_instance;
 
 } // namespace AIMPControlPlugin
 

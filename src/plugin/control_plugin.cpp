@@ -22,13 +22,21 @@
 
 #include <Guiddef.h>
 
+namespace AIMPControlPlugin
+{
+
+AIMP2ControlPlugin* plugin2_instance = nullptr;
+AIMP3ControlPlugin* plugin3_instance = nullptr;
+
+} // namespace AIMPControlPlugin
+
 /* Plugin DLL export function that will be called by AIMP(AIMP2 SDK). */
 BOOL WINAPI AIMP_QueryAddonEx(AIMP2SDK::IAIMPAddonHeader **newAddon)
 {
-    using AIMPControlPlugin::plugin_instance;
-    plugin_instance = new AIMPControlPlugin::AIMPControlPluginHeader();
-    plugin_instance->AddRef();
-    *newAddon = plugin_instance;
+    using AIMPControlPlugin::plugin2_instance;
+    plugin2_instance = new AIMPControlPlugin::AIMP2ControlPlugin();
+    plugin2_instance->AddRef();
+    *newAddon = plugin2_instance;
     return TRUE;
 }
 
@@ -45,15 +53,15 @@ BOOL WINAPI AIMP_QueryAddon3(AIMP3SDK::IAIMPAddonPlugin** newAddon)
 namespace {
 using namespace AIMPControlPlugin::PluginLogger;
 ModuleLoggerType& logger()
-    { return getLogManager().getModuleLogger<AIMPControlPlugin::AIMPControlPluginHeader>(); }
+    { return getLogManager().getModuleLogger<AIMPControlPlugin::AIMP2ControlPlugin>(); }
 }
 
 namespace AIMPControlPlugin
 {
 
-const std::wstring AIMPControlPluginHeader::kPLUGIN_SHORT_NAME        = L"Control Plugin";
-const std::wstring AIMPControlPluginHeader::kPLUGIN_AUTHOR            = L"Alexey Ivanov";
-const std::wstring AIMPControlPluginHeader::kPLUGIN_SETTINGS_FILENAME = L"settings.dat";
+const std::wstring AIMP2ControlPlugin::kPLUGIN_SHORT_NAME        = L"Control Plugin";
+const std::wstring AIMP2ControlPlugin::kPLUGIN_AUTHOR            = L"Alexey Ivanov";
+const std::wstring AIMP2ControlPlugin::kPLUGIN_SETTINGS_FILENAME = L"settings.dat";
 
 const UINT_PTR kTickTimerEventID = 0x01020304;
 const UINT     kTickTimerElapse = 100; // 100 ms.
@@ -61,33 +69,29 @@ const UINT     kTickTimerElapse = 100; // 100 ms.
 const UINT_PTR kTickTimer3EventID = 0x01020305;
 const UINT     kTickTimer3Elapse = 100; // 100 ms.
 
-AIMPControlPluginHeader* plugin_instance = nullptr;
-
-AIMP3ControlPlugin* plugin3_instance = nullptr;
-
 namespace PluginLogger
 {
 
 PluginLogger::LogManager& getLogManager()
 {
-    return AIMPControlPluginHeader::getLogManager();
+    return AIMP2ControlPlugin::getLogManager();
 }
 
-} // namespace AIMPControlPlugin
+} // namespace PluginLogger
 
-PluginLogger::LogManager& AIMPControlPluginHeader::getLogManager()
+PluginLogger::LogManager& AIMP2ControlPlugin::getLogManager()
 {
-    return plugin_instance->plugin_logger_;
+    return plugin2_instance->plugin_logger_;
 }
 
-AIMPControlPluginHeader::AIMPControlPluginHeader()
+AIMP2ControlPlugin::AIMP2ControlPlugin()
     :
     free_image_dll_is_available_(false),
     tick_timer_id_(0)
 {
 }
 
-BOOL WINAPI AIMPControlPluginHeader::GetHasSettingsDialog()
+BOOL WINAPI AIMP2ControlPlugin::GetHasSettingsDialog()
 {
     return TRUE;
 }
@@ -309,22 +313,22 @@ HRESULT WINAPI AIMP3ControlPlugin::ShowSettingsDialog(HWND parentWindow)
     return S_OK;
 }
 
-PWCHAR WINAPI AIMPControlPluginHeader::GetPluginAuthor()
+PWCHAR WINAPI AIMP2ControlPlugin::GetPluginAuthor()
 {
     return const_cast<const PWCHAR>( kPLUGIN_AUTHOR.c_str() ); // const cast is safe here since AIMP does not try to modify these data.
 }
 
-PWCHAR WINAPI AIMPControlPluginHeader::GetPluginName()
+PWCHAR WINAPI AIMP2ControlPlugin::GetPluginName()
 {
     return const_cast<const PWCHAR>( kPLUGIN_SHORT_NAME.c_str() ); // const cast is safe here since AIMP does not try to modify these data.
 }
 
-boost::filesystem::wpath AIMPControlPluginHeader::getSettingsFilePath()
+boost::filesystem::wpath AIMP2ControlPlugin::getSettingsFilePath()
 {
     return plugin_work_directory_ / kPLUGIN_SETTINGS_FILENAME;
 }
 
-boost::filesystem::wpath AIMPControlPluginHeader::makePluginWorkDirectory()
+boost::filesystem::wpath AIMP2ControlPlugin::makePluginWorkDirectory()
 {
     using namespace AIMP2SDK;
     // by default return ".\kPLUGIN_SHORT_NAME" directory.
@@ -352,7 +356,7 @@ boost::filesystem::wpath AIMPControlPluginHeader::makePluginWorkDirectory()
     return path_to_aimp_plugins_work_directory;
 }
 
-void AIMPControlPluginHeader::ensureWorkDirectoryExists()
+void AIMP2ControlPlugin::ensureWorkDirectoryExists()
 {
     namespace fs = boost::filesystem;
     plugin_work_directory_ = makePluginWorkDirectory();
@@ -372,7 +376,7 @@ void AIMPControlPluginHeader::ensureWorkDirectoryExists()
     }
 }
 
-void AIMPControlPluginHeader::loadSettings()
+void AIMP2ControlPlugin::loadSettings()
 {
     // Note: logger is not available at this point.
 
@@ -397,7 +401,7 @@ void AIMPControlPluginHeader::loadSettings()
     }
 }
 
-void AIMPControlPluginHeader::initializeLogger()
+void AIMP2ControlPlugin::initializeLogger()
 {
     if (settings_manager_.settings().logger.severity_level < PluginLogger::severity_levels_count) {
         plugin_logger_.setSeverity(settings_manager_.settings().logger.severity_level);
@@ -424,7 +428,7 @@ void AIMPControlPluginHeader::initializeLogger()
     }
 }
 
-void WINAPI AIMPControlPluginHeader::Initialize(AIMP2SDK::IAIMP2Controller* AController)
+void WINAPI AIMP2ControlPlugin::Initialize(AIMP2SDK::IAIMP2Controller* AController)
 {
     aimp_controller_.reset(AController);
 
@@ -477,7 +481,7 @@ void WINAPI AIMPControlPluginHeader::Initialize(AIMP2SDK::IAIMP2Controller* ACon
     BOOST_LOG_SEV(logger(), info) << "Plugin initialization is finished";
 }
 
-void WINAPI AIMPControlPluginHeader::Finalize()
+void WINAPI AIMP2ControlPlugin::Finalize()
 {
     BOOST_LOG_SEV(logger(), info) << "Plugin finalization is started";
 
@@ -508,7 +512,7 @@ void WINAPI AIMPControlPluginHeader::Finalize()
     plugin_logger_.stopLog();
 }
 
-void WINAPI AIMPControlPluginHeader::ShowSettingsDialog(HWND AParentWindow)
+void WINAPI AIMP2ControlPlugin::ShowSettingsDialog(HWND AParentWindow)
 {
     std::wostringstream message_body;
     message_body << L"AIMP2 Control plugin settings can be found in configuration file " << getSettingsFilePath();
@@ -518,7 +522,7 @@ void WINAPI AIMPControlPluginHeader::ShowSettingsDialog(HWND AParentWindow)
                 MB_ICONINFORMATION);
 }
 
-void AIMPControlPluginHeader::createRpcFrontends()
+void AIMP2ControlPlugin::createRpcFrontends()
 {
 #define REGISTER_RPC_FRONTEND(name) rpc_request_handler_->addFrontend( std::auto_ptr<Rpc::Frontend>( \
                                                                                                     new name::Frontend() \
@@ -530,7 +534,7 @@ void AIMPControlPluginHeader::createRpcFrontends()
 #undef REGISTER_RPC_FRONTEND
 }
 
-void AIMPControlPluginHeader::createRpcMethods()
+void AIMP2ControlPlugin::createRpcMethods()
 {
     using namespace AimpRpcMethods;
 
@@ -657,7 +661,7 @@ void freeImagePlusDllTest()
     img.saveToHandle(FIF_PNG, &io, nullptr); // check fipWinImage::saveToHandle() availability.
 }
 
-void AIMPControlPluginHeader::checkFreeImageDLLAvailability()
+void AIMP2ControlPlugin::checkFreeImageDLLAvailability()
 {
     // Wrap all calls to delay-load DLL functions inside SEH
     __try {
@@ -668,7 +672,7 @@ void AIMPControlPluginHeader::checkFreeImageDLLAvailability()
     }
 }
 
-boost::filesystem::wpath AIMPControlPluginHeader::getWebServerDocumentRoot() const // throws std::runtime_error
+boost::filesystem::wpath AIMP2ControlPlugin::getWebServerDocumentRoot() const // throws std::runtime_error
 {
     // get document root from settings.
     namespace fs = boost::filesystem;
@@ -686,15 +690,15 @@ boost::filesystem::wpath AIMPControlPluginHeader::getWebServerDocumentRoot() con
     return document_root_path;
 }
 
-void AIMPControlPluginHeader::StartTickTimer()
+void AIMP2ControlPlugin::StartTickTimer()
 {
-    tick_timer_id_ = ::SetTimer(NULL, kTickTimerEventID, kTickTimerElapse, &AIMPControlPluginHeader::OnTickTimerProc);
+    tick_timer_id_ = ::SetTimer(NULL, kTickTimerEventID, kTickTimerElapse, &AIMP2ControlPlugin::OnTickTimerProc);
     if (tick_timer_id_ == 0) {
         BOOST_LOG_SEV(logger(), critical) << "Plugin's service interrupted: SetTimer failed with error: " << GetLastError();
     }
 }
 
-void AIMPControlPluginHeader::StopTickTimer()
+void AIMP2ControlPlugin::StopTickTimer()
 {
     if (tick_timer_id_ != 0) {
         if (::KillTimer(NULL, tick_timer_id_) == 0) {
@@ -703,15 +707,15 @@ void AIMPControlPluginHeader::StopTickTimer()
     }
 }
 
-void CALLBACK AIMPControlPluginHeader::OnTickTimerProc(HWND /*hwnd*/,
+void CALLBACK AIMP2ControlPlugin::OnTickTimerProc(HWND /*hwnd*/,
                                                        UINT /*uMsg*/,
                                                        UINT_PTR /*idEvent*/,
                                                        DWORD /*dwTime*/)
 {
-    plugin_instance->OnTick();
+    plugin2_instance->OnTick();
 }
 
-void AIMPControlPluginHeader::OnTick()
+void AIMP2ControlPlugin::OnTick()
 {
     try {
         server_io_service_.poll();
