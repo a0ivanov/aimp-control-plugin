@@ -333,7 +333,7 @@ boost::filesystem::wpath AIMPControlPluginHeader::makePluginWorkDirectory()
     // get IAIMP2Extended interface.
     IAIMP2Extended* extended = nullptr;
     if ( aimp_controller_->AIMP_QueryObject(IAIMP2ExtendedID, &extended) ) {
-        boost::shared_ptr<IAIMP2Extended> aimp_extended( extended, AIMPPlayer::IReleaseFunctor() );
+        boost::intrusive_ptr<IAIMP2Extended> aimp_extended(extended);
         extended = nullptr;
 
         WCHAR buffer[MAX_PATH];
@@ -426,7 +426,7 @@ void AIMPControlPluginHeader::initializeLogger()
 
 void WINAPI AIMPControlPluginHeader::Initialize(AIMP2SDK::IAIMP2Controller* AController)
 {
-    aimp_controller_.reset( AController, AIMPPlayer::IReleaseFunctor() );
+    aimp_controller_.reset(AController);
 
     ensureWorkDirectoryExists();
     loadSettings(); // If file does not exist tries to save default settings.

@@ -122,7 +122,7 @@ public:
     /*!
         \param aimp_controller - pointer to IAIMP2Controller object.
     */
-    AIMPManager(boost::shared_ptr<AIMP2SDK::IAIMP2Controller> aimp_controller,
+    AIMPManager(boost::intrusive_ptr<AIMP2SDK::IAIMP2Controller> aimp_controller,
                 boost::asio::io_service& io_service_
                 ); // throws std::runtime_error
 
@@ -331,11 +331,11 @@ private:
     void initializeAIMPObjects(); // throws std::runtime_error
 
     // pointers to internal AIMP objects.
-    boost::shared_ptr<AIMP2SDK::IAIMP2Controller> aimp_controller_; //!< interface to work with AIMP application.
-    boost::shared_ptr<AIMP2SDK::IAIMP2Player> aimp_player_; //!< interface to work with AIMP control panel.
-    boost::shared_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager_; //!< interface for work with playlists.
-    boost::shared_ptr<AIMP2SDK::IAIMP2Extended> aimp_extended_; //!< interface for work aimp miscellaneous aspects.
-    boost::shared_ptr<AIMP2SDK::IAIMP2CoverArtManager> aimp_cover_art_manager_; //!< interface for work with track's album covers.
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2Controller> aimp_controller_; //!< interface to work with AIMP application.
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2Player> aimp_player_; //!< interface to work with AIMP control panel.
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager_; //!< interface for work with playlists.
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2Extended> aimp_extended_; //!< interface for work aimp miscellaneous aspects.
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2CoverArtManager> aimp_cover_art_manager_; //!< interface for work with track's album covers.
 
     PlaylistsListType playlists_; //!< playlists list. Currently it is map of playlist ID to Playlist object.
 
@@ -368,15 +368,6 @@ private:
 
     // These class were made friend only for easy emulate web ctl plugin behavior. Remove when possible.
     friend class AimpRpcMethods::EmulationOfWebCtlPlugin;
-};
-
-
-/*!
-    \brief Functor to be used with boost::sharedptr<IAIMP2XXXX> objects;
-           Calls IUnknown::Release() for passed object.
-*/
-struct IReleaseFunctor {
-    void operator()(IUnknown* object) const;
 };
 
 

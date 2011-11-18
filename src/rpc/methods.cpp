@@ -1189,7 +1189,7 @@ void EmulationOfWebCtlPlugin::getPlaylistList(std::ostringstream& out)
 {
     out << "[";
 
-    boost::shared_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp_manager_.aimp_playlist_manager_);
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp_manager_.aimp_playlist_manager_);
     const unsigned int playlist_name_length = 256;
     std::wstring playlist_name;
     const short playlists_count = aimp_manager_.aimp_playlist_manager_->AIMP_PLS_Count();
@@ -1256,7 +1256,7 @@ void EmulationOfWebCtlPlugin::getPlaylistSongs(int playlist_id, bool ignore_cach
 
     // not used, we have one thread. concurencyInstance.EnterWriter();
 
-    boost::shared_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp_manager_.aimp_playlist_manager_);
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp_manager_.aimp_playlist_manager_);
 
     int fileCount = aimp_playlist_manager->AIMP_PLS_GetFilesCount(playlist_id);
     if (size == 0) {
@@ -1329,7 +1329,7 @@ void EmulationOfWebCtlPlugin::getPlayerStatus(std::ostringstream& out)
 
 void EmulationOfWebCtlPlugin::getCurrentSong(std::ostringstream& out)
 {
-    boost::shared_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp_manager_.aimp_playlist_manager_);
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp_manager_.aimp_playlist_manager_);
     const int playlist_id  = aimp_playlist_manager->AIMP_PLS_ID_PlayingGet(),
               playing_file = aimp_playlist_manager->AIMP_PLS_ID_PlayingGetTrackIndex(playlist_id);
 
@@ -1368,7 +1368,7 @@ void EmulationOfWebCtlPlugin::setPlayerStatus(const std::string& statusType, int
 
 void EmulationOfWebCtlPlugin::sortPlaylist(int playlist_id, const std::string& sortType)
 {
-    boost::shared_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp_manager_.aimp_playlist_manager_);
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp_manager_.aimp_playlist_manager_);
     using namespace AIMP2SDK;
     if (sortType.compare("title") == 0) {
         aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_TITLE);

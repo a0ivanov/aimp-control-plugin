@@ -10,18 +10,6 @@
 #include "utils/iunknown_impl.h"
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
-#include <boost/intrusive_ptr.hpp>
-
-// required for boost::intrusive_ptr support
-inline void intrusive_ptr_add_ref(IUnknown* po)
-{
-    po->AddRef();
-}
-
-inline void intrusive_ptr_release(IUnknown* po)
-{
-    po->Release();
-}
 
 namespace MultiUserMode { class MultiUserModeManager; }
 namespace Http { class RequestHandler; }
@@ -119,7 +107,7 @@ private:
         \brief internal AIMP controller object, passed in plugin through AIMP2SDK::IAIMPAddonHeader::Initialize function by AIMP player.
         Used mostly by AIMPPlayer::AIMPManager object.
     */
-    boost::shared_ptr<AIMP2SDK::IAIMP2Controller> aimp_controller_;
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2Controller> aimp_controller_;
 
     boost::shared_ptr<MultiUserMode::MultiUserModeManager> multi_user_mode_manager_; //!< TODO: add doc
     boost::shared_ptr<Rpc::RequestHandler> rpc_request_handler_; //!< XML/Json RPC request handler. Used by Http::RequestHandler object.

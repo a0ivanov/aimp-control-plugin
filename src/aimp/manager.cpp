@@ -58,26 +58,9 @@ namespace AIMPPlayer
 {
 
 using namespace Utilities;
-
-void IReleaseFunctor::operator()(IUnknown* object) const
-{
-    /* do nothing here
-        Reason: tests shows that AIMP does not increment reference count of his objects before give them to plugin
-        through IAIMP2Controller::AIMP_QueryObject().
-        And the object IAIMP2Controller has zero reference count at plugin IAIMPAddonHeader::Initialize() call.
-        Uncomment following code if reference count is properly handled by AIMP:
-    */
-    //#if _DEBUG
-    //    ULONG ref_count = object->Release();
-    //    BOOST_LOG_SEV(logger(), debug) << "AIMP Object " << reinterpret_cast<ULONG>(object) << " release() = " << ref_count;
-    //#else
-    //    object->Release();
-    //#endif
-}
-
 using namespace AIMP2SDK;
 
-AIMPManager::AIMPManager(boost::shared_ptr<AIMP2SDK::IAIMP2Controller> aimp_controller,
+AIMPManager::AIMPManager(boost::intrusive_ptr<AIMP2SDK::IAIMP2Controller> aimp_controller,
                          boost::asio::io_service& io_service_
                          )
     :
@@ -438,7 +421,7 @@ void AIMPManager::initializeAIMPObjects()
     if (!result) {
         throw std::runtime_error("Creation object IAIMP2Player failed");
     }
-    aimp_player_.reset( player, IReleaseFunctor() );
+    aimp_player_.reset(player);
 
     // get IAIMP2PlaylistManager2 object.
     IAIMP2PlaylistManager2* playlist_manager = nullptr;
@@ -446,7 +429,7 @@ void AIMPManager::initializeAIMPObjects()
     if (!result) {
         throw std::runtime_error("Creation object IAIMP2PlaylistManager2 failed");
     }
-    aimp_playlist_manager_.reset(playlist_manager, IReleaseFunctor());
+    aimp_playlist_manager_.reset(playlist_manager);
 
     // get IAIMP2Extended object.
     IAIMP2Extended* extended = nullptr;
@@ -454,7 +437,7 @@ void AIMPManager::initializeAIMPObjects()
     if (!result) {
         throw std::runtime_error("Creation object IAIMP2Extended failed");
     }
-    aimp_extended_.reset( extended, IReleaseFunctor() );
+    aimp_extended_.reset(extended);
 
     // get IAIMP2CoverArtManager object.
     IAIMP2CoverArtManager* cover_art_manager = nullptr;
@@ -462,7 +445,7 @@ void AIMPManager::initializeAIMPObjects()
     if (!result) {
         throw std::runtime_error("Creation object IAIMP2CoverArtManager failed");
     }
-    aimp_cover_art_manager_.reset( cover_art_manager, IReleaseFunctor() );
+    aimp_cover_art_manager_.reset(cover_art_manager);
 }
 
 void AIMPManager::startPlayback()
