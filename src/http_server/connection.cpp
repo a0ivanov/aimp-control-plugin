@@ -10,12 +10,6 @@
 #include "http_server/request_handler.h"
 #include "plugin/logger.h"
 
-//namespace {
-//using namespace AIMPControlPlugin::PluginLogger;
-//ModuleLoggerType& logger()
-//    { return getLogManager().getModuleLogger<Http::Server>(); }
-//}
-
 namespace Http {
 
 template <typename SocketT>

@@ -8,7 +8,7 @@
 #include <boost/foreach.hpp>
 
 namespace {
-using namespace AIMPControlPlugin::PluginLogger;
+using namespace ControlPlugin::PluginLogger;
 ModuleLoggerType& logger()
     { return getLogManager().getModuleLogger<AIMPPlayer::AIMPManager>(); }
 }

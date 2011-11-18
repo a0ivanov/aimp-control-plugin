@@ -10,7 +10,7 @@
 #include <boost/log/attributes.hpp>
 #include <boost/log/filters.hpp>
 
-namespace AIMPControlPlugin { namespace PluginLogger {
+namespace ControlPlugin { namespace PluginLogger {
 
 const std::string LogManager::kRPC_SERVER_MODULE_NAME =   "rpc_server";
 const std::string LogManager::kHTTP_SERVER_MODULE_NAME =  "http_server";
@@ -236,7 +236,7 @@ inline std::basic_ostream< CharT, TraitsT >& operator<< (
 }
 
 template<>
-ModuleLoggerType& LogManager::getModuleLogger<AIMPControlPlugin::AIMP2ControlPlugin>()
+ModuleLoggerType& LogManager::getModuleLogger<ControlPlugin::AIMPControlPlugin>()
 {
     return plugin_lg_;
 }
@@ -259,4 +259,4 @@ ModuleLoggerType& LogManager::getModuleLogger<Http::Server>()
     return http_server_lg_;
 }
 
-} } // namespace AIMPControlPlugin::PluginLogger
+} } // namespace ControlPlugin::PluginLogger

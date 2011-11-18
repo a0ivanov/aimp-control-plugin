@@ -331,11 +331,11 @@ private:
     void initializeAIMPObjects(); // throws std::runtime_error
 
     // pointers to internal AIMP objects.
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2Controller> aimp_controller_; //!< interface to work with AIMP application.
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2Player> aimp_player_; //!< interface to work with AIMP control panel.
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager_; //!< interface for work with playlists.
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2Extended> aimp_extended_; //!< interface for work aimp miscellaneous aspects.
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2CoverArtManager> aimp_cover_art_manager_; //!< interface for work with track's album covers.
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2Controller> aimp2_controller_; //!< interface to work with AIMP application.
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2Player> aimp2_player_; //!< interface to work with AIMP control panel.
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp2_playlist_manager_; //!< interface for work with playlists.
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2Extended> aimp2_extended_; //!< interface for work aimp miscellaneous aspects.
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2CoverArtManager> aimp2_cover_art_manager_; //!< interface for work with track's album covers.
 
     PlaylistsListType playlists_; //!< playlists list. Currently it is map of playlist ID to Playlist object.
 

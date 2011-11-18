@@ -17,7 +17,7 @@
 #include <string.h>
 
 namespace {
-using namespace AIMPControlPlugin::PluginLogger;
+using namespace ControlPlugin::PluginLogger;
 ModuleLoggerType& logger()
     { return getLogManager().getModuleLogger<Rpc::RequestHandler>(); }
 }
@@ -1189,10 +1189,10 @@ void EmulationOfWebCtlPlugin::getPlaylistList(std::ostringstream& out)
 {
     out << "[";
 
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp_manager_.aimp_playlist_manager_);
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp_manager_.aimp2_playlist_manager_);
     const unsigned int playlist_name_length = 256;
     std::wstring playlist_name;
-    const short playlists_count = aimp_manager_.aimp_playlist_manager_->AIMP_PLS_Count();
+    const short playlists_count = aimp_manager_.aimp2_playlist_manager_->AIMP_PLS_Count();
     for (short i = 0; i < playlists_count; ++i) {
         int playlist_id;
         aimp_playlist_manager->AIMP_PLS_ID_By_Index(i, &playlist_id);
@@ -1256,7 +1256,7 @@ void EmulationOfWebCtlPlugin::getPlaylistSongs(int playlist_id, bool ignore_cach
 
     // not used, we have one thread. concurencyInstance.EnterWriter();
 
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp_manager_.aimp_playlist_manager_);
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp_manager_.aimp2_playlist_manager_);
 
     int fileCount = aimp_playlist_manager->AIMP_PLS_GetFilesCount(playlist_id);
     if (size == 0) {
@@ -1329,7 +1329,7 @@ void EmulationOfWebCtlPlugin::getPlayerStatus(std::ostringstream& out)
 
 void EmulationOfWebCtlPlugin::getCurrentSong(std::ostringstream& out)
 {
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp_manager_.aimp_playlist_manager_);
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp_manager_.aimp2_playlist_manager_);
     const int playlist_id  = aimp_playlist_manager->AIMP_PLS_ID_PlayingGet(),
               playing_file = aimp_playlist_manager->AIMP_PLS_ID_PlayingGetTrackIndex(playlist_id);
 
@@ -1368,7 +1368,7 @@ void EmulationOfWebCtlPlugin::setPlayerStatus(const std::string& statusType, int
 
 void EmulationOfWebCtlPlugin::sortPlaylist(int playlist_id, const std::string& sortType)
 {
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp_manager_.aimp_playlist_manager_);
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp_manager_.aimp2_playlist_manager_);
     using namespace AIMP2SDK;
     if (sortType.compare("title") == 0) {
         aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_TITLE);
@@ -1388,10 +1388,10 @@ void EmulationOfWebCtlPlugin::sortPlaylist(int playlist_id, const std::string& s
 void EmulationOfWebCtlPlugin::addFile(int playlist_id, const std::string& filename_url)
 {
     AIMP2SDK::IPLSStrings* strings;
-    aimp_manager_.aimp_controller_->AIMP_NewStrings(&strings);
+    aimp_manager_.aimp2_controller_->AIMP_NewStrings(&strings);
     const std::wstring filename = StringEncoding::utf8_to_utf16( WebCtl::urldecode(filename_url) );
     strings->AddFile(const_cast<PWCHAR>( filename.c_str() ), nullptr);
-    aimp_manager_.aimp_controller_->AIMP_PLS_AddFiles(playlist_id, strings);
+    aimp_manager_.aimp2_controller_->AIMP_PLS_AddFiles(playlist_id, strings);
 }
 
 ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
@@ -1455,10 +1455,10 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
             out << aimp_manager_.getStatus(AIMPManager::STATUS_LENGTH);
             break;
         case get_custom_status:
-            out << aimp_manager_.aimp_controller_->AIMP_Status_Get( static_cast<int>(params["status"]) ); // use native status getter since web ctl provides access to all statuses.
+            out << aimp_manager_.aimp2_controller_->AIMP_Status_Get( static_cast<int>(params["status"]) ); // use native status getter since web ctl provides access to all statuses.
             break;
         case set_custom_status:
-            aimp_manager_.aimp_controller_->AIMP_Status_Set( static_cast<int>(params["status"]), static_cast<int>(params["value"]) ); // use native status setter since web ctl provides access to all statuses.
+            aimp_manager_.aimp2_controller_->AIMP_Status_Set( static_cast<int>(params["status"]), static_cast<int>(params["value"]) ); // use native status setter since web ctl provides access to all statuses.
             break;
         case set_song_play:
             {
@@ -1469,7 +1469,7 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
         case set_song_position:
             {
             const int playlist_id = params["playlist"];
-            aimp_manager_.aimp_playlist_manager_->AIMP_PLS_Entry_SetPosition(playlist_id, params["song"], params["position"]);
+            aimp_manager_.aimp2_playlist_manager_->AIMP_PLS_Entry_SetPosition(playlist_id, params["song"], params["position"]);
             calcPlaylistCRC(playlist_id);
             }
             break;
@@ -1508,7 +1508,7 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
         case playlist_del_file:
             {
             const int playlist_id = params["playlist"];
-            aimp_manager_.aimp_playlist_manager_->AIMP_PLS_Entry_Delete(playlist_id, params["file"]);
+            aimp_manager_.aimp2_playlist_manager_->AIMP_PLS_Entry_Delete(playlist_id, params["file"]);
             calcPlaylistCRC(playlist_id);
             }
             break;

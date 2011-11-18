@@ -11,12 +11,12 @@
 #include <boost/static_assert.hpp>
 #include <set>
 
-namespace AIMPControlPlugin {
+namespace ControlPlugin {
 
 //! contains logger utils.
 namespace PluginLogger {
 
-//! Identificators of log message's severity level. If you need to add levels update AIMPControlPlugin::PluginSettings severityToString/severityFromString functions.
+//! Identificators of log message's severity level. If you need to add levels update ControlPlugin::PluginSettings severityToString/severityFromString functions.
 enum SEVERITY_LEVELS { debug = 0,
                        info,
                        warning,
@@ -41,11 +41,11 @@ typedef log::sources::severity_channel_logger<SEVERITY_LEVELS> ModuleLoggerType;
            Each module should use his own getModuleLogger() function specialization to logger access.<br>
            Function logger() is implemented by following example code in each module:
            <PRE>
-               // for AIMPControlPlugin::AIMP2ControlPlugin module
+               // for ControlPlugin::AIMPControlPlugin module
                namespace {
-                    using namespace AIMPControlPlugin::PluginLogger;
+                    using namespace ControlPlugin::PluginLogger;
                     ModuleLoggerType& logger()
-                        { return getLogManager().getModuleLogger<AIMPControlPlugin::AIMP2ControlPlugin>(); }
+                        { return getLogManager().getModuleLogger<ControlPlugin::AIMPControlPlugin>(); }
                }
            </PRE>
 */
@@ -125,15 +125,15 @@ private:
 //! provide global access to LogManager object.
 LogManager& getLogManager();
 
-} } // namespace AIMPControlPlugin::PluginLogger
+} } // namespace ControlPlugin::PluginLogger
 
 /* Forward declarations for LogManager::getModuleLogger() specialization. */
-namespace AIMPControlPlugin { class AIMP2ControlPlugin; }
+namespace ControlPlugin { class AIMPControlPlugin; }
 namespace AIMPPlayer { class AIMPManager; }
 namespace Rpc { class RequestHandler; }
 namespace Http { class Server; }
 
-namespace AIMPControlPlugin { namespace PluginLogger {
+namespace ControlPlugin { namespace PluginLogger {
 template<class T>
 ModuleLoggerType& LogManager::getModuleLogger()
 {
@@ -141,7 +141,7 @@ ModuleLoggerType& LogManager::getModuleLogger()
 }
 
 template<>
-ModuleLoggerType& LogManager::getModuleLogger<AIMPControlPlugin::AIMP2ControlPlugin>();
+ModuleLoggerType& LogManager::getModuleLogger<ControlPlugin::AIMPControlPlugin>();
 
 template<>
 ModuleLoggerType& LogManager::getModuleLogger<AIMPPlayer::AIMPManager>();
@@ -176,6 +176,6 @@ public:
     {}
 };
 
-} } // namespace AIMPControlPlugin::PluginLogger
+} } // namespace ControlPlugin::PluginLogger
 
 #endif // #ifndef LOGGER_H

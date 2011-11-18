@@ -6,9 +6,9 @@
 #include "plugin/logger.h"
 
 namespace {
-using namespace AIMPControlPlugin::PluginLogger;
+using namespace ControlPlugin::PluginLogger;
 ModuleLoggerType& logger()
-    { return getLogManager().getModuleLogger<AIMPControlPlugin::AIMP2ControlPlugin>(); }
+    { return getLogManager().getModuleLogger<ControlPlugin::AIMPControlPlugin>(); }
 }
 
 namespace Utilities
