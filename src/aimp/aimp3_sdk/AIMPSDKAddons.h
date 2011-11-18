@@ -203,13 +203,13 @@ typedef TAIMPSkinInfo *PAIMPSkinInfo;
 class IAIMPAddonsOptionsDialogFrame: public IUnknown
 {
 	public:
-		virtual HWND   WINAPI FrameCreate(HWND AParentWindow);
-		virtual void * WINAPI FrameData(); // unused
-		virtual int    WINAPI FrameFlags(); // unused
-		virtual PWCHAR WINAPI FrameName();
-		virtual void   WINAPI FrameFree(HWND AWindow);
-		virtual void   WINAPI FrameLoadConfigNotify();
-		virtual void   WINAPI FrameSaveConfigNotify();
+		virtual HWND   WINAPI FrameCreate(HWND AParentWindow) = 0;
+		virtual void * WINAPI FrameData() = 0; // unused
+		virtual int    WINAPI FrameFlags() = 0; // unused
+		virtual PWCHAR WINAPI FrameName() = 0;
+		virtual void   WINAPI FrameFree(HWND AWindow) = 0;
+		virtual void   WINAPI FrameLoadConfigNotify() = 0;
+		virtual void   WINAPI FrameSaveConfigNotify() = 0;
 };
 
 /* IAIMPAddonsOptionsDialog */
@@ -217,13 +217,13 @@ class IAIMPAddonsOptionsDialog: public IUnknown
 {
 	public:
 		// Add custom frame
-		virtual HRESULT WINAPI FrameAdd(IAIMPAddonsOptionsDialogFrame *AFrame);
+		virtual HRESULT WINAPI FrameAdd(IAIMPAddonsOptionsDialogFrame *AFrame) = 0;
 		// Remove custom frame
-		virtual HRESULT WINAPI FrameRemove(IAIMPAddonsOptionsDialogFrame *AFrame);
+		virtual HRESULT WINAPI FrameRemove(IAIMPAddonsOptionsDialogFrame *AFrame) = 0;
 		// Call this method, when something changed on your frame
-		virtual HRESULT WINAPI FrameModified(IAIMPAddonsOptionsDialogFrame *AFrame);
+		virtual HRESULT WINAPI FrameModified(IAIMPAddonsOptionsDialogFrame *AFrame) = 0;
 		// AForceShow - Execute Options Dialog, if dialog is not shown
-		virtual HRESULT WINAPI FrameShow(IAIMPAddonsOptionsDialogFrame *AFrame, BOOL AForceShow);
+		virtual HRESULT WINAPI FrameShow(IAIMPAddonsOptionsDialogFrame *AFrame, BOOL AForceShow) = 0;
 };
 
 /* IAIMPAddonsFileInfoRepository */
@@ -252,7 +252,7 @@ class IAIMPAddonsPlayingQueueController: public IUnknown
 		//   2) Plugins
 		//   3) Shuffle Manager
 		//   4) Playlist
-		virtual HRESULT WINAPI GetFile(HPLS *ID, int *AEntryIndex, BOOL ANext);
+		virtual HRESULT WINAPI GetFile(HPLS *ID, int *AEntryIndex, BOOL ANext) = 0;
 };
 
 /* IAIMPAddonsConfigFile */
@@ -261,15 +261,15 @@ class IAIMPAddonsConfigFile: public IUnknown
 	public:
 		// functions returns S_OK, if value exists in configuration file
 		virtual HRESULT WINAPI ReadString(PWCHAR ASectionName, PWCHAR AItemName, PWCHAR AValueBuffer,
-			int ASectionNameSizeInChars, int AItemNameSizeInChars, int AValueBufferSizeInChars);
+			int ASectionNameSizeInChars, int AItemNameSizeInChars, int AValueBufferSizeInChars) = 0;
 		virtual HRESULT WINAPI ReadInteger(PWCHAR ASectionName, PWCHAR AItemName, 
-			int ASectionNameSizeInChars, int AItemNameSizeInChars, int *AValue);
+			int ASectionNameSizeInChars, int AItemNameSizeInChars, int *AValue) = 0;
 		virtual HRESULT WINAPI WriteString(PWCHAR ASectionName, PWCHAR AItemName, PWCHAR AValueBuffer,
-			int ASectionNameSizeInChars, int AItemNameSizeInChars, int AValueBufferSizeInChars);
+			int ASectionNameSizeInChars, int AItemNameSizeInChars, int AValueBufferSizeInChars) = 0;
 		virtual HRESULT WINAPI WriteInteger(PWCHAR ASectionName, PWCHAR AItemName,
-			int ASectionNameSizeInChars, int AItemNameSizeInChars, int AValue);
-		virtual HRESULT WINAPI SectionExists(PWCHAR ASectionName, int ASectionNameSizeInChars);
-		virtual HRESULT WINAPI SectionRemove(PWCHAR ASectionName, int ASectionNameSizeInChars);
+			int ASectionNameSizeInChars, int AItemNameSizeInChars, int AValue) = 0;
+		virtual HRESULT WINAPI SectionExists(PWCHAR ASectionName, int ASectionNameSizeInChars) = 0;
+		virtual HRESULT WINAPI SectionRemove(PWCHAR ASectionName, int ASectionNameSizeInChars) = 0;
 };
 
 
@@ -277,13 +277,13 @@ class IAIMPAddonsConfigFile: public IUnknown
 class IAIMPAddonsLanguageFile: public IUnknown
 {
 	public:
-		virtual int WINAPI Version();
-		virtual int WINAPI CurrentFile(PWCHAR ABuffer, int ABufferSizeInChars);
-		virtual HRESULT WINAPI SectionExists(PWCHAR ASectionName, int ASectionNameSizeInChars);
+		virtual int WINAPI Version() = 0;
+		virtual int WINAPI CurrentFile(PWCHAR ABuffer, int ABufferSizeInChars) = 0;
+		virtual HRESULT WINAPI SectionExists(PWCHAR ASectionName, int ASectionNameSizeInChars) = 0;
 		virtual HRESULT WINAPI ReadString(PWCHAR ASectionName, PWCHAR AItemName, PWCHAR AValueBuffer,
-			int ASectionNameSizeInChars, int AItemNameSizeInChars, int AValueBufferSizeInChars);
+			int ASectionNameSizeInChars, int AItemNameSizeInChars, int AValueBufferSizeInChars) = 0;
 		// When Language changed AIMP will send to WndHandle "WM_AIMP_LANG_CHANGED" message
-		virtual HRESULT WINAPI Notification(HWND AWndHandle, BOOL ARegister);
+		virtual HRESULT WINAPI Notification(HWND AWndHandle, BOOL ARegister) = 0;
 };
 
 /* IAIMPAddonsMenuManager */
@@ -291,11 +291,11 @@ class IAIMPAddonsMenuManager: public IUnknown
 {
 	public:
 	    // AMenuID: see AIMP_MENUID_XXX
-		virtual HAIMPMENU WINAPI MenuCreate(DWORD AMenuID, PAIMPMenuItemInfo AItemInfo);
-		virtual HAIMPMENU WINAPI MenuCreateEx(HAIMPMENU AParentMenu, PAIMPMenuItemInfo AItemInfo);
-		virtual DWORD WINAPI MenuTextToShortCut(PWCHAR ABuffer, int ABufferSizeInChars);
-		virtual HRESULT WINAPI MenuRemove(HAIMPMENU AHandle);
-		virtual HRESULT WINAPI MenuUpdate(HAIMPMENU AHandle, PAIMPMenuItemInfo AItemInfo);
+		virtual HAIMPMENU WINAPI MenuCreate(DWORD AMenuID, PAIMPMenuItemInfo AItemInfo) = 0;
+		virtual HAIMPMENU WINAPI MenuCreateEx(HAIMPMENU AParentMenu, PAIMPMenuItemInfo AItemInfo) = 0;
+		virtual DWORD WINAPI MenuTextToShortCut(PWCHAR ABuffer, int ABufferSizeInChars) = 0;
+		virtual HRESULT WINAPI MenuRemove(HAIMPMENU AHandle) = 0;
+		virtual HRESULT WINAPI MenuUpdate(HAIMPMENU AHandle, PAIMPMenuItemInfo AItemInfo) = 0;
 };
 
 /* IAIMPAddonsProxySettings */
@@ -304,22 +304,22 @@ class IAIMPAddonsProxySettings: public IUnknown
 	public:
 		// Receiving Proxy Server params in "server:port" format
 		// Returns E_FAIL, if proxy doesn't use, and S_OK otherwise
-		virtual HRESULT WINAPI GetProxyParams(PWCHAR AServerBuffer, int AServerBufferSizeInChars);
+		virtual HRESULT WINAPI GetProxyParams(PWCHAR AServerBuffer, int AServerBufferSizeInChars) = 0;
 		// Receiving Proxy Server user autorization params
 		// Returns E_FAIL, if proxy server or user authorization doesn't use
 		virtual HRESULT WINAPI GetProxyAuthorizationParams(
 			PWCHAR AUserNameBuffer, int AUserNameBufferSizeInChars,
-			PWCHAR AUserPassBuffer, int AUserPassBufferSizeInChars);
+			PWCHAR AUserPassBuffer, int AUserPassBufferSizeInChars) = 0;
 };
 
 /* IAIMPAddonsPlaylistStrings */  
 class IAIMPAddonsPlaylistStrings: public IUnknown
 {
 	public:
-		virtual HRESULT WINAPI ItemAdd(PWCHAR AFileName, TAIMPFileInfo *AInfo);
-		virtual int     WINAPI ItemGetCount();
-		virtual HRESULT WINAPI ItemGetFileName(int AIndex, PWCHAR ABuffer, int ABufferSizeInChars);
-		virtual HRESULT WINAPI ItemGetInfo(int AIndex, TAIMPFileInfo *AInfo);
+		virtual HRESULT WINAPI ItemAdd(PWCHAR AFileName, TAIMPFileInfo *AInfo) = 0;
+		virtual int     WINAPI ItemGetCount() = 0;
+		virtual HRESULT WINAPI ItemGetFileName(int AIndex, PWCHAR ABuffer, int ABufferSizeInChars) = 0;
+		virtual HRESULT WINAPI ItemGetInfo(int AIndex, TAIMPFileInfo *AInfo) = 0;
 };
 
 /* IAIMPAddonsPlaylistManagerListener */
@@ -327,10 +327,10 @@ class IAIMPAddonsPlaylistStrings: public IUnknown
 class IAIMPAddonsPlaylistManagerListener: public IUnknown
 {
 	public:
-		virtual void WINAPI StorageActivated(HPLS ID);
-		virtual void WINAPI StorageAdded(HPLS ID);
-		virtual void WINAPI StorageChanged(HPLS ID, DWORD AFlags);
-		virtual void WINAPI StorageRemoved(HPLS ID);
+		virtual void WINAPI StorageActivated(HPLS ID) = 0;
+		virtual void WINAPI StorageAdded(HPLS ID) = 0;
+		virtual void WINAPI StorageChanged(HPLS ID, DWORD AFlags) = 0;
+		virtual void WINAPI StorageRemoved(HPLS ID) = 0;
 };
 
 /* IAIMPAddonsPlaylistManager */
@@ -342,52 +342,52 @@ class IAIMPAddonsPlaylistManager: public IUnknown
 		// AIMP_PLAYLIST_FORMAT_MODE_FILEINFO - put to AData param pointer to TAIMPFileInfo struct
 		// AIMP_PLAYLIST_FORMAT_MODE_CURRENT  - format current file info
 		// AString buffer will be automaticly freed, you must make copy
-		virtual HRESULT WINAPI FormatString(PWCHAR ATemplate, int ATemplateSizeInChars,	int AMode, void *AData, PWCHAR *AString);
+		virtual HRESULT WINAPI FormatString(PWCHAR ATemplate, int ATemplateSizeInChars,	int AMode, void *AData, PWCHAR *AString) = 0;
 		// Listeners
-		virtual HRESULT WINAPI ListenerAdd(IAIMPAddonsPlaylistManagerListener *AListener);
-		virtual HRESULT WINAPI ListenerRemove(IAIMPAddonsPlaylistManagerListener *AListener);
+		virtual HRESULT WINAPI ListenerAdd(IAIMPAddonsPlaylistManagerListener *AListener) = 0;
+		virtual HRESULT WINAPI ListenerRemove(IAIMPAddonsPlaylistManagerListener *AListener) = 0;
 		// See AIMP_PLAYLIST_ENTRY_PROPERTY_XXX
-		virtual HRESULT WINAPI EntryDelete(HPLSENTRY AEntry);
-		virtual HRESULT WINAPI EntryGetGroup(HPLSENTRY AEntry, HPLSGROUP *AGroup);
-		virtual HRESULT WINAPI EntryPropertyGetValue(HPLSENTRY AEntry, int APropertyID, void *ABuffer, int ABufferSize);
-		virtual HRESULT WINAPI EntryPropertySetValue(HPLSENTRY AEntry, int APropertyID, void *ABuffer, int ABufferSize);
-		virtual HRESULT WINAPI EntryReloadInfo(HPLSENTRY AEntry);
+		virtual HRESULT WINAPI EntryDelete(HPLSENTRY AEntry) = 0;
+		virtual HRESULT WINAPI EntryGetGroup(HPLSENTRY AEntry, HPLSGROUP *AGroup) = 0;
+		virtual HRESULT WINAPI EntryPropertyGetValue(HPLSENTRY AEntry, int APropertyID, void *ABuffer, int ABufferSize) = 0;
+		virtual HRESULT WINAPI EntryPropertySetValue(HPLSENTRY AEntry, int APropertyID, void *ABuffer, int ABufferSize) = 0;
+		virtual HRESULT WINAPI EntryReloadInfo(HPLSENTRY AEntry) = 0;
 		// See AIMP_PLAYLIST_GROUP_PROPERTY_XXX
-		virtual HRESULT WINAPI GroupPropertyGetValue(HPLSGROUP AGroup, int APropertyID, void *ABuffer, int ABufferSize);
-		virtual HRESULT WINAPI GroupPropertySetValue(HPLSGROUP AGroup, int APropertyID, void *ABuffer, int ABufferSize);
+		virtual HRESULT WINAPI GroupPropertyGetValue(HPLSGROUP AGroup, int APropertyID, void *ABuffer, int ABufferSize) = 0;
+		virtual HRESULT WINAPI GroupPropertySetValue(HPLSGROUP AGroup, int APropertyID, void *ABuffer, int ABufferSize) = 0;
 		//
-		virtual HPLS 	WINAPI StorageActiveGet();
+		virtual HPLS 	WINAPI StorageActiveGet() = 0;
 		virtual HRESULT WINAPI StorageActiveSet(HPLS ID);
-		virtual HRESULT WINAPI StorageAddEntries(HPLS ID, IAIMPAddonsPlaylistStrings *AObjects); // Add Objects to playlist. "Objects" can contains: shortcuts, files, folder, playlists
-		virtual HPLS 	WINAPI StorageCreate(PWCHAR AName, BOOL AActivate);
-		virtual HPLS 	WINAPI StorageCreateFromFile(PWCHAR AFileName, BOOL AActivate, BOOL AStartPlay);
-		virtual HPLS 	WINAPI StoragePlayingGet();
+		virtual HRESULT WINAPI StorageAddEntries(HPLS ID, IAIMPAddonsPlaylistStrings *AObjects) = 0; // Add Objects to playlist. "Objects" can contains: shortcuts, files, folder, playlists
+		virtual HPLS 	WINAPI StorageCreate(PWCHAR AName, BOOL AActivate) = 0;
+		virtual HPLS 	WINAPI StorageCreateFromFile(PWCHAR AFileName, BOOL AActivate, BOOL AStartPlay) = 0;
+		virtual HPLS 	WINAPI StoragePlayingGet() = 0;
 		//
-		virtual HPLS 	  WINAPI StorageGet(int AIndex);
-		virtual int  	  WINAPI StorageGetCount();
-		virtual HPLSENTRY WINAPI StorageGetEntry(HPLS ID, int AEntryIndex);
-		virtual int  	  WINAPI StorageGetEntryCount(HPLS ID);
-		virtual HRESULT   WINAPI StorageGetFiles(HPLS ID, int AFlags, IAIMPAddonsPlaylistStrings **AFiles); // Flags: Use combination of the AIMP_PLAYLIST_GETFILES_XXX flags
-		virtual HPLSGROUP WINAPI StorageGetGroup(HPLS ID, int AGroupIndex);
-		virtual	int		  WINAPI StorageGetGroupCount(HPLS ID);
+		virtual HPLS 	  WINAPI StorageGet(int AIndex) = 0;
+		virtual int  	  WINAPI StorageGetCount() = 0;
+		virtual HPLSENTRY WINAPI StorageGetEntry(HPLS ID, int AEntryIndex) = 0;
+		virtual int  	  WINAPI StorageGetEntryCount(HPLS ID) = 0;
+		virtual HRESULT   WINAPI StorageGetFiles(HPLS ID, int AFlags, IAIMPAddonsPlaylistStrings **AFiles) = 0; // Flags: Use combination of the AIMP_PLAYLIST_GETFILES_XXX flags
+		virtual HPLSGROUP WINAPI StorageGetGroup(HPLS ID, int AGroupIndex) = 0;
+		virtual	int		  WINAPI StorageGetGroupCount(HPLS ID) = 0;
 		//
-		virtual HRESULT WINAPI StorageDelete(HPLS ID, int AEntryIndex);
-		virtual HRESULT WINAPI StorageDeleteAll(HPLS ID);
-		virtual HRESULT WINAPI StorageDeleteByFilter(HPLS ID, BOOL APhysically,	TAIMPAddonsPlaylistManagerDeleteProc AFilterProc, void *AUserData);
-		virtual HRESULT WINAPI StorageRemove(HPLS ID); // Remove playlist storage from manager (like "close playlist")
+		virtual HRESULT WINAPI StorageDelete(HPLS ID, int AEntryIndex) = 0;
+		virtual HRESULT WINAPI StorageDeleteAll(HPLS ID) = 0;
+		virtual HRESULT WINAPI StorageDeleteByFilter(HPLS ID, BOOL APhysically,	TAIMPAddonsPlaylistManagerDeleteProc AFilterProc, void *AUserData) = 0;
+		virtual HRESULT WINAPI StorageRemove(HPLS ID) = 0; // Remove playlist storage from manager (like "close playlist")
 		//
-		virtual HRESULT WINAPI StorageSort(HPLS ID, int ASortType); // Predefined Sorting, see AIMP_PLAYLIST_SORT_TYPE_XXX
-		virtual HRESULT WINAPI StorageSortCustom(HPLS ID, TAIMPAddonsPlaylistManagerCompareProc ACompareProc, void *AUserData);
-		virtual HRESULT WINAPI StorageSortTemplate(HPLS ID, PWCHAR ABuffer, int ABufferSizeInChars);
+		virtual HRESULT WINAPI StorageSort(HPLS ID, int ASortType) = 0; // Predefined Sorting, see AIMP_PLAYLIST_SORT_TYPE_XXX
+		virtual HRESULT WINAPI StorageSortCustom(HPLS ID, TAIMPAddonsPlaylistManagerCompareProc ACompareProc, void *AUserData) = 0;
+		virtual HRESULT WINAPI StorageSortTemplate(HPLS ID, PWCHAR ABuffer, int ABufferSizeInChars) = 0;
 		// Lock / Unlock playlist calculation and drawing
-		virtual HRESULT WINAPI StorageBeginUpdate(HPLS ID);
-		virtual HRESULT WINAPI StorageEndUpdate(HPLS ID);
+		virtual HRESULT WINAPI StorageBeginUpdate(HPLS ID) = 0;
+		virtual HRESULT WINAPI StorageEndUpdate(HPLS ID) = 0;
 		// See AIMP_PLAYLIST_STORAGE_PROPERTY_XXX
-		virtual HRESULT WINAPI StoragePropertyGetValue(HPLS ID, int APropertyID, void *ABuffer, int ABufferSize);
-		virtual HRESULT WINAPI StoragePropertySetValue(HPLS ID, int APropertyID, void *ABuffer, int ABufferSize);
+		virtual HRESULT WINAPI StoragePropertyGetValue(HPLS ID, int APropertyID, void *ABuffer, int ABufferSize) = 0;
+		virtual HRESULT WINAPI StoragePropertySetValue(HPLS ID, int APropertyID, void *ABuffer, int ABufferSize) = 0;
 		// Queue
-		virtual HRESULT WINAPI QueueEntryAdd(HPLSENTRY AEntry, BOOL AInsertAtQueueBegining);
-		virtual HRESULT WINAPI QueueEntryRemove(HPLSENTRY AEntry);
+		virtual HRESULT WINAPI QueueEntryAdd(HPLSENTRY AEntry, BOOL AInsertAtQueueBegining) = 0;
+		virtual HRESULT WINAPI QueueEntryRemove(HPLSENTRY AEntry) = 0;
 };
 
 /* IAIMPAddonsCoverArtManager */
@@ -397,31 +397,31 @@ class IAIMPAddonsCoverArtManager: public IUnknown
 		// Picture will be proportional stretched to ADisplaySize value, if it assigned
 		// ACoverArtFileName: can be NULL (todo: doc)
 		virtual HBITMAP WINAPI CoverArtGetForFile(PWCHAR AFileName, SIZE_T *ADisplaySize,
-			PWCHAR ACoverArtFileNameBuffer, int ACoverArtFileNameBufferSizeInChars);
+			PWCHAR ACoverArtFileNameBuffer, int ACoverArtFileNameBufferSizeInChars) = 0;
 		// Work with CoverArt of playing file,
 		// if file is playing and CoverArt exists, functions returns S_OK
-		virtual HRESULT WINAPI CoverArtDraw(HDC DC, RECT *R); // CoverArt will be proportional stretched to R value
-		virtual HRESULT WINAPI CoverArtGetFileName(PWCHAR ABuffer, int ABufferSizeInChars);
-		virtual HRESULT WINAPI CoverArtGetSize(SIZE_T *ASize);
+		virtual HRESULT WINAPI CoverArtDraw(HDC DC, RECT *R) = 0; // CoverArt will be proportional stretched to R value
+		virtual HRESULT WINAPI CoverArtGetFileName(PWCHAR ABuffer, int ABufferSizeInChars) = 0;
+		virtual HRESULT WINAPI CoverArtGetSize(SIZE_T *ASize) = 0;
 };
 
 /* IAIMPAddonsPlayerManager */
 class IAIMPAddonsPlayerManager: public IUnknown
 {
 	public:
-		virtual HRESULT WINAPI PlayEntry(HPLSENTRY AEntry);
-		virtual HRESULT WINAPI PlayFile(PWCHAR AFileName, BOOL AFailIfNotExistsInPlaylist);
-		virtual HRESULT WINAPI PlayStorage(HPLS ID, int AEntryIndex /* -1 - default*/);
+		virtual HRESULT WINAPI PlayEntry(HPLSENTRY AEntry) = 0;
+		virtual HRESULT WINAPI PlayFile(PWCHAR AFileName, BOOL AFailIfNotExistsInPlaylist) = 0;
+		virtual HRESULT WINAPI PlayStorage(HPLS ID, int AEntryIndex /* -1 - default*/) = 0;
 		// Register / Unregister custom FileInfo repository, you can put own info about the any file
-		virtual HRESULT WINAPI FileInfoRepository(IAIMPAddonsFileInfoRepository *ARepository, BOOL ARegister);
+		virtual HRESULT WINAPI FileInfoRepository(IAIMPAddonsFileInfoRepository *ARepository, BOOL ARegister) = 0;
 		// if AFileName = nil: Get information about currently playing file
-		virtual HRESULT WINAPI FileInfoQuery(PWCHAR AFileName, TAIMPFileInfo *AInfo);
+		virtual HRESULT WINAPI FileInfoQuery(PWCHAR AFileName, TAIMPFileInfo *AInfo) = 0;
 		// Register / Unregister custom playing queue controller
-		virtual HRESULT WINAPI PlayingQueueController(IAIMPAddonsPlayingQueueController *AController, BOOL ARegister);
+		virtual HRESULT WINAPI PlayingQueueController(IAIMPAddonsPlayingQueueController *AController, BOOL ARegister) = 0;
 		// see AIMP_CFG_PATH_XXX
-		virtual HRESULT WINAPI ConfigGetPath(int AConfigPathID, PWCHAR ABuffer, int ABufferSizeInChars);
+		virtual HRESULT WINAPI ConfigGetPath(int AConfigPathID, PWCHAR ABuffer, int ABufferSizeInChars) = 0;
 		// see AIMP_SUPPORTS_EXTS_XXX
-		virtual HRESULT WINAPI SupportsExts(DWORD AFlags, PWCHAR ABuffer, int ABufferSizeInChars);
+		virtual HRESULT WINAPI SupportsExts(DWORD AFlags, PWCHAR ABuffer, int ABufferSizeInChars) = 0;
 };
 
 /* IAIMPAddonsSkinsManager */
@@ -430,19 +430,19 @@ class IAIMPAddonsSkinsManager: public IUnknown
 	public:
 		// AColorHue & AColorHueIntensity - optional
 		virtual HRESULT WINAPI GetCurrentSettings(PWCHAR ASkinLocalFileNameBuffer,
-			int ASkinLocalFileNameBufferSizeInChars, int *AColorHue, int *AColorHueIntensity);
+			int ASkinLocalFileNameBufferSizeInChars, int *AColorHue, int *AColorHueIntensity) = 0;
 		// Get Info about Skin
 		// + Skin can be placed anywhere
 		// + if AFileNameBuffer contains empty string - function return information about build-in skin
 		// WARNING!!! You must manually destroy TAIMPSkinInfo.Preview if it no longer need
-		virtual HRESULT WINAPI GetSkinInfo(PWCHAR AFileNameBuffer, int AFileNameBufferSizeInChars, PAIMPSkinInfo ASkinInfo);
+		virtual HRESULT WINAPI GetSkinInfo(PWCHAR AFileNameBuffer, int AFileNameBufferSizeInChars, PAIMPSkinInfo ASkinInfo) = 0;
 		// Skin must be placed in %AIMP_Skins% directory (see IAIMPAddonsPlayerManager.ConfigGetPath)
 		// AColorHue: [0..255], Default: 0 (don't change hue)
 		// AColorHueIntensity [0..100], Default: 100 (don't change Hue Intensity), depends from AColorHue value
-		virtual HRESULT WINAPI Select(PWCHAR ASkinLocalFileName, int AColorHue, int AColorHueIntensity);
+		virtual HRESULT WINAPI Select(PWCHAR ASkinLocalFileName, int AColorHue, int AColorHueIntensity) = 0;
 		// Conversion between HSL and RGB color spaces
-		virtual HRESULT WINAPI HSLToRGB(BYTE H, BYTE S, BYTE L, BYTE *R, BYTE *G, BYTE *B);
-		virtual HRESULT WINAPI RGBToHSL(BYTE R, BYTE G, BYTE B, BYTE *H, BYTE *S, BYTE *L);
+		virtual HRESULT WINAPI HSLToRGB(BYTE H, BYTE S, BYTE L, BYTE *R, BYTE *G, BYTE *B) = 0;
+		virtual HRESULT WINAPI RGBToHSL(BYTE R, BYTE G, BYTE B, BYTE *H, BYTE *S, BYTE *L) = 0;
 };
 
 /* IAIMPAddonPlugin */

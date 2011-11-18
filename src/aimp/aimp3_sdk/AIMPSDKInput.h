@@ -36,11 +36,11 @@ DEFINE_GUID(IID_IAIMPInputPluginDecoder, 0x41494D50, 0x0033, 0x494E, 0x00, 0x00,
 class IAIMPInputStream: public IUnknown
 {
 	public:
-		virtual INT64 WINAPI GetSize();
-		virtual INT64 WINAPI GetPosition();
-		virtual INT64 WINAPI SetPosition(const INT64 AValue);
-		virtual int   WINAPI ReadData(unsigned char *Buffer, int Size);
-		virtual INT64 WINAPI Skip(const INT64 ABytes);
+		virtual INT64 WINAPI GetSize() = 0;
+		virtual INT64 WINAPI GetPosition() = 0;
+		virtual INT64 WINAPI SetPosition(const INT64 AValue) = 0;
+		virtual int   WINAPI ReadData(unsigned char *Buffer, int Size) = 0;
+		virtual INT64 WINAPI Skip(const INT64 ABytes) = 0;
 };
 
 /* IAIMPInputPluginDecoder */
@@ -49,24 +49,24 @@ class IAIMPInputPluginDecoder: public IUnknown
 {
 	public:
 		// Read Info about stream, ABitDepth: See AIMP_INPUT_BITDEPTH_XXX flags
-		virtual BOOL WINAPI DecoderGetInfo(int *ASampleRate, int *AChannels, int *ABitDepth);
+		virtual BOOL WINAPI DecoderGetInfo(int *ASampleRate, int *AChannels, int *ABitDepth) = 0;
 		// Uncompressed stream position in Bytes
-		virtual INT64 WINAPI DecoderGetPosition();
+		virtual INT64 WINAPI DecoderGetPosition() = 0;
 		// Uncompressed stream size in Bytes
-		virtual INT64 WINAPI DecoderGetSize(); 
+		virtual INT64 WINAPI DecoderGetSize() = 0; 
 		// Read Info about the file
-		virtual BOOL WINAPI DecoderGetTags(TAIMPFileInfo *AFileInfo);
+		virtual BOOL WINAPI DecoderGetTags(TAIMPFileInfo *AFileInfo) = 0;
 		// Size of Buffer in Bytes
-		virtual int  WINAPI DecoderRead(unsigned char *Buffer, int Size);
+		virtual int  WINAPI DecoderRead(unsigned char *Buffer, int Size) = 0;
 		// Uncompressed stream position in Bytes
-		virtual BOOL WINAPI DecoderSetPosition(const INT64 AValue);
+		virtual BOOL WINAPI DecoderSetPosition(const INT64 AValue) = 0;
 		// Is DecoderSetPosition supports?
-		virtual BOOL WINAPI DecoderIsSeekable();
+		virtual BOOL WINAPI DecoderIsSeekable() = 0;
 		// Is speed, tempo and etc supports?
 		// RealTime streams doesn't supports speed control
-		virtual BOOL WINAPI DecoderIsRealTimeStream();
+		virtual BOOL WINAPI DecoderIsRealTimeStream() = 0;
 		// Return format type for current file, (MP3, OGG, AAC+, FLAC and etc)
-		virtual PWCHAR WINAPI DecoderGetFormatType();
+		virtual PWCHAR WINAPI DecoderGetFormatType() = 0;
 };
 
 /* IAIMPInputPluginHeader */
@@ -74,21 +74,21 @@ class IAIMPInputPluginDecoder: public IUnknown
 class IAIMPInputPluginHeader: public IUnknown
 {
 	public:
-		virtual PWCHAR WINAPI GetPluginAuthor();
-		virtual PWCHAR WINAPI GetPluginInfo();
-		virtual PWCHAR WINAPI GetPluginName();
+		virtual PWCHAR WINAPI GetPluginAuthor() = 0;
+		virtual PWCHAR WINAPI GetPluginInfo() = 0;
+		virtual PWCHAR WINAPI GetPluginName() = 0;
 		// Combination of the flags, See AIMP_INPUT_FLAG_XXX
-		virtual DWORD  WINAPI GetPluginFlags(); 
+		virtual DWORD  WINAPI GetPluginFlags() = 0; 
 		// Initialize / Finalize Plugin
-		virtual BOOL WINAPI Initialize();
-		virtual BOOL WINAPI Finalize();
+		virtual BOOL WINAPI Initialize() = 0;
+		virtual BOOL WINAPI Finalize() = 0;
 		// Create decoder for the file / Stream
-		virtual BOOL WINAPI CreateDecoder(PWCHAR AFileName, IAIMPInputPluginDecoder **ADecoder);
-		virtual BOOL WINAPI CreateDecoderEx(IAIMPInputStream *AStream, IAIMPInputPluginDecoder **ADecoder);
+		virtual BOOL WINAPI CreateDecoder(PWCHAR AFileName, IAIMPInputPluginDecoder **ADecoder) = 0;
+		virtual BOOL WINAPI CreateDecoderEx(IAIMPInputStream *AStream, IAIMPInputPluginDecoder **ADecoder) = 0;
 		// Get FileInfo
-		virtual BOOL WINAPI GetFileInfo(PWCHAR AFileName, TAIMPFileInfo *AFileInfo);
+		virtual BOOL WINAPI GetFileInfo(PWCHAR AFileName, TAIMPFileInfo *AFileInfo) = 0;
 		// Return string format: "My Custom Format1|*.fmt1;*.fmt2;|"
-		virtual PWCHAR WINAPI GetSupportsFormats();
+		virtual PWCHAR WINAPI GetSupportsFormats() = 0;
 };
 
 // Export function name: AIMP_QueryInput

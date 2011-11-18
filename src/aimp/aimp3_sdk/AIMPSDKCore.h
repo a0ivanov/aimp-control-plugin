@@ -489,7 +489,7 @@ struct TAIMPVersionInfo
 class IAIMPCoreUnitMessageHook: public IUnknown
 {
 	public:
-		virtual void WINAPI CoreMessage(DWORD AMessage, int AParam1, void *AParam2, HRESULT *AResult);
+		virtual void WINAPI CoreMessage(DWORD AMessage, int AParam1, void *AParam2, HRESULT *AResult) = 0;
 };
 
 /* IAIMPCoreUnit */
@@ -497,11 +497,11 @@ class IAIMPCoreUnitMessageHook: public IUnknown
 class IAIMPCoreUnit: public IUnknown
 {
 	public:
-		virtual HRESULT WINAPI GetVersion(TAIMPVersionInfo *AVersion);
-		virtual HRESULT WINAPI MessageHook(IAIMPCoreUnitMessageHook *AHook);
-		virtual DWORD   WINAPI MessageRegister(PWCHAR AMessageName);
-		virtual HRESULT WINAPI MessageSend(DWORD AMessage, int AParam1, void *AParam2);
-		virtual HRESULT WINAPI MessageUnhook(IAIMPCoreUnitMessageHook *AHook);
+		virtual HRESULT WINAPI GetVersion(TAIMPVersionInfo *AVersion) = 0;
+		virtual HRESULT WINAPI MessageHook(IAIMPCoreUnitMessageHook *AHook) = 0;
+		virtual DWORD   WINAPI MessageRegister(PWCHAR AMessageName) = 0;
+		virtual HRESULT WINAPI MessageSend(DWORD AMessage, int AParam1, void *AParam2) = 0;
+		virtual HRESULT WINAPI MessageUnhook(IAIMPCoreUnitMessageHook *AHook) = 0;
 };
 
 #endif

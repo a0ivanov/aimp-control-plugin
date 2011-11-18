@@ -41,15 +41,15 @@ typedef TAIMPVisualData *PAIMPVisualData;
 class IAIMPVisualPlugin3: public IUnknown
 {
 	public:
-		virtual PWCHAR WINAPI GetPluginAuthor();
-		virtual PWCHAR WINAPI GetPluginInfo();
-		virtual PWCHAR WINAPI GetPluginName();
-		virtual DWORD  WINAPI GetPluginFlags(); // See AIMP_VISUAL_FLAGS_XXX
-		virtual HRESULT WINAPI Initialize(IAIMPCoreUnit *ACoreUnit);
-		virtual HRESULT WINAPI Deinitialize();
-		virtual void WINAPI DisplayClick(int X, int Y);
-		virtual void WINAPI DisplayRender(HDC DC, PAIMPVisualData AData);
-		virtual void WINAPI DisplayResize(int AWidth, int AHeight);
+		virtual PWCHAR WINAPI GetPluginAuthor() = 0;
+		virtual PWCHAR WINAPI GetPluginInfo() = 0;
+		virtual PWCHAR WINAPI GetPluginName() = 0;
+		virtual DWORD  WINAPI GetPluginFlags() = 0; // See AIMP_VISUAL_FLAGS_XXX
+		virtual HRESULT WINAPI Initialize(IAIMPCoreUnit *ACoreUnit) = 0;
+		virtual HRESULT WINAPI Deinitialize() = 0;
+		virtual void WINAPI DisplayClick(int X, int Y) = 0;
+		virtual void WINAPI DisplayRender(HDC DC, PAIMPVisualData AData) = 0;
+		virtual void WINAPI DisplayResize(int AWidth, int AHeight) = 0;
 };
 
 // Export function name: AIMP_QueryVisual3
