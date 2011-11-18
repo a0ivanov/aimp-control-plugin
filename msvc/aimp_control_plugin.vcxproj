@@ -136,7 +136,6 @@
     <ClCompile Include="..\src\plugin\logger.cpp" />
     <ClCompile Include="..\src\plugin\settings.cpp" />
     <ClCompile Include="..\src\rpc\methods.cpp" />
-    <ClCompile Include="..\src\rpc\multi_user_mode_manager.cpp" />
     <ClCompile Include="..\src\rpc\rpc_request_handler.cpp" />
     <ClCompile Include="..\src\rpc\rpc_value.cpp" />
     <ClCompile Include="..\src\rpc\utils.cpp" />
@@ -184,7 +183,6 @@
     <ClInclude Include="..\src\rpc\frontend.h" />
     <ClInclude Include="..\src\rpc\method.h" />
     <ClInclude Include="..\src\rpc\methods.h" />
-    <ClInclude Include="..\src\rpc\multi_user_mode_manager.h" />
     <ClInclude Include="..\src\rpc\request_handler.h" />
     <ClInclude Include="..\src\rpc\request_parser.h" />
     <ClInclude Include="..\src\rpc\response_serializer.h" />

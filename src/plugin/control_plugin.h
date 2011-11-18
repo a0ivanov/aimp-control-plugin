@@ -11,7 +11,6 @@
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
 
-namespace MultiUserMode { class MultiUserModeManager; }
 namespace Http { class RequestHandler; }
 namespace Rpc { class RequestHandler; }
 namespace AIMP2SDK { class IAIMP2Controller; }
@@ -109,7 +108,6 @@ private:
     */
     boost::intrusive_ptr<AIMP2SDK::IAIMP2Controller> aimp_controller_;
 
-    boost::shared_ptr<MultiUserMode::MultiUserModeManager> multi_user_mode_manager_; //!< TODO: add doc
     boost::shared_ptr<Rpc::RequestHandler> rpc_request_handler_; //!< XML/Json RPC request handler. Used by Http::RequestHandler object.
     boost::shared_ptr<Http::RequestHandler> http_request_handler_; //!< Http request handler, used by Http::Server object.
     boost::asio::io_service server_io_service_;

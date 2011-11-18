@@ -58,9 +58,6 @@
     <ClCompile Include="..\src\rpc\methods.cpp">
       <Filter>src\rpc_server\general</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\rpc\multi_user_mode_manager.cpp">
-      <Filter>src\rpc_server\general</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\rpc\utils.cpp">
       <Filter>src\rpc_server\general</Filter>
     </ClCompile>
@@ -169,9 +166,6 @@
       <Filter>src\rpc_server\general</Filter>
     </ClInclude>
     <ClInclude Include="..\src\rpc\methods.h">
-      <Filter>src\rpc_server\general</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\rpc\multi_user_mode_manager.h">
       <Filter>src\rpc_server\general</Filter>
     </ClInclude>
     <ClInclude Include="..\src\rpc\request_handler.h">

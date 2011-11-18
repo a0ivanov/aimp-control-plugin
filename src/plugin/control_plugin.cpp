@@ -15,8 +15,6 @@
 #include "http_server/server.h"
 #include "utils/string_encoding.h"
 
-#include "rpc/multi_user_mode_manager.h"
-
 #include <FreeImagePlus.h>
 #include <Delayimp.h>
 
@@ -447,9 +445,6 @@ void WINAPI AIMP2ControlPlugin::Initialize(AIMP2SDK::IAIMP2Controller* AControll
 
         BOOST_LOG_SEV(logger(), info) << "AIMP version: " << aimp_manager_->getAIMPVersion();
 
-        // create multi user mode manager.
-        multi_user_mode_manager_.reset( new MultiUserMode::MultiUserModeManager(*aimp_manager_) );
-
         // create RPC request handler.
         rpc_request_handler_.reset( new Rpc::RequestHandler() );
         createRpcFrontends();
@@ -501,8 +496,6 @@ void WINAPI AIMP2ControlPlugin::Finalize()
 
     rpc_request_handler_.reset();
 
-    multi_user_mode_manager_.reset();
-
     aimp_manager_.reset();
 
     aimp_controller_.reset();
@@ -542,7 +535,6 @@ void AIMP2ControlPlugin::createRpcMethods()
             rpc_request_handler_->addMethod( \
                             std::auto_ptr<Rpc::Method>( \
                                                         new method_type(*aimp_manager_, \
-                                                                        *multi_user_mode_manager_, \
                                                                         *rpc_request_handler_\
                                                                         ) \
                                                        ) \
@@ -567,17 +559,15 @@ void AIMP2ControlPlugin::createRpcMethods()
     REGISTER_AIMP_RPC_METHOD(RemoveTrackFromPlayQueue);
     { // register this way since GetEntryPositionInDataTable depends from GetPlaylistEntries 
     std::auto_ptr<GetPlaylistEntries> method_getplaylistentries(new GetPlaylistEntries(*aimp_manager_,
-                                                                                       *multi_user_mode_manager_,
                                                                                        *rpc_request_handler_
                                                                                        )
                                                                 );
 
     std::auto_ptr<Rpc::Method> method_GetEntryPositionInDataTable(new GetEntryPositionInDataTable(*aimp_manager_,
-                                                                                     *multi_user_mode_manager_,
-                                                                                     *rpc_request_handler_,
-                                                                                     *method_getplaylistentries
-                                                                                     )
-                                                         );
+                                                                                                  *rpc_request_handler_,
+                                                                                                  *method_getplaylistentries
+                                                                                                  )
+                                                                  );
     { // auto_ptr can not be implicitly casted to ptr to object of base class.
     std::auto_ptr<Rpc::Method> method( method_getplaylistentries.release() );
     rpc_request_handler_->addMethod(method);
@@ -593,7 +583,6 @@ void AIMP2ControlPlugin::createRpcMethods()
         // add document root and path to directory for storing album covers in GetCover method.
         rpc_request_handler_->addMethod( std::auto_ptr<Rpc::Method>(
                                                 new GetCover(*aimp_manager_,
-                                                             *multi_user_mode_manager_,
                                                              *rpc_request_handler_,
                                                              getWebServerDocumentRoot().directory_string(),
                                                              L"tmp" // directory in document root to store temp image files.
@@ -608,7 +597,6 @@ void AIMP2ControlPlugin::createRpcMethods()
     // add file name for rating store file to SetTrackRating() method.
     rpc_request_handler_->addMethod( std::auto_ptr<Rpc::Method>(
                                                     new SetTrackRating( *aimp_manager_,
-                                                                        *multi_user_mode_manager_,
                                                                         *rpc_request_handler_,
                                                                         (plugin_work_directory_ / L"rating_store.txt").file_string()
                                                                        )
