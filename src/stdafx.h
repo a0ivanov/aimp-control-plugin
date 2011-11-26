@@ -22,6 +22,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/intrusive_ptr.hpp>
 
 #include <boost/noncopyable.hpp>
 
@@ -74,5 +75,16 @@
 #include "aimp/aimp2_sdk.h"
 
 #include "config.h"
+
+// required for boost::intrusive_ptr support
+inline void intrusive_ptr_add_ref(IUnknown* po)
+{
+    po->AddRef();
+}
+
+inline void intrusive_ptr_release(IUnknown* po)
+{
+    po->Release();
+}
 
 #pragma warning(pop)

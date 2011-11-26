@@ -20,7 +20,7 @@ const GUID BLUETOOTH_SERVICE_UUID = { 0xfa87c0d0,
                                      };
 
 namespace {
-using namespace AIMPControlPlugin::PluginLogger;
+using namespace ControlPlugin::PluginLogger;
 ModuleLoggerType& logger()
     { return getLogManager().getModuleLogger<Http::Server>(); }
 }
@@ -28,7 +28,7 @@ ModuleLoggerType& logger()
 namespace Http
 {
 
-using AIMPControlPlugin::PluginLogger::LogManager;
+using ControlPlugin::PluginLogger::LogManager;
 using namespace Utilities;
 
 Server::Server( boost::asio::io_service& io_service,

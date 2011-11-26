@@ -15,110 +15,152 @@
 #include "http_server/server.h"
 #include "utils/string_encoding.h"
 
-#include "rpc/multi_user_mode_manager.h"
-
 #include <FreeImagePlus.h>
 #include <Delayimp.h>
 
-/* Plugin DLL export function that will be called by AIMP. */
+#include <Guiddef.h>
+
+namespace ControlPlugin
+{
+
+AIMP2ControlPlugin* plugin2_instance = nullptr;
+AIMP3ControlPlugin* plugin3_instance = nullptr;
+AIMPControlPlugin* plugin_instance = nullptr;
+
+} // namespace ControlPlugin
+
+/* Plugin DLL export function that will be called by AIMP(AIMP2 SDK). */
 BOOL WINAPI AIMP_QueryAddonEx(AIMP2SDK::IAIMPAddonHeader **newAddon)
 {
-    using AIMPControlPlugin::plugin_instance;
-    plugin_instance = new AIMPControlPlugin::AIMPControlPluginHeader();
-    plugin_instance->AddRef();
-    *newAddon = plugin_instance;
+    using ControlPlugin::plugin2_instance;
+    if (!plugin2_instance) {
+        plugin2_instance = new ControlPlugin::AIMP2ControlPlugin();
+    }
+    plugin2_instance->AddRef();
+    *newAddon = plugin2_instance;
+    return TRUE;
+}
+
+/* Plugin DLL export function that will be called by AIMP(AIMP3 SDK). */
+BOOL WINAPI AIMP_QueryAddon3(AIMP3SDK::IAIMPAddonPlugin** newAddon)
+{
+    using ControlPlugin::plugin3_instance;
+    if (!plugin3_instance) {
+        plugin3_instance = new ControlPlugin::AIMP3ControlPlugin();
+    }
+    plugin3_instance->AddRef();
+    *newAddon = plugin3_instance;
     return TRUE;
 }
 
 namespace {
-using namespace AIMPControlPlugin::PluginLogger;
+using namespace ControlPlugin::PluginLogger;
 ModuleLoggerType& logger()
-    { return getLogManager().getModuleLogger<AIMPControlPlugin::AIMPControlPluginHeader>(); }
+    { return getLogManager().getModuleLogger<ControlPlugin::AIMPControlPlugin>(); }
 }
 
-namespace AIMPControlPlugin
+namespace ControlPlugin
 {
 
-const std::wstring AIMPControlPluginHeader::kPLUGIN_SHORT_NAME        = L"Control Plugin";
-const std::wstring AIMPControlPluginHeader::kPLUGIN_AUTHOR            = L"Alexey Ivanov";
-const std::wstring AIMPControlPluginHeader::kPLUGIN_SETTINGS_FILENAME = L"settings.dat";
+const std::wstring AIMPControlPlugin::kPLUGIN_SHORT_NAME        = L"Control Plugin";
+const std::wstring AIMPControlPlugin::kPLUGIN_AUTHOR            = L"Alexey Ivanov";
+const std::wstring AIMPControlPlugin::kPLUGIN_INFO              = L"Provides network access to AIMP player";
+const std::wstring AIMPControlPlugin::kPLUGIN_SETTINGS_FILENAME = L"settings.dat";
 
 const UINT_PTR kTickTimerEventID = 0x01020304;
 const UINT     kTickTimerElapse = 100; // 100 ms.
-
-AIMPControlPluginHeader* plugin_instance = nullptr;
 
 namespace PluginLogger
 {
 
 PluginLogger::LogManager& getLogManager()
 {
-    return AIMPControlPluginHeader::getLogManager();
+    return AIMPControlPlugin::getLogManager();
 }
 
-} // namespace AIMPControlPlugin
+} // namespace PluginLogger
 
-PluginLogger::LogManager& AIMPControlPluginHeader::getLogManager()
+PluginLogger::LogManager& AIMPControlPlugin::getLogManager()
 {
     return plugin_instance->plugin_logger_;
 }
 
-AIMPControlPluginHeader::AIMPControlPluginHeader()
+AIMPControlPlugin::AIMPControlPlugin()
     :
     free_image_dll_is_available_(false),
     tick_timer_id_(0)
 {
+    plugin_instance = this;
 }
 
-BOOL WINAPI AIMPControlPluginHeader::GetHasSettingsDialog()
+AIMPControlPlugin::~AIMPControlPlugin()
 {
-    return TRUE;
+    plugin_instance = nullptr;    
 }
 
-PWCHAR WINAPI AIMPControlPluginHeader::GetPluginAuthor()
-{
-    return const_cast<const PWCHAR>( kPLUGIN_AUTHOR.c_str() ); // const cast is safe here since AIMP does not try to modify these data.
-}
-
-PWCHAR WINAPI AIMPControlPluginHeader::GetPluginName()
-{
-    return const_cast<const PWCHAR>( kPLUGIN_SHORT_NAME.c_str() ); // const cast is safe here since AIMP does not try to modify these data.
-}
-
-boost::filesystem::wpath AIMPControlPluginHeader::getSettingsFilePath()
+boost::filesystem::wpath AIMPControlPlugin::getSettingsFilePath()
 {
     return plugin_work_directory_ / kPLUGIN_SETTINGS_FILENAME;
 }
 
-boost::filesystem::wpath AIMPControlPluginHeader::makePluginWorkDirectory()
+std::wstring AIMPControlPlugin::getAimpDataPath()
 {
-    using namespace AIMP2SDK;
-    // by default return ".\kPLUGIN_SHORT_NAME" directory.
-    boost::filesystem::wpath path_to_aimp_plugins_work_directory(kPLUGIN_SHORT_NAME);
+    // by default return "".
 
-    // get IAIMP2Extended interface.
-    IAIMP2Extended* extended = nullptr;
-    if ( aimp_controller_->AIMP_QueryObject(IAIMP2ExtendedID, &extended) ) {
-        boost::shared_ptr<IAIMP2Extended> aimp_extended( extended, AIMPPlayer::IReleaseFunctor() );
-        extended = nullptr;
+    if (aimp2_controller_) {
+        using namespace AIMP2SDK;
 
-        WCHAR buffer[MAX_PATH];
-        const int buffer_length = aimp_extended->AIMP_GetPath(AIMP_CFG_DATA, buffer, MAX_PATH);
+        IAIMP2Extended* extended = nullptr;
+        if ( aimp2_controller_->AIMP_QueryObject(IAIMP2ExtendedID, &extended) ) {
+            boost::intrusive_ptr<IAIMP2Extended> aimp_extended(extended);
+            extended = nullptr;
 
-        if (0 < buffer_length && buffer_length <= MAX_PATH) {
-            path_to_aimp_plugins_work_directory.clear();
-            path_to_aimp_plugins_work_directory.append(buffer, buffer + buffer_length);
-            path_to_aimp_plugins_work_directory /= kPLUGIN_SHORT_NAME;
+            WCHAR buffer[MAX_PATH + 1];
+            const int buffer_length = aimp_extended->AIMP_GetPath(AIMP_CFG_DATA, buffer, MAX_PATH);
+
+            if (0 < buffer_length && buffer_length <= MAX_PATH) {
+                return std::wstring(buffer, buffer + buffer_length);
+            } else {
+                // Do nothing here because of logger is not initialized at this point. Default value will be returned.
+                //BOOST_LOG_SEV(logger(), error) << "Failed to get path to plugin configuration directory. AIMP_GetPath() returned " << buffer_length;
+            }
         } else {
-            // Do nothing here because of logger is not initialized at this point. Default path will be returned.
-            //BOOST_LOG_SEV(logger(), error) << "Failed to get path to plugin configuration directory. AIMP_GetPath() returned " << buffer_length;
+            // Do nothing here because of logger is not initialized at this point. Default value will be returned.
+            //BOOST_LOG_SEV(logger(), error) << "Failed to get path to plugin configuration directory. Failed to get IAIMP2ExtendedID object.
         }
     }
+
+    if (aimp3_core_unit_) {
+        using namespace AIMP3SDK;
+
+        IAIMPAddonsPlayerManager* manager;
+        if (S_OK == aimp3_core_unit_->QueryInterface(IID_IAIMPAddonsPlayerManager, 
+                                                     reinterpret_cast<void**>(&manager)
+                                                     ) 
+            )
+        {
+            boost::intrusive_ptr<IAIMPAddonsPlayerManager> player_manager(manager);
+            manager = nullptr;
+
+            WCHAR buffer[MAX_PATH + 1] = {0};
+            if ( S_OK == player_manager->ConfigGetPath(AIMP_CFG_PATH_PROFILE, buffer, MAX_PATH) ) {
+                return buffer;
+            }
+        }
+    }
+    return L"";
+}
+
+boost::filesystem::wpath AIMPControlPlugin::makePluginWorkDirectory()
+{   
+    // by default return ".\kPLUGIN_SHORT_NAME" directory.
+    boost::filesystem::wpath path_to_aimp_plugins_work_directory( getAimpDataPath() );
+    path_to_aimp_plugins_work_directory /= kPLUGIN_SHORT_NAME;
 
     return path_to_aimp_plugins_work_directory;
 }
 
-void AIMPControlPluginHeader::ensureWorkDirectoryExists()
+void AIMPControlPlugin::ensureWorkDirectoryExists()
 {
     namespace fs = boost::filesystem;
     plugin_work_directory_ = makePluginWorkDirectory();
@@ -138,7 +180,7 @@ void AIMPControlPluginHeader::ensureWorkDirectoryExists()
     }
 }
 
-void AIMPControlPluginHeader::loadSettings()
+void AIMPControlPlugin::loadSettings()
 {
     // Note: logger is not available at this point.
 
@@ -163,7 +205,7 @@ void AIMPControlPluginHeader::loadSettings()
     }
 }
 
-void AIMPControlPluginHeader::initializeLogger()
+void AIMPControlPlugin::initializeLogger()
 {
     if (settings_manager_.settings().logger.severity_level < PluginLogger::severity_levels_count) {
         plugin_logger_.setSeverity(settings_manager_.settings().logger.severity_level);
@@ -190,9 +232,21 @@ void AIMPControlPluginHeader::initializeLogger()
     }
 }
 
-void WINAPI AIMPControlPluginHeader::Initialize(AIMP2SDK::IAIMP2Controller* AController)
+void AIMPControlPlugin::Initialize(AIMP2SDK::IAIMP2Controller* AController)
 {
-    aimp_controller_.reset( AController, AIMPPlayer::IReleaseFunctor() );
+    aimp2_controller_.reset(AController);
+    Initialize();
+}
+
+HRESULT AIMPControlPlugin::Initialize(AIMP3SDK::IAIMPCoreUnit* ACoreUnit)
+{
+    aimp3_core_unit_.reset(ACoreUnit);
+    return Initialize();
+}
+
+HRESULT AIMPControlPlugin::Initialize()
+{
+    HRESULT result = S_OK;
 
     ensureWorkDirectoryExists();
     loadSettings(); // If file does not exist tries to save default settings.
@@ -205,12 +259,9 @@ void WINAPI AIMPControlPluginHeader::Initialize(AIMP2SDK::IAIMP2Controller* ACon
     // create plugin core
     try {
         // create AIMP manager.
-        aimp_manager_.reset( new AIMPPlayer::AIMPManager(aimp_controller_, server_io_service_) );
+        aimp_manager_.reset( new AIMPPlayer::AIMPManager(aimp2_controller_, server_io_service_) );
 
         BOOST_LOG_SEV(logger(), info) << "AIMP version: " << aimp_manager_->getAIMPVersion();
-
-        // create multi user mode manager.
-        multi_user_mode_manager_.reset( new MultiUserMode::MultiUserModeManager(*aimp_manager_) );
 
         // create RPC request handler.
         rpc_request_handler_.reset( new Rpc::RequestHandler() );
@@ -234,16 +285,21 @@ void WINAPI AIMPControlPluginHeader::Initialize(AIMP2SDK::IAIMP2Controller* ACon
         StartTickTimer();
     } catch (boost::thread_resource_error& e) {
         BOOST_LOG_SEV(logger(), critical) << "Plugin initialization failed. Reason: create main server thread failed. Reason: " << e.what();
+        result = E_FAIL;
     } catch (std::runtime_error& e) {
         BOOST_LOG_SEV(logger(), critical) << "Plugin initialization failed. Reason: " << e.what();
+        result = E_FAIL;
     } catch (...) {
         BOOST_LOG_SEV(logger(), critical) << "Plugin initialization failed. Reason is unknown";
+        result = E_FAIL;
     }
 
     BOOST_LOG_SEV(logger(), info) << "Plugin initialization is finished";
+
+    return result;
 }
 
-void WINAPI AIMPControlPluginHeader::Finalize()
+HRESULT AIMPControlPlugin::Finalize()
 {
     BOOST_LOG_SEV(logger(), info) << "Plugin finalization is started";
 
@@ -263,18 +319,19 @@ void WINAPI AIMPControlPluginHeader::Finalize()
 
     rpc_request_handler_.reset();
 
-    multi_user_mode_manager_.reset();
-
     aimp_manager_.reset();
 
-    aimp_controller_.reset();
+    aimp2_controller_.reset();
+    aimp3_core_unit_.reset();
 
     BOOST_LOG_SEV(logger(), info) << "Plugin finalization is finished";
 
     plugin_logger_.stopLog();
+
+    return S_OK;
 }
 
-void WINAPI AIMPControlPluginHeader::ShowSettingsDialog(HWND AParentWindow)
+HRESULT AIMPControlPlugin::ShowSettingsDialog(HWND AParentWindow)
 {
     std::wostringstream message_body;
     message_body << L"AIMP2 Control plugin settings can be found in configuration file " << getSettingsFilePath();
@@ -282,9 +339,11 @@ void WINAPI AIMPControlPluginHeader::ShowSettingsDialog(HWND AParentWindow)
                 message_body.str().c_str(),
                 L"Information about AIMP2 Control Plugin",
                 MB_ICONINFORMATION);
+
+    return S_OK;
 }
 
-void AIMPControlPluginHeader::createRpcFrontends()
+void AIMPControlPlugin::createRpcFrontends()
 {
 #define REGISTER_RPC_FRONTEND(name) rpc_request_handler_->addFrontend( std::auto_ptr<Rpc::Frontend>( \
                                                                                                     new name::Frontend() \
@@ -296,7 +355,7 @@ void AIMPControlPluginHeader::createRpcFrontends()
 #undef REGISTER_RPC_FRONTEND
 }
 
-void AIMPControlPluginHeader::createRpcMethods()
+void AIMPControlPlugin::createRpcMethods()
 {
     using namespace AimpRpcMethods;
 
@@ -304,7 +363,6 @@ void AIMPControlPluginHeader::createRpcMethods()
             rpc_request_handler_->addMethod( \
                             std::auto_ptr<Rpc::Method>( \
                                                         new method_type(*aimp_manager_, \
-                                                                        *multi_user_mode_manager_, \
                                                                         *rpc_request_handler_\
                                                                         ) \
                                                        ) \
@@ -329,17 +387,15 @@ void AIMPControlPluginHeader::createRpcMethods()
     REGISTER_AIMP_RPC_METHOD(RemoveTrackFromPlayQueue);
     { // register this way since GetEntryPositionInDataTable depends from GetPlaylistEntries 
     std::auto_ptr<GetPlaylistEntries> method_getplaylistentries(new GetPlaylistEntries(*aimp_manager_,
-                                                                                       *multi_user_mode_manager_,
                                                                                        *rpc_request_handler_
                                                                                        )
                                                                 );
 
     std::auto_ptr<Rpc::Method> method_GetEntryPositionInDataTable(new GetEntryPositionInDataTable(*aimp_manager_,
-                                                                                     *multi_user_mode_manager_,
-                                                                                     *rpc_request_handler_,
-                                                                                     *method_getplaylistentries
-                                                                                     )
-                                                         );
+                                                                                                  *rpc_request_handler_,
+                                                                                                  *method_getplaylistentries
+                                                                                                  )
+                                                                  );
     { // auto_ptr can not be implicitly casted to ptr to object of base class.
     std::auto_ptr<Rpc::Method> method( method_getplaylistentries.release() );
     rpc_request_handler_->addMethod(method);
@@ -355,7 +411,6 @@ void AIMPControlPluginHeader::createRpcMethods()
         // add document root and path to directory for storing album covers in GetCover method.
         rpc_request_handler_->addMethod( std::auto_ptr<Rpc::Method>(
                                                 new GetCover(*aimp_manager_,
-                                                             *multi_user_mode_manager_,
                                                              *rpc_request_handler_,
                                                              getWebServerDocumentRoot().directory_string(),
                                                              L"tmp" // directory in document root to store temp image files.
@@ -370,7 +425,6 @@ void AIMPControlPluginHeader::createRpcMethods()
     // add file name for rating store file to SetTrackRating() method.
     rpc_request_handler_->addMethod( std::auto_ptr<Rpc::Method>(
                                                     new SetTrackRating( *aimp_manager_,
-                                                                        *multi_user_mode_manager_,
                                                                         *rpc_request_handler_,
                                                                         (plugin_work_directory_ / L"rating_store.txt").file_string()
                                                                        )
@@ -423,7 +477,7 @@ void freeImagePlusDllTest()
     img.saveToHandle(FIF_PNG, &io, nullptr); // check fipWinImage::saveToHandle() availability.
 }
 
-void AIMPControlPluginHeader::checkFreeImageDLLAvailability()
+void AIMPControlPlugin::checkFreeImageDLLAvailability()
 {
     // Wrap all calls to delay-load DLL functions inside SEH
     __try {
@@ -434,7 +488,7 @@ void AIMPControlPluginHeader::checkFreeImageDLLAvailability()
     }
 }
 
-boost::filesystem::wpath AIMPControlPluginHeader::getWebServerDocumentRoot() const // throws std::runtime_error
+boost::filesystem::wpath AIMPControlPlugin::getWebServerDocumentRoot() const // throws std::runtime_error
 {
     // get document root from settings.
     namespace fs = boost::filesystem;
@@ -452,15 +506,15 @@ boost::filesystem::wpath AIMPControlPluginHeader::getWebServerDocumentRoot() con
     return document_root_path;
 }
 
-void AIMPControlPluginHeader::StartTickTimer()
+void AIMPControlPlugin::StartTickTimer()
 {
-    tick_timer_id_ = ::SetTimer(NULL, kTickTimerEventID, kTickTimerElapse, &AIMPControlPluginHeader::OnTickTimerProc);
+    tick_timer_id_ = ::SetTimer(NULL, kTickTimerEventID, kTickTimerElapse, &AIMPControlPlugin::OnTickTimerProc);
     if (tick_timer_id_ == 0) {
         BOOST_LOG_SEV(logger(), critical) << "Plugin's service interrupted: SetTimer failed with error: " << GetLastError();
     }
 }
 
-void AIMPControlPluginHeader::StopTickTimer()
+void AIMPControlPlugin::StopTickTimer()
 {
     if (tick_timer_id_ != 0) {
         if (::KillTimer(NULL, tick_timer_id_) == 0) {
@@ -469,25 +523,25 @@ void AIMPControlPluginHeader::StopTickTimer()
     }
 }
 
-void CALLBACK AIMPControlPluginHeader::OnTickTimerProc(HWND /*hwnd*/,
-                                                       UINT /*uMsg*/,
-                                                       UINT_PTR /*idEvent*/,
-                                                       DWORD /*dwTime*/)
+void CALLBACK AIMPControlPlugin::OnTickTimerProc(HWND /*hwnd*/,
+                                                 UINT /*uMsg*/,
+                                                 UINT_PTR /*idEvent*/,
+                                                 DWORD /*dwTime*/)
 {
     plugin_instance->OnTick();
 }
 
-void AIMPControlPluginHeader::OnTick()
+void AIMPControlPlugin::OnTick()
 {
     try {
         server_io_service_.poll();
     } catch (std::exception& e) {
         // Just send error in log and stop processing.
-        BOOST_LOG_SEV(logger(), critical) << "Unhandled exception inside AIMPControlPlugin::OnTick(): " << e.what();
+        BOOST_LOG_SEV(logger(), critical) << "Unhandled exception inside ControlPlugin::OnTick(): " << e.what();
         server_io_service_.stop();
         StopTickTimer();
         BOOST_LOG_SEV(logger(), info) << "Service was stopped.";
     }
 }
 
-} // namespace AIMPControlPlugin
+} // namespace ControlPlugin

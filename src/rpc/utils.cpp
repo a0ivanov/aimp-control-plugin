@@ -4,7 +4,7 @@
 #include "utils.h"
 
 namespace {
-using namespace AIMPControlPlugin::PluginLogger;
+using namespace ControlPlugin::PluginLogger;
 ModuleLoggerType& logger()
     { return getLogManager().getModuleLogger<Rpc::RequestHandler>(); }
 }

@@ -12,8 +12,6 @@
 // headers of DelayedResponseSender class
 #include <boost/enable_shared_from_this.hpp>
 
-namespace MultiUserMode { class MultiUserModeManager; }
-
 namespace Http { class DelayedResponseSender; }
 
 namespace Rpc

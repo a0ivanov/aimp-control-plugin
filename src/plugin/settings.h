@@ -8,7 +8,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/filesystem.hpp>
 
-namespace AIMPControlPlugin { namespace PluginSettings {
+namespace ControlPlugin { namespace PluginSettings {
 
 struct Settings
 {
@@ -81,6 +81,6 @@ public:
     {}
 };
 
-} } // namespace AIMPControlPlugin::PluginSettings
+} } // namespace ControlPlugin::PluginSettings
 
 #endif // #ifndef PLUGIN_SETTINGS_H

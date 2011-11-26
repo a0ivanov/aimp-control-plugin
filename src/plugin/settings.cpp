@@ -11,7 +11,7 @@
 #include <boost/assign/std.hpp>
 #include <libs/serialization/src/utf8_codecvt_facet.cpp>
 
-namespace AIMPControlPlugin { namespace PluginSettings {
+namespace ControlPlugin { namespace PluginSettings {
 
 using namespace PluginLogger;
 using boost::property_tree::wptree;
@@ -205,4 +205,4 @@ const wchar_t* severityToString(int level)
     return severity_levels[severity_levels_count];
 }
 
-} } // namespace AIMPControlPlugin::PluginSettings
+} } // namespace ControlPlugin::PluginSettings
