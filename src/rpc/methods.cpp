@@ -1194,7 +1194,7 @@ void replaceAll(const T* toreplace, size_t toreplace_length,
 
 void EmulationOfWebCtlPlugin::getPlaylistList(std::ostringstream& out)
 {
-    AIMPPlayer::AIMP2ManagerImpl* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2ManagerImpl*>(&aimp_manager_);
+    AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_);
     if (aimp2_manager) {
         out << "[";
 
@@ -1269,7 +1269,7 @@ void EmulationOfWebCtlPlugin::getPlaylistSongs(int playlist_id, bool ignore_cach
 
     // not used, we have one thread. concurencyInstance.EnterWriter();
 
-    AIMPPlayer::AIMP2ManagerImpl* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2ManagerImpl*>(&aimp_manager_);
+    AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_);
     if (!aimp2_manager) {
         assert(!"emulation of web-ctl-plugin on AIMP3 is not implemented yet");
         throw std::runtime_error("not implemented on AIMP3: "__FUNCTION__);
@@ -1348,7 +1348,7 @@ void EmulationOfWebCtlPlugin::getPlayerStatus(std::ostringstream& out)
 
 void EmulationOfWebCtlPlugin::getCurrentSong(std::ostringstream& out)
 {
-    AIMPPlayer::AIMP2ManagerImpl* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2ManagerImpl*>(&aimp_manager_);
+    AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_);
     if (!aimp2_manager) {
         assert(!"emulation of web-ctl-plugin on AIMP3 is not implemented yet");
         throw std::runtime_error("not implemented on AIMP3: "__FUNCTION__);
@@ -1393,7 +1393,7 @@ void EmulationOfWebCtlPlugin::setPlayerStatus(const std::string& statusType, int
 
 void EmulationOfWebCtlPlugin::sortPlaylist(int playlist_id, const std::string& sortType)
 {
-    AIMPPlayer::AIMP2ManagerImpl* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2ManagerImpl*>(&aimp_manager_);
+    AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_);
     if (!aimp2_manager) {
         assert(!"emulation of web-ctl-plugin on AIMP3 is not implemented yet");
         throw std::runtime_error("not implemented on AIMP3: "__FUNCTION__);
@@ -1418,7 +1418,7 @@ void EmulationOfWebCtlPlugin::sortPlaylist(int playlist_id, const std::string& s
 
 void EmulationOfWebCtlPlugin::addFile(int playlist_id, const std::string& filename_url)
 {
-    AIMPPlayer::AIMP2ManagerImpl* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2ManagerImpl*>(&aimp_manager_);
+    AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_);
     if (!aimp2_manager) {
         assert(!"emulation of web-ctl-plugin on AIMP3 is not implemented yet");
         throw std::runtime_error("not implemented on AIMP3: "__FUNCTION__);
@@ -1447,7 +1447,7 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
 
         std::ostringstream out(std::ios::in | std::ios::out | std::ios::binary);
 
-        AIMPPlayer::AIMP2ManagerImpl* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2ManagerImpl*>(&aimp_manager_);
+        AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_);
         if (!aimp2_manager) {
             assert(!"emulation of web-ctl-plugin on AIMP3 is not implemented yet");
             throw std::runtime_error("not implemented on AIMP3: "__FUNCTION__);

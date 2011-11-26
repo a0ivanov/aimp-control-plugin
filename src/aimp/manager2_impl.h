@@ -26,18 +26,18 @@ namespace AIMPPlayer
 /*!
     \brief Provides interaction with AIMP2 player.
 */
-class AIMP2ManagerImpl : public AIMPManager
+class AIMP2Manager : public AIMPManager
 {
 public:
 
     /*!
         \param aimp_controller - pointer to IAIMP2Controller object.
     */
-    AIMP2ManagerImpl(boost::intrusive_ptr<AIMP2SDK::IAIMP2Controller> aimp_controller,
-                     boost::asio::io_service& io_service_
-                     ); // throws std::runtime_error
+    AIMP2Manager(boost::intrusive_ptr<AIMP2SDK::IAIMP2Controller> aimp_controller,
+                 boost::asio::io_service& io_service_
+                 ); // throws std::runtime_error
 
-    ~AIMP2ManagerImpl();
+    ~AIMP2Manager();
 
     //! Starts playback.
     void startPlayback();

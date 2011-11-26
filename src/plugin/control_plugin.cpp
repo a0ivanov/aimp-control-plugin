@@ -249,7 +249,7 @@ boost::shared_ptr<AIMPPlayer::AIMPManager> AIMPControlPlugin::CreateAIMPManager(
 {
     boost::shared_ptr<AIMPPlayer::AIMPManager> result;
     if (aimp2_controller_) {
-        result.reset( new AIMPPlayer::AIMP2ManagerImpl(aimp2_controller_, server_io_service_) );
+        result.reset( new AIMPPlayer::AIMP2Manager(aimp2_controller_, server_io_service_) );
     } else if (aimp3_core_unit_) {
         assert(!"AIMP3ManagerImpl is not implemented yet");
         throw std::runtime_error("AIMP3ManagerImpl is not implemented yet. "__FUNCTION__);
