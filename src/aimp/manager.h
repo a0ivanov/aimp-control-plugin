@@ -235,7 +235,7 @@ public:
             %a - artist
             %B - bitrate
             %C - channels count
-            //( 'F', _MAKE_FUNC_(std::wstring, PlaylistEntry::getFilename) )
+            //%F - path to file
             %G - genre
             %H - sample rate
             %L - duration
