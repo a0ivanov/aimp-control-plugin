@@ -110,9 +110,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\src\aimp\entries_sorter.cpp" />
-    <ClCompile Include="..\src\aimp\manager.cpp" />
+    <ClCompile Include="..\src\aimp\manager2_impl.cpp" />
     <ClCompile Include="..\src\aimp\playlist.cpp" />
     <ClCompile Include="..\src\aimp\playlist_entry.cpp" />
+    <ClCompile Include="..\src\aimp\track_description.cpp" />
     <ClCompile Include="..\src\dllmain.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
@@ -166,8 +167,10 @@
     <ClInclude Include="..\src\aimp\common_types.h" />
     <ClInclude Include="..\src\aimp\entries_sorter.h" />
     <ClInclude Include="..\src\aimp\manager.h" />
+    <ClInclude Include="..\src\aimp\manager2_impl.h" />
     <ClInclude Include="..\src\aimp\playlist.h" />
     <ClInclude Include="..\src\aimp\playlist_entry.h" />
+    <ClInclude Include="..\src\aimp\track_description.h" />
     <ClInclude Include="..\src\config.h" />
     <ClInclude Include="..\src\http_server\connection.h" />
     <ClInclude Include="..\src\http_server\header.h" />

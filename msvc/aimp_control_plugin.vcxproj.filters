@@ -94,9 +94,6 @@
     <ClCompile Include="..\src\aimp\entries_sorter.cpp">
       <Filter>src\aimp_manager</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\aimp\manager.cpp">
-      <Filter>src\aimp_manager</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\aimp\playlist.cpp">
       <Filter>src\aimp_manager</Filter>
     </ClCompile>
@@ -146,6 +143,12 @@
       <Filter>src\rpc_server\webctl</Filter>
     </ClCompile>
     <ClCompile Include="..\src\aimp\playlist_entry.cpp">
+      <Filter>src\aimp_manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\aimp\manager2_impl.cpp">
+      <Filter>src\aimp_manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\aimp\track_description.cpp">
       <Filter>src\aimp_manager</Filter>
     </ClCompile>
   </ItemGroup>
@@ -308,6 +311,12 @@
     </ClInclude>
     <ClInclude Include="..\src\aimp\aimp2_sdk.h">
       <Filter>src\aimp_manager\aimp_sdk\2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\manager2_impl.h">
+      <Filter>src\aimp_manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\track_description.h">
+      <Filter>src\aimp_manager</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

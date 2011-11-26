@@ -77,6 +77,8 @@ private:
     */
     boost::filesystem::wpath getSettingsFilePath();
 
+    boost::shared_ptr<AIMPPlayer::AIMPManager> CreateAIMPManager(); // throws std::runtime_error
+
     //! Initializes logger in case if settings log level is not LogManager::NONE.
     void initializeLogger();
 

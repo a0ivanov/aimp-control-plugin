@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "control_plugin.h"
+#include "aimp/manager2_impl.h"
 #include "logger.h"
 #include "settings.h"
 #include "rpc/methods.h"
@@ -244,6 +245,21 @@ HRESULT AIMPControlPlugin::Initialize(AIMP3SDK::IAIMPCoreUnit* ACoreUnit)
     return Initialize();
 }
 
+boost::shared_ptr<AIMPPlayer::AIMPManager> AIMPControlPlugin::CreateAIMPManager()
+{
+    boost::shared_ptr<AIMPPlayer::AIMPManager> result;
+    if (aimp2_controller_) {
+        result.reset( new AIMPPlayer::AIMP2ManagerImpl(aimp2_controller_, server_io_service_) );
+    } else if (aimp3_core_unit_) {
+        assert(!"AIMP3ManagerImpl is not implemented yet");
+        throw std::runtime_error("AIMP3ManagerImpl is not implemented yet. "__FUNCTION__);
+    } else {
+        assert(!"both AIMP2 and AIMP3 plugin addon objects do not exist.");
+        throw std::runtime_error("both AIMP2 and AIMP3 plugin addon objects do not exist. "__FUNCTION__);
+    }
+    return result;
+}
+
 HRESULT AIMPControlPlugin::Initialize()
 {
     HRESULT result = S_OK;
@@ -259,7 +275,7 @@ HRESULT AIMPControlPlugin::Initialize()
     // create plugin core
     try {
         // create AIMP manager.
-        aimp_manager_.reset( new AIMPPlayer::AIMPManager(aimp2_controller_, server_io_service_) );
+        aimp_manager_ = CreateAIMPManager();
 
         BOOST_LOG_SEV(logger(), info) << "AIMP version: " << aimp_manager_->getAIMPVersion();
 
