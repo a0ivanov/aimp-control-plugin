@@ -311,9 +311,6 @@ private:
     //! Unsubscribes from all available AIMP callbacks.
     void unregisterNotifiers();
 
-    // Function used for testing available callbacks in AIMP3.
-    void registerCallbackRange(int id_first, int id_last);
-
     //! Callback function to notify manager about AIMP player state changes. Called by AIMP from it's thread.
     static void WINAPI internalAIMPStateNotifier(DWORD User, DWORD dwCBType);
 
@@ -330,12 +327,12 @@ private:
     //! initializes all requiered for work AIMP SDK interfaces.
     void initializeAIMPObjects(); // throws std::runtime_error
 
-    // pointers to internal AIMP objects.
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2Controller> aimp2_controller_; //!< interface to work with AIMP application.
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2Player> aimp2_player_; //!< interface to work with AIMP control panel.
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp2_playlist_manager_; //!< interface for work with playlists.
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2Extended> aimp2_extended_; //!< interface for work aimp miscellaneous aspects.
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2CoverArtManager> aimp2_cover_art_manager_; //!< interface for work with track's album covers.
+    // pointers to internal AIMP2 objects.
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2Controller>       aimp2_controller_;        //!< to work with AIMP application.
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2Player>           aimp2_player_;            //!< to work with AIMP control panel.
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp2_playlist_manager_;  //!< to work with playlists and tracks.
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2Extended>         aimp2_extended_;          //!< to work aimp miscellaneous aspects.
+    boost::intrusive_ptr<AIMP2SDK::IAIMP2CoverArtManager>  aimp2_cover_art_manager_; //!< to work with track's album covers.
 
     PlaylistsListType playlists_; //!< playlists list. Currently it is map of playlist ID to Playlist object.
 

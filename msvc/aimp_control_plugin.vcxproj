@@ -156,6 +156,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\aimp\aimp2_sdk.h" />
+    <ClInclude Include="..\src\aimp\aimp3_sdk\aimp3_sdk.h" />
+    <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKAddons.h" />
+    <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKCommon.h" />
+    <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKCore.h" />
+    <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKInput.h" />
+    <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKRemote.h" />
+    <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKVisual.h" />
     <ClInclude Include="..\src\aimp\common_types.h" />
     <ClInclude Include="..\src\aimp\entries_sorter.h" />
     <ClInclude Include="..\src\aimp\manager.h" />

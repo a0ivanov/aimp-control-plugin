@@ -357,20 +357,6 @@ void AIMPManager::onTimerPlaylistsChangeCheck(const boost::system::error_code& e
 
 #endif // #ifdef MANUAL_PLAYLISTS_CONTENT_CHANGES_DETERMINATION
 
-void AIMPManager::registerCallbackRange(int id_first, int id_last)
-{
-    for (int callback_id = id_first; callback_id != id_last; ++callback_id) {
-        // register notifier.
-        boolean result = aimp2_controller_->AIMP_CallBack_Set( callback_id,
-                                                             &internalAIMPStateNotifier,
-                                                             reinterpret_cast<DWORD>(this) // user data that will be passed in internalAIMPStateNotifier().
-                                                            );
-        if (!result) {
-            BOOST_LOG_SEV(logger(), error) << "Error occured while register " << callback_id << " callback";
-        }
-    }
-}
-
 void AIMPManager::registerNotifiers()
 {
     using namespace boost::assign;
@@ -395,10 +381,6 @@ void AIMPManager::registerNotifiers()
             BOOST_LOG_SEV(logger(), error) << "Error occured while register " << callback.second << " callback";
         }
     }
-
-    // ID of playlists is sent when playlist is activated or changed.
-    //registerCallbackRange(AIMP_INFO_UPDATE + 1, AIMP_PLAYER_STATE);
-    //registerCallbackRange(AIMP_TRACK_POS_CHANGED + 1, 100);
 }
 
 void AIMPManager::unregisterNotifiers()

@@ -35,6 +35,15 @@
     <Filter Include="src\rpc_server\webctl">
       <UniqueIdentifier>{5b0d084a-e2be-41bd-9ddf-ae2a519e9dab}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\aimp_manager\aimp_sdk">
+      <UniqueIdentifier>{47199064-0f6f-40a1-b64f-9de6761bc512}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\aimp_manager\aimp_sdk\3">
+      <UniqueIdentifier>{9ddea356-b26d-417f-b503-b125444d3cf2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\aimp_manager\aimp_sdk\2">
+      <UniqueIdentifier>{369e0838-d79d-4033-9bd0-8da069c14564}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\stdafx.cpp">
@@ -231,9 +240,6 @@
     <ClInclude Include="..\src\http_server\server.h">
       <Filter>src\http server</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\aimp\aimp2_sdk.h">
-      <Filter>src\aimp_manager</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\aimp\common_types.h">
       <Filter>src\aimp_manager</Filter>
     </ClInclude>
@@ -278,6 +284,30 @@
     </ClInclude>
     <ClInclude Include="..\src\webctlrpc\response_serializer.h">
       <Filter>src\rpc_server\webctl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3_sdk\aimp3_sdk.h">
+      <Filter>src\aimp_manager\aimp_sdk\3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKRemote.h">
+      <Filter>src\aimp_manager\aimp_sdk\3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKAddons.h">
+      <Filter>src\aimp_manager\aimp_sdk\3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKCommon.h">
+      <Filter>src\aimp_manager\aimp_sdk\3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKCore.h">
+      <Filter>src\aimp_manager\aimp_sdk\3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKInput.h">
+      <Filter>src\aimp_manager\aimp_sdk\3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKVisual.h">
+      <Filter>src\aimp_manager\aimp_sdk\3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp2_sdk.h">
+      <Filter>src\aimp_manager\aimp_sdk\2</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
