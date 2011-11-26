@@ -727,7 +727,7 @@ PlaylistEntryID AIMPManager::getActiveEntry() const
 
 TrackDescription AIMPManager::getActiveTrack() const
 {
-    return TrackDescription( getActiveEntry(), getActivePlaylist() );
+    return TrackDescription( getActivePlaylist(), getActiveEntry() );
 }
 
 AIMPManager::PLAYBACK_STATE AIMPManager::getPlaybackState() const
@@ -1255,7 +1255,7 @@ std::wstring AIMPManager::getFormattedEntryTitle(const PlaylistEntry& entry, con
 
 std::ostream& operator<<(std::ostream& os, const TrackDescription& track_desc)
 {
-    os << "track: " << track_desc.track_id << ", playlist: " << track_desc.playlist_id;
+    os << "playlist: " << track_desc.playlist_id << ", track: " << track_desc.track_id;
     return os;
 }
 

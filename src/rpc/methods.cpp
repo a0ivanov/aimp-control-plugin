@@ -48,7 +48,7 @@ ResponseType Play::execute(const Rpc::Value& root_request, Rpc::Value& root_resp
 {
     const Rpc::Value& params = root_request["params"];
     if (params.type() == Rpc::Value::TYPE_OBJECT && params.size() == 2) {
-        const TrackDescription track_desc(params["track_id"], params["playlist_id"]);
+        const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
         try {
             aimp_manager_.startPlayback(track_desc);
         } catch (std::runtime_error&) {
@@ -73,7 +73,7 @@ ResponseType GetFormattedEntryTitle::execute(const Rpc::Value& root_request, Rpc
         throw Rpc::Exception("Wrong arguments count. Wait 3 arguments: int track_id, int playlist_id, string format_string", WRONG_ARGUMENT);
     }
 
-    const TrackDescription track_desc(params["track_id"], params["playlist_id"]);
+    const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
     try {
         const PlaylistEntry& entry = aimp_manager_.getEntry(track_desc);
         using namespace StringEncoding;
@@ -239,7 +239,7 @@ ResponseType EnqueueTrack::execute(const Rpc::Value& root_request, Rpc::Value& r
         throw Rpc::Exception("Wrong arguments count. Wait at least 2 int values: track_id, playlist_id.", WRONG_ARGUMENT);
     }
 
-    const TrackDescription track_desc(params["track_id"], params["playlist_id"]);
+    const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
     const bool insert_at_queue_beginning = params.isMember("insert_at_queue_beginning") ? bool(params["insert_at_queue_beginning"]) 
                                                                                         : false; // by default insert at the end of queue.
 
@@ -258,7 +258,7 @@ ResponseType RemoveTrackFromPlayQueue::execute(const Rpc::Value& root_request, R
         throw Rpc::Exception("Wrong arguments count. Wait 2 int values: track_id, playlist_id.", WRONG_ARGUMENT);
     }
 
-    const TrackDescription track_desc(params["track_id"], params["playlist_id"]);
+    const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
     try {
         aimp_manager_.removeEntryFromPlayQueue(track_desc);
     } catch (std::runtime_error&) {
@@ -813,7 +813,7 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
         throw Rpc::Exception("Wrong arguments count. Wait at least 2 int values: track_id, playlist_id.", WRONG_ARGUMENT);
     }
 
-    const TrackDescription track_desc(params["track_id"], params["playlist_id"]);
+    const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
 
     int cover_width;
     int cover_height;
@@ -873,7 +873,7 @@ ResponseType GetPlaylistEntryInfo::execute(const Rpc::Value& root_request, Rpc::
         throw Rpc::Exception("Wrong arguments count. Wait 2 int values: track_id, playlist_id.", WRONG_ARGUMENT);
     }
 
-    const TrackDescription track_desc(params["track_id"], params["playlist_id"]);
+    const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
 
     try {
         const PlaylistEntry& entry = aimp_manager_.getEntry(track_desc);
@@ -1077,7 +1077,7 @@ ResponseType SetTrackRating::execute(const Rpc::Value& root_request, Rpc::Value&
         throw Rpc::Exception("Wrong arguments count. Wait 3 int values: track ID, playlist ID, rating", WRONG_ARGUMENT);
     }
 
-    const TrackDescription track_desc(params["track_id"], params["playlist_id"]);
+    const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
     const int rating( Utilities::limit_value<int>(params["rating"], 0, 5) ); // set rating range [0, 5]
 
     try {
@@ -1462,7 +1462,7 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
             break;
         case set_song_play:
             {
-            const TrackDescription track_desc(params["song"], params["playlist"]);
+            const TrackDescription track_desc(params["playlist"], params["song"]);
             aimp_manager_.startPlayback(track_desc);
             }
             break;
@@ -1515,13 +1515,13 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
         case playlist_queue_add:
             {
             const bool insert_at_queue_beginning = false;
-            const TrackDescription track_desc(params["song"], params["playlist"]);
+            const TrackDescription track_desc(params["playlist"], params["song"]);
             aimp_manager_.enqueueEntryForPlay(track_desc, insert_at_queue_beginning);
             }
             break;
         case playlist_queue_remove:
             {
-            const TrackDescription track_desc(params["song"], params["playlist"]);
+            const TrackDescription track_desc(params["playlist"], params["song"]);
             aimp_manager_.removeEntryFromPlayQueue(track_desc);
             }
             break;

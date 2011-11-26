@@ -370,18 +370,18 @@ private:
 
 /*!
     Track description.
-    Track's absolute coordinates are { track ID in playlist, playlist ID }.
+    Track's absolute coordinates are { playlist ID, track ID in playlist }.
 */
 struct TrackDescription
 {
-    TrackDescription(PlaylistEntryID track_id, PlaylistID playlist_id)
+    TrackDescription(PlaylistID playlist_id, PlaylistEntryID track_id)
         :
-        track_id(track_id),
-        playlist_id(playlist_id)
+        playlist_id(playlist_id),
+        track_id(track_id)
     {}
 
-    PlaylistEntryID track_id;
     PlaylistID playlist_id;
+    PlaylistEntryID track_id;
 };
 
 std::ostream& operator<<(std::ostream& os, const TrackDescription& track_desc);
