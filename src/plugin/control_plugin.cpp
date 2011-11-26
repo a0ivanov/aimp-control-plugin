@@ -115,7 +115,7 @@ std::wstring AIMPControlPlugin::getAimpDataPath()
             boost::intrusive_ptr<IAIMP2Extended> aimp_extended(extended);
             extended = nullptr;
 
-            WCHAR buffer[MAX_PATH];
+            WCHAR buffer[MAX_PATH + 1];
             const int buffer_length = aimp_extended->AIMP_GetPath(AIMP_CFG_DATA, buffer, MAX_PATH);
 
             if (0 < buffer_length && buffer_length <= MAX_PATH) {
@@ -140,6 +140,7 @@ std::wstring AIMPControlPlugin::getAimpDataPath()
             )
         {
             boost::intrusive_ptr<IAIMPAddonsPlayerManager> player_manager(manager);
+            manager = nullptr;
 
             WCHAR buffer[MAX_PATH + 1] = {0};
             if ( S_OK == player_manager->ConfigGetPath(AIMP_CFG_PATH_PROFILE, buffer, MAX_PATH) ) {
