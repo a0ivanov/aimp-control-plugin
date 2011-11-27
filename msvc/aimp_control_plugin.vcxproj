@@ -111,6 +111,7 @@
   <ItemGroup>
     <ClCompile Include="..\src\aimp\entries_sorter.cpp" />
     <ClCompile Include="..\src\aimp\manager2_impl.cpp" />
+    <ClCompile Include="..\src\aimp\manager3_impl.cpp" />
     <ClCompile Include="..\src\aimp\playlist.cpp" />
     <ClCompile Include="..\src\aimp\playlist_entry.cpp" />
     <ClCompile Include="..\src\aimp\track_description.cpp" />
@@ -168,6 +169,7 @@
     <ClInclude Include="..\src\aimp\entries_sorter.h" />
     <ClInclude Include="..\src\aimp\manager.h" />
     <ClInclude Include="..\src\aimp\manager2_impl.h" />
+    <ClInclude Include="..\src\aimp\manager3_impl.h" />
     <ClInclude Include="..\src\aimp\playlist.h" />
     <ClInclude Include="..\src\aimp\playlist_entry.h" />
     <ClInclude Include="..\src\aimp\track_description.h" />

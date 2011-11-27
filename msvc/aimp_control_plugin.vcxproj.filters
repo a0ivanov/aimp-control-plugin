@@ -151,6 +151,9 @@
     <ClCompile Include="..\src\aimp\track_description.cpp">
       <Filter>src\aimp_manager</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\aimp\manager3_impl.cpp">
+      <Filter>src\aimp_manager</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\stdafx.h">
@@ -316,6 +319,9 @@
       <Filter>src\aimp_manager</Filter>
     </ClInclude>
     <ClInclude Include="..\src\aimp\track_description.h">
+      <Filter>src\aimp_manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\manager3_impl.h">
       <Filter>src\aimp_manager</Filter>
     </ClInclude>
   </ItemGroup>

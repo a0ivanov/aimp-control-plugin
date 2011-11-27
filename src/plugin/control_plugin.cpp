@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include "control_plugin.h"
 #include "aimp/manager2_impl.h"
+#include "aimp/manager3_impl.h"
 #include "logger.h"
 #include "settings.h"
 #include "rpc/methods.h"
@@ -251,8 +252,7 @@ boost::shared_ptr<AIMPPlayer::AIMPManager> AIMPControlPlugin::CreateAIMPManager(
     if (aimp2_controller_) {
         result.reset( new AIMPPlayer::AIMP2Manager(aimp2_controller_, server_io_service_) );
     } else if (aimp3_core_unit_) {
-        assert(!"AIMP3ManagerImpl is not implemented yet");
-        throw std::runtime_error("AIMP3ManagerImpl is not implemented yet. "__FUNCTION__);
+        result.reset( new AIMPPlayer::AIMP3Manager(aimp3_core_unit_) );
     } else {
         assert(!"both AIMP2 and AIMP3 plugin addon objects do not exist.");
         throw std::runtime_error("both AIMP2 and AIMP3 plugin addon objects do not exist. "__FUNCTION__);
