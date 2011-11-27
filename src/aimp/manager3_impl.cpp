@@ -4,7 +4,6 @@
 #include "manager3_impl.h"
 #include "manager_impl_common.h"
 #include "playlist_entry.h"
-#include "aimp3_sdk/aimp3_sdk.h"
 #include "utils/iunknown_impl.h"
 #include "plugin/logger.h"
 #include "utils/string_encoding.h"
@@ -92,16 +91,42 @@ AIMP3SDK::HPLS cast(PlaylistID id)
 //    return reinterpret_cast<AIMP3SDK::HPLSENTRY>(id);
 //}
 
-class AIMPCoreUnitMessageHook : public IUnknownInterfaceImpl<AIMP3SDK::IAIMPCoreUnitMessageHook>
+class AIMP3Manager::AIMPCoreUnitMessageHook : public IUnknownInterfaceImpl<AIMP3SDK::IAIMPCoreUnitMessageHook>
 {
 public:
-    AIMPCoreUnitMessageHook(AIMP3Manager* aimp3_manager)
+    explicit AIMPCoreUnitMessageHook(AIMP3Manager* aimp3_manager)
         : 
         aimp3_manager_(aimp3_manager)
     {}
 
     virtual void WINAPI CoreMessage(DWORD AMessage, int AParam1, void *AParam2, HRESULT *AResult) {
-        aimp3_manager_->OnAimpCoreMessage(AMessage, AParam1, AParam2, AResult);
+        aimp3_manager_->onAimpCoreMessage(AMessage, AParam1, AParam2, AResult);
+    }
+
+private:
+
+    AIMP3Manager* aimp3_manager_;
+};
+
+class AIMP3Manager::AIMPAddonsPlaylistManagerListener : public IUnknownInterfaceImpl<AIMP3SDK::IAIMPAddonsPlaylistManagerListener>
+{
+public:
+    explicit AIMPAddonsPlaylistManagerListener(AIMP3Manager* aimp3_manager)
+        : 
+        aimp3_manager_(aimp3_manager)
+    {}
+
+    virtual void WINAPI StorageActivated(AIMP3SDK::HPLS ID) {
+        aimp3_manager_->onStorageActivated(ID);
+    }
+    virtual void WINAPI StorageAdded(AIMP3SDK::HPLS ID) {
+        aimp3_manager_->onStorageAdded(ID);
+    }
+    virtual void WINAPI StorageChanged(AIMP3SDK::HPLS ID, DWORD AFlags) {
+        aimp3_manager_->onStorageChanged(ID, AFlags);
+    }
+    virtual void WINAPI StorageRemoved(AIMP3SDK::HPLS ID) {
+        aimp3_manager_->onStorageRemoved(ID);
     }
 
 private:
@@ -120,15 +145,24 @@ AIMP3Manager::AIMP3Manager(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_c
         throw std::runtime_error( std::string("Error occured while AIMP3Manager initialization. Reason:") + e.what() );
     }
     ///!!!register listeners here
-    aimp3_core_message_hook_.reset( new AIMPCoreUnitMessageHook(this) );
-    aimp3_core_unit_->MessageHook( aimp3_core_message_hook_.get() );
+    //aimp3_core_message_hook_.reset( new AIMPCoreUnitMessageHook(this) );
+    //aimp3_core_message_hook_->AddRef();
+    //aimp3_core_unit_->MessageHook( aimp3_core_message_hook_.get() );
+
+    //aimp3_playlist_manager_listener_.reset( new AIMPAddonsPlaylistManagerListener(this)  );
+    //aimp3_playlist_manager_listener_->AddRef();
+    //HRESULT r = aimp3_playlist_manager_->ListenerAdd( aimp3_playlist_manager_listener_.get() );
+    //r = r;
 }
 
 AIMP3Manager::~AIMP3Manager()
 {
     ///!!!unregister listeners here
-    aimp3_core_unit_->MessageUnhook( aimp3_core_message_hook_.get() );
-    aimp3_core_message_hook_.reset();
+    //aimp3_playlist_manager_->ListenerRemove( aimp3_playlist_manager_listener_.get() );
+    //aimp3_playlist_manager_listener_.reset();
+
+    //aimp3_core_unit_->MessageUnhook( aimp3_core_message_hook_.get() );
+    //aimp3_core_message_hook_.reset();
 }
 
 void AIMP3Manager::initializeAIMPObjects()
@@ -165,6 +199,40 @@ void AIMP3Manager::initializeAIMPObjects()
     aimp3_coverart_manager_.reset(coverart_manager);
 }
 
+void AIMP3Manager::onStorageActivated(AIMP3SDK::HPLS /*id*/)
+{
+    // do nothing
+}
+
+void AIMP3Manager::onStorageAdded(AIMP3SDK::HPLS id)
+{
+    Playlist& playlist = ( playlists_[cast<PlaylistID>(id)] = loadPlaylist(id) );
+    loadEntries(playlist);
+    notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+}
+
+void AIMP3Manager::onStorageChanged(AIMP3SDK::HPLS id, DWORD flags)
+{
+    using namespace AIMP3SDK;
+
+    // TODO: handle other flag values
+    if (    (AIMP_PLAYLIST_NOTIFY_CONTENT & flags) != 0 
+         || (AIMP_PLAYLIST_NOTIFY_NAME & flags) != 0
+         || (AIMP_PLAYLIST_NOTIFY_ENTRYINFO & flags) != 0 
+        )
+    {
+        Playlist& playlist = ( playlists_[cast<PlaylistID>(id)] = loadPlaylist(id) );
+        loadEntries(playlist);
+        notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+    }
+}
+
+void AIMP3Manager::onStorageRemoved(AIMP3SDK::HPLS id)
+{
+    playlists_.erase( cast<PlaylistID>(id) );
+    notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+}
+
 Playlist AIMP3Manager::loadPlaylist(int playlist_index)
 {
     const char * const error_prefix = "Error occured while extracting playlist data: ";
@@ -174,6 +242,13 @@ Playlist AIMP3Manager::loadPlaylist(int playlist_index)
         throw std::runtime_error(MakeString() << error_prefix << "IAIMPAddonsPlaylistManager::StorageGet failed");
     }
 
+    return loadPlaylist(id);
+}
+
+Playlist AIMP3Manager::loadPlaylist(AIMP3SDK::HPLS id)
+{
+    const char * const error_prefix = "Error occured while extracting playlist data: ";
+    
     using namespace AIMP3SDK;
     
     HRESULT r;
@@ -391,7 +466,7 @@ void AIMP3Manager::playPreviousTrack()
     aimp3_core_unit_->MessageSend(AIMP_MSG_CMD_PREV, kNoParam1, kNoParam2); // aimp2_player_->PrevTrack();
 }
 
-void AIMP3Manager::OnAimpCoreMessage(DWORD AMessage, int AParam1, void* AParam2, HRESULT* AResult)
+void AIMP3Manager::onAimpCoreMessage(DWORD AMessage, int AParam1, void* AParam2, HRESULT* AResult)
 {
     assert(AResult);
     *AResult = E_FAIL;
@@ -627,6 +702,11 @@ const Playlist& AIMP3Manager::getPlaylist(PlaylistID playlist_id) const
     }
 
     return playlist_iterator->second;
+}
+
+Playlist& AIMP3Manager::getPlaylist(PlaylistID playlist_id)
+{
+    return const_cast<Playlist&>( const_cast<const AIMP3Manager&>(*this).getPlaylist(playlist_id) );
 }
 
 const PlaylistEntry& AIMP3Manager::getEntry(TrackDescription track_desc) const

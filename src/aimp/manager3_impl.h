@@ -4,6 +4,7 @@
 #define AIMP_MANAGER3_IMPL_H
 
 #include "manager.h"
+#include "aimp3_sdk/aimp3_sdk.h"
 
 namespace AIMP3SDK {
     class IAIMPCoreUnit;
@@ -18,8 +19,6 @@ namespace AimpRpcMethods {
 
 namespace AIMPPlayer
 {
-
-class AIMPCoreUnitMessageHook;
 
 /*!
     \brief Provides interaction with AIMP3 player.
@@ -173,7 +172,11 @@ public:
     */
     void unRegisterListener(EventsListenerID listener_id);
 
-    void OnAimpCoreMessage(DWORD AMessage, int AParam1, void *AParam2, HRESULT *AResult);
+    void onAimpCoreMessage(DWORD AMessage, int AParam1, void *AParam2, HRESULT *AResult);
+    void onStorageActivated(AIMP3SDK::HPLS id);
+    void onStorageAdded(AIMP3SDK::HPLS id);
+    void onStorageChanged(AIMP3SDK::HPLS id, DWORD flags);
+    void onStorageRemoved(AIMP3SDK::HPLS id);
 
 private:
 
@@ -223,6 +226,9 @@ private:
 
     //! Loads playlist by AIMP internal index.
     Playlist loadPlaylist(int playlist_index); // throws std::runtime_error
+    Playlist loadPlaylist(AIMP3SDK::HPLS id); // throws std::runtime_error
+    
+    Playlist& getPlaylist(PlaylistID playlist_id);
 
     //! initializes all requiered for work AIMP SDK interfaces.
     void initializeAIMPObjects(); // throws std::runtime_error
@@ -233,7 +239,10 @@ private:
     boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistManager> aimp3_playlist_manager_;
     boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsCoverArtManager> aimp3_coverart_manager_;
 
+    class AIMPCoreUnitMessageHook;
     boost::intrusive_ptr<AIMPCoreUnitMessageHook> aimp3_core_message_hook_;
+    class AIMPAddonsPlaylistManagerListener;
+    boost::intrusive_ptr<AIMPAddonsPlaylistManagerListener> aimp3_playlist_manager_listener_;
 
     PlaylistsListType playlists_; //!< playlists list. Currently it is map of playlist ID to Playlist object.
 
