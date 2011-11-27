@@ -65,7 +65,7 @@ public:
     void playPreviousTrack();
 
     /*!
-        \brief Sets AIMP status to specified value. See enum STATUS to know about avaiable statuses and ranges of their values.
+        \brief Sets AIMP status to specified value. See enum STATUS to know about available statuses and ranges of their values.
         \param status - status to set.
         \param value - depends on status.
         \throw std::runtime_error if status was not set successfully.
@@ -78,7 +78,7 @@ public:
     /*!
         \brief Enqueues specified track for playing.
         \param track_desc - track descriptor.
-        \param insert_at_queue_beginning - flag, must be set to insert track at queue beggining, otherwise track will be set to end of queue.
+        \param insert_at_queue_beginning - flag, must be set to insert track at queue beginning, otherwise track will be set to end of queue.
         \throw std::runtime_error if track does not exist.
     */
     void enqueueEntryForPlay(TrackDescription track_desc, bool insert_at_queue_beginning); // throws std::runtime_error
@@ -137,7 +137,7 @@ public:
         </PRE>
         \return formatted string for entry.
     */
-    std::wstring getFormattedEntryTitle(const PlaylistEntry& entry, const std::string& format_string) const;
+    std::wstring getFormattedEntryTitle(const PlaylistEntry& entry, const std::string& format_string_utf8) const;
 
     /*!
         \brief Saves album cover for track to std::vector in PNG format.

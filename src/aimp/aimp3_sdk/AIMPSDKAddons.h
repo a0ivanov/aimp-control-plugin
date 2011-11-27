@@ -396,13 +396,13 @@ class IAIMPAddonsCoverArtManager: public IUnknown
 	public:
 		// Picture will be proportional stretched to ADisplaySize value, if it assigned
 		// ACoverArtFileName: can be NULL (todo: doc)
-		virtual HBITMAP WINAPI CoverArtGetForFile(PWCHAR AFileName, SIZE_T *ADisplaySize,
+		virtual HBITMAP WINAPI CoverArtGetForFile(PWCHAR AFileName, SIZE* ADisplaySize,
 			PWCHAR ACoverArtFileNameBuffer, int ACoverArtFileNameBufferSizeInChars) = 0;
 		// Work with CoverArt of playing file,
 		// if file is playing and CoverArt exists, functions returns S_OK
 		virtual HRESULT WINAPI CoverArtDraw(HDC DC, RECT *R) = 0; // CoverArt will be proportional stretched to R value
 		virtual HRESULT WINAPI CoverArtGetFileName(PWCHAR ABuffer, int ABufferSizeInChars) = 0;
-		virtual HRESULT WINAPI CoverArtGetSize(SIZE_T *ASize) = 0;
+		virtual HRESULT WINAPI CoverArtGetSize(SIZE *ASize) = 0;
 };
 
 /* IAIMPAddonsPlayerManager */

@@ -5,6 +5,7 @@
 #include "manager_impl_common.h"
 #include "playlist_entry.h"
 #include "aimp3_sdk/aimp3_sdk.h"
+#include "utils/iunknown_impl.h"
 #include "plugin/logger.h"
 #include "utils/string_encoding.h"
 #include "utils/image.h"
@@ -59,7 +60,54 @@ namespace AIMPPlayer
 {
 
 using namespace Utilities;
-using namespace AIMP3SDK;
+
+const AIMP3SDK::HPLS kInvalidPlaylistId = nullptr;
+const int kNoParam1 = 0;
+void * const kNoParam2 = nullptr;
+
+//! general tempate for convinient casting. Provide specialization for your own types.
+template<typename To, typename From> To cast(From);
+
+template<>
+PlaylistID cast(AIMP3SDK::HPLS handle)
+{
+    return reinterpret_cast<PlaylistID>(handle);
+}
+
+template<>
+AIMP3SDK::HPLS cast(PlaylistID id)
+{
+    return reinterpret_cast<AIMP3SDK::HPLS>(id);
+}
+
+//template<>
+//PlaylistEntryID cast(AIMP3SDK::HPLSENTRY handle)
+//{
+//    return reinterpret_cast<PlaylistEntryID>(handle);
+//}
+//
+//template<>
+//AIMP3SDK::HPLSENTRY cast(PlaylistEntryID id)
+//{
+//    return reinterpret_cast<AIMP3SDK::HPLSENTRY>(id);
+//}
+
+class AIMPCoreUnitMessageHook : public IUnknownInterfaceImpl<AIMP3SDK::IAIMPCoreUnitMessageHook>
+{
+public:
+    AIMPCoreUnitMessageHook(AIMP3Manager* aimp3_manager)
+        : 
+        aimp3_manager_(aimp3_manager)
+    {}
+
+    virtual void WINAPI CoreMessage(DWORD AMessage, int AParam1, void *AParam2, HRESULT *AResult) {
+        aimp3_manager_->OnAimpCoreMessage(AMessage, AParam1, AParam2, AResult);
+    }
+
+private:
+
+    AIMP3Manager* aimp3_manager_;
+};
 
 AIMP3Manager::AIMP3Manager(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_core_unit)
     :
@@ -72,131 +120,179 @@ AIMP3Manager::AIMP3Manager(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_c
         throw std::runtime_error( std::string("Error occured while AIMP3Manager initialization. Reason:") + e.what() );
     }
     ///!!!register listeners here
+    aimp3_core_message_hook_.reset( new AIMPCoreUnitMessageHook(this) );
+    aimp3_core_unit_->MessageHook( aimp3_core_message_hook_.get() );
 }
 
 AIMP3Manager::~AIMP3Manager()
 {
     ///!!!unregister listeners here
+    aimp3_core_unit_->MessageUnhook( aimp3_core_message_hook_.get() );
+    aimp3_core_message_hook_.reset();
+}
+
+void AIMP3Manager::initializeAIMPObjects()
+{
+    using namespace AIMP3SDK;
+    IAIMPAddonsPlayerManager* player_manager;
+    if (S_OK != aimp3_core_unit_->QueryInterface(IID_IAIMPAddonsPlayerManager, 
+                                                 reinterpret_cast<void**>(&player_manager)
+                                                 ) 
+        )
+    {
+        throw std::runtime_error("Creation object IAIMPAddonsPlayerManager failed"); 
+    }
+    aimp3_player_manager_.reset(player_manager);
+
+    IAIMPAddonsPlaylistManager* playlist_manager;
+    if (S_OK != aimp3_core_unit_->QueryInterface(IID_IAIMPAddonsPlaylistManager, 
+                                                 reinterpret_cast<void**>(&playlist_manager)
+                                                 ) 
+        )
+    {
+        throw std::runtime_error("Creation object IAIMPAddonsPlaylistManager failed"); 
+    }
+    aimp3_playlist_manager_.reset(playlist_manager);
+
+    IAIMPAddonsCoverArtManager* coverart_manager;
+    if (S_OK != aimp3_core_unit_->QueryInterface(IID_IAIMPAddonsCoverArtManager, 
+                                                 reinterpret_cast<void**>(&coverart_manager)
+                                                 ) 
+        )
+    {
+        throw std::runtime_error("Creation object IAIMPAddonsCoverArtManager failed"); 
+    }
+    aimp3_coverart_manager_.reset(coverart_manager);
 }
 
 Playlist AIMP3Manager::loadPlaylist(int playlist_index)
 {
     const char * const error_prefix = "Error occured while extracting playlist data: ";
     
-    int id;
-    if ( S_OK != aimp2_playlist_manager_->AIMP_PLS_ID_By_Index(playlist_index, &id) ) {
-        throw std::runtime_error(MakeString() << error_prefix << "AIMP_PLS_ID_By_Index failed");
+    AIMP3SDK::HPLS id = aimp3_playlist_manager_->StorageGet(playlist_index);
+    if (id == kInvalidPlaylistId) {
+        throw std::runtime_error(MakeString() << error_prefix << "IAIMPAddonsPlaylistManager::StorageGet failed");
     }
 
-    INT64 duration, size;
-    if ( S_OK != aimp2_playlist_manager_->AIMP_PLS_GetInfo(id, &duration, &size) ) {
-        throw std::runtime_error(MakeString() << error_prefix << "AIMP_PLS_GetInfo failed");
+    using namespace AIMP3SDK;
+    
+    HRESULT r;
+    INT64 duration;
+    r = aimp3_playlist_manager_->StoragePropertyGetValue( id, AIMP_PLAYLIST_STORAGE_PROPERTY_DURATION, &duration, sizeof(duration) );
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << error_prefix << "IAIMPAddonsPlaylistManager::StoragePropertyGetValue(AIMP_PLAYLIST_STORAGE_PROPERTY_DURATION) failed. Result " << r);
+    }
+    INT64 size;
+    r = aimp3_playlist_manager_->StoragePropertyGetValue( id, AIMP_PLAYLIST_STORAGE_PROPERTY_SIZE, &size, sizeof(size) );
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << error_prefix << "IAIMPAddonsPlaylistManager::StoragePropertyGetValue(AIMP_PLAYLIST_STORAGE_PROPERTY_SIZE) failed. Result " << r);
     }
 
     const size_t name_length = 256;
     WCHAR name[name_length + 1] = {0};
-    if ( S_OK != aimp2_playlist_manager_->AIMP_PLS_GetName(id, name, name_length) ) {    
-        throw std::runtime_error(MakeString() << error_prefix << "AIMP_PLS_GetName failed");
+    r = aimp3_playlist_manager_->StoragePropertyGetValue(id, AIMP_PLAYLIST_STORAGE_PROPERTY_NAME, name, name_length);
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << error_prefix << "IAIMPAddonsPlaylistManager::StoragePropertyGetValue(AIMP_PLAYLIST_STORAGE_PROPERTY_NAME) failed. Result " << r);
     }
 
-    const int files_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(id);
+    const int entries_count = aimp3_playlist_manager_->StorageGetEntryCount(id);
 
     return Playlist(name,
-                    files_count,
+                    entries_count,
                     duration,
                     size,
-                    id
+                    cast<PlaylistID>(id)
                     );
 }
 
 /*
     Helper for convinient load entry data from AIMP.
-    Prepares AIMP2SDK::AIMP2FileInfo struct.
-    Contains necessary string buffers that always are in clear state.
+    Prepares AIMP3SDK::TAIMPFileInfo struct.
+    Contains necessary string buffers which are always in clear state.
 */
-class AIMP2FileInfoHelper
+class AIMP3FileInfoHelper
 {
 public:
 
-    AIMP2SDK::AIMP2FileInfo& getEmptyFileInfo()
+    AIMP3SDK::TAIMPFileInfo& getEmptyFileInfo()
     {
         memset( &info_, 0, sizeof(info_) );
-        info_.cbSizeOf = sizeof(info_);
+        info_.StructSize = sizeof(info_);
         // clear all buffers content
         WCHAR* field_buffers[] = { album, artist, date, filename, genre, title };
         BOOST_FOREACH(WCHAR* field_buffer, field_buffers) {
             memset( field_buffer, 0, kFIELDBUFFERSIZE * sizeof(field_buffer[0]) );
         }
         // set buffers length
-        info_.nAlbumLen = info_.nArtistLen = info_.nDateLen
-        = info_.nDateLen = info_.nFileNameLen = info_.nGenreLen = info_.nTitleLen
+        info_.AlbumLength = info_.ArtistLength = info_.DateLength
+        = info_.DateLength = info_.FileNameLength = info_.GenreLength = info_.TitleLength
         = kFIELDBUFFERSIZE;
         // set buffers
-        info_.sAlbum = album;
-        info_.sArtist = artist;
-        info_.sDate = date;
-        info_.sFileName = filename;
-        info_.sGenre = genre;
-        info_.sTitle = title;
+        info_.Album = album;
+        info_.Artist = artist;
+        info_.Date = date;
+        info_.FileName = filename;
+        info_.Genre = genre;
+        info_.Title = title;
 
         return info_;
     }
 
-    AIMP2SDK::AIMP2FileInfo& getFileInfo()
+    AIMP3SDK::TAIMPFileInfo& getFileInfo()
         { return info_; }
 
     PlaylistEntry getPlaylistEntry(DWORD entry_id, crc32_t crc32 = 0)
     {
         getFileInfoWithCorrectStringLengths();
 
-        return PlaylistEntry(   info_.sAlbum,    info_.nAlbumLen,
-                                info_.sArtist,   info_.nArtistLen,
-                                info_.sDate,     info_.nDateLen,
-                                info_.sFileName, info_.nFileNameLen,
-                                info_.sGenre,    info_.nGenreLen,
-                                info_.sTitle,    info_.nTitleLen,
-                                // info_.nActive - useless, not used.
-                                info_.nBitRate,
-                                info_.nChannels,
-                                info_.nDuration,
-                                info_.nFileSize,
-                                info_.nRating,
-                                info_.nSampleRate,
-                                info_.nTrackID,
+        return PlaylistEntry(   info_.Album,    info_.AlbumLength,
+                                info_.Artist,   info_.ArtistLength,
+                                info_.Date,     info_.DateLength,
+                                info_.FileName, info_.FileNameLength,
+                                info_.Genre,    info_.GenreLength,
+                                info_.Title,    info_.TitleLength,
+                                // info_.Active - useless, not used.
+                                info_.BitRate,
+                                info_.Channels,
+                                info_.Duration,
+                                info_.FileSize,
+                                info_.Rating,
+                                info_.SampleRate,
+                                info_.TrackNumber,
                                 entry_id,
                                 crc32
                             );
     }
 
     /* \return track ID. */
-    DWORD getTrackID() const
-        { return info_.nTrackID; }
+    DWORD getTrackNumber() const
+        { return info_.TrackNumber; }
 
-    AIMP2SDK::AIMP2FileInfo& getFileInfoWithCorrectStringLengths()
+    AIMP3SDK::TAIMPFileInfo& getFileInfoWithCorrectStringLengths()
     {
         // fill string lengths if Aimp do not do this.
-        if (info_.nAlbumLen == kFIELDBUFFERSIZE) {
-            info_.nAlbumLen = std::wcslen(info_.sAlbum);
+        if (info_.AlbumLength == kFIELDBUFFERSIZE) {
+            info_.AlbumLength = std::wcslen(info_.Album);
         }
 
-        if (info_.nArtistLen == kFIELDBUFFERSIZE) {
-            info_.nArtistLen = std::wcslen(info_.sArtist);
+        if (info_.ArtistLength == kFIELDBUFFERSIZE) {
+            info_.ArtistLength = std::wcslen(info_.Artist);
         }
 
-        if (info_.nDateLen == kFIELDBUFFERSIZE) {
-            info_.nDateLen = std::wcslen(info_.sDate);
+        if (info_.DateLength == kFIELDBUFFERSIZE) {
+            info_.DateLength = std::wcslen(info_.Date);
         }
 
-        if (info_.nFileNameLen == kFIELDBUFFERSIZE) {
-            info_.nFileNameLen = std::wcslen(info_.sFileName);
+        if (info_.FileNameLength == kFIELDBUFFERSIZE) {
+            info_.FileNameLength = std::wcslen(info_.FileName);
         }
 
-        if (info_.nGenreLen == kFIELDBUFFERSIZE) {
-            info_.nGenreLen = std::wcslen(info_.sGenre);
+        if (info_.GenreLength == kFIELDBUFFERSIZE) {
+            info_.GenreLength = std::wcslen(info_.Genre);
         }
 
-        if (info_.nTitleLen == kFIELDBUFFERSIZE) {
-            info_.nTitleLen = std::wcslen(info_.sTitle);
+        if (info_.TitleLength == kFIELDBUFFERSIZE) {
+            info_.TitleLength = std::wcslen(info_.Title);
         }
 
         return info_;
@@ -204,39 +300,49 @@ public:
 
 private:
 
-    AIMP2SDK::AIMP2FileInfo info_;
-    static const DWORD kFIELDBUFFERSIZE = 256;
-    WCHAR album[kFIELDBUFFERSIZE];
-    WCHAR artist[kFIELDBUFFERSIZE];
-    WCHAR date[kFIELDBUFFERSIZE];
-    WCHAR filename[kFIELDBUFFERSIZE];
-    WCHAR genre[kFIELDBUFFERSIZE];
-    WCHAR title[kFIELDBUFFERSIZE];
+    AIMP3SDK::TAIMPFileInfo info_;
+    static const DWORD kFIELDBUFFERSIZE = MAX_PATH;
+    WCHAR album[kFIELDBUFFERSIZE + 1];
+    WCHAR artist[kFIELDBUFFERSIZE + 1];
+    WCHAR date[kFIELDBUFFERSIZE + 1];
+    WCHAR filename[kFIELDBUFFERSIZE + 1];
+    WCHAR genre[kFIELDBUFFERSIZE + 1];
+    WCHAR title[kFIELDBUFFERSIZE + 1];
 };
 
 void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
 {
+    using namespace AIMP3SDK;
     // PROFILE_EXECUTION_TIME(__FUNCTION__);
-    const PlaylistID playlist_id = playlist.getID();
-    const int entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
 
-    AIMP2FileInfoHelper file_info_helper; // used for get entries from AIMP conviniently.
+    HRESULT r;
+
+    const AIMP3SDK::HPLS playlist_id = cast<AIMP3SDK::HPLS>( playlist.getID() );    
+
+    boost::intrusive_ptr<IAIMPAddonsPlaylistStrings> strings;
+    {
+        IAIMPAddonsPlaylistStrings* strings_raw = nullptr;
+        r = aimp3_playlist_manager_->StorageGetFiles(playlist_id, 0, &strings_raw);
+        if (S_OK != r) {
+            throw std::runtime_error(MakeString() << "IAIMPAddonsPlaylistManager::StorageGetFiles(" << playlist_id << ") failed. Result " << r);
+        }
+        strings.reset(strings_raw);
+    }
+
+    const int entries_count = strings->ItemGetCount();
+
+    AIMP3FileInfoHelper file_info_helper; // used for get entries from AIMP conviniently.
 
     // temp objects to prevent partial change state of passed objects when error occurs.
     EntriesListType entries;
     entries.reserve(entries_count);
     
     for (int entry_index = 0; entry_index < entries_count; ++entry_index) {
-        // aimp2_playlist_manager_->AIMP_PLS_Entry_ReloadInfo(id_, entry_index); // try to make AIMP update track info: this takes significant time and some tracks are not updated anyway.
-        if ( aimp2_playlist_manager_->AIMP_PLS_Entry_InfoGet(playlist_id,
-                                                             entry_index,
-                                                             &file_info_helper.getEmptyFileInfo()
-                                                             )
-            )
-        {
-            entries.push_back( file_info_helper.getPlaylistEntry(entry_index) );
+        r = strings->ItemGetInfo( entry_index, &file_info_helper.getEmptyFileInfo() );
+        if (S_OK == r) {
+            entries.push_back( file_info_helper.getPlaylistEntry(entry_index) ); ///!!! Maybe we need to use this instead index: HPLSENTRY entry_id = aimp3_playlist_manager_->StorageGetEntry(playlist_id, entry_index);
         } else {
-            BOOST_LOG_SEV(logger(), error) << "Error occured while getting entry info ¹" << entry_index << " from playlist with ID = " << playlist_id;
+            BOOST_LOG_SEV(logger(), error) << "Error " << r << " occured while getting entry info ¹" << entry_index << " from playlist with ID = " << playlist_id;
             throw std::runtime_error("Error occured while getting playlist entries.");
         }
     }
@@ -245,107 +351,130 @@ void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
     playlist.getEntries().swap(entries);
 }
 
-
-
 void AIMP3Manager::startPlayback()
 {
     // play current track.
-    aimp2_player_->PlayOrResume();
+    //aimp3_player_manager_->PlayStorage(aimp3_playlist_manager_->StoragePlayingGet(), -1); //aimp2_player_->PlayOrResume();
+    using namespace AIMP3SDK;
+    aimp3_core_unit_->MessageSend(AIMP_MSG_CMD_PLAY, kNoParam1, kNoParam2);
 }
 
 void AIMP3Manager::startPlayback(TrackDescription track_desc) // throws std::runtime_error
 {
-    if ( FALSE == aimp2_player_->PlayTrack(track_desc.playlist_id, track_desc.track_id) ) {
-        throw std::runtime_error( MakeString() << "Error in "__FUNCTION__" with " << track_desc );
+    HRESULT r = aimp3_player_manager_->PlayStorage(cast<AIMP3SDK::HPLS>(track_desc.playlist_id), track_desc.track_id);
+    if (S_OK != r) {
+        throw std::runtime_error( MakeString() << "Error " << r << " in "__FUNCTION__" with " << track_desc );
     }
 }
 
 void AIMP3Manager::stopPlayback()
 {
-    aimp2_player_->Stop();
+    using namespace AIMP3SDK;
+    aimp3_core_unit_->MessageSend(AIMP_MSG_CMD_STOP, kNoParam1, kNoParam2); // aimp2_player_->Stop();
 }
 
 void AIMP3Manager::pausePlayback()
 {
-    aimp2_player_->Pause();
+    using namespace AIMP3SDK;
+    aimp3_core_unit_->MessageSend(AIMP_MSG_CMD_PLAYPAUSE, kNoParam1, kNoParam2); // aimp2_player_->Pause();
 }
 
 void AIMP3Manager::playNextTrack()
 {
-    aimp2_player_->NextTrack();
+    using namespace AIMP3SDK;
+    aimp3_core_unit_->MessageSend(AIMP_MSG_CMD_NEXT, kNoParam1, kNoParam2); // aimp2_player_->NextTrack();
 }
 
 void AIMP3Manager::playPreviousTrack()
 {
-    aimp2_player_->PrevTrack();
+    using namespace AIMP3SDK;
+    aimp3_core_unit_->MessageSend(AIMP_MSG_CMD_PREV, kNoParam1, kNoParam2); // aimp2_player_->PrevTrack();
 }
 
-//! general tempate for convinient casting. Provide specialization for your own types.
-template<typename To, typename From> To cast(From);
-typedef int AIMP2SDK_STATUS;
-
-void AIMP3Manager::notifyAboutInternalEventOnStatusChange(AIMP3Manager::STATUS status)
+void AIMP3Manager::OnAimpCoreMessage(DWORD AMessage, int AParam1, void* AParam2, HRESULT* AResult)
 {
-    switch (status) {
-    case STATUS_SHUFFLE:
-        notifyAboutInternalEvent(SHUFFLE_EVENT);
-        break;
-    case STATUS_REPEAT:
-        notifyAboutInternalEvent(REPEAT_EVENT);
-        break;
-    case STATUS_VOLUME:
-        notifyAboutInternalEvent(VOLUME_EVENT);
-        break;
-    case STATUS_MUTE:
-        notifyAboutInternalEvent(MUTE_EVENT);
-        break;
-    case STATUS_POS:
-        notifyAboutInternalEvent(TRACK_PROGRESS_CHANGED_DIRECTLY_EVENT);
-        break;
-    default:
-        // do nothing, about other status changes AIMP will notify us itself.
-        break;
-    }
+    assert(AResult);
+    *AResult = E_FAIL;
 }
 
-void AIMP3Manager::setStatus(AIMP3Manager::STATUS status, AIMP3Manager::StatusValue value)
-{
-    try {
-        if ( FALSE == aimp2_controller_->AIMP_Status_Set(cast<AIMP2SDK_STATUS>(status), value) ) {
-            throw std::runtime_error(MakeString() << "Error occured while setting status " << asString(status) << " to value " << value);
-        }
-    } catch (std::bad_cast& e) {
-        throw std::runtime_error( e.what() );
-    }
+//void AIMP3Manager::notifyAboutInternalEventOnStatusChange(AIMP3Manager::STATUS status)
+//{
+//    switch (status) {
+//    case STATUS_SHUFFLE:
+//        notifyAboutInternalEvent(SHUFFLE_EVENT);
+//        break;
+//    case STATUS_REPEAT:
+//        notifyAboutInternalEvent(REPEAT_EVENT);
+//        break;
+//    case STATUS_VOLUME:
+//        notifyAboutInternalEvent(VOLUME_EVENT);
+//        break;
+//    case STATUS_MUTE:
+//        notifyAboutInternalEvent(MUTE_EVENT);
+//        break;
+//    case STATUS_POS:
+//        notifyAboutInternalEvent(TRACK_PROGRESS_CHANGED_DIRECTLY_EVENT);
+//        break;
+//    default:
+//        // do nothing, about other status changes AIMP will notify us itself.
+//        break;
+//    }
+//}
 
-    notifyAboutInternalEventOnStatusChange(status);
+void AIMP3Manager::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValue value)
+{
+    //try {
+    //    if ( FALSE == aimp2_controller_->AIMP_Status_Set(cast<AIMP2SDK_STATUS>(status), value) ) {
+    //        throw std::runtime_error(MakeString() << "Error occured while setting status " << asString(status) << " to value " << value);
+    //    }
+    //} catch (std::bad_cast& e) {
+    //    throw std::runtime_error( e.what() );
+    //}
+
+    //notifyAboutInternalEventOnStatusChange(status);
 }
 
 AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) const
 {
-    return aimp2_controller_->AIMP_Status_Get(status);
+    //return aimp2_controller_->AIMP_Status_Get(status);
+    return 0;
 }
 
 std::string AIMP3Manager::getAIMPVersion() const
 {
-    const int version = aimp2_controller_->AIMP_GetSystemVersion(); // IAIMP2Player::Version() is not used since it is always returns 1. Maybe it is Aimp SDK version?
+    using namespace AIMP3SDK;
+    TAIMPVersionInfo version_info = {0};
+    HRESULT r = aimp3_core_unit_->GetVersion(&version_info);
+
+    if (S_OK != r) {
+        BOOST_LOG_SEV(logger(), error) << "IAIMPCoreUnit::GetVersion returned " << r;
+        return "";
+    }
+    
+    const int version = version_info.BuildNumber;
     using namespace std;
     ostringstream os;
-    os << version / 1000 << '.' << setfill('0') << setw(2) << (version % 1000) / 10 << '.' << version % 10;
+    os << version / 1000 << '.' << setfill('0') << setw(2) << (version % 1000) / 10 << '.' << version % 10
+       << ' ' << (version_info.BuildSuffix) ? StringEncoding::utf16_to_system_ansi_encoding_safe(version_info.BuildSuffix) : "";
     return os.str();
 }
 
 PlaylistID AIMP3Manager::getActivePlaylist() const
 {
     // return AIMP internal playlist ID here since AIMP3Manager uses the same IDs.
-    return aimp2_playlist_manager_->AIMP_PLS_ID_PlayingGet();
+    return cast<PlaylistID>( aimp3_playlist_manager_->StoragePlayingGet() );
 }
 
 PlaylistEntryID AIMP3Manager::getActiveEntry() const
 {
+    using namespace AIMP3SDK;
     const PlaylistID active_playlist = getActivePlaylist();
-    const int internal_active_entry_index = aimp2_playlist_manager_->AIMP_PLS_ID_PlayingGetTrackIndex(active_playlist);
-    // internal index equals AIMP3Manager ID. In other case map index<->ID(use Playlist::entries_id_list_) here in all places where TrackDescription is used.
+    int internal_active_entry_index;
+    aimp3_playlist_manager_->StoragePropertyGetValue( cast<AIMP3SDK::HPLS>(active_playlist), AIMP_PLAYLIST_STORAGE_PROPERTY_TRACKINGINDEX,
+                                                      &internal_active_entry_index, sizeof(internal_active_entry_index) 
+                                                     );
+
+    // internal index equals AIMP3Manager's entry ID. In other case map index<->ID(use Playlist::entries_id_list_) here in all places where TrackDescription is used.
     const PlaylistEntryID entry_id = internal_active_entry_index;
     return entry_id;
 }
@@ -378,17 +507,30 @@ AIMP3Manager::PLAYBACK_STATE AIMP3Manager::getPlaybackState() const
     return state;
 }
 
+AIMP3SDK::HPLSENTRY getEntryHandle(TrackDescription track_desc,
+                                   boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistManager> aimp3_playlist_manager)
+{
+    // Note: TrackDescription's track_id is really entry index, not HPLSENTRY value.
+    return aimp3_playlist_manager->StorageGetEntry(cast<AIMP3SDK::HPLS>(track_desc.playlist_id), track_desc.track_id);    
+}
+
 void AIMP3Manager::enqueueEntryForPlay(TrackDescription track_desc, bool insert_at_queue_beginning) // throws std::runtime_error
 {
-    if ( S_OK != aimp2_playlist_manager_->AIMP_PLS_Entry_QueueSet(track_desc.playlist_id, track_desc.track_id, insert_at_queue_beginning) ) {
-        throw std::runtime_error(MakeString() << "Error in "__FUNCTION__" with " << track_desc);
+    using namespace AIMP3SDK;
+    AIMP3SDK::HPLSENTRY entry_handle = getEntryHandle(track_desc, aimp3_playlist_manager_);
+    HRESULT r = aimp3_playlist_manager_->QueueEntryAdd(entry_handle, insert_at_queue_beginning);
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << "Error " << r << " in "__FUNCTION__" with " << track_desc);
     }
 }
 
 void AIMP3Manager::removeEntryFromPlayQueue(TrackDescription track_desc) // throws std::runtime_error
 {
-    if ( S_OK != aimp2_playlist_manager_->AIMP_PLS_Entry_QueueRemove(track_desc.playlist_id, track_desc.track_id) ) {
-        throw std::runtime_error(MakeString() << "Error in "__FUNCTION__" with " << track_desc);
+    using namespace AIMP3SDK;
+    AIMP3SDK::HPLSENTRY entry_handle = getEntryHandle(track_desc, aimp3_playlist_manager_);
+    HRESULT r = aimp3_playlist_manager_->QueueEntryRemove(entry_handle);
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << "Error " << r << " in "__FUNCTION__" with " << track_desc);
     }
 }
 
@@ -434,8 +576,14 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMP3Manager::getCoverImage(TrackDescr
     }
 
     const PlaylistEntry& entry = getEntry(track_desc);
-    const SIZE request_full_size = { 0, 0 };
-    HBITMAP cover_bitmap_handle = aimp2_cover_art_manager_->GetCoverArtForFile(const_cast<PWCHAR>( entry.getFilename().c_str() ), &request_full_size);
+    //SIZE cover_size = { 0, 0 };
+    //HBITMAP cover_bitmap_handle = aimp2_cover_art_manager_->GetCoverArtForFile(const_cast<PWCHAR>( entry.getFilename().c_str() ), &request_full_size);
+    WCHAR coverart_filename_buffer[MAX_PATH + 1] = {0};
+    HBITMAP cover_bitmap_handle = aimp3_coverart_manager_->CoverArtGetForFile(const_cast<PWCHAR>( entry.getFilename().c_str() ), NULL,
+			                                                                  coverart_filename_buffer, MAX_PATH);
+    if (coverart_filename_buffer[0] != 0) {
+        coverart_filename_buffer[0] = coverart_filename_buffer[0];
+    }
 
     // get real bitmap size
     const SIZE cover_full_size = ImageUtils::getBitmapSize(cover_bitmap_handle);
@@ -459,7 +607,8 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMP3Manager::getCoverImage(TrackDescr
             cover_size.cy = cover_height;
         }
 
-        cover_bitmap_handle = aimp2_cover_art_manager_->GetCoverArtForFile(const_cast<PWCHAR>( entry.getFilename().c_str() ), &cover_size);
+        cover_bitmap_handle = aimp3_coverart_manager_->CoverArtGetForFile(const_cast<PWCHAR>( entry.getFilename().c_str() ), &cover_size,
+			                                                              coverart_filename_buffer, MAX_PATH);
     }
 
     using namespace ImageUtils;
@@ -520,10 +669,22 @@ void AIMP3Manager::unRegisterListener(AIMP3Manager::EventsListenerID listener_id
     external_listeners_.erase(listener_id);
 }
 
-std::wstring AIMP3Manager::getFormattedEntryTitle(const PlaylistEntry& entry, const std::string& format_string) const // throw std::invalid_argument
+std::wstring AIMP3Manager::getFormattedEntryTitle(const PlaylistEntry& entry, const std::string& format_string_utf8) const // throw std::invalid_argument
 {
-    assert(!"to implement");
-    return ""; ///!!!
+    std::wstring wformat_string( StringEncoding::utf8_to_utf16(format_string_utf8) );
+    
+    PWCHAR formatted_string = nullptr;
+    HRESULT r = aimp3_playlist_manager_->FormatString( const_cast<PWCHAR>( wformat_string.c_str() ),
+                                                       wformat_string.length(),
+                                                       0, // AIMP_PLAYLIST_FORMAT_MODE_PREVIEW
+                                                       nullptr,
+                                                       &formatted_string
+                                                      );
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << "Error " << r << " in "__FUNCTION__" with " << format_string_utf8);
+    }
+
+    return formatted_string;
 }
 
 } // namespace AIMPPlayer

@@ -6,7 +6,7 @@
 namespace AIMPPlayer
 {
 
-const char* asString(AIMPManager::STATUS status)
+inline const char* asString(AIMPManager::STATUS status)
 {
  switch (status) {
     case AIMPManager::STATUS_VOLUME:    return "VOLUME";
