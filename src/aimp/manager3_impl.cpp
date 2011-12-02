@@ -582,7 +582,7 @@ PlaylistEntryID AIMP3Manager::getActiveEntry() const
     using namespace AIMP3SDK;
     const PlaylistID active_playlist = getActivePlaylist();
     int internal_active_entry_index;
-    aimp3_playlist_manager_->StoragePropertyGetValue( cast<AIMP3SDK::HPLS>(active_playlist), AIMP_PLAYLIST_STORAGE_PROPERTY_TRACKINGINDEX,
+    aimp3_playlist_manager_->StoragePropertyGetValue( cast<AIMP3SDK::HPLS>(active_playlist), AIMP_PLAYLIST_STORAGE_PROPERTY_PLAYINGINDEX,
                                                       &internal_active_entry_index, sizeof(internal_active_entry_index) 
                                                      );
 
