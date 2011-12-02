@@ -108,18 +108,13 @@ private:
     AIMP3Manager* aimp3_manager_;
 };
 
-class AIMP3Manager::AIMPAddonsPlaylistManagerListener : public AIMP3SDK::IAIMPAddonsPlaylistManagerListener
-    //public IUnknownInterfaceImpl<AIMP3SDK::IAIMPAddonsPlaylistManagerListener>
+class AIMP3Manager::AIMPAddonsPlaylistManagerListener : public IUnknownInterfaceImpl<AIMP3SDK::IAIMPAddonsPlaylistManagerListener>
 {
 public:
     explicit AIMPAddonsPlaylistManagerListener(AIMP3Manager* aimp3_manager)
         : 
-        reference_count_(0),
         aimp3_manager_(aimp3_manager)
     {}
-
-    virtual ~AIMPAddonsPlaylistManagerListener() {
-    }
 
     virtual void WINAPI StorageActivated(AIMP3SDK::HPLS ID) {
         aimp3_manager_->onStorageActivated(ID);
@@ -134,36 +129,6 @@ public:
         aimp3_manager_->onStorageRemoved(ID);
     }
 
-    virtual HRESULT WINAPI QueryInterface(REFIID riid, LPVOID* ppvObj) {
-        if (!ppvObj) {
-            return E_POINTER;
-        }
-
-        if (IID_IUnknown == riid) {
-            *ppvObj = this;
-            AddRef();
-            return S_OK;
-        }
-
-        return E_NOINTERFACE;
-    }
-
-    virtual ULONG WINAPI AddRef(void)
-        { return ++reference_count_; }
-
-    virtual ULONG WINAPI Release(void) {
-        ULONG reference_count = --reference_count_;
-
-        if (reference_count == 0) {
-            delete this;
-        }
-
-        return reference_count;
-    }
-
-private:
-
-    ULONG reference_count_;
 private:
 
     AIMP3Manager* aimp3_manager_;
@@ -184,11 +149,10 @@ AIMP3Manager::AIMP3Manager(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_c
     //aimp3_core_message_hook_->AddRef();
     //aimp3_core_unit_->MessageHook( aimp3_core_message_hook_.get() );
 
-    aimp3_playlist_manager_listener_.reset( new AIMPAddonsPlaylistManagerListener(this)  );
-    aimp3_playlist_manager_listener_->AddRef();
-    HRESULT r = aimp3_playlist_manager_->ListenerAdd( aimp3_playlist_manager_listener_.get() );
-    //HRESULT r = aimp3_playlist_manager_->ListenerAdd( new AIMPAddonsPlaylistManagerListener(this)  );
-    r = r;
+    //aimp3_playlist_manager_listener_.reset( new AIMPAddonsPlaylistManagerListener(this)  );
+    //aimp3_playlist_manager_listener_->AddRef();
+    //HRESULT r = aimp3_playlist_manager_->ListenerAdd( aimp3_playlist_manager_listener_.get() );
+    //r = r;
 }
 
 AIMP3Manager::~AIMP3Manager()
