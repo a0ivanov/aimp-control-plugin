@@ -156,11 +156,11 @@ AIMP3Manager::AIMP3Manager(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_c
 
     ///!!!register listeners here
     aimp3_core_message_hook_.reset( new AIMPCoreUnitMessageHook(this) );
-    aimp3_core_message_hook_->AddRef();
+    // do not addref our pointer since AIMP do this itself. aimp3_core_message_hook_->AddRef();
     aimp3_core_unit_->MessageHook( aimp3_core_message_hook_.get() );
 
     aimp3_playlist_manager_listener_.reset( new AIMPAddonsPlaylistManagerListener(this)  );
-    aimp3_playlist_manager_listener_->AddRef();
+    // do not addref our pointer since AIMP do this itself. aimp3_playlist_manager_listener_->AddRef();
     aimp3_playlist_manager_->ListenerAdd( aimp3_playlist_manager_listener_.get() );
 }
 
