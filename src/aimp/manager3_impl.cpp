@@ -505,8 +505,19 @@ void AIMP3Manager::playPreviousTrack()
 
 void AIMP3Manager::onAimpCoreMessage(DWORD AMessage, int AParam1, void* AParam2, HRESULT* AResult)
 {
+    using namespace AIMP3SDK;
+
     assert(AResult);
-    *AResult = E_FAIL;
+    
+    switch (AMessage) {
+    case AIMP_MSG_PROPERTY_RADIOCAP: // this sent every second in aimp v961
+        AMessage = AMessage;
+        break;
+    default:
+        AMessage = AMessage;
+        break;
+    }
+    *AResult = E_NOTIMPL;
 }
 
 //void AIMP3Manager::notifyAboutInternalEventOnStatusChange(AIMP3Manager::STATUS status)
