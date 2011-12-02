@@ -3,7 +3,7 @@
 /* ******************************************** */
 /*                                              */
 /*                AIMP Plugins API              */
-/*             v3.00.943 (26.10.2011)           */
+/*             v3.00.960 (01.12.2011)           */
 /*                Addons Plugins                */
 /*                                              */
 /*              (c) Artem Izmaylov              */
@@ -84,6 +84,7 @@ const int AIMP_PLAYLIST_STORAGE_PROPERTY_FOCUSINDEX               = 50; // ABuff
 const int AIMP_PLAYLIST_STORAGE_PROPERTY_TRACKINGINDEX            = 51; // ABuffer: Pointer to Integer, ABufferSize: SizeOf(Integer)
 const int AIMP_PLAYLIST_STORAGE_PROPERTY_DURATION                 = 52; // READONLY! ABuffer: Pointer to Int64 (64-bit Integer), ABufferSize: SizeOf(Int64)
 const int AIMP_PLAYLIST_STORAGE_PROPERTY_SIZE                     = 53; // READONLY! ABuffer: Pointer to Int64 (64-bit Integer), ABufferSize: SizeOf(Int64)
+const int AIMP_PLAYLIST_STORAGE_PROPERTY_PLAYINGINDEX			  = 54; // READONLY! ABuffer: Pointer to Integer, ABufferSize: SizeOf(Integer)
 
 // IAIMPAddonsPlaylistManager.StorageSort
 const int AIMP_PLAYLIST_SORT_TYPE_TITLE      = 1;
@@ -396,7 +397,7 @@ class IAIMPAddonsCoverArtManager: public IUnknown
 	public:
 		// Picture will be proportional stretched to ADisplaySize value, if it assigned
 		// ACoverArtFileName: can be NULL (todo: doc)
-		virtual HBITMAP WINAPI CoverArtGetForFile(PWCHAR AFileName, SIZE* ADisplaySize,
+		virtual HBITMAP WINAPI CoverArtGetForFile(PWCHAR AFileName, SIZE *ADisplaySize,
 			PWCHAR ACoverArtFileNameBuffer, int ACoverArtFileNameBufferSizeInChars) = 0;
 		// Work with CoverArt of playing file,
 		// if file is playing and CoverArt exists, functions returns S_OK

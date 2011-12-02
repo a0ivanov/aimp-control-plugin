@@ -1,7 +1,7 @@
 /* ******************************************** */
 /*                                              */
 /*                AIMP Plugins API              */
-/*             v3.00.943 (26.10.2011)           */
+/*             v3.00.960 (01.12.2011)           */
 /*                Visual Plugins                */
 /*                                              */
 /*              (c) Artem Izmaylov              */
@@ -23,9 +23,10 @@ const int  AIMP_VISUAL_FLAGS_RQD_DATA_WAVE       = 1;
 const int  AIMP_VISUAL_FLAGS_RQD_DATA_SPECTRUM   = 2;
 const int  AIMP_VISUAL_FLAGS_NOT_SUSPEND	     = 4;
 
-typedef   signed short TWaveForm[2][512];
-typedef unsigned short TSpectrum[2][256];
+typedef   signed char TWaveForm[2][512];
+typedef unsigned char TSpectrum[2][256];
 
+#pragma pack(push, 1)
 struct TAIMPVisualData
 {
 	int LevelR;
@@ -33,6 +34,7 @@ struct TAIMPVisualData
 	TSpectrum Spectrum;
 	TWaveForm WaveForm;
 };
+#pragma pack(pop)
 
 typedef TAIMPVisualData *PAIMPVisualData;
 
