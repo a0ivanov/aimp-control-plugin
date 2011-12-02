@@ -210,42 +210,64 @@ void AIMP3Manager::initializeAIMPObjects()
 
 void AIMP3Manager::onStorageActivated(AIMP3SDK::HPLS /*id*/)
 {
-    // do nothing
+    // do nothing, but if code will be added, it must not throw any exceptions, since this method called by AIMP.
 }
 
 void AIMP3Manager::onStorageAdded(AIMP3SDK::HPLS id)
 {
-    Playlist& playlist = ( playlists_[cast<PlaylistID>(id)] = loadPlaylist(id) );
-    loadEntries(playlist);
-    notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+    try {
+        Playlist& playlist = ( playlists_[cast<PlaylistID>(id)] = loadPlaylist(id) );
+        loadEntries(playlist);
+        notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+    } catch (std::exception& e) {
+        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << id << ". Reason: " << e.what();
+    } catch (...) {
+        // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
+        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with handle " << id;
+    }
 }
 
 void AIMP3Manager::onStorageChanged(AIMP3SDK::HPLS id, DWORD flags)
 {
     using namespace AIMP3SDK;
 
-    // TODO: handle other flag values
-    if (    (AIMP_PLAYLIST_NOTIFY_CONTENT & flags) != 0 
-         || (AIMP_PLAYLIST_NOTIFY_NAME & flags) != 0
-         || (AIMP_PLAYLIST_NOTIFY_ENTRYINFO & flags) != 0 
-        )
-    {
-        Playlist& playlist = ( playlists_[cast<PlaylistID>(id)] = loadPlaylist(id) );
-
+    try {
+        // TODO: handle other flag values
         if (    (AIMP_PLAYLIST_NOTIFY_CONTENT & flags) != 0 
+             || (AIMP_PLAYLIST_NOTIFY_NAME & flags) != 0
              || (AIMP_PLAYLIST_NOTIFY_ENTRYINFO & flags) != 0 
-            )        
+            )
         {
-            loadEntries(playlist);
+            Playlist& playlist = ( playlists_[cast<PlaylistID>(id)] = loadPlaylist(id) );
+
+            if (    (AIMP_PLAYLIST_NOTIFY_CONTENT & flags) != 0 
+                 || (AIMP_PLAYLIST_NOTIFY_ENTRYINFO & flags) != 0 
+                )        
+            {
+                loadEntries(playlist);
+            }
+            notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
         }
-        notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+    } catch (std::exception& e) {
+        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << id << ". Reason: " << e.what();
+    } catch (...) {
+        // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
+        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with handle " << id;
     }
 }
 
 void AIMP3Manager::onStorageRemoved(AIMP3SDK::HPLS id)
 {
-    playlists_.erase( cast<PlaylistID>(id) );
-    notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+    try {
+        playlists_.erase( cast<PlaylistID>(id) );
+        notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+    } catch (std::exception& e) {
+        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << id << ". Reason: " << e.what();
+    } catch (...) {
+        // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
+        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with handle " << id;
+    }
+
 }
 
 Playlist AIMP3Manager::loadPlaylist(int playlist_index)
