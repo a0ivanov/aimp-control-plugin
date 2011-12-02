@@ -155,11 +155,11 @@ public:
     */
     virtual void removeEntryFromPlayQueue(TrackDescription track_desc) = 0; // throws std::runtime_error
 
-    //! \return current active playlist.
-    virtual PlaylistID getActivePlaylist() const = 0;
+    //! \return current playing playlist.
+    virtual PlaylistID getPlayingPlaylist() const = 0;
 
-    //! \return current active track.
-    virtual PlaylistEntryID getActiveEntry() const = 0;
+    //! \return current playing track.
+    virtual PlaylistEntryID getPlayingEntry() const = 0;
 
     //! \return descriptor of active track.
     virtual TrackDescription getActiveTrack() const = 0;

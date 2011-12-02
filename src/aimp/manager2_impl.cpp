@@ -647,15 +647,15 @@ std::string AIMP2Manager::getAIMPVersion() const
     return os.str();
 }
 
-PlaylistID AIMP2Manager::getActivePlaylist() const
+PlaylistID AIMP2Manager::getPlayingPlaylist() const
 {
     // return AIMP internal playlist ID here since AIMP2Manager uses the same IDs.
     return aimp2_playlist_manager_->AIMP_PLS_ID_PlayingGet();
 }
 
-PlaylistEntryID AIMP2Manager::getActiveEntry() const
+PlaylistEntryID AIMP2Manager::getPlayingEntry() const
 {
-    const PlaylistID active_playlist = getActivePlaylist();
+    const PlaylistID active_playlist = getPlayingPlaylist();
     const int internal_active_entry_index = aimp2_playlist_manager_->AIMP_PLS_ID_PlayingGetTrackIndex(active_playlist);
     // internal index equals AIMP2Manager ID. In other case map index<->ID(use Playlist::entries_id_list_) here in all places where TrackDescription is used.
     const PlaylistEntryID entry_id = internal_active_entry_index;
@@ -664,7 +664,7 @@ PlaylistEntryID AIMP2Manager::getActiveEntry() const
 
 TrackDescription AIMP2Manager::getActiveTrack() const
 {
-    return TrackDescription( getActivePlaylist(), getActiveEntry() );
+    return TrackDescription( getPlayingPlaylist(), getPlayingEntry() );
 }
 
 AIMP2Manager::PLAYBACK_STATE AIMP2Manager::getPlaybackState() const
@@ -781,7 +781,7 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMP2Manager::getCoverImage(TrackDescr
 const Playlist& AIMP2Manager::getPlaylist(PlaylistID playlist_id) const
 {
     if (playlist_id == -1) { // treat ID -1 as active playlist.
-        playlist_id = getActivePlaylist();
+        playlist_id = getPlayingPlaylist();
     }
 
     auto playlist_iterator( playlists_.find(playlist_id) );
@@ -798,10 +798,10 @@ const PlaylistEntry& AIMP2Manager::getEntry(TrackDescription track_desc) const
 
     if (track_desc.track_id == -1) { // treat ID -1 as active track.
         if (   track_desc.playlist_id == -1
-            || track_desc.playlist_id == getActivePlaylist()
+            || track_desc.playlist_id == getPlayingPlaylist()
             )
         {
-            track_desc.track_id = getActiveEntry();
+            track_desc.track_id = getPlayingEntry();
         }
     }
     const EntriesListType& entries = playlist.getEntries();

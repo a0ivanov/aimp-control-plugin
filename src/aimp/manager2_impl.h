@@ -90,11 +90,11 @@ public:
     */
     void removeEntryFromPlayQueue(TrackDescription track_desc); // throws std::runtime_error
 
-    //! \return current active playlist.
-    PlaylistID getActivePlaylist() const;
+    //! \return current playing playlist.
+    PlaylistID getPlayingPlaylist() const;
 
-    //! \return current active track.
-    PlaylistEntryID getActiveEntry() const;
+    //! \return current playing track.
+    PlaylistEntryID getPlayingEntry() const;
 
     //! \return descriptor of active track.
     TrackDescription getActiveTrack() const;

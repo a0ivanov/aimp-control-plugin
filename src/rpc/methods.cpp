@@ -985,8 +985,8 @@ void SubscribeOnAIMPStateUpdateEvent::prepareResponse(EVENTS event_id, Rpc::Valu
         RpcResultUtils::setCurrentTrackProgressIfPossible(aimp_manager_, result);
         break;
     case CURRENT_TRACK_CHANGE_EVENT:
-        RpcResultUtils::setCurrentPlaylist(aimp_manager_.getActivePlaylist(), result);
-        RpcResultUtils::setCurrentPlaylistEntry(aimp_manager_.getActiveEntry(), result);
+        RpcResultUtils::setCurrentPlaylist(aimp_manager_.getPlayingPlaylist(), result);
+        RpcResultUtils::setCurrentPlaylistEntry(aimp_manager_.getPlayingEntry(), result);
         break;
     case CONTROL_PANEL_STATE_CHANGE_EVENT:
         RpcResultUtils::setControlPanelInfo(aimp_manager_, result);

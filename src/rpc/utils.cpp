@@ -96,8 +96,8 @@ void setCurrentShuffleMode(bool shuffle_on, Rpc::Value& result)
 
 void setCurrentPlayingSourceInfo(const AIMPManager& aimp_manager, Rpc::Value& result)
 {
-    setCurrentPlaylist(aimp_manager.getActivePlaylist(), result);
-    setCurrentPlaylistEntry(aimp_manager.getActiveEntry(), result);
+    setCurrentPlaylist(aimp_manager.getPlayingPlaylist(), result);
+    setCurrentPlaylistEntry(aimp_manager.getPlayingEntry(), result);
 }
 
 void setControlPanelInfo(const AIMPManager& aimp_manager, Rpc::Value& result)
