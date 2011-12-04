@@ -581,6 +581,94 @@ void AIMP3Manager::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValu
 AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) const
 {
     //return aimp2_controller_->AIMP_Status_Get(status);
+    using namespace AIMP3SDK;
+    DWORD msg = 0;
+    int param1 = 0;
+    void* param2 = nullptr;
+
+    switch (status) {
+    case STATUS_VOLUME:
+        msg = AIMP_MSG_PROPERTY_VOLUME; break;
+    case STATUS_BALANCE:
+        msg = AIMP_MSG_PROPERTY_BALANCE; break;
+    case STATUS_SPEED:
+        msg = AIMP_MSG_PROPERTY_SPEED; break;
+    case STATUS_Player:
+        msg = AIMP_MSG_PROPERTY_PLAYER_STATE; break;
+    case STATUS_MUTE:
+        msg = AIMP_MSG_PROPERTY_MUTE; break;
+    case STATUS_REVERB:
+        msg = AIMP_MSG_PROPERTY_REVERB; break;
+    case STATUS_ECHO:
+        msg = AIMP_MSG_PROPERTY_ECHO; break;
+    case STATUS_CHORUS:
+        msg = AIMP_MSG_PROPERTY_CHORUS; break;
+    case STATUS_Flanger:
+        msg = AIMP_MSG_PROPERTY_FLANGER; break;
+    case STATUS_EQ_STS:
+        msg = AIMP_MSG_PROPERTY_EQUALIZER; break;
+    case STATUS_EQ_SLDR01:
+    case STATUS_EQ_SLDR02:
+    case STATUS_EQ_SLDR03:
+    case STATUS_EQ_SLDR04:
+    case STATUS_EQ_SLDR05:
+    case STATUS_EQ_SLDR06:
+    case STATUS_EQ_SLDR07:
+    case STATUS_EQ_SLDR08:
+    case STATUS_EQ_SLDR09:
+    case STATUS_EQ_SLDR10:
+    case STATUS_EQ_SLDR11:
+    case STATUS_EQ_SLDR12:
+    case STATUS_EQ_SLDR13:
+    case STATUS_EQ_SLDR14:
+    case STATUS_EQ_SLDR15:
+    case STATUS_EQ_SLDR16:
+    case STATUS_EQ_SLDR17:
+    case STATUS_EQ_SLDR18:
+        msg = AIMP_MSG_PROPERTY_EQUALIZER_BAND;
+        param1 = status - STATUS_EQ_SLDR01;
+        break;
+    case STATUS_REPEAT:
+        msg = AIMP_MSG_PROPERTY_REPEAT; break;
+    //STATUS_ON_STOP,
+    case STATUS_POS:
+        msg = AIMP_MSG_PROPERTY_PLAYER_POSITION; break;
+    case STATUS_LENGTH:
+        msg = AIMP_MSG_PROPERTY_PLAYER_DURATION; break;
+    //STATUS_REPEATPLS,
+    //STATUS_REP_PLS_1,
+    //STATUS_KBPS,
+    //STATUS_KHZ,
+    //STATUS_MODE,
+    case STATUS_RADIO:
+        msg = AIMP_MSG_PROPERTY_RADIOCAP; break;
+    //STATUS_STREAM_TYPE,
+    //STATUS_TIMER,
+    case STATUS_SHUFFLE:
+        msg = AIMP_MSG_PROPERTY_SHUFFLE; break;
+
+    case STATUS_MAIN_HWND:
+    case STATUS_TC_HWND:
+    case STATUS_APP_HWND:
+    case STATUS_PL_HWND:
+    case STATUS_EQ_HWND:
+        msg = AIMP_MSG_PROPERTY_HWND;
+        switch (status) {
+        case STATUS_MAIN_HWND: param1 = AIMP_MPH_MAINFORM; break;
+        case STATUS_APP_HWND:  param1 = AIMP_MPH_APPLICATION; break;
+        case STATUS_TC_HWND:   param1 = AIMP_MPH_TRAYCONTROL; break;
+        case STATUS_PL_HWND:   param1 = AIMP_MPH_PLAYLISTFORM; break;
+        case STATUS_EQ_HWND:   param1 = AIMP_MPH_EQUALIZERFORM; break;
+        default:
+            break;
+        }
+        break;
+    case STATUS_TRAY:
+        msg = AIMP_MSG_PROPERTY_MINIMIZED_TO_TRAY; break;
+    default:
+        break;
+    }
+
     return 0;
 }
 
