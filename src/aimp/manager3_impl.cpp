@@ -464,7 +464,7 @@ void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
 
     const int entries_count = strings->ItemGetCount();
 
-    AIMP3FileInfoHelper file_info_helper; // used for get entries from AIMP conviniently.
+    AIMP3FileInfoHelper file_info_helper; // used for get entries from AIMP conveniently.
 
     // temp objects to prevent partial change state of passed objects when error occurs.
     EntriesListType entries;

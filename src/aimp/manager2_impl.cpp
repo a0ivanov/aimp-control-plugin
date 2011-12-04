@@ -237,7 +237,7 @@ void AIMP2Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
     const PlaylistID playlist_id = playlist.id();
     const int entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
 
-    AIMP2FileInfoHelper file_info_helper; // used for get entries from AIMP conviniently.
+    AIMP2FileInfoHelper file_info_helper; // used for get entries from AIMP conveniently.
 
     // temp objects to prevent partial change state of passed objects when error occurs.
     EntriesListType entries;
@@ -319,7 +319,7 @@ bool AIMP2Manager::isLoadedPlaylistEqualsAimpPlaylist(PlaylistID playlist_id) co
     const int entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
     assert( entries_count >= 0 && static_cast<size_t>(entries_count) == loaded_entries.size() ); // function returns correct result only if entries count in loaded and actual playlists are equal.
 
-    AIMP2FileInfoHelper file_info_helper; // used for get entries from AIMP conviniently.
+    AIMP2FileInfoHelper file_info_helper; // used for get entries from AIMP conveniently.
 
     for (int entry_index = 0; entry_index < entries_count; ++entry_index) {
         if ( aimp2_playlist_manager_->AIMP_PLS_Entry_InfoGet( playlist_id,
