@@ -216,9 +216,11 @@ void AIMP3Manager::onStorageActivated(AIMP3SDK::HPLS /*id*/)
 void AIMP3Manager::onStorageAdded(AIMP3SDK::HPLS id)
 {
     try {
-        Playlist& playlist = ( playlists_[cast<PlaylistID>(id)] = loadPlaylist(id) );
-        loadEntries(playlist);
-        notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+        playlists_[cast<PlaylistID>(id)] = loadPlaylist(id);
+        //Playlist& playlist = playlists_[cast<PlaylistID>(id)];
+        //playlist = loadPlaylist(id);
+        //loadEntries(playlist);
+        //notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     } catch (std::exception& e) {
         BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << id << ". Reason: " << e.what();
     } catch (...) {
@@ -232,26 +234,32 @@ void AIMP3Manager::onStorageChanged(AIMP3SDK::HPLS id, DWORD flags)
     using namespace AIMP3SDK;
 
     try {
-        // TODO: handle other flag values
-        if (    (AIMP_PLAYLIST_NOTIFY_CONTENT & flags) != 0 
-             || (AIMP_PLAYLIST_NOTIFY_NAME & flags) != 0
-             || (AIMP_PLAYLIST_NOTIFY_ENTRYINFO & flags) != 0 
+        BOOST_LOG_SEV(logger(), debug) << "onStorageChanged(id = " << id << ", flags = " << flags << ")...";
+        Playlist& playlist = playlists_[cast<PlaylistID>(id)];
+        bool need_notify_clients = false;
+        if (   (AIMP_PLAYLIST_NOTIFY_NAME & flags) != 0 
+            || (AIMP_PLAYLIST_NOTIFY_ENTRYINFO & flags) != 0
+            || (AIMP_PLAYLIST_NOTIFY_STATISTICS & flags) != 0 
             )
         {
-            if (    (AIMP_PLAYLIST_NOTIFY_CONTENT & flags) != 0 
-                 || (AIMP_PLAYLIST_NOTIFY_ENTRYINFO & flags) != 0                 
-                )    
-            {
-                Playlist& playlist = playlists_[cast<PlaylistID>(id)];
-                if ( (AIMP_PLAYLIST_NOTIFY_PLAYINDEX & flags) == 0 ) {
-                    playlist = loadPlaylist(id);
-                    loadEntries(playlist);
-                } else {
-                    updatePlaylist(playlist);
-                }
-            }
+            BOOST_LOG_SEV(logger(), debug) << "updatePlaylist";
+            updatePlaylist(playlist);
+            need_notify_clients = true;
+        }
+
+        if (   (AIMP_PLAYLIST_NOTIFY_ENTRYINFO & flags) != 0  
+            || (AIMP_PLAYLIST_NOTIFY_CONTENT & flags) != 0 
+            )
+        {
+            BOOST_LOG_SEV(logger(), debug) << "loadEnries";
+            loadEntries(playlist); 
+            need_notify_clients = true;
+        }
+
+        if (need_notify_clients) {
             notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
         }
+        BOOST_LOG_SEV(logger(), debug) << "...onStorageChanged()";
     } catch (std::exception& e) {
         BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << id << ". Reason: " << e.what();
     } catch (...) {
