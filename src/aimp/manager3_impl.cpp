@@ -217,6 +217,10 @@ void AIMP3Manager::onStorageAdded(AIMP3SDK::HPLS id)
 {
     try {
         playlists_[cast<PlaylistID>(id)] = loadPlaylist(id);
+
+        // force playlist content loading
+        //aimp3_playlist_manager_->StorageGetEntryCount(id);
+
         //Playlist& playlist = playlists_[cast<PlaylistID>(id)];
         //playlist = loadPlaylist(id);
         //loadEntries(playlist);
@@ -229,12 +233,41 @@ void AIMP3Manager::onStorageAdded(AIMP3SDK::HPLS id)
     }
 }
 
+std::string playlistNotifyFlagsToString(DWORD flags)
+{
+    const size_t flag_count = 9;
+    static const char * const strings[flag_count] = { "NAME", "SELECTION", "TRACKINGINDEX", "PLAYINDEX", "FOCUSINDEX", 
+                                                      "CONTENT", "ENTRYINFO", "STATISTICS", "PLAYINGSWITCHS" };
+    std::ostringstream os;
+    if (flags) {
+        DWORD f = flags;
+        size_t index = 0;
+        while (f != 0) {
+            if ( (f & 0x1) == 0x1 ) {
+                if ( os.tellp() != std::streampos(0) ) {
+                    os << '|';
+                }
+                if (index < flag_count) {
+                    os << strings[index];
+                } else {
+                    os << "out of range value";
+                }
+            }
+            ++index;
+            f >>= 1;
+        }
+    } else {
+        os << "NONE";
+    }
+    return os.str();
+}
+
 void AIMP3Manager::onStorageChanged(AIMP3SDK::HPLS id, DWORD flags)
 {
     using namespace AIMP3SDK;
 
     try {
-        BOOST_LOG_SEV(logger(), debug) << "onStorageChanged(id = " << id << ", flags = " << flags << ")...";
+        BOOST_LOG_SEV(logger(), debug) << "onStorageChanged(id = " << id << ", flags = " << flags << " " << playlistNotifyFlagsToString(flags) << ")...";
         Playlist& playlist = playlists_[cast<PlaylistID>(id)];
         bool need_notify_clients = false;
         if (   (AIMP_PLAYLIST_NOTIFY_NAME & flags) != 0 
@@ -259,6 +292,14 @@ void AIMP3Manager::onStorageChanged(AIMP3SDK::HPLS id, DWORD flags)
         if (need_notify_clients) {
             notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
         }
+
+        //for (int i = 0, count = aimp3_playlist_manager_->StorageGetCount(); i != count; ++i) {
+        //    AIMP3SDK::HPLS handle = aimp3_playlist_manager_->StorageGet(i);
+        //    INT64 size;
+        //    aimp3_playlist_manager_->StoragePropertyGetValue( handle, AIMP_PLAYLIST_STORAGE_PROPERTY_SIZE, &size, sizeof(size) );
+
+        //}
+
         BOOST_LOG_SEV(logger(), debug) << "...onStorageChanged()";
     } catch (std::exception& e) {
         BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << id << ". Reason: " << e.what();
@@ -683,11 +724,17 @@ std::string AIMP3Manager::getAIMPVersion() const
         return "";
     }
     
-    const int version = version_info.BuildNumber;
+    const int version = version_info.ID;
+    std::string suffix;
+    if (version_info.BuildSuffix) {
+        suffix = StringEncoding::utf16_to_system_ansi_encoding_safe(version_info.BuildSuffix);
+    }
+
     using namespace std;
     ostringstream os;
     os << version / 1000 << '.' << setfill('0') << setw(2) << (version % 1000) / 10 << '.' << version % 10
-       << ' ' << (version_info.BuildSuffix) ? StringEncoding::utf16_to_system_ansi_encoding_safe(version_info.BuildSuffix) : "";
+       << " Build " << version_info.BuildNumber
+       << ' ' << suffix;
     return os.str();
 }
 
