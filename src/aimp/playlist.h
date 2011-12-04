@@ -35,8 +35,8 @@ public:
     Playlist& operator=(Playlist&& rhs);
 
     //! Returns entries in default order: id ascendence.
-    const EntriesListType& getEntries() const;
-    EntriesListType& getEntries();
+    const EntriesListType& entries() const;
+    EntriesListType& entries();
 
     //! Returns entries IDs ordered by specified field.
     const PlaylistEntryIDList& getEntriesSortedByField(EntriesSortUtil::FieldToOrderDescriptor order_descriptor) const;
@@ -53,21 +53,29 @@ public:
     const PlaylistEntryIDList& getEntriesSortedByMultipleFields(const EntriesSortUtil::FieldToOrderDescriptors& field_to_order_descriptors) const;
 
     //! Returns indentificator.
-    PlaylistID getID() const { return id_; }
+    PlaylistID id() const { return id_; }
 
     //! Returns title.
-    const std::wstring& getTitle() const { return title_; }
+    const std::wstring& title() const { return title_; }
 
     //! Returns entries count.
-    DWORD getEntriesCount() const { return file_count_; }
+    DWORD entriesCount() const { return file_count_; }
 
     //! Returns summary duration of all entries.
-    INT64 getDuration() const { return duration_; }
+    INT64 duration() const { return duration_; }
 
     //! Returns summary size of all entries in bytes.
-    INT64 getSizeOfAllEntriesInBytes() const { return size_of_all_entries_in_bytes_; }
+    INT64 sizeOfAllEntriesInBytes() const { return size_of_all_entries_in_bytes_; }
 
     void swap(Playlist& rhs);
+
+    void title(const std::wstring& title) { title_ = title; }
+
+    void entriesCount(DWORD count) { file_count_ = count; }
+
+    void duration(INT64 duration) { duration_ = duration; }
+
+    void sizeOfAllEntriesInBytes(INT64 size) { size_of_all_entries_in_bytes_ = size; }
 
 private:
 

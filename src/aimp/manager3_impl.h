@@ -227,7 +227,8 @@ private:
     //! Loads playlist by AIMP internal index.
     Playlist loadPlaylist(int playlist_index); // throws std::runtime_error
     Playlist loadPlaylist(AIMP3SDK::HPLS id); // throws std::runtime_error
-    
+    void updatePlaylist(Playlist& playlist); // throws std::runtime_error
+
     Playlist& getPlaylist(PlaylistID playlist_id);
 
     //! initializes all requiered for work AIMP SDK interfaces.

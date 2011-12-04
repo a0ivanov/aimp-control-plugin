@@ -238,13 +238,17 @@ void AIMP3Manager::onStorageChanged(AIMP3SDK::HPLS id, DWORD flags)
              || (AIMP_PLAYLIST_NOTIFY_ENTRYINFO & flags) != 0 
             )
         {
-            Playlist& playlist = ( playlists_[cast<PlaylistID>(id)] = loadPlaylist(id) );
-
             if (    (AIMP_PLAYLIST_NOTIFY_CONTENT & flags) != 0 
-                 || (AIMP_PLAYLIST_NOTIFY_ENTRYINFO & flags) != 0 
-                )        
+                 || (AIMP_PLAYLIST_NOTIFY_ENTRYINFO & flags) != 0                 
+                )    
             {
-                loadEntries(playlist);
+                Playlist& playlist = playlists_[cast<PlaylistID>(id)];
+                if ( (AIMP_PLAYLIST_NOTIFY_PLAYINDEX & flags) == 0 ) {
+                    playlist = loadPlaylist(id);
+                    loadEntries(playlist);
+                } else {
+                    updatePlaylist(playlist);
+                }
             }
             notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
         }
@@ -315,6 +319,15 @@ Playlist AIMP3Manager::loadPlaylist(AIMP3SDK::HPLS id)
                     size,
                     cast<PlaylistID>(id)
                     );
+}
+
+void AIMP3Manager::updatePlaylist(Playlist& playlist)
+{
+    Playlist updated( loadPlaylist( playlist.id() ) );
+    playlist.title( updated.title() );
+    playlist.entriesCount( updated.entriesCount() );
+    playlist.duration( updated.duration() );
+    playlist.sizeOfAllEntriesInBytes( updated.sizeOfAllEntriesInBytes() );
 }
 
 /*
@@ -429,7 +442,7 @@ void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
 
     HRESULT r;
 
-    const AIMP3SDK::HPLS playlist_id = cast<AIMP3SDK::HPLS>( playlist.getID() );    
+    const AIMP3SDK::HPLS playlist_id = cast<AIMP3SDK::HPLS>( playlist.id() );    
 
     boost::intrusive_ptr<IAIMPAddonsPlaylistStrings> strings;
     {
@@ -460,7 +473,7 @@ void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
     }
 
     // we got list, save result
-    playlist.getEntries().swap(entries);
+    playlist.entries().swap(entries);
 }
 
 void AIMP3Manager::startPlayback()
@@ -700,9 +713,9 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMP3Manager::getCoverImage(TrackDescr
 
     const PlaylistEntry& entry = getEntry(track_desc);
     //SIZE cover_size = { 0, 0 };
-    //HBITMAP cover_bitmap_handle = aimp2_cover_art_manager_->GetCoverArtForFile(const_cast<PWCHAR>( entry.getFilename().c_str() ), &request_full_size);
+    //HBITMAP cover_bitmap_handle = aimp2_cover_art_manager_->GetCoverArtForFile(const_cast<PWCHAR>( entry.filename().c_str() ), &request_full_size);
     WCHAR coverart_filename_buffer[MAX_PATH + 1] = {0};
-    HBITMAP cover_bitmap_handle = aimp3_coverart_manager_->CoverArtGetForFile(const_cast<PWCHAR>( entry.getFilename().c_str() ), NULL,
+    HBITMAP cover_bitmap_handle = aimp3_coverart_manager_->CoverArtGetForFile(const_cast<PWCHAR>( entry.filename().c_str() ), NULL,
 			                                                                  coverart_filename_buffer, MAX_PATH);
     if (coverart_filename_buffer[0] != 0) {
         coverart_filename_buffer[0] = coverart_filename_buffer[0];
@@ -730,7 +743,7 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMP3Manager::getCoverImage(TrackDescr
             cover_size.cy = cover_height;
         }
 
-        cover_bitmap_handle = aimp3_coverart_manager_->CoverArtGetForFile(const_cast<PWCHAR>( entry.getFilename().c_str() ), &cover_size,
+        cover_bitmap_handle = aimp3_coverart_manager_->CoverArtGetForFile(const_cast<PWCHAR>( entry.filename().c_str() ), &cover_size,
 			                                                              coverart_filename_buffer, MAX_PATH);
     }
 
@@ -769,7 +782,7 @@ const PlaylistEntry& AIMP3Manager::getEntry(TrackDescription track_desc) const
             track_desc.track_id = getPlayingEntry();
         }
     }
-    const EntriesListType& entries = playlist.getEntries();
+    const EntriesListType& entries = playlist.entries();
     if ( track_desc.track_id < 0 || static_cast<size_t>(track_desc.track_id) >= entries.size() ) {
         throw std::runtime_error(MakeString() << "Error in "__FUNCTION__ << ". Entry " << track_desc << " does not exist");
     }

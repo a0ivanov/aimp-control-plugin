@@ -515,11 +515,11 @@ public:
         using namespace RpcValueSetHelpers;
         using namespace RpcResultUtils;
         boost::assign::insert(playlist_fields_filler_.setters_)
-            ( getStringFieldID(Playlist::ID),                           boost::bind( createSetter(&Playlist::getID),                      _1, _2 ) )
-            ( getStringFieldID(Playlist::TITLE),                        boost::bind( createSetter(&Playlist::getTitle),                   _1, _2 ) )
-            ( getStringFieldID(Playlist::DURATION),                     boost::bind( createSetter(&Playlist::getDuration),                _1, _2 ) )
-            ( getStringFieldID(Playlist::ENTRIES_COUNT),                boost::bind( createSetter(&Playlist::getEntriesCount),            _1, _2 ) )
-            ( getStringFieldID(Playlist::SIZE_OF_ALL_ENTRIES_IN_BYTES), boost::bind( createSetter(&Playlist::getSizeOfAllEntriesInBytes), _1, _2 ) )
+            ( getStringFieldID(Playlist::ID),                           boost::bind( createSetter(&Playlist::id),                      _1, _2 ) )
+            ( getStringFieldID(Playlist::TITLE),                        boost::bind( createSetter(&Playlist::title),                   _1, _2 ) )
+            ( getStringFieldID(Playlist::DURATION),                     boost::bind( createSetter(&Playlist::duration),                _1, _2 ) )
+            ( getStringFieldID(Playlist::ENTRIES_COUNT),                boost::bind( createSetter(&Playlist::entriesCount),            _1, _2 ) )
+            ( getStringFieldID(Playlist::SIZE_OF_ALL_ENTRIES_IN_BYTES), boost::bind( createSetter(&Playlist::sizeOfAllEntriesInBytes), _1, _2 ) )
         ;
     }
 
@@ -586,11 +586,11 @@ public:
 
         // initialization of fields available to filtering.
         GettersOfEntryStringField& fields_to_filter_getters = entry_contain_string_.field_getters_;
-        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::getTitle,  _1) );
-        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::getArtist, _1) );
-        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::getAlbum,  _1) );
-        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::getDate,   _1) );
-        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::getGenre,  _1) );
+        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::title,  _1) );
+        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::artist, _1) );
+        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::album,  _1) );
+        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::date,   _1) );
+        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::genre,  _1) );
     }
 
     std::string help()

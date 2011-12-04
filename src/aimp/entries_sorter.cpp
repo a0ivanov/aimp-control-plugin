@@ -13,17 +13,17 @@ EntriesSorter::EntriesSorter(boost::shared_ptr<const EntriesListType> entries)
     :
     entries_(entries)
 {
-#define MAKE_CACHE_FOR_FIELD(field_name) OrderedEntryIDsCache( createComparatorPlaylistEntryIDs(*entries_, &PlaylistEntry::get##field_name) )
-    ordered_caches_.insert(std::make_pair(ID,       MAKE_CACHE_FOR_FIELD(ID) ) );
-    ordered_caches_.insert(std::make_pair(TITLE,    MAKE_CACHE_FOR_FIELD(Title) ) );
-    ordered_caches_.insert(std::make_pair(ARTIST,   MAKE_CACHE_FOR_FIELD(Artist) ) );
-    ordered_caches_.insert(std::make_pair(ALBUM,    MAKE_CACHE_FOR_FIELD(Album) ) );
-    ordered_caches_.insert(std::make_pair(DATE,     MAKE_CACHE_FOR_FIELD(Date) ) );
-    ordered_caches_.insert(std::make_pair(GENRE,    MAKE_CACHE_FOR_FIELD(Genre) ) );
-    ordered_caches_.insert(std::make_pair(BITRATE,  MAKE_CACHE_FOR_FIELD(Bitrate) ) );
-    ordered_caches_.insert(std::make_pair(DURATION, MAKE_CACHE_FOR_FIELD(Duration) ) );
-    ordered_caches_.insert(std::make_pair(FILESIZE, MAKE_CACHE_FOR_FIELD(FileSize) ) );
-    ordered_caches_.insert(std::make_pair(RATING,   MAKE_CACHE_FOR_FIELD(Rating) ) );
+#define MAKE_CACHE_FOR_FIELD(field_name) OrderedEntryIDsCache( createComparatorPlaylistEntryIDs(*entries_, &PlaylistEntry::##field_name) )
+    ordered_caches_.insert(std::make_pair(ID,       MAKE_CACHE_FOR_FIELD(id) ) );
+    ordered_caches_.insert(std::make_pair(TITLE,    MAKE_CACHE_FOR_FIELD(title) ) );
+    ordered_caches_.insert(std::make_pair(ARTIST,   MAKE_CACHE_FOR_FIELD(artist) ) );
+    ordered_caches_.insert(std::make_pair(ALBUM,    MAKE_CACHE_FOR_FIELD(album) ) );
+    ordered_caches_.insert(std::make_pair(DATE,     MAKE_CACHE_FOR_FIELD(date) ) );
+    ordered_caches_.insert(std::make_pair(GENRE,    MAKE_CACHE_FOR_FIELD(genre) ) );
+    ordered_caches_.insert(std::make_pair(BITRATE,  MAKE_CACHE_FOR_FIELD(bitrate) ) );
+    ordered_caches_.insert(std::make_pair(DURATION, MAKE_CACHE_FOR_FIELD(duration) ) );
+    ordered_caches_.insert(std::make_pair(FILESIZE, MAKE_CACHE_FOR_FIELD(fileSize) ) );
+    ordered_caches_.insert(std::make_pair(RATING,   MAKE_CACHE_FOR_FIELD(rating) ) );
 #undef MAKE_CACHE_FOR_FIELD
     assert( FIELDS_ORDERABLE_SIZE == ordered_caches_.size() );
 }

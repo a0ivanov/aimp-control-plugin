@@ -38,49 +38,49 @@ public:
     PlaylistEntry& operator=(PlaylistEntry&& rhs);
 
     //! Returns album.
-    const std::wstring& getAlbum() const { return album_; }
+    const std::wstring& album() const { return album_; }
 
     //! Returns artist.
-    const std::wstring& getArtist() const { return artist_; }
+    const std::wstring& artist() const { return artist_; }
 
     //! Returns date(usual only year of track creation).
-    const std::wstring& getDate() const { return date_; }
+    const std::wstring& date() const { return date_; }
 
     //! Returns absolute path to file.
-    const std::wstring& getFilename() const { return filename_; }
+    const std::wstring& filename() const { return filename_; }
 
     //! Returns genre.
-    const std::wstring& getGenre() const { return genre_; }
+    const std::wstring& genre() const { return genre_; }
 
     //! Returns title. This field always non empty. If other string fields are empty, this value contains at least file name.
-    const std::wstring& getTitle() const { return title_; }
+    const std::wstring& title() const { return title_; }
 
     //! Returns bitrate in bits per seconds.
-    DWORD getBitrate() const { return bitrate_; }
+    DWORD bitrate() const { return bitrate_; }
 
     //! Returns count of channels.
-    DWORD getChannelsCount() const { return channels_count_; }
+    DWORD channelsCount() const { return channels_count_; }
 
     //! Returns duration in milliseconds.
-    DWORD getDuration() const { return duration_; }
+    DWORD duration() const { return duration_; }
 
     //! Returns file size in bytes.
-    INT64 getFileSize() const { return filesize_; }
+    INT64 fileSize() const { return filesize_; }
 
     //! Returns rating in range [0, 5] where 0 means "not set". Currently does not supported by AIMP SDK and always equals zero.
-    DWORD getRating() const { return rating_; }
+    DWORD rating() const { return rating_; }
 
     //! Returns sample rate in Hertz(Hz).
-    DWORD getSampleRate() const { return samplerate_; }
+    DWORD sampleRate() const { return samplerate_; }
 
     //! Returns internal AIMP player's ID of track. It seems it is not unique. Not used.
-    DWORD getTrackID() const { return track_id_aimp_internal_; }
+    DWORD trackID() const { return track_id_aimp_internal_; }
 
     //! Returns external unique PlaylistEntry's ID of track.
-    PlaylistEntryID getID() const { return id_; }
+    PlaylistEntryID id() const { return id_; }
 
     //! Returns crc32 of entry. Calculate only if value was not calculated earlier.
-    crc32_t getCRC32() const;
+    crc32_t crc32() const;
 
     void swap(PlaylistEntry& rhs);
 
@@ -101,7 +101,7 @@ private:
     DWORD samplerate_; //!< sample rate in Hertz(Hz).
     DWORD track_id_aimp_internal_; //! internal AIMP player's ID of track. It seems it is not unique. Not used.
     PlaylistEntryID id_; //! external unique PlaylistEntry's ID of track.
-    mutable crc32_t crc32_; //! crc32 can be lazy calculated in const getCRC32() function, so make it mutable.
+    mutable crc32_t crc32_; //! crc32 can be lazy calculated in const crc32() function, so make it mutable.
 
     PlaylistEntry();
     PlaylistEntry(const PlaylistEntry&);
@@ -122,18 +122,18 @@ template<>
 inline crc32_t Utilities::crc32<AIMPPlayer::PlaylistEntry>(const AIMPPlayer::PlaylistEntry& entry)
 {
     const crc32_t members_crc32_list [] = {
-        crc32( entry.getAlbum() ),
-        crc32( entry.getArtist() ),
-        crc32( entry.getDate() ),
-        crc32( entry.getFilename() ),
-        crc32( entry.getGenre() ),
-        crc32( entry.getTitle() ),
-        entry.getBitrate(),
-        entry.getChannelsCount(),
-        entry.getDuration(),
-        crc32( entry.getFileSize() ),
-        entry.getRating(),
-        entry.getSampleRate()
+        crc32( entry.album() ),
+        crc32( entry.artist() ),
+        crc32( entry.date() ),
+        crc32( entry.filename() ),
+        crc32( entry.genre() ),
+        crc32( entry.title() ),
+        entry.bitrate(),
+        entry.channelsCount(),
+        entry.duration(),
+        crc32( entry.fileSize() ),
+        entry.rating(),
+        entry.sampleRate()
     };
 
     return Utilities::crc32( &members_crc32_list[0], sizeof(members_crc32_list) );

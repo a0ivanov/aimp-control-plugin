@@ -471,7 +471,7 @@ ResponseType GetPlaylistEntriesTemplateMethod::execute(const Rpc::Value& params,
     }
 
     const Playlist& playlist = getPlayListFromRpcParam(aimp_manager_, params["playlist_id"]);
-    const EntriesListType& entries = playlist.getEntries();
+    const EntriesListType& entries = playlist.entries();
 
     total_entries_count_handler( entries.size() );
 
@@ -585,16 +585,16 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager,
     using namespace RpcValueSetHelpers;
     using namespace RpcResultUtils;
     boost::assign::insert(entry_fields_filler_.setters_)
-        ( getStringFieldID(PlaylistEntry::ID),       boost::bind( createSetter(&PlaylistEntry::getID),       _1, _2 ) )  // Use plugin id of entry instead Aimp internal id( PlaylistEntry::getTrackID() ).
-        ( getStringFieldID(PlaylistEntry::TITLE),    boost::bind( createSetter(&PlaylistEntry::getTitle),    _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::ARTIST),   boost::bind( createSetter(&PlaylistEntry::getArtist),   _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::ALBUM),    boost::bind( createSetter(&PlaylistEntry::getAlbum),    _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::DATE),     boost::bind( createSetter(&PlaylistEntry::getDate),     _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::GENRE),    boost::bind( createSetter(&PlaylistEntry::getGenre),    _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::BITRATE),  boost::bind( createSetter(&PlaylistEntry::getBitrate),  _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::DURATION), boost::bind( createSetter(&PlaylistEntry::getDuration), _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::FILESIZE), boost::bind( createSetter(&PlaylistEntry::getFileSize), _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::RATING),   boost::bind( createSetter(&PlaylistEntry::getRating),   _1, _2 ) )
+        ( getStringFieldID(PlaylistEntry::ID),       boost::bind( createSetter(&PlaylistEntry::id),       _1, _2 ) )  // Use plugin id of entry instead Aimp internal id( PlaylistEntry::trackID() ).
+        ( getStringFieldID(PlaylistEntry::TITLE),    boost::bind( createSetter(&PlaylistEntry::title),    _1, _2 ) )
+        ( getStringFieldID(PlaylistEntry::ARTIST),   boost::bind( createSetter(&PlaylistEntry::artist),   _1, _2 ) )
+        ( getStringFieldID(PlaylistEntry::ALBUM),    boost::bind( createSetter(&PlaylistEntry::album),    _1, _2 ) )
+        ( getStringFieldID(PlaylistEntry::DATE),     boost::bind( createSetter(&PlaylistEntry::date),     _1, _2 ) )
+        ( getStringFieldID(PlaylistEntry::GENRE),    boost::bind( createSetter(&PlaylistEntry::genre),    _1, _2 ) )
+        ( getStringFieldID(PlaylistEntry::BITRATE),  boost::bind( createSetter(&PlaylistEntry::bitrate),  _1, _2 ) )
+        ( getStringFieldID(PlaylistEntry::DURATION), boost::bind( createSetter(&PlaylistEntry::duration), _1, _2 ) )
+        ( getStringFieldID(PlaylistEntry::FILESIZE), boost::bind( createSetter(&PlaylistEntry::fileSize), _1, _2 ) )
+        ( getStringFieldID(PlaylistEntry::RATING),   boost::bind( createSetter(&PlaylistEntry::rating),   _1, _2 ) )
     ;
 
     // fill supported field names.
@@ -802,7 +802,7 @@ ResponseType GetPlaylistEntriesCount::execute(const Rpc::Value& root_request, Rp
 
     const Playlist& playlist = getPlayListFromRpcParam(aimp_manager_, params["playlist_id"]);
 
-    root_response["result"] = playlist.getEntries().size(); // max int value overflow is possible, but I doubt that we will work with such huge playlists.
+    root_response["result"] = playlist.entries().size(); // max int value overflow is possible, but I doubt that we will work with such huge playlists.
     return RESPONSE_IMMEDIATE;
 }
 
@@ -881,16 +881,16 @@ ResponseType GetPlaylistEntryInfo::execute(const Rpc::Value& root_request, Rpc::
         using namespace RpcResultUtils;
         using namespace StringEncoding;
         Value& result = root_response["result"];
-        result[getStringFieldID(PlaylistEntry::ID)      ] = entry.getID();
-        result[getStringFieldID(PlaylistEntry::TITLE)   ] = utf16_to_utf8( entry.getTitle() );
-        result[getStringFieldID(PlaylistEntry::ARTIST)  ] = utf16_to_utf8( entry.getArtist() );
-        result[getStringFieldID(PlaylistEntry::ALBUM)   ] = utf16_to_utf8( entry.getAlbum() );
-        result[getStringFieldID(PlaylistEntry::DATE)    ] = utf16_to_utf8( entry.getDate() );
-        result[getStringFieldID(PlaylistEntry::GENRE)   ] = utf16_to_utf8( entry.getGenre() );
-        result[getStringFieldID(PlaylistEntry::BITRATE) ] = static_cast<unsigned int>( entry.getBitrate() );
-        result[getStringFieldID(PlaylistEntry::DURATION)] = static_cast<unsigned int>( entry.getDuration() );
-        result[getStringFieldID(PlaylistEntry::FILESIZE)] = static_cast<unsigned int>( entry.getFileSize() );
-        result[getStringFieldID(PlaylistEntry::RATING)  ] = static_cast<unsigned int>( entry.getRating() );
+        result[getStringFieldID(PlaylistEntry::ID)      ] = entry.id();
+        result[getStringFieldID(PlaylistEntry::TITLE)   ] = utf16_to_utf8( entry.title() );
+        result[getStringFieldID(PlaylistEntry::ARTIST)  ] = utf16_to_utf8( entry.artist() );
+        result[getStringFieldID(PlaylistEntry::ALBUM)   ] = utf16_to_utf8( entry.album() );
+        result[getStringFieldID(PlaylistEntry::DATE)    ] = utf16_to_utf8( entry.date() );
+        result[getStringFieldID(PlaylistEntry::GENRE)   ] = utf16_to_utf8( entry.genre() );
+        result[getStringFieldID(PlaylistEntry::BITRATE) ] = static_cast<unsigned int>( entry.bitrate() );
+        result[getStringFieldID(PlaylistEntry::DURATION)] = static_cast<unsigned int>( entry.duration() );
+        result[getStringFieldID(PlaylistEntry::FILESIZE)] = static_cast<unsigned int>( entry.fileSize() );
+        result[getStringFieldID(PlaylistEntry::RATING)  ] = static_cast<unsigned int>( entry.rating() );
 
     } catch (std::runtime_error&) {
         throw Rpc::Exception("Getting info about track failed. Reason: track not found.", TRACK_NOT_FOUND);
@@ -1085,7 +1085,7 @@ ResponseType SetTrackRating::execute(const Rpc::Value& root_request, Rpc::Value&
         std::wofstream file(file_to_save_ratings_, std::ios_base::out | std::ios_base::app);
         file.imbue( std::locale("") ); // set system locale.
         if ( file.good() ) {
-            file << entry.getFilename() << L"; rating:" << rating << L"\n";
+            file << entry.filename() << L"; rating:" << rating << L"\n";
             file.close();
         } else {
             throw std::exception("Ratings file can not be opened.");

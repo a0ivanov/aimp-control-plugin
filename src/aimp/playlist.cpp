@@ -69,13 +69,13 @@ void Playlist::swap(Playlist& rhs)
     swap(entries_sorter_, rhs.entries_sorter_);
 }
 
-const EntriesListType& Playlist::getEntries() const
+const EntriesListType& Playlist::entries() const
 {
     assert(entries_);
     return *entries_;
 }
 
-EntriesListType& Playlist::getEntries()
+EntriesListType& Playlist::entries()
 {
     // every time when entry list is changed we need to perform reset to be sure it does not use old cache.
     entries_sorter_.reset();

@@ -186,7 +186,7 @@ public:
     }
 
     /* \return track ID. */
-    DWORD getTrackID() const
+    DWORD trackID() const
         { return info_.nTrackID; }
 
     AIMP2SDK::AIMP2FileInfo& getFileInfoWithCorrectStringLengths()
@@ -234,7 +234,7 @@ private:
 void AIMP2Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
 {
     // PROFILE_EXECUTION_TIME(__FUNCTION__);
-    const PlaylistID playlist_id = playlist.getID();
+    const PlaylistID playlist_id = playlist.id();
     const int entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
 
     AIMP2FileInfoHelper file_info_helper; // used for get entries from AIMP conviniently.
@@ -259,7 +259,7 @@ void AIMP2Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
     }
 
     // we got list, save result
-    playlist.getEntries().swap(entries);
+    playlist.entries().swap(entries);
 }
 
 #ifdef MANUAL_PLAYLISTS_CONTENT_CHANGES_DETERMINATION
@@ -282,7 +282,7 @@ void AIMP2Manager::checkIfPlaylistsChanged()
             // current playlist was not loaded yet, load it now without entries.
             playlists_.insert( std::make_pair(current_playlist_id, loadPlaylist(playlist_index) ) );
             playlists_to_reload.push_back(current_playlist_id);
-        } else if (loaded_playlist_iter->second.getEntriesCount() != entries_count) {
+        } else if (loaded_playlist_iter->second.entriesCount() != entries_count) {
             // list loaded, but entries count is changed: load new playlist to update all internal fields.
             playlists_[current_playlist_id] = loadPlaylist(playlist_index); // we must use map's operator[] instead insert() method, since insert is no-op for existing key.
             playlists_to_reload.push_back(current_playlist_id);
@@ -314,7 +314,7 @@ bool AIMP2Manager::isLoadedPlaylistEqualsAimpPlaylist(PlaylistID playlist_id) co
     // PROFILE_EXECUTION_TIME(__FUNCTION__);
 
     const Playlist& playlist = getPlaylist(playlist_id);
-    const EntriesListType& loaded_entries = playlist.getEntries();
+    const EntriesListType& loaded_entries = playlist.entries();
 
     const int entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
     assert( entries_count >= 0 && static_cast<size_t>(entries_count) == loaded_entries.size() ); // function returns correct result only if entries count in loaded and actual playlists are equal.
@@ -330,7 +330,7 @@ bool AIMP2Manager::isLoadedPlaylistEqualsAimpPlaylist(PlaylistID playlist_id) co
         {
             // need to compare loaded_entry with file_info_helper.info_;
             const AIMP2SDK::AIMP2FileInfo& aimp_entry = file_info_helper.getFileInfoWithCorrectStringLengths();
-            if ( loaded_entries[entry_index].getCRC32() != Utilities::crc32(aimp_entry) ) {
+            if ( loaded_entries[entry_index].crc32() != Utilities::crc32(aimp_entry) ) {
                 return false;
             }
         } else {
@@ -747,7 +747,7 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMP2Manager::getCoverImage(TrackDescr
 
     const PlaylistEntry& entry = getEntry(track_desc);
     const SIZE request_full_size = { 0, 0 };
-    HBITMAP cover_bitmap_handle = aimp2_cover_art_manager_->GetCoverArtForFile(const_cast<PWCHAR>( entry.getFilename().c_str() ), &request_full_size);
+    HBITMAP cover_bitmap_handle = aimp2_cover_art_manager_->GetCoverArtForFile(const_cast<PWCHAR>( entry.filename().c_str() ), &request_full_size);
 
     // get real bitmap size
     const SIZE cover_full_size = ImageUtils::getBitmapSize(cover_bitmap_handle);
@@ -771,7 +771,7 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMP2Manager::getCoverImage(TrackDescr
             cover_size.cy = cover_height;
         }
 
-        cover_bitmap_handle = aimp2_cover_art_manager_->GetCoverArtForFile(const_cast<PWCHAR>( entry.getFilename().c_str() ), &cover_size);
+        cover_bitmap_handle = aimp2_cover_art_manager_->GetCoverArtForFile(const_cast<PWCHAR>( entry.filename().c_str() ), &cover_size);
     }
 
     using namespace ImageUtils;
@@ -804,7 +804,7 @@ const PlaylistEntry& AIMP2Manager::getEntry(TrackDescription track_desc) const
             track_desc.track_id = getPlayingEntry();
         }
     }
-    const EntriesListType& entries = playlist.getEntries();
+    const EntriesListType& entries = playlist.entries();
     if ( track_desc.track_id < 0 || static_cast<size_t>(track_desc.track_id) >= entries.size() ) {
         throw std::runtime_error(MakeString() << "Error in "__FUNCTION__ << ". Entry " << track_desc << " does not exist");
     }
@@ -928,7 +928,7 @@ struct BitrateFormatter {
 
     std::wstring operator()(const PlaylistEntry& entry) const { 
         clear(os);
-        os << entry.getBitrate() << L" kbps";
+        os << entry.bitrate() << L" kbps";
         return os.str();
     }
 };
@@ -943,7 +943,7 @@ struct ChannelsCountFormatter {
     std::wstring operator()(const PlaylistEntry& entry) const { 
         clear(os);
 
-        switch ( entry.getChannelsCount() ) {
+        switch ( entry.channelsCount() ) {
         case 0:
             break;
         case 1:
@@ -953,7 +953,7 @@ struct ChannelsCountFormatter {
             os << L"Stereo";
             break;
         default:
-            os << entry.getChannelsCount() << L" channels";
+            os << entry.channelsCount() << L" channels";
             break;
         }
         return os.str();
@@ -970,7 +970,7 @@ struct DurationFormatter
 
     std::wstring operator()(const PlaylistEntry& entry) const {
         clear(os);
-        formatTime( os, entry.getDuration() );
+        formatTime( os, entry.duration() );
         return os.str();
     }
 
@@ -997,7 +997,7 @@ struct DurationFormatter
 
 struct FileNameExtentionFormatter {
     std::wstring operator()(const PlaylistEntry& entry) const { 
-        std::wstring ext = boost::filesystem::extension( entry.getFilename() );
+        std::wstring ext = boost::filesystem::extension( entry.filename() );
         if ( !ext.empty() ) {
             if (ext[0] == L'.') {
                 ext.erase( ext.begin() );
@@ -1018,7 +1018,7 @@ struct SampleRateFormatter {
     std::wstring operator()(const PlaylistEntry& entry) const { 
         clear(os);
 
-        const DWORD rate_in_hertz = entry.getSampleRate();
+        const DWORD rate_in_hertz = entry.sampleRate();
         os << (rate_in_hertz / 1000)
            << L" kHz";
         return os.str();
@@ -1034,7 +1034,7 @@ struct FileSizeFormatter
 
     std::wstring operator()(const PlaylistEntry& entry) const {
         clear(os);
-        formatSize( os, entry.getFileSize() );
+        formatSize( os, entry.fileSize() );
         return os.str();
     }
 
@@ -1061,24 +1061,24 @@ public:
 #define _MAKE_FUNC_(function) boost::bind( createStringMakerFunctor(&function), boost::bind(&function,    _1) )
         using namespace boost::assign;
         insert(formatters_)
-            ( 'A', _MAKE_FUNC_(PlaylistEntry::getAlbum) )
-            ( 'a', _MAKE_FUNC_(PlaylistEntry::getArtist) )
-            //( 'B', _MAKE_FUNC_(PlaylistEntry::getBitrate) ) // use BitrateFormatter which adds units(ex.: kbps)
+            ( 'A', _MAKE_FUNC_(PlaylistEntry::album) )
+            ( 'a', _MAKE_FUNC_(PlaylistEntry::artist) )
+            //( 'B', _MAKE_FUNC_(PlaylistEntry::bitrate) ) // use BitrateFormatter which adds units(ex.: kbps)
             ( 'B', boost::bind<std::wstring>(BitrateFormatter(), _1) )
-            //( 'C', _MAKE_FUNC_(PlaylistEntry::getChannelsCount) ) // use ChannelsCountFormatter which uses string representation (ex.: Mono/Stereo)
+            //( 'C', _MAKE_FUNC_(PlaylistEntry::channelsCount) ) // use ChannelsCountFormatter which uses string representation (ex.: Mono/Stereo)
             ( 'C', boost::bind<std::wstring>(ChannelsCountFormatter(), _1) )
             ( 'E', boost::bind<std::wstring>(FileNameExtentionFormatter(), _1) )
-            //( 'F', _MAKE_FUNC_(PlaylistEntry::getFilename) ) getting filename is disabled.
-            ( 'G', _MAKE_FUNC_(PlaylistEntry::getGenre) )
-            //( 'H', _MAKE_FUNC_(PlaylistEntry::getSampleRate) ) // this returns rate in Hertz, so use adequate SampleRateFormatter.
+            //( 'F', _MAKE_FUNC_(PlaylistEntry::filename) ) getting filename is disabled.
+            ( 'G', _MAKE_FUNC_(PlaylistEntry::genre) )
+            //( 'H', _MAKE_FUNC_(PlaylistEntry::sampleRate) ) // this returns rate in Hertz, so use adequate SampleRateFormatter.
             ( 'H', boost::bind<std::wstring>(SampleRateFormatter(), _1) )
-            //( 'L', _MAKE_FUNC_(PlaylistEntry::getDuration) ) // this returns milliseconds, so use adequate DurationFormatter.
+            //( 'L', _MAKE_FUNC_(PlaylistEntry::duration) ) // this returns milliseconds, so use adequate DurationFormatter.
             ( 'L', boost::bind<std::wstring>(DurationFormatter(), _1) )
-            ( 'M', _MAKE_FUNC_(PlaylistEntry::getRating) )
-            //( 'S', _MAKE_FUNC_(PlaylistEntry::getFileSize) ) // this returns size in bytes, so use adequate FileSizeFormatter.
+            ( 'M', _MAKE_FUNC_(PlaylistEntry::rating) )
+            //( 'S', _MAKE_FUNC_(PlaylistEntry::fileSize) ) // this returns size in bytes, so use adequate FileSizeFormatter.
             ( 'S', boost::bind<std::wstring>(FileSizeFormatter(), _1) )
-            ( 'T', _MAKE_FUNC_(PlaylistEntry::getTitle) )
-            ( 'Y', _MAKE_FUNC_(PlaylistEntry::getDate) )
+            ( 'T', _MAKE_FUNC_(PlaylistEntry::title) )
+            ( 'Y', _MAKE_FUNC_(PlaylistEntry::date) )
         ;
         formatters_end_ = formatters_.end();
 #undef _MAKE_FUNC_

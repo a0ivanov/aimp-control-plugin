@@ -89,7 +89,7 @@ void PlaylistEntry::swap(PlaylistEntry& rhs)
 }
 
 // Define this method here since specialization of Utilities::crc32() for AIMP2SDK::AIMP2FileInfo should be defined first.
-crc32_t PlaylistEntry::getCRC32() const
+crc32_t PlaylistEntry::crc32() const
 {
     if (crc32_ == 0) {
         // if crc32 was not passed as parameter, calc it here
