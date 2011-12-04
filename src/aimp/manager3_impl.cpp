@@ -331,7 +331,7 @@ Playlist AIMP3Manager::loadPlaylist(AIMP3SDK::HPLS id)
 
 void AIMP3Manager::updatePlaylist(Playlist& playlist)
 {
-    Playlist updated( loadPlaylist( playlist.id() ) );
+    Playlist updated( loadPlaylist( cast<AIMP3SDK::HPLS>( playlist.id() ) ) );
     playlist.title( updated.title() );
     playlist.entriesCount( updated.entriesCount() );
     playlist.duration( updated.duration() );
