@@ -178,6 +178,8 @@ public:
     void onStorageChanged(AIMP3SDK::HPLS id, DWORD flags);
     void onStorageRemoved(AIMP3SDK::HPLS id);
 
+    void onTick();
+
 private:
 
     /*!
