@@ -43,18 +43,18 @@ public:
 
 private:
 
-    HRESULT Initialize();
+    HRESULT initialize();
 
     // Runs the server's io_service loop.
-    void OnTick();
+    void onTick();
 
-    static void CALLBACK OnTickTimerProc(HWND hwnd,
+    static void CALLBACK onTickTimerProc(HWND hwnd,
                                          UINT uMsg,
                                          UINT_PTR idEvent,
                                          DWORD dwTime);
 
-    void StartTickTimer();
-    void StopTickTimer();
+    void startTickTimer();
+    void stopTickTimer();
 
     /*! Asks AIMP about plugins working directory.
         \return full path to plugin work directory or (in case of error) current directory ".\$(short_plugin_name)"..

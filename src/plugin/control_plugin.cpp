@@ -237,13 +237,13 @@ void AIMPControlPlugin::initializeLogger()
 void AIMPControlPlugin::Initialize(AIMP2SDK::IAIMP2Controller* AController)
 {
     aimp2_controller_.reset(AController);
-    Initialize();
+    initialize();
 }
 
 HRESULT AIMPControlPlugin::Initialize(AIMP3SDK::IAIMPCoreUnit* ACoreUnit)
 {
     aimp3_core_unit_.reset(ACoreUnit);
-    return Initialize();
+    return initialize();
 }
 
 boost::shared_ptr<AIMPPlayer::AIMPManager> AIMPControlPlugin::CreateAIMPManager()
@@ -260,7 +260,7 @@ boost::shared_ptr<AIMPPlayer::AIMPManager> AIMPControlPlugin::CreateAIMPManager(
     return result;
 }
 
-HRESULT AIMPControlPlugin::Initialize()
+HRESULT AIMPControlPlugin::initialize()
 {
     HRESULT result = S_OK;
 
@@ -298,7 +298,7 @@ HRESULT AIMPControlPlugin::Initialize()
                                        )
                       );
 
-        StartTickTimer();
+        startTickTimer();
     } catch (boost::thread_resource_error& e) {
         BOOST_LOG_SEV(logger(), critical) << "Plugin initialization failed. Reason: create main server thread failed. Reason: " << e.what();
         result = E_FAIL;
@@ -319,7 +319,7 @@ HRESULT AIMPControlPlugin::Finalize()
 {
     BOOST_LOG_SEV(logger(), info) << "Plugin finalization is started";
 
-    StopTickTimer();
+    stopTickTimer();
 
     server_io_service_.stop();
     
@@ -522,15 +522,15 @@ boost::filesystem::wpath AIMPControlPlugin::getWebServerDocumentRoot() const // 
     return document_root_path;
 }
 
-void AIMPControlPlugin::StartTickTimer()
+void AIMPControlPlugin::startTickTimer()
 {
-    tick_timer_id_ = ::SetTimer(NULL, kTickTimerEventID, kTickTimerElapse, &AIMPControlPlugin::OnTickTimerProc);
+    tick_timer_id_ = ::SetTimer(NULL, kTickTimerEventID, kTickTimerElapse, &AIMPControlPlugin::onTickTimerProc);
     if (tick_timer_id_ == 0) {
         BOOST_LOG_SEV(logger(), critical) << "Plugin's service interrupted: SetTimer failed with error: " << GetLastError();
     }
 }
 
-void AIMPControlPlugin::StopTickTimer()
+void AIMPControlPlugin::stopTickTimer()
 {
     if (tick_timer_id_ != 0) {
         if (::KillTimer(NULL, tick_timer_id_) == 0) {
@@ -539,23 +539,30 @@ void AIMPControlPlugin::StopTickTimer()
     }
 }
 
-void CALLBACK AIMPControlPlugin::OnTickTimerProc(HWND /*hwnd*/,
+void CALLBACK AIMPControlPlugin::onTickTimerProc(HWND /*hwnd*/,
                                                  UINT /*uMsg*/,
                                                  UINT_PTR /*idEvent*/,
                                                  DWORD /*dwTime*/)
 {
-    plugin_instance->OnTick();
+    plugin_instance->onTick();
 }
 
-void AIMPControlPlugin::OnTick()
+void AIMPControlPlugin::onTick()
 {
     try {
         server_io_service_.poll();
+        //{ // for tests
+        //    using namespace AIMPPlayer;
+        //    boost::shared_ptr<AIMP3Manager> aimp3_manager_ = boost::dynamic_pointer_cast<AIMP3Manager>(aimp_manager_);
+        //    if (aimp3_manager_) {
+        //        aimp3_manager_->onTick();
+        //    }
+        //}
     } catch (std::exception& e) {
         // Just send error in log and stop processing.
-        BOOST_LOG_SEV(logger(), critical) << "Unhandled exception inside ControlPlugin::OnTick(): " << e.what();
+        BOOST_LOG_SEV(logger(), critical) << "Unhandled exception inside ControlPlugin::onTick(): " << e.what();
         server_io_service_.stop();
-        StopTickTimer();
+        stopTickTimer();
         BOOST_LOG_SEV(logger(), info) << "Service was stopped.";
     }
 }
