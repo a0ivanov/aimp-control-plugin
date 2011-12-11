@@ -1147,6 +1147,34 @@ void AIMP3Manager::unRegisterListener(AIMP3Manager::EventsListenerID listener_id
     external_listeners_.erase(listener_id);
 }
 
+void fillTAIMPFileInfoFromPlaylistEntry(const PlaylistEntry& entry, AIMP3SDK::TAIMPFileInfo* fi_ptr)
+{
+    assert(fi_ptr);
+    AIMP3SDK::TAIMPFileInfo& fi = *fi_ptr;
+
+    fi.StructSize = sizeof(fi);
+    fi.BitRate     = entry.bitrate();
+    fi.Channels    = entry.channelsCount();
+    fi.Duration    = entry.duration();
+    fi.FileSize    = entry.fileSize();
+    fi.Rating      = entry.rating();
+    fi.SampleRate  = entry.sampleRate();
+    fi.TrackNumber = entry.trackID();
+
+    fi.AlbumLength    = entry.album().length();
+    fi.ArtistLength   = entry.artist().length();
+    fi.DateLength     = entry.date().length();
+    fi.FileNameLength = entry.filename().length();
+    fi.GenreLength    = entry.genre().length();
+    fi.TitleLength    = entry.title().length();
+    fi.Album    = const_cast<PWCHAR>( entry.album().c_str() );
+    fi.Artist   = const_cast<PWCHAR>( entry.artist().c_str() );
+    fi.Date     = const_cast<PWCHAR>( entry.date().c_str() );
+    fi.FileName = const_cast<PWCHAR>( entry.filename().c_str() );
+    fi.Genre    = const_cast<PWCHAR>( entry.genre().c_str() );
+    fi.Title    = const_cast<PWCHAR>( entry.title().c_str() );
+}
+
 std::wstring AIMP3Manager::getFormattedEntryTitle(const PlaylistEntry& entry, const std::string& format_string_utf8) const // throw std::invalid_argument
 {
     std::wstring wformat_string( StringEncoding::utf8_to_utf16(format_string_utf8) );
@@ -1159,11 +1187,17 @@ std::wstring AIMP3Manager::getFormattedEntryTitle(const PlaylistEntry& entry, co
                &wformat_string);
     }
 
+    using namespace AIMP3SDK;
+    const int mode = AIMP_PLAYLIST_FORMAT_MODE_FILEINFO; // since AIMP_PLAYLIST_FORMAT_MODE_PREVIEW expands %R as "Artist" and %T as "Title" we use AIMP_PLAYLIST_FORMAT_MODE_FILEINFO which works as expected.
+    
+    TAIMPFileInfo fi = {0};
+    fillTAIMPFileInfoFromPlaylistEntry(entry, &fi);
+
     PWCHAR formatted_string = nullptr;
     HRESULT r = aimp3_playlist_manager_->FormatString( const_cast<PWCHAR>( wformat_string.c_str() ),
                                                        wformat_string.length(),
-                                                       AIMP3SDK::AIMP_PLAYLIST_FORMAT_MODE_PREVIEW, // 
-                                                       nullptr,
+                                                       mode,
+                                                       &fi,
                                                        &formatted_string
                                                       );
     if (S_OK != r) {
