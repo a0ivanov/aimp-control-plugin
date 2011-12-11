@@ -1150,11 +1150,19 @@ void AIMP3Manager::unRegisterListener(AIMP3Manager::EventsListenerID listener_id
 std::wstring AIMP3Manager::getFormattedEntryTitle(const PlaylistEntry& entry, const std::string& format_string_utf8) const // throw std::invalid_argument
 {
     std::wstring wformat_string( StringEncoding::utf8_to_utf16(format_string_utf8) );
-    
+
+    { // use AIMP3 format specifiers.
+    using namespace Utilities;
+    // Aimp3 uses %R insteas %a as Artist.
+    replaceAll(L"%a", 2,
+               L"%R", 2,
+               &wformat_string);
+    }
+
     PWCHAR formatted_string = nullptr;
     HRESULT r = aimp3_playlist_manager_->FormatString( const_cast<PWCHAR>( wformat_string.c_str() ),
                                                        wformat_string.length(),
-                                                       0, // AIMP_PLAYLIST_FORMAT_MODE_PREVIEW
+                                                       AIMP3SDK::AIMP_PLAYLIST_FORMAT_MODE_PREVIEW, // 
                                                        nullptr,
                                                        &formatted_string
                                                       );
