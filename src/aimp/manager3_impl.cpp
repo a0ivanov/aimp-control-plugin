@@ -590,11 +590,52 @@ void AIMP3Manager::onAimpCoreMessage(DWORD AMessage, int AParam1, void* AParam2,
     using namespace AIMP3SDK;
 
     assert(AResult);
-    
+    /*
+        ///!!! do not know when to notify about these events.
+        EVENT_INFO_UPDATE,
+        EVENT_EFFECT_CHANGED,
+    */
     switch (AMessage) {
     case AIMP_MSG_PROPERTY_RADIOCAP: // this sent every second in aimp v961
         AMessage = AMessage;
         break;
+    case AIMP_MSG_EVENT_PLAYER_STATE:
+        notifyAllExternalListeners(EVENT_PLAYER_STATE);
+        break;
+    case AIMP_MSG_EVENT_PLAYER_UPDATE_POSITION:
+        notifyAllExternalListeners(EVENT_PLAY_FILE);
+        break;
+    case AIMP_MSG_EVENT_STREAM_START:
+        notifyAllExternalListeners(EVENT_TRACK_PROGRESS_CHANGED_DIRECTLY);
+        break;
+    case AIMP_MSG_EVENT_PROPERTY_VALUE: {
+        const int property_id = AParam1;
+        switch (property_id) {
+        case AIMP_MSG_PROPERTY_VOLUME:
+            notifyAllExternalListeners(EVENT_VOLUME);
+            break;
+        case AIMP_MSG_PROPERTY_MUTE:
+            notifyAllExternalListeners(EVENT_MUTE);
+            break;
+        case AIMP_MSG_PROPERTY_SHUFFLE:
+            notifyAllExternalListeners(EVENT_SHUFFLE);
+            break;
+        case AIMP_MSG_PROPERTY_REPEAT:
+            notifyAllExternalListeners(EVENT_REPEAT);
+            break;
+        case AIMP_MSG_PROPERTY_EQUALIZER:
+        case AIMP_MSG_PROPERTY_EQUALIZER_BAND:
+            notifyAllExternalListeners(EVENT_EQ_CHANGED);
+            break;
+        case AIMP_MSG_PROPERTY_PLAYER_POSITION:
+            notifyAllExternalListeners(EVENT_TRACK_POS_CHANGED);
+            break;
+        default:
+            notifyAllExternalListeners(EVENT_STATUS_CHANGE);
+            break;
+        }
+        break;
+    }
     default:
         AMessage = AMessage;
         break;
@@ -628,6 +669,8 @@ void AIMP3Manager::onAimpCoreMessage(DWORD AMessage, int AParam1, void* AParam2,
 
 void AIMP3Manager::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValue value)
 {
+    // do not forget to call notifyAllExternalListeners(EVENT_TRACK_PROGRESS_CHANGED_DIRECTLY) on setting STATUS_POS.
+
     //try {
     //    if ( FALSE == aimp2_controller_->AIMP_Status_Set(cast<AIMP2SDK_STATUS>(status), value) ) {
     //        throw std::runtime_error(MakeString() << "Error occured while setting status " << asString(status) << " to value " << value);
@@ -679,7 +722,11 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
         int value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
-            return value;
+            switch (value) {
+            case 0: return STOPPED;
+            case 1: return PAUSED;
+            case 2: return PLAYING;
+            }
         }
         break;
     }
