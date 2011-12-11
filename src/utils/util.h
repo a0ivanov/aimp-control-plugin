@@ -89,6 +89,23 @@ private:
 };
 
 
+template<typename T>
+void replaceAll(const T* toreplace, size_t toreplace_length,
+                const T* replaceby, size_t replaceby_length,
+                std::basic_string<T>* string)
+{
+    assert(string);
+    if (toreplace_length > 0) {
+        typedef std::basic_string<T> StringT;
+        StringT::size_type begin = 0,
+                           found;
+        while( ( found = string->find(toreplace, begin, toreplace_length) ) != StringT::npos ) {
+            string->replace(found, toreplace_length, replaceby, replaceby_length);
+            begin = found + replaceby_length;
+        }
+    }
+}
+
 } // namespace Utilities
 
 #endif // #ifndef UTILITIES_H

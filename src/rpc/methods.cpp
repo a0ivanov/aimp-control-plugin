@@ -1175,23 +1175,6 @@ std::string urldecode(const std::string& url_src)
 
 } // namespace WebCtl
 
-template<typename T>
-void replaceAll(const T* toreplace, size_t toreplace_length,
-                const T* replaceby, size_t replaceby_length,
-                std::basic_string<T>* string)
-{
-    assert(string);
-    if (toreplace_length > 0) {
-        typedef std::basic_string<T> StringT;
-        StringT::size_type begin = 0,
-                           found;
-        while( ( found = string->find(toreplace, begin, toreplace_length) ) != StringT::npos ) {
-            string->replace(found, toreplace_length, replaceby, replaceby_length);
-            begin = found + replaceby_length;
-        }
-    }
-}
-
 void EmulationOfWebCtlPlugin::getPlaylistList(std::ostringstream& out)
 {
     AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_);
@@ -1210,6 +1193,7 @@ void EmulationOfWebCtlPlugin::getPlaylistList(std::ostringstream& out)
             playlist_name.resize(playlist_name_length, 0);
             aimp_playlist_manager->AIMP_PLS_GetName( playlist_id, &playlist_name[0], playlist_name.length() );
             playlist_name.resize( wcslen( playlist_name.c_str() ) );
+            using namespace Utilities;
             replaceAll(L"\"", 1,
                        L"\\\"", 2,
                        &playlist_name);
@@ -1301,6 +1285,7 @@ void EmulationOfWebCtlPlugin::getPlaylistSongs(int playlist_id, bool ignore_cach
             entry_title.resize(entry_title_length, 0);
             aimp_playlist_manager->AIMP_PLS_Entry_GetTitle( playlist_id, i, &entry_title[0], entry_title.length() );
             entry_title.resize( wcslen( entry_title.c_str() ) );
+            using namespace Utilities;
             replaceAll(L"\"", 1,
                        L"\\\"", 2,
                        &entry_title);
@@ -1361,6 +1346,7 @@ void EmulationOfWebCtlPlugin::getCurrentSong(std::ostringstream& out)
     std::wstring entry_title(256, 0);
     aimp_playlist_manager->AIMP_PLS_Entry_GetTitle( playlist_id, playing_file, &entry_title[0], entry_title.length() );
     entry_title.resize( wcslen( entry_title.c_str() ) );
+    using namespace Utilities;
     replaceAll(L"\"", 1,
                L"\\\"", 2,
                &entry_title);
