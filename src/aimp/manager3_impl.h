@@ -172,6 +172,14 @@ public:
     */
     void unRegisterListener(EventsListenerID listener_id);
 
+    /*!
+        Sets rating of specified track.
+
+        \param track_desc - track descriptor.
+        \param rating - rating value in range [0-5]. Zero value resets rating.
+    */
+    void setTrackRating(TrackDescription track_desc, int rating); // throw std::runtime_error
+
     void onAimpCoreMessage(DWORD AMessage, int AParam1, void *AParam2, HRESULT *AResult);
     void onStorageActivated(AIMP3SDK::HPLS id);
     void onStorageAdded(AIMP3SDK::HPLS id);

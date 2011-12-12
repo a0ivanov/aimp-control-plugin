@@ -79,6 +79,17 @@ AIMP3SDK::HPLS cast(PlaylistID id)
     return reinterpret_cast<AIMP3SDK::HPLS>(id);
 }
 
+// use usual functions instead template specialization since in fact PlaylistEntryID == PlaylistID == int.
+PlaylistEntryID castToPlaylistEntryID (AIMP3SDK::HPLSENTRY handle)
+{
+    return reinterpret_cast<PlaylistEntryID>(handle);
+}
+
+AIMP3SDK::HPLSENTRY castToHPLSENTRY(PlaylistEntryID id)
+{
+    return reinterpret_cast<AIMP3SDK::HPLSENTRY>(id);
+}
+
 //template<>
 //PlaylistEntryID cast(AIMP3SDK::HPLSENTRY handle)
 //{
@@ -1410,6 +1421,16 @@ std::wstring AIMP3Manager::getFormattedEntryTitle(const PlaylistEntry& entry, co
     }
 
     return formatted_string;
+}
+
+void AIMP3Manager::setTrackRating(TrackDescription track_desc, int rating)
+{
+    const PlaylistEntry& entry = getEntry(track_desc);
+
+    HRESULT r = aimp3_playlist_manager_->EntryPropertySetValue( castToHPLSENTRY( entry.id() ), AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_MARK, &rating, sizeof(rating) );    
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << "Error " << r << " in "__FUNCTION__", track " << track_desc);
+    }
 }
 
 } // namespace AIMPPlayer
