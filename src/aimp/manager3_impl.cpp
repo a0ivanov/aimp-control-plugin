@@ -667,10 +667,8 @@ void AIMP3Manager::onAimpCoreMessage(DWORD AMessage, int AParam1, void* AParam2,
 //    }
 //}
 
-void AIMP3Manager::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValue value)
+void AIMP3Manager::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValue status_value)
 {
-    // do not forget to call notifyAllExternalListeners(EVENT_TRACK_PROGRESS_CHANGED_DIRECTLY) on setting STATUS_POS.
-
     //try {
     //    if ( FALSE == aimp2_controller_->AIMP_Status_Set(cast<AIMP2SDK_STATUS>(status), value) ) {
     //        throw std::runtime_error(MakeString() << "Error occured while setting status " << asString(status) << " to value " << value);
@@ -680,6 +678,213 @@ void AIMP3Manager::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValu
     //}
 
     //notifyAboutInternalEventOnStatusChange(status);
+
+    using namespace AIMP3SDK;
+    DWORD msg = 0;
+    const int param1 = AIMP_MSG_PROPVALUE_SET;
+    HRESULT r = S_OK;
+    switch (status) {
+    case STATUS_VOLUME: {
+        msg = AIMP_MSG_PROPERTY_VOLUME;
+        float value = status_value / 100.f;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_BALANCE: {
+        msg = AIMP_MSG_PROPERTY_BALANCE;
+        float value = status_value / 100.f;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_SPEED: {
+        msg = AIMP_MSG_PROPERTY_SPEED;
+        float value = status_value / 100.f;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_Player: {
+        msg = AIMP_MSG_PROPERTY_PLAYER_STATE;
+        int value = 0;
+        switch (status_value) {
+        case STOPPED: value = 0; break;
+        case PAUSED:  value = 1; break;
+        case PLAYING: value = 2; break;
+        default:
+            throw std::runtime_error( MakeString() << "Failed to set status: STATUS_Player. Reason: failed to convert status value " << status_value << " to AIMP3 value.");
+        }
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_MUTE: {
+        msg = AIMP_MSG_PROPERTY_MUTE;
+        BOOL value = status_value;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_REVERB: {
+        msg = AIMP_MSG_PROPERTY_REVERB;
+        float value = status_value / 100.f;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_ECHO: {
+        msg = AIMP_MSG_PROPERTY_ECHO;
+        float value = status_value / 100.f;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_CHORUS: {
+        msg = AIMP_MSG_PROPERTY_CHORUS;
+        float value = status_value / 100.f;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_Flanger: {
+        msg = AIMP_MSG_PROPERTY_FLANGER;
+        float value = status_value / 100.f;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_EQ_STS: {
+        msg = AIMP_MSG_PROPERTY_EQUALIZER;
+        BOOL value = status_value;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_EQ_SLDR01:
+    case STATUS_EQ_SLDR02:
+    case STATUS_EQ_SLDR03:
+    case STATUS_EQ_SLDR04:
+    case STATUS_EQ_SLDR05:
+    case STATUS_EQ_SLDR06:
+    case STATUS_EQ_SLDR07:
+    case STATUS_EQ_SLDR08:
+    case STATUS_EQ_SLDR09:
+    case STATUS_EQ_SLDR10:
+    case STATUS_EQ_SLDR11:
+    case STATUS_EQ_SLDR12:
+    case STATUS_EQ_SLDR13:
+    case STATUS_EQ_SLDR14:
+    case STATUS_EQ_SLDR15:
+    case STATUS_EQ_SLDR16:
+    case STATUS_EQ_SLDR17:
+    case STATUS_EQ_SLDR18: {
+        msg = AIMP_MSG_PROPERTY_EQUALIZER_BAND;
+        const int param1 = MAKELONG(status - STATUS_EQ_SLDR01, AIMP_MSG_PROPVALUE_SET);
+        float value = status_value / 100.f;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_REPEAT: {
+        msg = AIMP_MSG_PROPERTY_REPEAT;
+        BOOL value = status_value;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    //STATUS_ON_STOP,
+    case STATUS_POS: {
+        msg = AIMP_MSG_PROPERTY_PLAYER_POSITION;
+        float value = static_cast<float>(status_value);
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            notifyAllExternalListeners(EVENT_TRACK_PROGRESS_CHANGED_DIRECTLY);
+            return;
+        }
+        break;
+    }
+    case STATUS_LENGTH: {
+        throw std::runtime_error( MakeString() << "Failed to set read-only status: STATUS_LENGTH");
+    }
+    //STATUS_REPEATPLS,
+    //STATUS_REP_PLS_1,
+    //STATUS_KBPS,
+    //STATUS_KHZ,
+    //STATUS_MODE,
+    case STATUS_RADIO: {
+        msg = AIMP_MSG_PROPERTY_RADIOCAP;
+        BOOL value = status_value;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    //STATUS_STREAM_TYPE,
+    //STATUS_TIMER,
+    case STATUS_SHUFFLE: {
+        msg = AIMP_MSG_PROPERTY_SHUFFLE;
+        BOOL value = status_value;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_MAIN_HWND:
+    case STATUS_TC_HWND:
+    case STATUS_APP_HWND:
+    case STATUS_PL_HWND:
+    case STATUS_EQ_HWND: {
+        throw std::runtime_error( MakeString() << "Failed to set read-only status: STATUS_LENGTH");
+        break;
+    }
+    case STATUS_TRAY: {
+        msg = AIMP_MSG_PROPERTY_MINIMIZED_TO_TRAY;
+        BOOL value = status_value;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    default:
+        break;
+    }
+
+    std::ostringstream os;
+    os << "Failed to set status " << status << ". Reason: ";
+    if (r != S_OK) {
+        os << "IAIMPCoreUnit::MessageSend(" << msg << ", " << param1 << ") returned " << r << ".";
+    } else {
+        os << "status is not supported.";
+    }
+    throw std::runtime_error( os.str() );
 }
 
 AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) const
@@ -901,7 +1106,7 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
     }
 
     std::ostringstream os;
-    os << "Failed to convert status " << status << " to AIMP3 message value. Reason: ";
+    os << "Failed to get status " << status << ". Reason: ";
     if (r != S_OK) {
         os << "IAIMPCoreUnit::MessageSend(" << msg << ", " << param1 << ") returned " << r << ".";
     } else {
