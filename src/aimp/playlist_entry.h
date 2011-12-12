@@ -69,6 +69,7 @@ public:
 
     //! Returns rating in range [0, 5] where 0 means "not set". Currently does not supported by AIMP SDK and always equals zero.
     DWORD rating() const { return rating_; }
+    void rating(DWORD r) { rating_ = r; }
 
     //! Returns sample rate in Hertz(Hz).
     DWORD sampleRate() const { return samplerate_; }

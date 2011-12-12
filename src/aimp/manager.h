@@ -159,7 +159,7 @@ public:
     virtual PlaylistID getPlayingPlaylist() const = 0;
 
     //! \return current playing track.
-    virtual PlaylistEntryID getPlayingEntry() const = 0;
+    virtual PlaylistEntryID getPlayingEntry() const = 0; // throws std::runtime_error
 
     //! \return descriptor of active track.
     virtual TrackDescription getActiveTrack() const = 0;

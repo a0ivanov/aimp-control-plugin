@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include "methods.h"
 #include "aimp/manager.h"
+#include "aimp/manager3_impl.h"
 #include "plugin/logger.h"
 #include "rpc/exception.h"
 #include "rpc/value.h"
@@ -1080,19 +1081,30 @@ ResponseType SetTrackRating::execute(const Rpc::Value& root_request, Rpc::Value&
     const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
     const int rating( Utilities::limit_value<int>(params["rating"], 0, 5) ); // set rating range [0, 5]
 
-    try {
-        const PlaylistEntry& entry = aimp_manager_.getEntry(track_desc);
-        std::wofstream file(file_to_save_ratings_, std::ios_base::out | std::ios_base::app);
-        file.imbue( std::locale("") ); // set system locale.
-        if ( file.good() ) {
-            file << entry.filename() << L"; rating:" << rating << L"\n";
-            file.close();
-        } else {
-            throw std::exception("Ratings file can not be opened.");
+    AIMP3Manager* aimp3_manager = dynamic_cast<AIMP3Manager*>(&aimp_manager_);
+    if (aimp3_manager) {
+        try {
+            aimp3_manager->setTrackRating(track_desc, rating);
+        } catch (std::exception& e) {
+            BOOST_LOG_SEV(logger(), error) << "Error saving rating in "__FUNCTION__". Reason: " << e.what();
+            throw Rpc::Exception("Error saving rating.", RATING_SET_FAILED);
         }
-    } catch (std::exception& e) {
-        BOOST_LOG_SEV(logger(), error) << "Error saving rating to text file in "__FUNCTION__". Reason: " << e.what();
-        throw Rpc::Exception("Error saving rating to text file.", RATING_SET_FAILED);
+    } else {
+        // AIMP2 does not support rating set. Save rating in simple text file.
+        try {
+            const PlaylistEntry& entry = aimp_manager_.getEntry(track_desc);
+            std::wofstream file(file_to_save_ratings_, std::ios_base::out | std::ios_base::app);
+            file.imbue( std::locale("") ); // set system locale.
+            if ( file.good() ) {
+                file << entry.filename() << L"; rating:" << rating << L"\n";
+                file.close();
+            } else {
+                throw std::exception("Ratings file can not be opened.");
+            }
+        } catch (std::exception& e) {
+            BOOST_LOG_SEV(logger(), error) << "Error saving rating to text file in "__FUNCTION__". Reason: " << e.what();
+            throw Rpc::Exception("Error saving rating to text file.", RATING_SET_FAILED);
+        }
     }
     return RESPONSE_IMMEDIATE;
 }

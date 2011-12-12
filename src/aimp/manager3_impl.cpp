@@ -515,6 +515,19 @@ private:
     WCHAR title[kFIELDBUFFERSIZE + 1];
 };
 
+boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistStrings> AIMP3Manager::getPlaylistStrings(const AIMP3SDK::HPLS playlist_id)
+{
+    using namespace AIMP3SDK;
+
+    IAIMPAddonsPlaylistStrings* strings_raw = nullptr;
+    HRESULT r = aimp3_playlist_manager_->StorageGetFiles(playlist_id, 0, &strings_raw);
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << "IAIMPAddonsPlaylistManager::StorageGetFiles(" << playlist_id << ") failed. Result " << r);
+    }
+    boost::intrusive_ptr<IAIMPAddonsPlaylistStrings> strings(strings_raw);
+    return strings;
+}
+
 void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
 {
     using namespace AIMP3SDK;
@@ -524,15 +537,7 @@ void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
 
     const AIMP3SDK::HPLS playlist_id = cast<AIMP3SDK::HPLS>( playlist.id() );    
 
-    boost::intrusive_ptr<IAIMPAddonsPlaylistStrings> strings;
-    {
-        IAIMPAddonsPlaylistStrings* strings_raw = nullptr;
-        r = aimp3_playlist_manager_->StorageGetFiles(playlist_id, 0, &strings_raw);
-        if (S_OK != r) {
-            throw std::runtime_error(MakeString() << "IAIMPAddonsPlaylistManager::StorageGetFiles(" << playlist_id << ") failed. Result " << r);
-        }
-        strings.reset(strings_raw);
-    }
+    boost::intrusive_ptr<IAIMPAddonsPlaylistStrings> strings( getPlaylistStrings(playlist_id) );
 
     const int entries_count = strings->ItemGetCount();
 
@@ -546,6 +551,15 @@ void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
         r = strings->ItemGetInfo( entry_index, &file_info_helper.getEmptyFileInfo() );
         if (S_OK == r) {
             entries.push_back( file_info_helper.getPlaylistEntry(entry_index) ); ///!!! Maybe we need to use this instead index: HPLSENTRY entry_id = aimp3_playlist_manager_->StorageGetEntry(playlist_id, entry_index);
+
+            { // get rating manually, since AIMP3 does not fill TAIMPFileInfo::Rating value.
+                int rating;
+                HPLSENTRY entry_id = aimp3_playlist_manager_->StorageGetEntry(playlist_id, entry_index);
+                r = aimp3_playlist_manager_->EntryPropertyGetValue( entry_id, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_MARK, &rating, sizeof(rating) );    
+                if (S_OK == r) {
+                    entries.back().rating(rating);
+                }
+            }
         } else {
             BOOST_LOG_SEV(logger(), error) << "Error " << r << " occured while getting entry info ¹" << entry_index << " from playlist with ID = " << playlist_id;
             throw std::runtime_error("Error occured while getting playlist entries.");
@@ -614,7 +628,7 @@ void AIMP3Manager::onAimpCoreMessage(DWORD AMessage, int AParam1, void* AParam2,
         notifyAllExternalListeners(EVENT_PLAYER_STATE);
         break;
     case AIMP_MSG_EVENT_PLAYER_UPDATE_POSITION:
-        notifyAllExternalListeners(EVENT_PLAY_FILE);
+        //notifyAllExternalListeners(EVENT_PLAY_FILE);
         break;
     case AIMP_MSG_EVENT_STREAM_START:
         notifyAllExternalListeners(EVENT_TRACK_PROGRESS_CHANGED_DIRECTLY);
@@ -1159,9 +1173,12 @@ PlaylistEntryID AIMP3Manager::getPlayingEntry() const
     using namespace AIMP3SDK;
     const PlaylistID active_playlist = getPlayingPlaylist();
     int internal_active_entry_index;
-    aimp3_playlist_manager_->StoragePropertyGetValue( cast<AIMP3SDK::HPLS>(active_playlist), AIMP_PLAYLIST_STORAGE_PROPERTY_PLAYINGINDEX,
-                                                      &internal_active_entry_index, sizeof(internal_active_entry_index) 
-                                                     );
+    HRESULT r = aimp3_playlist_manager_->StoragePropertyGetValue( cast<AIMP3SDK::HPLS>(active_playlist), AIMP_PLAYLIST_STORAGE_PROPERTY_PLAYINGINDEX,
+                                                                  &internal_active_entry_index, sizeof(internal_active_entry_index) 
+                                                                 );
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << "Error " << r << " in "__FUNCTION__);
+    }
 
     // internal index equals AIMP3Manager's entry ID. In other case map index<->ID(use Playlist::entries_id_list_) here in all places where TrackDescription is used.
     const PlaylistEntryID entry_id = internal_active_entry_index;
@@ -1343,6 +1360,11 @@ const PlaylistEntry& AIMP3Manager::getEntry(TrackDescription track_desc) const
     return entries[track_desc.track_id]; // currently track ID is simple index in entries list.
 }
 
+PlaylistEntry& AIMP3Manager::getEntry(TrackDescription track_desc)
+{
+    return const_cast<PlaylistEntry&>( const_cast<const AIMP3Manager&>(*this).getEntry(track_desc) );
+}
+
 void AIMP3Manager::notifyAllExternalListeners(EVENTS event) const
 {
     BOOST_FOREACH(const auto& listener_pair, external_listeners_) {
@@ -1425,12 +1447,18 @@ std::wstring AIMP3Manager::getFormattedEntryTitle(const PlaylistEntry& entry, co
 
 void AIMP3Manager::setTrackRating(TrackDescription track_desc, int rating)
 {
-    const PlaylistEntry& entry = getEntry(track_desc);
-
-    HRESULT r = aimp3_playlist_manager_->EntryPropertySetValue( castToHPLSENTRY( entry.id() ), AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_MARK, &rating, sizeof(rating) );    
+    using namespace AIMP3SDK;
+    PlaylistEntry& entry = getEntry(track_desc);
+    HPLSENTRY entry_id = aimp3_playlist_manager_->StorageGetEntry(cast<AIMP3SDK::HPLS>(track_desc.playlist_id),
+                                                                  entry.id()
+                                                                  );
+    const DWORD old_rating = entry.rating();
+    entry.rating(rating);
+    HRESULT r = aimp3_playlist_manager_->EntryPropertySetValue( entry_id, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_MARK, &rating, sizeof(rating) );    
     if (S_OK != r) {
+        entry.rating(old_rating);
         throw std::runtime_error(MakeString() << "Error " << r << " in "__FUNCTION__", track " << track_desc);
-    }
+    }    
 }
 
 } // namespace AIMPPlayer
