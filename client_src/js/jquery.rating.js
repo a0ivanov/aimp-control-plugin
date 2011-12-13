@@ -300,16 +300,22 @@
 			var input = $( control.current ? control.current.data('rating.input') : null );
 			// click callback, as requested here: http://plugins.jquery.com/node/1655
 					
-					// **** MODIFICATION *****
-					// Thanks to faivre.thomas - http://code.google.com/p/jquery-star-rating-plugin/issues/detail?id=27
-					//
-					//old line doing the callback :
-					//if(control.callback) control.callback.apply(input[0], [input.val(), $('a', control.current)[0]]);// callback event
-					//
-					//new line doing the callback (if i want :)
-					if((wantCallBack ||wantCallBack == undefined) && control.callback) control.callback.apply(input[0], [input.val(), $('a', control.current)[0]]);// callback event
-					//to ensure retro-compatibility, wantCallBack must be considered as true by default
-					// **** /MODIFICATION *****
+            // **** MODIFICATION *****
+            // Thanks to faivre.thomas - http://code.google.com/p/jquery-star-rating-plugin/issues/detail?id=27
+            //
+            //old line doing the callback :
+            //if(control.callback) control.callback.apply(input[0], [input.val(), $('a', control.current)[0]]);// callback event
+            //
+            //new line doing the callback (if i want :)
+            if((wantCallBack ||wantCallBack == undefined) && control.callback) {
+                if (control.current === null) {
+                    control.callback.apply(control.cancel[0].parentNode, [control.cancelValue, $('a', control.cancel)[0]]);// callback event
+                } else {
+                    control.callback.apply(input[0], [input.val(), $('a', control.current)[0]]);// callback event
+                }
+            }
+            //to ensure retro-compatibility, wantCallBack must be considered as true by default
+            // **** /MODIFICATION *****
 					
   },// $.fn.rating.select
 		

@@ -1071,17 +1071,17 @@ function initStarRatingWidget(div_id)
 {
     return $('#' + div_id + ' .rating_star').rating({
         callback: onRatingWidgetClick,
-        cancel: getText('track_info_dialog_cancel_rating')
-        //cancelValue: '0'
+        cancel: getText('track_info_dialog_cancel_rating'),
+        cancelValue: 0
     });
 }
 
 function setRatingWidgetValue(div_id, value)
 {
 	$('#' + div_id + ' .rating_star').rating('select',
-											   value,
-											   false // do not invoke callback on 'select'
-	);
+											 value,
+											 false // do not invoke callback on 'select'
+                                             );
 }
 
 function resetRatingWidgetValue(div_id)
