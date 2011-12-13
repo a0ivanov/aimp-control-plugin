@@ -1452,13 +1452,12 @@ void AIMP3Manager::setTrackRating(TrackDescription track_desc, int rating)
     HPLSENTRY entry_id = aimp3_playlist_manager_->StorageGetEntry(cast<AIMP3SDK::HPLS>(track_desc.playlist_id),
                                                                   entry.id()
                                                                   );
-    const DWORD old_rating = entry.rating();
-    entry.rating(rating);
     HRESULT r = aimp3_playlist_manager_->EntryPropertySetValue( entry_id, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_MARK, &rating, sizeof(rating) );    
     if (S_OK != r) {
-        entry.rating(old_rating);
         throw std::runtime_error(MakeString() << "Error " << r << " in "__FUNCTION__", track " << track_desc);
-    }    
+    }  
+    // Note: at this point entry does not exist any more, since EntryPropertySetValue forces calling of onStorageChanged() so, entries are reloaded.
+    // entry.rating(rating);
 }
 
 } // namespace AIMPPlayer
