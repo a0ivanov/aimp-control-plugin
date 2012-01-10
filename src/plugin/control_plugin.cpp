@@ -551,13 +551,12 @@ void AIMPControlPlugin::onTick()
 {
     try {
         server_io_service_.poll();
-        //{ // for tests
-        //    using namespace AIMPPlayer;
-        //    boost::shared_ptr<AIMP3Manager> aimp3_manager_ = boost::dynamic_pointer_cast<AIMP3Manager>(aimp_manager_);
-        //    if (aimp3_manager_) {
-        //        aimp3_manager_->onTick();
-        //    }
-        //}
+        { // for tests
+            using namespace AIMPPlayer;
+            if (aimp_manager_) {
+                aimp_manager_->onTick();
+            }
+        }
     } catch (std::exception& e) {
         // Just send error in log and stop processing.
         BOOST_LOG_SEV(logger(), critical) << "Unhandled exception inside ControlPlugin::onTick(): " << e.what();

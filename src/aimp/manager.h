@@ -23,18 +23,18 @@ public:
 
     enum STATUS {
         STATUS_FIRST, // not a status.
-        STATUS_VOLUME = 1, // volume level range is [0, 100].
-        STATUS_BALANCE,
-        STATUS_SPEED,
-        STATUS_Player,
-        STATUS_MUTE,       // true/false
-        STATUS_REVERB,
-        STATUS_ECHO,
-        STATUS_CHORUS,
-        STATUS_Flanger,
+        STATUS_VOLUME = 1, // volume level range is [0,100] in percents: 0 = 0%, 100 = 100%.
+        STATUS_BALANCE, // [0,100]: 0 left only, 50 left=right, 100 right.
+        STATUS_SPEED, // [0,100] in percents: 0 = 50%, 50 = 100%, 100 = 150%.
+        STATUS_Player, // [0,1,2] stop, play, pause.
+        STATUS_MUTE, // [0,1] off/on.
+        STATUS_REVERB, // [0,100]: 0 disabled, 6=2%, 51=46%, 100=99%.
+        STATUS_ECHO, // [0,100]: 0 disabled, 6=2%, 51=46%, 100=99%.
+        STATUS_CHORUS, // [0,100]: 0 disabled, 10=1%, 49=54%, 100=99%.
+        STATUS_Flanger, // [0,100]: 0 disabled, 6=2%, 51=46%, 100=99%.
 
-        STATUS_EQ_STS,
-        STATUS_EQ_SLDR01,
+        STATUS_EQ_STS, // [0,1] off/on.
+        STATUS_EQ_SLDR01, // EQ_SLDRXX [0,100]: 0 = -15db, 50 = 0db, 100 = 15db.
         STATUS_EQ_SLDR02,
         STATUS_EQ_SLDR03,
         STATUS_EQ_SLDR04,
@@ -53,25 +53,25 @@ public:
         STATUS_EQ_SLDR17,
         STATUS_EQ_SLDR18,
 
-        STATUS_REPEAT,     // true/false
+        STATUS_REPEAT, // [0,1] off/on.
         STATUS_ON_STOP,
-        STATUS_POS,
-        STATUS_LENGTH,
+        STATUS_POS, // POS [0,STATUS_LENGTH's value] in seconds.
+        STATUS_LENGTH, // in seconds.
         STATUS_REPEATPLS,
         STATUS_REP_PLS_1,
-        STATUS_KBPS,
-        STATUS_KHZ,
+        STATUS_KBPS, // bitrate in kilobits/seconds.
+        STATUS_KHZ, // sampling in Hertz, ex.: 44100.
         STATUS_MODE,
         STATUS_RADIO,
         STATUS_STREAM_TYPE,
         STATUS_TIMER,
-        STATUS_SHUFFLE,    // true/false
+        STATUS_SHUFFLE, // [0,1] off/on.
         STATUS_MAIN_HWND,
         STATUS_TC_HWND,
         STATUS_APP_HWND,
         STATUS_PL_HWND,
         STATUS_EQ_HWND,
-        STATUS_TRAY,
+        STATUS_TRAY, // [0,1] false/true.
         STATUS_LAST // not a status.
     };
 
@@ -242,6 +242,8 @@ public:
         \param notifier_id - listener ID that returned by registerListener() method call.
     */
     virtual void unRegisterListener(EventsListenerID listener_id) = 0;
+
+    virtual void onTick() = 0;
 };
 
 inline bool aimpStatusValid(int status)

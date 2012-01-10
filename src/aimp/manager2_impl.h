@@ -177,6 +177,8 @@ public:
     */
     void unRegisterListener(EventsListenerID listener_id);
 
+    void onTick();
+
 private:
 
     /*!

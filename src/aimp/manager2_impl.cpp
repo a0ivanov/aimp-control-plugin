@@ -596,6 +596,68 @@ AIMP2Manager::STATUS cast(AIMP2SDK_STATUS status) // throws std::bad_cast
                         );
 }
 
+const char* toString(AIMP2SDK_STATUS status)
+{
+    using namespace AIMP2SDK;
+    switch (status) {
+    case AIMP_STS_VOLUME:    return "VOLUME";
+    case AIMP_STS_BALANCE:   return "BALANCE";
+    case AIMP_STS_SPEED:     return "SPEED";
+    case AIMP_STS_Player:    return "Player";
+    case AIMP_STS_MUTE:      return "MUTE";
+    case AIMP_STS_REVERB:    return "REVERB";
+    case AIMP_STS_ECHO:      return "ECHO";
+    case AIMP_STS_CHORUS:    return "CHORUS";
+    case AIMP_STS_Flanger:   return "Flanger";
+
+    case AIMP_STS_EQ_STS:    return "EQ_STS";
+    case AIMP_STS_EQ_SLDR01: return "EQ_SLDR01";
+    case AIMP_STS_EQ_SLDR02: return "EQ_SLDR02";
+    case AIMP_STS_EQ_SLDR03: return "EQ_SLDR03";
+    case AIMP_STS_EQ_SLDR04: return "EQ_SLDR04";
+    case AIMP_STS_EQ_SLDR05: return "EQ_SLDR05";
+    case AIMP_STS_EQ_SLDR06: return "EQ_SLDR06";
+    case AIMP_STS_EQ_SLDR07: return "EQ_SLDR07";
+    case AIMP_STS_EQ_SLDR08: return "EQ_SLDR08";
+    case AIMP_STS_EQ_SLDR09: return "EQ_SLDR09";
+    case AIMP_STS_EQ_SLDR10: return "EQ_SLDR10";
+    case AIMP_STS_EQ_SLDR11: return "EQ_SLDR11";
+    case AIMP_STS_EQ_SLDR12: return "EQ_SLDR12";
+    case AIMP_STS_EQ_SLDR13: return "EQ_SLDR13";
+    case AIMP_STS_EQ_SLDR14: return "EQ_SLDR14";
+    case AIMP_STS_EQ_SLDR15: return "EQ_SLDR15";
+    case AIMP_STS_EQ_SLDR16: return "EQ_SLDR16";
+    case AIMP_STS_EQ_SLDR17: return "EQ_SLDR17";
+    case AIMP_STS_EQ_SLDR18: return "EQ_SLDR18";
+
+    case AIMP_STS_REPEAT:    return "REPEAT";
+    case AIMP_STS_ON_STOP:   return "ON_STOP";
+    case AIMP_STS_POS:       return "POS";
+    case AIMP_STS_LENGTH:    return "LENGTH";
+    case AIMP_STS_REPEATPLS: return "REPEATPLS";
+    case AIMP_STS_REP_PLS_1: return "REP_PLS_1";
+    case AIMP_STS_KBPS:      return "KBPS";
+    case AIMP_STS_KHZ:       return "KHZ";
+    case AIMP_STS_MODE:      return "MODE";
+    case AIMP_STS_RADIO:     return "RADIO";
+    case AIMP_STS_STREAM_TYPE: return "STREAM_TYPE";
+    case AIMP_STS_TIMER:     return "TIMER";
+    case AIMP_STS_SHUFFLE:   return "SHUFFLE";
+    case AIMP_STS_MAIN_HWND: return "MAIN_HWND";
+    case AIMP_STS_TC_HWND:   return "TC_HWND";
+    case AIMP_STS_APP_HWND:  return "APP_HWND";
+    case AIMP_STS_PL_HWND:   return "PL_HWND";
+    case AIMP_STS_EQ_HWND:   return "EQ_HWND";
+    case AIMP_STS_TRAY:      return "TRAY";
+    default:
+        break;
+    }
+
+    assert(!"unknown AIMPSDK status in "__FUNCTION__);
+    throw std::bad_cast( std::string(MakeString() << "can't find string representation of AIMP SDK status " << status).c_str()
+                        );
+}
+
 void AIMP2Manager::notifyAboutInternalEventOnStatusChange(AIMP2Manager::STATUS status)
 {
     switch (status) {
@@ -636,6 +698,34 @@ void AIMP2Manager::setStatus(AIMP2Manager::STATUS status, AIMP2Manager::StatusVa
 AIMP2Manager::StatusValue AIMP2Manager::getStatus(AIMP2Manager::STATUS status) const
 {
     return aimp2_controller_->AIMP_Status_Get(status);
+}
+
+void AIMP2Manager::onTick()
+{
+    struct StatusDesc { int key, value; };
+    static bool inited = false;
+    const int status_count = STATUS_LAST - STATUS_FIRST - 1;
+    static StatusDesc status_desc[status_count];
+    if (!inited) {
+        inited = true;
+        for(int i = 0; i != status_count; ++i) {
+            StatusDesc& desc = status_desc[i];
+            desc.key = STATUS_FIRST + i + 1;
+            desc.value = aimp2_controller_->AIMP_Status_Get(desc.key);
+        }
+    }
+
+    for(int i = 0; i != status_count; ++i) {
+        StatusDesc& desc = status_desc[i];
+        const int status = desc.key;
+        const int new_value = aimp2_controller_->AIMP_Status_Get(status);
+        if (desc.value != new_value) {
+            if (STATUS_POS != desc.key) {
+                BOOST_LOG_SEV(logger(), debug) << "status(STATUS_" << toString(status) << ") changed from " << desc.value << " to " << new_value;
+            }
+            desc.value = new_value;
+        }
+    }
 }
 
 std::string AIMP2Manager::getAIMPVersion() const
