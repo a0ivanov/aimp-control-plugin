@@ -866,7 +866,7 @@ void AIMP3Manager::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValu
     case STATUS_KHZ: {
         throw std::runtime_error( MakeString() << "Failed to set read-only status: " << asString(status) );
     }
-    case STATUS_REPEATPLS: {
+    case STATUS_ACTION_ON_END_OF_PLAYLIST: {
         msg = AIMP_MSG_PROPERTY_ACTION_ON_END_OF_PLAYLIST;
         int value = status_value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
@@ -878,9 +878,9 @@ void AIMP3Manager::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValu
         }
         break;
     }
-    case STATUS_REP_PLS_1: {
+    case STATUS_REPEAT_SINGLE_FILE_PLAYLISTS: {
         msg = AIMP_MSG_PROPERTY_REPEAT_SINGLE_FILE_PLAYLISTS;
-        BOOL value = !status_value;
+        BOOL value = status_value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
             return;
@@ -1104,7 +1104,7 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
         }
         break;
     }
-    case STATUS_REPEATPLS: {
+    case STATUS_ACTION_ON_END_OF_PLAYLIST: {
         msg = AIMP_MSG_PROPERTY_ACTION_ON_END_OF_PLAYLIST;
         int value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
@@ -1117,12 +1117,12 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
         }
         break;
     }
-    case STATUS_REP_PLS_1: {
+    case STATUS_REPEAT_SINGLE_FILE_PLAYLISTS: {
         msg = AIMP_MSG_PROPERTY_REPEAT_SINGLE_FILE_PLAYLISTS;
         BOOL value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
-            return !value;
+            return value;
         }
         break;
     }

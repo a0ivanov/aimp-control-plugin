@@ -43,8 +43,8 @@ inline const char* asString(AIMPManager::STATUS status)
     case AIMPManager::STATUS_STAY_ON_TOP: return "STAY_ON_TOP";
     case AIMPManager::STATUS_POS:       return "POS";
     case AIMPManager::STATUS_LENGTH:    return "LENGTH";
-    case AIMPManager::STATUS_REPEATPLS: return "REPEATPLS";
-    case AIMPManager::STATUS_REP_PLS_1: return "REP_PLS_1";
+    case AIMPManager::STATUS_ACTION_ON_END_OF_PLAYLIST: return "ACTION_ON_END_OF_PLAYLIST";
+    case AIMPManager::STATUS_REPEAT_SINGLE_FILE_PLAYLISTS: return "REPEAT_SINGLE_FILE_PLAYLISTS";
     case AIMPManager::STATUS_KBPS:      return "KBPS";
     case AIMPManager::STATUS_KHZ:       return "KHZ";
     case AIMPManager::STATUS_MODE:      return "MODE";
