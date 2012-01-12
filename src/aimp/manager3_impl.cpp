@@ -720,7 +720,7 @@ void AIMP3Manager::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValu
     }
     case STATUS_BALANCE: {
         msg = AIMP_MSG_PROPERTY_BALANCE;
-        float value = status_value / 100.f;
+        float value = status_value / 50.f - 1.f;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
             return;
@@ -729,7 +729,7 @@ void AIMP3Manager::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValu
     }
     case STATUS_SPEED: {
         msg = AIMP_MSG_PROPERTY_SPEED;
-        float value = status_value / 100.f;
+        float value = status_value / 100.f + 0.5f;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
             return;
@@ -826,7 +826,7 @@ void AIMP3Manager::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValu
     case STATUS_EQ_SLDR18: {
         msg = AIMP_MSG_PROPERTY_EQUALIZER_BAND;
         const int param1 = MAKELONG(status - STATUS_EQ_SLDR01, AIMP_MSG_PROPVALUE_SET);
-        float value = status_value / 100.f;
+        float value = status_value / 100.f * 30.f - 15.f;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
             return;
@@ -934,7 +934,7 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
         float value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
-            return static_cast<StatusValue>(value * 100.f);
+            return static_cast<StatusValue>((value + 1.f)*50.f);
         }
         break;
     }
@@ -943,7 +943,7 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
         float value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
-            return static_cast<StatusValue>(value * 100.f);
+            return static_cast<StatusValue>((value - 0.5f) * 100.f);
         }
         break;
     }
@@ -1037,7 +1037,7 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
         float value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
-            return static_cast<StatusValue>(value * 100.f);
+            return static_cast<StatusValue>((value + 15.f) / 30.f * 100.f);
         }
         break;
     }
