@@ -54,7 +54,7 @@ public:
         STATUS_EQ_SLDR18,
 
         STATUS_REPEAT, // [0,1] off/on.
-        STATUS_ON_STOP,
+        STATUS_STAY_ON_TOP,
         STATUS_POS, // POS [0,STATUS_LENGTH's value] in seconds.
         STATUS_LENGTH, // in seconds.
         STATUS_REPEATPLS, // [0,1,2] On the end of playlist "Jump to the next playlist"/"Repeat playlist"/"Do nothing

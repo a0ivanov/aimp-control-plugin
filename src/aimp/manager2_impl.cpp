@@ -504,7 +504,7 @@ AIMP2SDK_STATUS cast(AIMPManager::STATUS status) // throws std::bad_cast
     case AIMPManager::STATUS_EQ_SLDR18: return AIMP_STS_EQ_SLDR18;
 
     case AIMPManager::STATUS_REPEAT:    return AIMP_STS_REPEAT;
-    case AIMPManager::STATUS_ON_STOP:   return AIMP_STS_ON_STOP;
+    case AIMPManager::STATUS_STAY_ON_TOP:   return AIMP_STS_ON_STOP;
     case AIMPManager::STATUS_POS:       return AIMP_STS_POS;
     case AIMPManager::STATUS_LENGTH:    return AIMP_STS_LENGTH;
     case AIMPManager::STATUS_REPEATPLS: return AIMP_STS_REPEATPLS;
@@ -568,7 +568,7 @@ AIMP2Manager::STATUS cast(AIMP2SDK_STATUS status) // throws std::bad_cast
     case AIMP_STS_EQ_SLDR18: return AIMPManager::STATUS_EQ_SLDR18;
 
     case AIMP_STS_REPEAT:    return AIMPManager::STATUS_REPEAT;
-    case AIMP_STS_ON_STOP:   return AIMPManager::STATUS_ON_STOP;
+    case AIMP_STS_ON_STOP:   return AIMPManager::STATUS_STAY_ON_TOP;
     case AIMP_STS_POS:       return AIMPManager::STATUS_POS;
     case AIMP_STS_LENGTH:    return AIMPManager::STATUS_LENGTH;
     case AIMP_STS_REPEATPLS: return AIMPManager::STATUS_REPEATPLS;

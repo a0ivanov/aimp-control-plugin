@@ -842,7 +842,15 @@ void AIMP3Manager::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValu
         }
         break;
     }
-    //STATUS_ON_STOP,
+    case STATUS_STAY_ON_TOP: {
+        msg = AIMP_MSG_PROPERTY_STAYONTOP;
+        BOOL value = status_value;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;                         
+    }
     case STATUS_POS: {
         msg = AIMP_MSG_PROPERTY_PLAYER_POSITION;
         float value = static_cast<float>(status_value);
@@ -1073,7 +1081,15 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
         }
         break;
     }
-    //STATUS_ON_STOP,
+    case STATUS_STAY_ON_TOP: {
+        msg = AIMP_MSG_PROPERTY_STAYONTOP;
+        BOOL value;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            return value;
+        }
+        break;                         
+    }
     case STATUS_POS: {
         msg = AIMP_MSG_PROPERTY_PLAYER_POSITION;
         float value;

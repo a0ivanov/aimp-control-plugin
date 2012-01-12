@@ -66,8 +66,7 @@ public:
         Not supported statuses are(can't find their analogs in AIMP3 SDK):
             STATUS_STREAM_TYPE,
             STATUS_TIMER,
-            STATUS_MODE,
-            STATUS_ON_STOP
+            STATUS_MODE
 
         \param status - status to set.
         \param value - depends on status.
@@ -81,8 +80,7 @@ public:
         Not supported statuses are(can't find their analogs in AIMP3 SDK):
             STATUS_STREAM_TYPE,
             STATUS_TIMER,
-            STATUS_MODE,
-            STATUS_ON_STOP
+            STATUS_MODE
     */
     StatusValue getStatus(STATUS status) const;
 
