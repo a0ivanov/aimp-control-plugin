@@ -898,9 +898,9 @@ void AIMP3Manager::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValu
         break;
     }
     //STATUS_STREAM_TYPE,
-    //STATUS_TIMER,
+    case STATUS_REVERSETIME:
     case STATUS_SHUFFLE: {
-        msg = AIMP_MSG_PROPERTY_SHUFFLE;
+        msg = status == STATUS_SHUFFLE ? AIMP_MSG_PROPERTY_SHUFFLE : AIMP_MSG_PROPERTY_REVERSETIME;
         BOOL value = status_value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
@@ -1143,9 +1143,9 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
         break;
     }
     //STATUS_STREAM_TYPE,
-    //STATUS_TIMER,
+    case STATUS_REVERSETIME:
     case STATUS_SHUFFLE: {
-        msg = AIMP_MSG_PROPERTY_SHUFFLE;
+        msg = status == STATUS_SHUFFLE ? AIMP_MSG_PROPERTY_SHUFFLE : AIMP_MSG_PROPERTY_REVERSETIME;
         BOOL value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {

@@ -65,7 +65,7 @@ public:
         See enum STATUS to know about available statuses and ranges of their values.
         Not supported statuses are(can't find their analogs in AIMP3 SDK):
             STATUS_STREAM_TYPE,
-            STATUS_TIMER,
+            STATUS_REVERSETIME,
             STATUS_MODE
 
         \param status - status to set.
@@ -79,7 +79,7 @@ public:
         
         Not supported statuses are(can't find their analogs in AIMP3 SDK):
             STATUS_STREAM_TYPE,
-            STATUS_TIMER,
+            STATUS_REVERSETIME,
             STATUS_MODE
     */
     StatusValue getStatus(STATUS status) const;

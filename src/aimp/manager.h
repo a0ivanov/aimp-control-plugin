@@ -64,7 +64,7 @@ public:
         STATUS_MODE,
         STATUS_RADIO,
         STATUS_STREAM_TYPE,
-        STATUS_TIMER,
+        STATUS_REVERSETIME, // [0,1] off/on.
         STATUS_SHUFFLE, // [0,1] off/on.
         STATUS_MAIN_HWND,
         STATUS_TC_HWND,

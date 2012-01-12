@@ -50,7 +50,7 @@ inline const char* asString(AIMPManager::STATUS status)
     case AIMPManager::STATUS_MODE:      return "MODE";
     case AIMPManager::STATUS_RADIO:     return "RADIO";
     case AIMPManager::STATUS_STREAM_TYPE: return "STREAM_TYPE";
-    case AIMPManager::STATUS_TIMER:     return "TIMER";
+    case AIMPManager::STATUS_REVERSETIME: return "REVERSETIME";
     case AIMPManager::STATUS_SHUFFLE:   return "SHUFFLE";
     case AIMPManager::STATUS_MAIN_HWND: return "MAIN_HWND";
     case AIMPManager::STATUS_TC_HWND:   return "TC_HWND";
