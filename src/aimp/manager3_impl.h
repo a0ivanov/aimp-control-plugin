@@ -66,8 +66,6 @@ public:
         Not supported statuses are(can't find their analogs in AIMP3 SDK):
             STATUS_STREAM_TYPE,
             STATUS_TIMER,
-            STATUS_REPEATPLS,
-            STATUS_REP_PLS_1,
             STATUS_MODE,
             STATUS_ON_STOP
 
@@ -83,8 +81,6 @@ public:
         Not supported statuses are(can't find their analogs in AIMP3 SDK):
             STATUS_STREAM_TYPE,
             STATUS_TIMER,
-            STATUS_REPEATPLS,
-            STATUS_REP_PLS_1,
             STATUS_MODE,
             STATUS_ON_STOP
     */

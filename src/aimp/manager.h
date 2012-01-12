@@ -57,8 +57,8 @@ public:
         STATUS_ON_STOP,
         STATUS_POS, // POS [0,STATUS_LENGTH's value] in seconds.
         STATUS_LENGTH, // in seconds.
-        STATUS_REPEATPLS,
-        STATUS_REP_PLS_1,
+        STATUS_REPEATPLS, // [0,1,2] On the end of playlist "Jump to the next playlist"/"Repeat playlist"/"Do nothing
+        STATUS_REP_PLS_1, // [0,1] Disable repeat when only one file in playlist Enable/Disable.
         STATUS_KBPS, // bitrate in kilobits/seconds.
         STATUS_KHZ, // sampling in Hertz, ex.: 44100.
         STATUS_MODE,

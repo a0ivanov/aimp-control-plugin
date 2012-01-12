@@ -862,8 +862,27 @@ void AIMP3Manager::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValu
                                                                                                    : "STATUS_KHZ")
                                  );
     }
-    //STATUS_REPEATPLS,
-    //STATUS_REP_PLS_1,
+    case STATUS_REPEATPLS: {
+        msg = AIMP_MSG_PROPERTY_ACTION_ON_END_OF_PLAYLIST;
+        int value = status_value;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            enum { JUMP_TO_THE_NEXT_PLAYLIST,
+                   REPEAT_PLAYLIST,
+                   DO_NOTHING };
+            return;
+        }
+        break;
+    }
+    case STATUS_REP_PLS_1: {
+        msg = AIMP_MSG_PROPERTY_REPEAT_SINGLE_FILE_PLAYLISTS;
+        BOOL value = !status_value;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
     //STATUS_MODE,
     case STATUS_RADIO: {
         msg = AIMP_MSG_PROPERTY_RADIOCAP;
@@ -1073,8 +1092,28 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
         }
         break;
     }
-    //STATUS_REPEATPLS,
-    //STATUS_REP_PLS_1,
+    case STATUS_REPEATPLS: {
+        msg = AIMP_MSG_PROPERTY_ACTION_ON_END_OF_PLAYLIST;
+        int value;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            enum { JUMP_TO_THE_NEXT_PLAYLIST,
+                   REPEAT_PLAYLIST,
+                   DO_NOTHING };
+            
+            return value;
+        }
+        break;
+    }
+    case STATUS_REP_PLS_1: {
+        msg = AIMP_MSG_PROPERTY_REPEAT_SINGLE_FILE_PLAYLISTS;
+        BOOL value;
+        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        if (S_OK == r) {
+            return !value;
+        }
+        break;
+    }
     //STATUS_MODE,
     case STATUS_KBPS:
     case STATUS_KHZ: {
