@@ -752,7 +752,7 @@ PlaylistEntryID AIMP2Manager::getPlayingEntry() const
     return entry_id;
 }
 
-TrackDescription AIMP2Manager::getActiveTrack() const
+TrackDescription AIMP2Manager::getPlayingTrack() const
 {
     return TrackDescription( getPlayingPlaylist(), getPlayingEntry() );
 }

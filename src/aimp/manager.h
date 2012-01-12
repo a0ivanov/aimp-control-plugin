@@ -161,8 +161,8 @@ public:
     //! \return current playing track.
     virtual PlaylistEntryID getPlayingEntry() const = 0; // throws std::runtime_error
 
-    //! \return descriptor of active track.
-    virtual TrackDescription getActiveTrack() const = 0;
+    //! \return descriptor of playing track.
+    virtual TrackDescription getPlayingTrack() const = 0;
 
     //! \return ID of playback state.
     virtual PLAYBACK_STATE getPlaybackState() const = 0;

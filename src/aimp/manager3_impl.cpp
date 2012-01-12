@@ -853,13 +853,17 @@ void AIMP3Manager::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValu
         }
         break;
     }
-    case STATUS_LENGTH: {
-        throw std::runtime_error( MakeString() << "Failed to set read-only status: STATUS_LENGTH");
+    case STATUS_LENGTH:
+    case STATUS_KBPS:
+    case STATUS_KHZ: {
+        throw std::runtime_error( MakeString() << "Failed to set read-only status: "
+                                               << (status == STATUS_LENGTH ? "STATUS_LENGTH" 
+                                                                           : status == STATUS_KBPS ? "STATUS_KBPS" 
+                                                                                                   : "STATUS_KHZ")
+                                 );
     }
     //STATUS_REPEATPLS,
     //STATUS_REP_PLS_1,
-    //STATUS_KBPS,
-    //STATUS_KHZ,
     //STATUS_MODE,
     case STATUS_RADIO: {
         msg = AIMP_MSG_PROPERTY_RADIOCAP;
@@ -1071,9 +1075,13 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
     }
     //STATUS_REPEATPLS,
     //STATUS_REP_PLS_1,
-    //STATUS_KBPS,
-    //STATUS_KHZ,
     //STATUS_MODE,
+    case STATUS_KBPS:
+    case STATUS_KHZ: {
+        const PlaylistEntry& entry = getEntry( getPlayingTrack() );
+        return status == STATUS_KBPS ? entry.bitrate() : entry.sampleRate();
+        }
+        break;
     case STATUS_RADIO: {
         msg = AIMP_MSG_PROPERTY_RADIOCAP;
         BOOL value;
@@ -1185,7 +1193,7 @@ PlaylistEntryID AIMP3Manager::getPlayingEntry() const
     return entry_id;
 }
 
-TrackDescription AIMP3Manager::getActiveTrack() const
+TrackDescription AIMP3Manager::getPlayingTrack() const
 {
     return TrackDescription( getPlayingPlaylist(), getPlayingEntry() );
 }

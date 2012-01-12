@@ -97,7 +97,7 @@ public:
     PlaylistEntryID getPlayingEntry() const;
 
     //! \return descriptor of active track.
-    TrackDescription getActiveTrack() const;
+    TrackDescription getPlayingTrack() const;
 
     //! \return ID of playback state.
     PLAYBACK_STATE getPlaybackState() const;

@@ -68,8 +68,6 @@ public:
             STATUS_TIMER,
             STATUS_REPEATPLS,
             STATUS_REP_PLS_1,
-            STATUS_KBPS,
-            STATUS_KHZ,
             STATUS_MODE,
             STATUS_ON_STOP
 
@@ -79,7 +77,17 @@ public:
     */
     void setStatus(STATUS status, StatusValue value); // throws std::runtime_error
 
-    //! Gets value for specified status.
+    /*!
+        \brief Gets value for specified status.
+        
+        Not supported statuses are(can't find their analogs in AIMP3 SDK):
+            STATUS_STREAM_TYPE,
+            STATUS_TIMER,
+            STATUS_REPEATPLS,
+            STATUS_REP_PLS_1,
+            STATUS_MODE,
+            STATUS_ON_STOP
+    */
     StatusValue getStatus(STATUS status) const;
 
     /*!
@@ -104,7 +112,7 @@ public:
     PlaylistEntryID getPlayingEntry() const;
 
     //! \return descriptor of active track.
-    TrackDescription getActiveTrack() const;
+    TrackDescription getPlayingTrack() const;
 
     //! \return ID of playback state.
     PLAYBACK_STATE getPlaybackState() const;
