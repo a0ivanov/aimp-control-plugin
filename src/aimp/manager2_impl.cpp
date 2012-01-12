@@ -596,7 +596,7 @@ AIMP2Manager::STATUS cast(AIMP2SDK_STATUS status) // throws std::bad_cast
                         );
 }
 
-const char* toString(AIMP2SDK_STATUS status)
+const char* asString(AIMP2SDK_STATUS status)
 {
     using namespace AIMP2SDK;
     switch (status) {
@@ -721,7 +721,7 @@ void AIMP2Manager::onTick()
         const int new_value = aimp2_controller_->AIMP_Status_Get(status);
         if (desc.value != new_value) {
             if (STATUS_POS != desc.key) {
-                BOOST_LOG_SEV(logger(), debug) << "status(STATUS_" << toString(status) << ") changed from " << desc.value << " to " << new_value;
+                BOOST_LOG_SEV(logger(), debug) << "status(STATUS_" << asString(status) << ") changed from " << desc.value << " to " << new_value;
             }
             desc.value = new_value;
         }

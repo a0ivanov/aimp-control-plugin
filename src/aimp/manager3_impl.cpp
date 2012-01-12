@@ -864,11 +864,7 @@ void AIMP3Manager::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValu
     case STATUS_LENGTH:
     case STATUS_KBPS:
     case STATUS_KHZ: {
-        throw std::runtime_error( MakeString() << "Failed to set read-only status: "
-                                               << (status == STATUS_LENGTH ? "STATUS_LENGTH" 
-                                                                           : status == STATUS_KBPS ? "STATUS_KBPS" 
-                                                                                                   : "STATUS_KHZ")
-                                 );
+        throw std::runtime_error( MakeString() << "Failed to set read-only status: " << asString(status) );
     }
     case STATUS_REPEATPLS: {
         msg = AIMP_MSG_PROPERTY_ACTION_ON_END_OF_PLAYLIST;

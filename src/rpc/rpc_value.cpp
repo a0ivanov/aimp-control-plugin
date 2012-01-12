@@ -16,7 +16,7 @@ void handleUnknownType()
     throw Exception("type error: unknown type", TYPE_ERROR);
 }
 
-const char* toString(Value::TYPE type)
+const char* asString(Value::TYPE type)
 {
     const char* type_name = nullptr;
     switch (type) {
@@ -58,7 +58,7 @@ const char* toString(Value::TYPE type)
 void throwTypeErrorException(Value::TYPE expected, Value::TYPE current)
 {
     std::ostringstream os;
-    os << "type error: expected " << toString(expected) << ", have " << toString(current);
+    os << "type error: expected " << asString(expected) << ", have " << asString(current);
     throw Exception(os.str(), TYPE_ERROR);
 }
 
@@ -450,7 +450,7 @@ const size_t Value::size() const
     }
 
     std::ostringstream os;
-    os << "type error: expected TYPE_ARRAY or TYPE_OBJECT, have " << toString(type_);
+    os << "type error: expected TYPE_ARRAY or TYPE_OBJECT, have " << asString(type_);
     throw Exception(os.str(), TYPE_ERROR);
 }
 
