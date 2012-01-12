@@ -60,7 +60,19 @@ public:
     void playPreviousTrack();
 
     /*!
-        \brief Sets AIMP status to specified value. See enum STATUS to know about available statuses and ranges of their values.
+        \brief Sets AIMP status to specified value.
+        
+        See enum STATUS to know about available statuses and ranges of their values.
+        Not supported statuses are(can't find their analogs in AIMP3 SDK):
+            STATUS_STREAM_TYPE,
+            STATUS_TIMER,
+            STATUS_REPEATPLS,
+            STATUS_REP_PLS_1,
+            STATUS_KBPS,
+            STATUS_KHZ,
+            STATUS_MODE,
+            STATUS_ON_STOP
+
         \param status - status to set.
         \param value - depends on status.
         \throw std::runtime_error if status was not set successfully.
