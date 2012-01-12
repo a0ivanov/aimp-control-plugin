@@ -40,7 +40,7 @@ inline const char* asString(AIMPManager::STATUS status)
     case AIMPManager::STATUS_EQ_SLDR18: return "EQ_SLDR18";
 
     case AIMPManager::STATUS_REPEAT:    return "REPEAT";
-    case AIMPManager::STATUS_ON_STOP:   return "ON_STOP";
+    case AIMPManager::STATUS_STAY_ON_TOP: return "STAY_ON_TOP";
     case AIMPManager::STATUS_POS:       return "POS";
     case AIMPManager::STATUS_LENGTH:    return "LENGTH";
     case AIMPManager::STATUS_REPEATPLS: return "REPEATPLS";
