@@ -170,6 +170,7 @@
     <ClInclude Include="..\src\aimp\manager.h" />
     <ClInclude Include="..\src\aimp\manager2_impl.h" />
     <ClInclude Include="..\src\aimp\manager3_impl.h" />
+    <ClInclude Include="..\src\aimp\manager_impl_common.h" />
     <ClInclude Include="..\src\aimp\playlist.h" />
     <ClInclude Include="..\src\aimp\playlist_entry.h" />
     <ClInclude Include="..\src\aimp\track_description.h" />

@@ -324,6 +324,9 @@
     <ClInclude Include="..\src\aimp\manager3_impl.h">
       <Filter>src\aimp_manager</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\aimp\manager_impl_common.h">
+      <Filter>src\aimp_manager</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\control_plugin.def">
