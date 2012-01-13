@@ -1027,9 +1027,10 @@ private:
 
 /*!
     \brief Set track rating.
-
-    Current implementation just saves path to track and rating in text file since AIMP SDK does not support rating change now.
-    No checks are performed(ex. rating already exists for file and etc.) since it is temporarily stub.
+    On AIMP3: full functional.
+    On AIMP2: 
+        Current implementation just saves path to track and rating in text file since AIMP SDK does not support rating change now.
+        No checks are performed(ex. rating already exists for file and etc.) since it is temporarily stub.
 */
 class SetTrackRating : public AIMPRPCMethod
 {
@@ -1118,6 +1119,28 @@ private:
 
 
     MethodNamesMap method_names_;
+};
+
+/*!
+    \brief Returns URI of track for download.
+*/
+class DownloadTrack : public AIMPRPCMethod
+{
+public:
+    DownloadTrack(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request_handler)
+        : AIMPRPCMethod("DownloadTrack", aimp_manager, rpc_request_handler)
+    {}
+
+    std::string help()
+    {
+        return ""
+        ;
+    }
+
+    Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
+
+private:
+
 };
 
 } // namespace AimpRpcMethods

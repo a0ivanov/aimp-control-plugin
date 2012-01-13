@@ -70,6 +70,7 @@ track_contol_menu_play : 'Воспроизвести',
 track_contol_menu_pause : 'Приостановить',
 track_contol_menu_enqueue : 'Добавить в очередь',
 track_contol_menu_remove_from_queue : 'Удалить из очереди',
+track_contol_menu_download_track : 'Скачать',
 
 track_info_dialog_caption : 'Информация о треке',
 track_info_dialog_cancel_rating : 'Без оценки',

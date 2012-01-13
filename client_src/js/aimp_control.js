@@ -322,11 +322,13 @@ function getControlMenuDescriptor(nTr)
 	var play_button_id          = 'play_entry_' + entry_id;
 	var enqueue_entry_button_id = 'enqueue_entry_' + entry_id;
 	var remove_from_queue_entry_button_id = 'remove_from_queue_entry_' + entry_id;
+	var download_track_button_id = 'download_track_entry_' + entry_id;
 	var control_menu_html =   '<table cellpadding="5" cellspacing="0" border="0">'
 							+ '<tr>'
 							+ '<td><button id="' + play_button_id + '"></button></td>'
 							+ '<td><button id="' + enqueue_entry_button_id + '"></button></td>'
 							+ '<td><button id="' + remove_from_queue_entry_button_id + '"></button></td>'
+							+ '<td><button id="' + download_track_button_id + '"></button></td>'
 							+ '</tr>'
 							+ '</table>';
 
@@ -337,7 +339,8 @@ function getControlMenuDescriptor(nTr)
 		nTr : null,
 		play_button_id : play_button_id,
 		enqueue_button_id : enqueue_entry_button_id,
-		remove_from_queue_button_id : remove_from_queue_entry_button_id
+		remove_from_queue_button_id : remove_from_queue_entry_button_id,
+		download_track_button_id : download_track_button_id
 	};
 }
 
@@ -458,7 +461,25 @@ function initTrackControlMenu(control_menu_descriptor)
 									          { on_exception : on_control_menu_command }
 											  );
     });
-
+	
+    var download_track_button = $('#' + control_menu_descriptor.download_track_button_id , control_menu_descriptor.nTr);
+    download_track_button.button({
+        text : false,
+		icons: { primary: 'ui-icon-arrowthick-1-s' },
+		label : getText('track_contol_menu_download_track')
+    }).click(function() {
+		var args = { track_id    : parseInt(control_menu_descriptor.entry_id),
+					 playlist_id : parseInt(control_menu_descriptor.playlist_id)
+				   }
+		aimp_manager.downloadTrack(args,
+								   { on_exception : on_control_menu_command,
+								    on_success : function(result) {
+												     alert(result.uri);
+												 }
+								    }
+								   );
+    });
+	
     // add updater to global list.
     var notifier_id = control_menu_descriptor.entry_id + '_' + control_menu_descriptor.playlist_id;
     control_menu_state_updaters[notifier_id] = { notifier : updateTrackControlMenu, control_menu_descriptor : control_menu_descriptor };

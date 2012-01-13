@@ -69,6 +69,7 @@ track_contol_menu_play : 'Play',
 track_contol_menu_pause : 'Pause',
 track_contol_menu_enqueue : 'Add to queue',
 track_contol_menu_remove_from_queue : 'Remove from queue',
+track_contol_menu_download_track : 'Download',
 
 track_info_dialog_caption : 'Track info',
 track_info_dialog_cancel_rating : 'Not rated',

@@ -1579,4 +1579,10 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
     return RESPONSE_IMMEDIATE;
 }
 
+Rpc::ResponseType DownloadTrack::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+{
+    root_response["result"]["uri"] = "to implement";
+    return RESPONSE_IMMEDIATE;
+}
+
 } // namespace AimpRpcMethods

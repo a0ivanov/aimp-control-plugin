@@ -436,6 +436,8 @@ void AIMPControlPlugin::createRpcMethods()
     } else {
         BOOST_LOG_SEV(logger(), info) << "Album cover processing was disabled.";
     }
+    REGISTER_AIMP_RPC_METHOD(DownloadTrack);
+
     // Comet technique, "subscribe" method.
     REGISTER_AIMP_RPC_METHOD(SubscribeOnAIMPStateUpdateEvent);
     // add file name for rating store file to SetTrackRating() method.
