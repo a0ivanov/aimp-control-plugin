@@ -471,14 +471,8 @@ function initTrackControlMenu(control_menu_descriptor)
 		var args = { track_id    : parseInt(control_menu_descriptor.entry_id),
 					 playlist_id : parseInt(control_menu_descriptor.playlist_id)
 				   }
-		aimp_manager.downloadTrack(args,
-								   { on_exception : on_control_menu_command,
-								    on_success : function(result) {
-													 window.location = result.uri;
-													 //window.location.href = result.uri;													 
-												 }
-								    }
-								   );
+		var uri = '/downloadTrack/playlist_id/' + args.playlist_id + '/track_id/' + args.track_id;
+		window.location = uri; // start downloading.
     });
 	
     // add updater to global list.

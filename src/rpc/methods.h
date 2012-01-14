@@ -51,8 +51,7 @@ enum ERROR_CODES { WRONG_ARGUMENT = 11, /*!< returned when arguments passed in f
                    TRACK_NOT_FOUND,
                    ALBUM_COVER_LOAD_FAILED,
                    RATING_SET_FAILED,
-                   STATUS_SET_FAILED,
-                   DOWNLOAD_TRACK_FAILED
+                   STATUS_SET_FAILED
 };
 
 using namespace AIMPPlayer;
@@ -1121,28 +1120,6 @@ private:
 
 
     MethodNamesMap method_names_;
-};
-
-/*!
-    \brief Returns URI of track for download.
-*/
-class DownloadTrack : public AIMPRPCMethod
-{
-public:
-    DownloadTrack(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("DownloadTrack", aimp_manager, rpc_request_handler)
-    {}
-
-    std::string help()
-    {
-        return ""
-        ;
-    }
-
-    Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
-
-private:
-
 };
 
 } // namespace AimpRpcMethods
