@@ -4,6 +4,13 @@
 #include "request_handler.h"
 #include "../aimp/manager.h"
 
+#include "../http_server/reply.h"
+#include "../http_server/request.h"
+#include "../http_server/mime_types.h"
+
+#include "utils/string_encoding.h"
+#include "utils/util.h"
+
 namespace DownloadTrack
 {
 
@@ -63,6 +70,45 @@ std::wstring RequestHandler::getTrackSourcePath(const std::string& request_uri)
         throw std::runtime_error("Track source does not exist.");
     }
     return entry.filename();
+}
+
+bool RequestHandler::handle_request(const Http::Request& req, Http::Reply& rep)
+{
+    using namespace Http;
+
+    try {
+        namespace fs = boost::filesystem;
+        const std::wstring track_source_path( getTrackSourcePath(req.uri) );
+
+        // Open the file to send back.
+        const std::string full_path = StringEncoding::utf16_to_system_ansi_encoding(track_source_path);
+        std::ifstream is(full_path.c_str(), std::ios::in | std::ios::binary);
+        if (!is) {
+            rep = Reply::stock_reply(Reply::not_found);
+            return true;
+        }
+
+        // Fill out the reply to be sent to the client.
+        char buf[512];
+        while (is.read( buf, sizeof(buf) ).gcount() > 0) {
+            rep.content.append( buf, static_cast<std::size_t>( is.gcount() ) ); // cast from int64 to uint32 is safe here since we have maximum 512 bytes.
+        }
+
+        const fs::path path(full_path);
+
+        // fill http headers.
+        rep.status = Reply::ok;
+        rep.headers.resize(3);
+        rep.headers[0].name = "Content-Length";
+        rep.headers[0].value = boost::lexical_cast<std::string>( rep.content.size() );
+        rep.headers[1].name = "Content-Type";
+        rep.headers[1].value = mime_types::extension_to_type( path.extension().c_str() );
+        rep.headers[2].name = "Content-Disposition";
+        rep.headers[2].value = Utilities::MakeString() << "attachment; filename=\"" << path.filename() << "\"";
+    } catch (std::exception&) {
+        rep = Reply::stock_reply(Reply::not_found);
+    }
+    return true;
 }
 
 } // namespace DownloadTrack

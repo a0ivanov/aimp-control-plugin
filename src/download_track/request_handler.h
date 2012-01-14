@@ -3,8 +3,10 @@
 #ifndef DOWNLOAD_TRACK_REQUEST_HANDLER_H
 #define DOWNLOAD_TRACK_REQUEST_HANDLER_H
 
-namespace AIMPPlayer {
-    class AIMPManager;
+namespace AIMPPlayer { class AIMPManager; }
+namespace Http {
+    struct Request; 
+    struct Reply;
 }
 
 namespace DownloadTrack
@@ -18,9 +20,12 @@ public:
         aimp_manager_(aimp_manager)
     {}
 
-    std::wstring getTrackSourcePath(const std::string& request_uri); // throws std::exception.
+    bool handle_request(const Http::Request& req, Http::Reply& rep); // throws std::exception.
 
 private:
+
+    std::wstring getTrackSourcePath(const std::string& request_uri); // throws std::exception.
+
 
     AIMPPlayer::AIMPManager& aimp_manager_;
 };

@@ -17,9 +17,6 @@
 #include "mime_types.h"
 #include "rpc/request_handler.h"
 
-#include "utils/string_encoding.h"
-#include "utils/util.h"
-
 namespace Http {
 
 bool RequestHandler::handle_request(const Request& req, Reply& rep, ICometDelayedConnection_ptr connection)
@@ -42,46 +39,11 @@ bool RequestHandler::handle_request(const Request& req, Reply& rep, ICometDelaye
 
         return false; // response sending will be delayed.
     } else if (req.uri.find("/downloadTrack/") == 0) { // handle special download track request.
-        return handleDownloadTrackRequest(req, rep);
+        return download_track_request_handler_.handle_request(req, rep);
     } else {
         handle_file_request(req, rep);
     }
 
-    return true;
-}
-
-bool RequestHandler::handleDownloadTrackRequest(const Request& req, Reply& rep)
-{
-    try {
-        namespace fs = boost::filesystem;
-        const std::wstring track_source_path( download_track_request_handler_.getTrackSourcePath(req.uri) );
-
-        // Open the file to send back.
-        const std::string full_path = StringEncoding::utf16_to_system_ansi_encoding(track_source_path);
-        std::ifstream is(full_path.c_str(), std::ios::in | std::ios::binary);
-        if (!is) {
-            rep = Reply::stock_reply(Reply::not_found);
-            return true;
-        }
-
-        // Fill out the reply to be sent to the client.
-        char buf[512];
-        while (is.read( buf, sizeof(buf) ).gcount() > 0) {
-            rep.content.append( buf, static_cast<std::size_t>( is.gcount() ) ); // cast from int64 to uint32 is safe here since we have maximum 512 bytes.
-        }
-
-        const fs::path path(full_path);
-        fillReplyWithContent(mime_types::extension_to_type( path.extension().c_str() ), rep);
-
-        { // add Content-Disposition header.
-            Http::header header;
-            header.name = "Content-Disposition";
-            header.value= Utilities::MakeString() << "attachment; filename=\"" << path.filename() << "\"";
-            rep.headers.push_back(header);
-        }
-    } catch (std::exception&) {
-        rep = Reply::stock_reply(Reply::not_found);
-    }
     return true;
 }
 
