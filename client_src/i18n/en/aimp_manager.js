@@ -23,6 +23,7 @@ error_playlist_not_found : 'Playlist not found',
 error_track_not_found : 'Track not found',
 error_album_cover_load_failed : 'Album cover loading failed',
 error_rating_set_failed : 'Rating set failed',
-error_status_set_failed : 'Status set failed'
+error_status_set_failed : 'Status set failed',
+error_download_track : 'Failed to download track'
 
 }

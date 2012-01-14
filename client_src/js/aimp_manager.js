@@ -84,7 +84,8 @@ function AimpManager() {
             21 : 'error_track_not_found',
             22 : 'error_album_cover_load_failed',
             23 : 'error_rating_set_failed',
-            24 : 'error_status_set_failed'
+            24 : 'error_status_set_failed',
+			25 : 'error_download_track'
         };
     }
     initLocalizedErrorMessages();

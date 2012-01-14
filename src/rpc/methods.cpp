@@ -1579,9 +1579,32 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
     return RESPONSE_IMMEDIATE;
 }
 
+bool fileExists(const std::wstring& filepath)
+{
+    namespace fs = boost::filesystem;
+    const fs::wpath path(filepath);
+    return fs::exists(path);
+}
+
 Rpc::ResponseType DownloadTrack::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
-    root_response["result"]["uri"] = "to implement";
+    const Rpc::Value& params = root_request["params"];
+    if (params.type() != Rpc::Value::TYPE_OBJECT || params.size() < 2) {
+        throw Rpc::Exception("Wrong arguments count. Wait 2 int values: track_id, playlist_id.", WRONG_ARGUMENT);
+    }
+
+    const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
+    const PlaylistEntry& entry = aimp_manager_.getEntry(track_desc);
+    if (   entry.filename().empty() 
+        || !fileExists( entry.filename() ) 
+        )
+    {
+        throw Rpc::Exception("Track source does not exist.", DOWNLOAD_TRACK_FAILED);
+    }
+
+    root_response["result"]["uri"] = (Utilities::MakeString() << "/dowloadTrack?playlist_id=" << track_desc.playlist_id 
+                                                              << "&track_id=" << track_desc.track_id);
+    
     return RESPONSE_IMMEDIATE;
 }
 
