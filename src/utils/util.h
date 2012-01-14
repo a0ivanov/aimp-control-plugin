@@ -106,6 +106,9 @@ void replaceAll(const T* toreplace, size_t toreplace_length,
     }
 }
 
+// Returns true if string is started with search_string.
+bool stringStartsWith(const std::string& string, const std::string& search_string);
+
 } // namespace Utilities
 
 #endif // #ifndef UTILITIES_H

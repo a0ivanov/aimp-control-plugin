@@ -34,4 +34,12 @@ Profiler::~Profiler()
     BOOST_LOG_SEV(logger(), debug) << msg_ << " duration " << timer_.elapsed() << " sec.";
 }
 
+bool stringStartsWith(const std::string& string, const std::string& search_string)
+{
+    if ( string.length() >= search_string.length() ) {
+        return search_string.find( string.c_str(), 0, search_string.length() ) == 0;
+    }
+    return false;
+}
+
 } // namespace Utilities
