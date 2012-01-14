@@ -16,8 +16,11 @@
 #include "request.h"
 #include "mime_types.h"
 #include "rpc/request_handler.h"
+#include "utils/util.h"
 
 namespace Http {
+
+const std::string kDOWNLOAD_TRACK_TAG("/downloadTrack/");
 
 bool RequestHandler::handle_request(const Request& req, Reply& rep, ICometDelayedConnection_ptr connection)
 {
@@ -33,12 +36,19 @@ bool RequestHandler::handle_request(const Request& req, Reply& rep, ICometDelaye
                                                                    &response_content_type
                                                                    );
         if (result || !result) {
-            fillReplyWithContent(response_content_type, rep);
+            if ( Utilities::stringStartsWith(rep.content, kDOWNLOAD_TRACK_TAG) ) { // handle special download track response.
+                Request req_download_track(req);
+                req_download_track.uri = rep.content;
+                rep.content.clear();
+                return download_track_request_handler_.handle_request(req_download_track, rep);
+            } else { // usual RPC response.
+                fillReplyWithContent(response_content_type, rep);
+            }
             return true; // response will be sent immediately.
         }
 
         return false; // response sending will be delayed.
-    } else if (req.uri.find("/downloadTrack/") == 0) { // handle special download track request.
+    } else if ( Utilities::stringStartsWith(req.uri, kDOWNLOAD_TRACK_TAG) ) { // handle special download track request.
         return download_track_request_handler_.handle_request(req, rep);
     } else {
         handle_file_request(req, rep);

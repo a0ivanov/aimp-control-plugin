@@ -1100,7 +1100,8 @@ private:
         playlist_add_file,
         playlist_del_file,
         playlist_queue_add,
-        playlist_queue_remove
+        playlist_queue_remove,
+        download_song
     };
 
     typedef std::map<std::string, METHOD_ID> MethodNamesMap;

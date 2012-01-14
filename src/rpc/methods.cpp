@@ -1146,7 +1146,8 @@ void EmulationOfWebCtlPlugin::initMethodNamesMap()
         ("playlist_add_file",  playlist_add_file)
         ("playlist_del_file",  playlist_del_file)
         ("playlist_queue_add", playlist_queue_add)
-        ("playlist_queue_remove", playlist_queue_remove);
+        ("playlist_queue_remove", playlist_queue_remove)
+        ("download_song",      download_song);
 }
 
 const EmulationOfWebCtlPlugin::METHOD_ID* EmulationOfWebCtlPlugin::getMethodID(const std::string& method_name) const
@@ -1159,10 +1160,10 @@ const EmulationOfWebCtlPlugin::METHOD_ID* EmulationOfWebCtlPlugin::getMethodID(c
 namespace WebCtl
 {
 
-const char * const kVERSION = "2.6.4.4";
-const unsigned int kVERSION_INT = 2644;
+const char * const kVERSION = "2.6.5.0";
+const unsigned int kVERSION_INT = 2650;
 unsigned int update_time = 10,
-             cache_time = 60;
+             cache_time  = 60;
 
 std::string urldecode(const std::string& url_src)
 {
@@ -1564,6 +1565,14 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
             {
             const TrackDescription track_desc(params["playlist"], params["song"]);
             aimp_manager_.removeEntryFromPlayQueue(track_desc);
+            }
+            break;
+        case download_song:
+            {
+            const TrackDescription track_desc(params["playlist"], params["song"]);
+            // prepare URI for DownloadTrack::RequestHandler.
+            out << "/downloadTrack/playlist_id/" << track_desc.playlist_id 
+                << "/track_id/" << track_desc.track_id;
             }
             break;
         default:
