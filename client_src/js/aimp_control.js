@@ -474,7 +474,8 @@ function initTrackControlMenu(control_menu_descriptor)
 		aimp_manager.downloadTrack(args,
 								   { on_exception : on_control_menu_command,
 								    on_success : function(result) {
-												     alert(result.uri);
+													 window.location = result.uri;
+													 //window.location.href = result.uri;													 
 												 }
 								    }
 								   );

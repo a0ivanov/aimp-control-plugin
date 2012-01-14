@@ -7,6 +7,7 @@
 
 #include "stdafx.h"
 #include "http_server/request_handler.h"
+#include "download_track/request_handler.h"
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -16,32 +17,71 @@
 #include "mime_types.h"
 #include "rpc/request_handler.h"
 
+#include "utils/string_encoding.h"
+#include "utils/util.h"
+
 namespace Http {
 
 bool RequestHandler::handle_request(const Request& req, Reply& rep, ICometDelayedConnection_ptr connection)
 {
-    if ( Rpc::Frontend* frontend = rpc_request_handler_.getFrontEnd(req.uri) ) {
-        std::string response, response_content_type;
+    if ( Rpc::Frontend* frontend = rpc_request_handler_.getFrontEnd(req.uri) ) { // handle RPC call.
+        std::string response_content_type;
         DelayedResponseSender_ptr comet_delayed_response_sender( new DelayedResponseSender(connection, *this) );
 
         boost::tribool result = rpc_request_handler_.handleRequest(req.uri,
                                                                    req.content,
                                                                    comet_delayed_response_sender,
                                                                    *frontend,
-                                                                   &response,
+                                                                   &rep.content,
                                                                    &response_content_type
                                                                    );
         if (result || !result) {
-            rep.content = response;
             fillReplyWithContent(response_content_type, rep);
             return true; // response will be sent immediately.
         }
 
         return false; // response sending will be delayed.
+    } else if (req.uri.find("/downloadTrack/") == 0) { // handle special download track request.
+        return handleDownloadTrackRequest(req, rep);
     } else {
         handle_file_request(req, rep);
     }
 
+    return true;
+}
+
+bool RequestHandler::handleDownloadTrackRequest(const Request& req, Reply& rep)
+{
+    try {
+        namespace fs = boost::filesystem;
+        const std::wstring track_source_path( download_track_request_handler_.getTrackSourcePath(req.uri) );
+
+        // Open the file to send back.
+        const std::string full_path = StringEncoding::utf16_to_system_ansi_encoding(track_source_path);
+        std::ifstream is(full_path.c_str(), std::ios::in | std::ios::binary);
+        if (!is) {
+            rep = Reply::stock_reply(Reply::not_found);
+            return true;
+        }
+
+        // Fill out the reply to be sent to the client.
+        char buf[512];
+        while (is.read( buf, sizeof(buf) ).gcount() > 0) {
+            rep.content.append( buf, static_cast<std::size_t>( is.gcount() ) ); // cast from int64 to uint32 is safe here since we have maximum 512 bytes.
+        }
+
+        const fs::path path(full_path);
+        fillReplyWithContent(mime_types::extension_to_type( path.extension().c_str() ), rep);
+
+        { // add Content-Disposition header.
+            Http::header header;
+            header.name = "Content-Disposition";
+            header.value= Utilities::MakeString() << "attachment; filename=\"" << path.filename() << "\"";
+            rep.headers.push_back(header);
+        }
+    } catch (std::exception&) {
+        rep = Reply::stock_reply(Reply::not_found);
+    }
     return true;
 }
 
@@ -72,7 +112,7 @@ void RequestHandler::handle_file_request(const Request& req, Reply& rep)
     std::size_t last_dot_pos = request_path.find_last_of(".");
     std::string extension;
     if (last_dot_pos != std::string::npos && last_dot_pos > last_slash_pos) {
-        extension = request_path.substr(last_dot_pos + 1);
+        extension = request_path.substr(last_dot_pos);
     }
 
     // Open the file to send back.

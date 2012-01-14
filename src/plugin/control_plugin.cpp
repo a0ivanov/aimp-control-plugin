@@ -15,6 +15,7 @@
 #include "http_server/request_handler.h"
 #include "http_server/request_handler.h"
 #include "http_server/server.h"
+#include "download_track/request_handler.h"
 #include "utils/string_encoding.h"
 
 #include <FreeImagePlus.h>
@@ -284,10 +285,13 @@ HRESULT AIMPControlPlugin::initialize()
         createRpcFrontends();
         createRpcMethods();
 
+        download_track_request_handler_.reset( new DownloadTrack::RequestHandler(*aimp_manager_) );
+
         using namespace StringEncoding;
         // create HTTP request handler.
         http_request_handler_.reset( new Http::RequestHandler( utf16_to_system_ansi_encoding( getWebServerDocumentRoot().directory_string() ),
-                                                               *rpc_request_handler_
+                                                               *rpc_request_handler_,
+                                                               *download_track_request_handler_
                                                               )
                                     );
         // create XMLRPC server.
@@ -332,6 +336,8 @@ HRESULT AIMPControlPlugin::Finalize()
     }
 
     http_request_handler_.reset();
+
+    download_track_request_handler_.reset();
 
     rpc_request_handler_.reset();
 
@@ -436,7 +442,7 @@ void AIMPControlPlugin::createRpcMethods()
     } else {
         BOOST_LOG_SEV(logger(), info) << "Album cover processing was disabled.";
     }
-    REGISTER_AIMP_RPC_METHOD(DownloadTrack);
+    REGISTER_AIMP_RPC_METHOD(AimpRpcMethods::DownloadTrack);
 
     // Comet technique, "subscribe" method.
     REGISTER_AIMP_RPC_METHOD(SubscribeOnAIMPStateUpdateEvent);

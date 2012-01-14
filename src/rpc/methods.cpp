@@ -1602,8 +1602,8 @@ Rpc::ResponseType DownloadTrack::execute(const Rpc::Value& root_request, Rpc::Va
         throw Rpc::Exception("Track source does not exist.", DOWNLOAD_TRACK_FAILED);
     }
 
-    root_response["result"]["uri"] = (Utilities::MakeString() << "/dowloadTrack?playlist_id=" << track_desc.playlist_id 
-                                                              << "&track_id=" << track_desc.track_id);
+    root_response["result"]["uri"] = (Utilities::MakeString() << "/downloadTrack/playlist_id/" << track_desc.playlist_id 
+                                                              << "/track_id/" << track_desc.track_id);
     
     return RESPONSE_IMMEDIATE;
 }

@@ -17,6 +17,7 @@
 #include <boost/enable_shared_from_this.hpp>
 
 namespace Rpc { class RequestHandler; }
+namespace DownloadTrack { class RequestHandler; }
 
 namespace Http
 {
@@ -32,10 +33,13 @@ class RequestHandler : private boost::noncopyable
 public:
 
     /// Construct with document root directory and Rpc handler.
-    explicit RequestHandler(const std::string& document_root, Rpc::RequestHandler& rpc_request_handler)
+    explicit RequestHandler(const std::string& document_root,
+                            Rpc::RequestHandler& rpc_request_handler,
+                            DownloadTrack::RequestHandler& download_track_request_handler)
         :
         document_root_(document_root),
-        rpc_request_handler_(rpc_request_handler)
+        rpc_request_handler_(rpc_request_handler),
+        download_track_request_handler_(download_track_request_handler)
     {}
 
     /*
@@ -57,10 +61,13 @@ private:
     */
     static void fillReplyWithContent(const std::string& content_type, Reply& rep);
 
+    bool handleDownloadTrackRequest(const Request& req, Reply& rep);
+
     // The directory containing the files to be served.
     std::string document_root_;
 
     Rpc::RequestHandler& rpc_request_handler_;
+    DownloadTrack::RequestHandler& download_track_request_handler_;
 };
 
 

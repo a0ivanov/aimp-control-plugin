@@ -44,6 +44,9 @@
     <Filter Include="src\aimp_manager\aimp_sdk\2">
       <UniqueIdentifier>{369e0838-d79d-4033-9bd0-8da069c14564}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\download_track">
+      <UniqueIdentifier>{5889807d-b6c9-40a9-9087-2c7f627959bb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\stdafx.cpp">
@@ -153,6 +156,9 @@
     </ClCompile>
     <ClCompile Include="..\src\aimp\manager3_impl.cpp">
       <Filter>src\aimp_manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\download_track\download_track_request_handler.cpp">
+      <Filter>src\download_track</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -326,6 +332,9 @@
     </ClInclude>
     <ClInclude Include="..\src\aimp\manager_impl_common.h">
       <Filter>src\aimp_manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\download_track\request_handler.h">
+      <Filter>src\download_track</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
