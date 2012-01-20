@@ -261,10 +261,13 @@ void AIMP3Manager::onStorageAdded(AIMP3SDK::HPLS id)
 std::string playlistNotifyFlagsToString(DWORD flags)
 {
     using namespace AIMP3SDK;
+
+#ifndef  NDEBUG
     const DWORD all_flags =   AIMP_PLAYLIST_NOTIFY_NAME | AIMP_PLAYLIST_NOTIFY_SELECTION | AIMP_PLAYLIST_NOTIFY_TRACKINGINDEX
                             | AIMP_PLAYLIST_NOTIFY_PLAYINDEX | AIMP_PLAYLIST_NOTIFY_FOCUSINDEX | AIMP_PLAYLIST_NOTIFY_CONTENT
                             | AIMP_PLAYLIST_NOTIFY_ENTRYINFO | AIMP_PLAYLIST_NOTIFY_STATISTICS | AIMP_PLAYLIST_NOTIFY_PLAYINGSWITCHS;
     assert(flags <= all_flags);
+#endif
 
     const size_t flag_count = 9;
     static const char * const strings[flag_count] = { "NAME", "SELECTION", "TRACKINGINDEX", "PLAYINDEX", "FOCUSINDEX", 

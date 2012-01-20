@@ -19,6 +19,10 @@
 #define JSON_ASSERT( condition ) assert( condition );  // @todo <= change this into an exception throw
 #define JSON_ASSERT_MESSAGE( condition, message ) if (!( condition )) throw std::runtime_error( message );
 
+#pragma warning (push)
+// warning C4127: conditional expression is constant
+#pragma warning (disable: 4127)
+
 namespace Json {
 
 const Value Value::null;
@@ -1718,3 +1722,5 @@ Path::make( Value &root ) const
 
 
 } // namespace Json
+
+#pragma warning (pop)
