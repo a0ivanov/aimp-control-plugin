@@ -282,7 +282,7 @@ void AIMP2Manager::checkIfPlaylistsChanged()
             // current playlist was not loaded yet, load it now without entries.
             playlists_.insert( std::make_pair(current_playlist_id, loadPlaylist(playlist_index) ) );
             playlists_to_reload.push_back(current_playlist_id);
-        } else if (loaded_playlist_iter->second.entriesCount() != entries_count) {
+        } else if ( loaded_playlist_iter->second.entriesCount() != static_cast<size_t>(entries_count) ) {
             // list loaded, but entries count is changed: load new playlist to update all internal fields.
             playlists_[current_playlist_id] = loadPlaylist(playlist_index); // we must use map's operator[] instead insert() method, since insert is no-op for existing key.
             playlists_to_reload.push_back(current_playlist_id);
@@ -1104,7 +1104,7 @@ struct DurationFormatter
 
 struct FileNameExtentionFormatter {
     std::wstring operator()(const PlaylistEntry& entry) const { 
-        std::wstring ext = boost::filesystem::extension( entry.filename() );
+        std::wstring ext = boost::filesystem::path( entry.filename() ).extension().native();
         if ( !ext.empty() ) {
             if (ext[0] == L'.') {
                 ext.erase( ext.begin() );

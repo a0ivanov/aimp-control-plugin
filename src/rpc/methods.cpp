@@ -233,7 +233,7 @@ ResponseType Mute::execute(const Rpc::Value& root_request, Rpc::Value& root_resp
     return RESPONSE_IMMEDIATE;
 }
 
-ResponseType EnqueueTrack::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+ResponseType EnqueueTrack::execute(const Rpc::Value& root_request, Rpc::Value& /*root_response*/)
 {
     const Rpc::Value& params = root_request["params"];
     if (params.type() != Rpc::Value::TYPE_OBJECT || params.size() < 2) {
@@ -252,7 +252,7 @@ ResponseType EnqueueTrack::execute(const Rpc::Value& root_request, Rpc::Value& r
     return RESPONSE_IMMEDIATE;
 }
 
-ResponseType RemoveTrackFromPlayQueue::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+ResponseType RemoveTrackFromPlayQueue::execute(const Rpc::Value& root_request, Rpc::Value& /*root_response*/)
 {
     const Rpc::Value& params = root_request["params"];
     if (params.type() != Rpc::Value::TYPE_OBJECT || params.size() != 2) {
@@ -684,14 +684,14 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
     Rpc::Value& rpcvalue_entries = rpc_result[kENTRIES_STRING];
 
     struct SetEntriesCount {
-        mutable Rpc::Value& value_;
-        const std::string& member_name_;
+        mutable Rpc::Value* value_;
+        const std::string* member_name_;
         SetEntriesCount(Rpc::Value& value, const std::string& member_name)
-            : value_(value),
-              member_name_(member_name)
+            : value_(&value),
+              member_name_(&member_name)
         {}
         void operator()(size_t count) const
-            { value_[member_name_] = count; }
+            { (*value_)[*member_name_] = count; }
     };
 
     Rpc::ResponseType response_type = get_playlist_entries_templatemethod_->execute(rpc_params, 
@@ -931,18 +931,18 @@ const std::wstring* GetCover::isCoverExistsInCoverDirectory(TrackDescription tra
 std::wstring GetCover::getTempFileNameForAlbumCover(TrackDescription track_desc, std::size_t width, std::size_t height)
 {
     struct RandomDigitCharGenerator {
-        RandomNumbersGenerator& gen_;
+        RandomNumbersGenerator* gen_;
 
-        RandomDigitCharGenerator(RandomNumbersGenerator& gen)
+        RandomDigitCharGenerator(RandomNumbersGenerator* gen)
             : gen_(gen)
         {}
 
         wchar_t operator()() const
-            { return static_cast<wchar_t>( L'0' + gen_() ); }
+            { return static_cast<wchar_t>( L'0' + (*gen_)() ); }
     };
 
     // generate random part;
-    std::generate(random_file_part_.begin(), random_file_part_.end(), RandomDigitCharGenerator(die_) );
+    std::generate(random_file_part_.begin(), random_file_part_.end(), RandomDigitCharGenerator(&die_) );
 
     std::wostringstream filename;
     filename << L"cover_" << track_desc.track_id << L"_" << track_desc.playlist_id << "_" << width << "x" << height << "_" << random_file_part_;
@@ -963,7 +963,7 @@ SubscribeOnAIMPStateUpdateEvent::EVENTS SubscribeOnAIMPStateUpdateEvent::getEven
     throw Rpc::Exception("Event does not supported", WRONG_ARGUMENT);
 }
 
-ResponseType SubscribeOnAIMPStateUpdateEvent::execute(const Rpc::Value& root_request, Rpc::Value& result)
+ResponseType SubscribeOnAIMPStateUpdateEvent::execute(const Rpc::Value& root_request, Rpc::Value& /*result*/)
 {
     EVENTS event_id = getEventFromRpcParams(root_request["params"]);
 
@@ -1065,13 +1065,13 @@ void SubscribeOnAIMPStateUpdateEvent::sendEventNotificationToSubscriber(EVENTS e
     response_sender_descriptor.sender->sendResponseSuccess(response);
 }
 
-ResponseType GetPlayerControlPanelState::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+ResponseType GetPlayerControlPanelState::execute(const Rpc::Value& /*root_request*/, Rpc::Value& root_response)
 {
     RpcResultUtils::setControlPanelInfo(aimp_manager_, root_response["result"]);
     return RESPONSE_IMMEDIATE;
 }
 
-ResponseType SetTrackRating::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+ResponseType SetTrackRating::execute(const Rpc::Value& root_request, Rpc::Value& /*root_response*/)
 {
     const Rpc::Value& params = root_request["params"];
     if (params.type() != Rpc::Value::TYPE_OBJECT || params.size() != 3) {

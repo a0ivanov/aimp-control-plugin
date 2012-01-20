@@ -52,7 +52,7 @@ void loadPropertyTreeFromFile(wptree& pt, const boost::filesystem::wpath& filena
 {
     std::wifstream istream;
     istream.exceptions(std::ios_base::failbit | std::ios_base::badbit); // ask stream to generate exception in case of error.
-    istream.open( filename.file_string().c_str() );
+    istream.open( filename.c_str() );
 
     // set UTF-8 convert facet.
     istream.imbue( std::locale(istream.getloc(),
@@ -127,7 +127,7 @@ void Manager::load(const boost::filesystem::wpath& filename)
 void savePropertyTreeToFile(const wptree& pt, const boost::filesystem::wpath& filename) // throws std::exception
 {
     std::wofstream ostream;
-    ostream.open(filename.file_string().c_str(), std::ios_base::out);
+    ostream.open(filename.c_str(), std::ios_base::out);
     ostream.exceptions(std::ios_base::failbit | std::ios_base::badbit); // ask stream to generate exception in case of error.
 
     // set UTF-8 convert facet.

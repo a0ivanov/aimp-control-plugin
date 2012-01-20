@@ -9,20 +9,26 @@ Boost library
 and placed as boost library.
 3) Following libraries must be built: filesystem, date_time, thread, regex, log.
 
+Note: Boost Log 1.0(not 1.1) uses Boost Filesystem v2(which was default until Boost 1.46.0), so to compile do following:
+    - add macro "BOOST_FILESYSTEM_VERSION 2" to "boost\config\user.hpp" file.
+    - pass --disable-filesystem3 arg to bjam for all commands.
+        The one way to define that macro is add it to "boost\config\user.hpp" file.
+        More info at http://www.boost.org/doc/libs/1_46_1/libs/filesystem/v2/doc/index.htm.
+        Strange but bjam arg "define='BOOST_FILESYSTEM_VERSION=2'" does not work.
+
 Commands sequence without explanation(see details below):
-    3.1) add macro "BOOST_FILESYSTEM_VERSION 2" to "boost\config\user.hpp" file.
-    3.2) bjam --with-date_time --with-thread --with-regex --with-filesystem --disable-filesystem3 link=static runtime-link=static
-         bjam --with-log define=BOOST_LOG_NO_COMPILER_TLS link=static runtime-link=static --disable-filesystem3
-    3.3) bjam --with-date_time --with-thread --with-regex --with-filesystem --disable-filesystem3
-         bjam --with-log define=BOOST_LOG_NO_COMPILER_TLS --disable-filesystem3
+    3.1) for Release config:
+         bjam --with-date_time --with-thread --with-regex --with-filesystem  link=static runtime-link=static
+         bjam --with-log define=BOOST_LOG_NO_COMPILER_TLS link=static runtime-link=static 
+    3.2) for Debug config:
+         bjam --with-date_time --with-thread --with-regex --with-filesystem 
+         bjam --with-log define=BOOST_LOG_NO_COMPILER_TLS
 
 Details:
     To build as "Multi-threaded DLL" (currently used by Debug configuration) use command:
             bjam --with-filesystem --with-date_time --with-thread --with-regex
         Boost Log must be built with BOOST_LOG_NO_COMPILER_TLS define, since crash occurs inside void boost::log::source::aux::set_severity_level(int level) without it on Windows XP(on Windows Vista/7 works fine).
         See details at http://msdn.microsoft.com/ru-ru/library/2s9wt68x.aspx, note about __declspec(thread) in DLL on Windows before Vista.
-        Also Boost Log relies on Boost Filesystem v2, so define macro BOOST_FILESYSTEM_VERSION=2(and pass --disable-filesystem3 arg to bjam), since default version is 3 from Boost 1.46.0.
-            The one way to define that macro is add it to "boost\config\user.hpp" file. More info at http://www.boost.org/doc/libs/1_46_1/libs/filesystem/v2/doc/index.htm. Strange but bjam arg "define='BOOST_FILESYSTEM_VERSION=2'" does not work.
             bjam --with-log define=BOOST_LOG_NO_COMPILER_TLS
     To build with "Multi-threaded" runtime (currently used by Release configuration) add options to bjam:
         link=static runtime-link=static

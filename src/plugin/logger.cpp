@@ -5,10 +5,13 @@
 #include "utils/string_encoding.h"
 #include "utils/util.h"
 #include <boost/filesystem.hpp>
+
+#pragma warning (push, 3)
 #include <boost/log/utility/exception_handler.hpp>
 #include <boost/log/formatters.hpp>
 #include <boost/log/attributes.hpp>
 #include <boost/log/filters.hpp>
+#pragma warning (pop)
 
 namespace ControlPlugin { namespace PluginLogger {
 
@@ -43,7 +46,7 @@ struct BoostLogExceptionHandler
 {
     typedef void result_type;
 
-    void operator() (const fs::basic_filesystem_error<fs::wpath>& e) const
+    void operator() (const fs::filesystem_error& /*e*/) const
     {
         //core->remove_sink(synk_file_); // can't do this: deadlock occures.
 
@@ -63,13 +66,13 @@ void LogManager::checkDirectoryAccess(const boost::filesystem::wpath& log_direct
     // ensure directory exists or can be created
     try {
         fs::create_directory(log_directory);
-    } catch (fs::basic_filesystem_error<fs::wpath>&) {
+    } catch (fs::filesystem_error&) {
         throw FileLogError("Log directory can not be created.");
     }
 
     boost::filesystem::wpath test_file_path = log_directory / L"testdiraccess";
     // ensure we can create file there
-    std::wofstream temp_file( test_file_path.file_string() );
+    std::wofstream temp_file( test_file_path.c_str() );
     if ( !temp_file.is_open() ) {
         throw FileLogError("Log directory is read only.");
     }
@@ -79,7 +82,7 @@ void LogManager::checkDirectoryAccess(const boost::filesystem::wpath& log_direct
     // ensure we can remove files
     try {
         remove(test_file_path);
-    } catch (fs::basic_filesystem_error<fs::wpath>&) {
+    } catch (fs::filesystem_error&) {
         throw FileLogError("Test file can not be removed. Log directory should provide full access for correct work.");
     }
 }
@@ -112,7 +115,7 @@ void LogManager::startLog(const fs::wpath& log_directory,
         // Setup a global exception handler that will call BoostLogExceptionHandler::operator()
         // for the specified exception types. Note the std::nothrow argument that
         // specifies that all other exceptions should also be passed to the functor.
-        core->set_exception_handler(log::make_exception_handler<fs::basic_filesystem_error<fs::wpath> >
+        core->set_exception_handler(log::make_exception_handler<fs::filesystem_error >
                                                                     (BoostLogExceptionHandler(), std::nothrow)
                                     );
     }

@@ -37,15 +37,17 @@ struct ComparatorAdaptorFromIDToEntryField : std::binary_function<PlaylistEntryI
 
     ComparatorAdaptorFromIDToEntryField(const EntriesListType& entries, FieldGetterMemberFunc getter)
         :
-        entries_(entries),
+        entries_(&entries),
         getter_(getter)
     {}
 
     bool operator()(PlaylistEntryID id_left, PlaylistEntryID id_right) const
     {
-        const R& left_field_value  = (entries_[id_left].*getter_)();
-        const R& right_field_value = (entries_[id_right].*getter_)();
+        const R& left_field_value  = ((*entries_)[id_left].*getter_)();
+        const R& right_field_value = ((*entries_)[id_right].*getter_)();
+#pragma warning (push, 3)
         if (order_direction == ASCENDING) {
+#pragma warning (pop)
             return compare_less_functor_(left_field_value, right_field_value);
         } else {
             return compare_less_functor_(right_field_value, left_field_value);
@@ -54,7 +56,7 @@ struct ComparatorAdaptorFromIDToEntryField : std::binary_function<PlaylistEntryI
 
     CompareFields<R> compare_less_functor_;
     FieldGetterMemberFunc getter_;
-    const EntriesListType& entries_;
+    const EntriesListType* entries_;
 };
 
 //! Helper function for creation ComparatorAdaptorFromIDToEntryField object from field getter function.

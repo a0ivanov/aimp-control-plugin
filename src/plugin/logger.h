@@ -3,11 +3,14 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
+#pragma warning (push, 3)
 #include <boost/log/common.hpp>
 #include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/sinks/text_file_backend.hpp>
 #include <boost/log/sinks/debug_output_backend.hpp>
 #include <boost/log/sources/severity_channel_logger.hpp>
+#pragma warning (pop)
+
 #include <boost/static_assert.hpp>
 #include <set>
 

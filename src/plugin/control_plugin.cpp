@@ -172,12 +172,12 @@ void AIMPControlPlugin::ensureWorkDirectoryExists()
         We avoid code of existing check because of we need to create plugin work directory any way. */
     try {
         fs::create_directory(plugin_work_directory_); // try to create directory unconditionally.
-    } catch (fs::basic_filesystem_error<fs::wpath>& e) {
+    } catch (fs::filesystem_error& e) {
         using namespace StringEncoding;
         // work directory can not be created.
         // TODO: send log to aimp internal logger.
         BOOST_LOG_SEV(logger(), error) << "Failed to create plugin work directory \""
-                                       << utf16_to_system_ansi_encoding_safe( plugin_work_directory_.directory_string() )
+                                       << utf16_to_system_ansi_encoding_safe( plugin_work_directory_.native() )
                                        << "\". Reason:"
                                        << e.what();
     }
@@ -228,7 +228,7 @@ void AIMPControlPlugin::initializeLogger()
             // Send msg to other log backends.
             BOOST_LOG_SEV(logger(), error)  << "File log was not initializated, "
                                             << "log directory "
-                                            << StringEncoding::utf16_to_system_ansi_encoding_safe( log_directory.directory_string() )
+                                            << StringEncoding::utf16_to_system_ansi_encoding_safe( log_directory.native() )
                                             << ". Reason: "
                                             << e.what();
         }
@@ -289,7 +289,7 @@ HRESULT AIMPControlPlugin::initialize()
 
         using namespace StringEncoding;
         // create HTTP request handler.
-        http_request_handler_.reset( new Http::RequestHandler( utf16_to_system_ansi_encoding( getWebServerDocumentRoot().directory_string() ),
+        http_request_handler_.reset( new Http::RequestHandler( utf16_to_system_ansi_encoding( getWebServerDocumentRoot().native() ),
                                                                *rpc_request_handler_,
                                                                *download_track_request_handler_
                                                               )
@@ -434,7 +434,7 @@ void AIMPControlPlugin::createRpcMethods()
         rpc_request_handler_->addMethod( std::auto_ptr<Rpc::Method>(
                                                 new GetCover(*aimp_manager_,
                                                              *rpc_request_handler_,
-                                                             getWebServerDocumentRoot().directory_string(),
+                                                             getWebServerDocumentRoot().native(),
                                                              L"tmp" // directory in document root to store temp image files.
                                                              )
                                                                     )
@@ -449,7 +449,7 @@ void AIMPControlPlugin::createRpcMethods()
     rpc_request_handler_->addMethod( std::auto_ptr<Rpc::Method>(
                                                     new SetTrackRating( *aimp_manager_,
                                                                         *rpc_request_handler_,
-                                                                        (plugin_work_directory_ / L"rating_store.txt").file_string()
+                                                                        (plugin_work_directory_ / L"rating_store.txt").native()
                                                                        )
                                                                 )
                                     );
@@ -522,7 +522,7 @@ boost::filesystem::wpath AIMPControlPlugin::getWebServerDocumentRoot() const // 
 
     if ( !( fs::exists(document_root_path) && fs::is_directory(document_root_path) ) ) {
         throw std::runtime_error(Utilities::MakeString() << "Web-server document root directory does not exist: \"" 
-                                                         << StringEncoding::utf16_to_system_ansi_encoding( document_root_path.string() ) << "\""
+                                                         << StringEncoding::utf16_to_system_ansi_encoding( document_root_path.native() ) << "\""
                                  );
     }
 

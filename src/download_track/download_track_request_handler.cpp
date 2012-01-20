@@ -102,7 +102,7 @@ bool RequestHandler::handle_request(const Http::Request& req, Http::Reply& rep)
         rep.headers[0].name = "Content-Length";
         rep.headers[0].value = boost::lexical_cast<std::string>( rep.content.size() );
         rep.headers[1].name = "Content-Type";
-        rep.headers[1].value = mime_types::extension_to_type( path.extension().c_str() );
+        rep.headers[1].value = mime_types::extension_to_type( path.extension().string().c_str() );
         rep.headers[2].name = "Content-Disposition";
         rep.headers[2].value = Utilities::MakeString() << "attachment; filename=\"" << path.filename() << "\"";
     } catch (std::exception&) {

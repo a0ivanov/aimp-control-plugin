@@ -554,7 +554,7 @@ typedef boost::function<void(size_t)> EntriesCountHandler;
 
 
 // Fetches list of entries to further processing by GetPlaylistEntries and GetDataTablePageForEntry methods.
-class GetPlaylistEntriesTemplateMethod
+class GetPlaylistEntriesTemplateMethod : boost::noncopyable
 {
 public:
 

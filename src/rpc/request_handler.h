@@ -72,7 +72,7 @@ private:
 
 
 //! Adaptor for Connection class, provide only one method: sendResponse().
-class DelayedResponseSender : public boost::enable_shared_from_this<DelayedResponseSender>
+class DelayedResponseSender : public boost::enable_shared_from_this<DelayedResponseSender>, boost::noncopyable
 {
 public:
 

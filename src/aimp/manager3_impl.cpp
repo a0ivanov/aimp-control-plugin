@@ -610,7 +610,7 @@ void AIMP3Manager::playPreviousTrack()
     aimp3_core_unit_->MessageSend(AIMP_MSG_CMD_PREV, kNoParam1, kNoParam2); // aimp2_player_->PrevTrack();
 }
 
-void AIMP3Manager::onAimpCoreMessage(DWORD AMessage, int AParam1, void* AParam2, HRESULT* AResult)
+void AIMP3Manager::onAimpCoreMessage(DWORD AMessage, int AParam1, void* /*AParam2*/, HRESULT* AResult)
 {
     using namespace AIMP3SDK;
 

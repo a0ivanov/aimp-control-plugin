@@ -104,16 +104,16 @@ const PlaylistEntryIDList& EntriesSorter::getEntriesSortedByMultipleFields(const
         SortByMultipleFieldsFunctor(const FieldToOrderDescriptors& field_to_order_descriptors,
                                     const OrderedCachesList& ordered_caches)
             :
-            field_to_order_descriptors_(field_to_order_descriptors),
-            ordered_caches_(ordered_caches)
+            field_to_order_descriptors_(&field_to_order_descriptors),
+            ordered_caches_(&ordered_caches)
         {}
 
         bool operator()(PlaylistEntryID id_left, PlaylistEntryID id_right) const
         {
-            const size_t descriptors_size = field_to_order_descriptors_.size();
+            const size_t descriptors_size = field_to_order_descriptors_->size();
             for (size_t index = 0; index < descriptors_size; ++index) {
-                const FieldToOrderDescriptor& field_desc = field_to_order_descriptors_[index];
-                const ComparatorPlaylistEntryIDsBase* comparator = ordered_caches_.find(field_desc.field_)->second.comparator_.get();
+                const FieldToOrderDescriptor& field_desc = (*field_to_order_descriptors_)[index];
+                const ComparatorPlaylistEntryIDsBase* comparator = ordered_caches_->find(field_desc.field_)->second.comparator_.get();
 
                 if (index == descriptors_size - 1) { // return result of comparation of last field.
                     return comparator->compare(id_left, id_right, field_desc.direction_);
@@ -132,8 +132,8 @@ const PlaylistEntryIDList& EntriesSorter::getEntriesSortedByMultipleFields(const
             return false; // avoid warning C4715: not all control paths return a value.
         }
 
-        const OrderedCachesList& ordered_caches_;
-        const FieldToOrderDescriptors& field_to_order_descriptors_;
+        const OrderedCachesList* ordered_caches_;
+        const FieldToOrderDescriptors* field_to_order_descriptors_;
     };
 
     std::sort( sorted_entry_ids.begin(), sorted_entry_ids.end(), SortByMultipleFieldsFunctor(field_to_order_descriptors, ordered_caches_) );

@@ -111,7 +111,7 @@ void setControlPanelInfo(const AIMPManager& aimp_manager, Rpc::Value& result)
     setCurrentShuffleMode(aimp_manager.getStatus(AIMPManager::STATUS_SHUFFLE) != 0, result);
 }
 
-void setPlaylistsContentChangeInfo(const AIMPPlayer::AIMPManager& aimp_manager, Rpc::Value& result)
+void setPlaylistsContentChangeInfo(const AIMPPlayer::AIMPManager& /*aimp_manager*/, Rpc::Value& result)
 {
      result["playlists_changed"] = true;
      // ??? result["playlist_id_to_reload"];
