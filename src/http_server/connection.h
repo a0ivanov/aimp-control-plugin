@@ -52,6 +52,9 @@ private:
     /// Handle completion of a write operation.
     void handle_write(const boost::system::error_code& e);
 
+    /// Handle completion of a header write operation.
+    void handle_write_headers_on_file_sending(const boost::system::error_code& e);
+
     /// Strand to ensure the connection's handlers are not called concurrently.
     boost::asio::io_service::strand strand_;
 

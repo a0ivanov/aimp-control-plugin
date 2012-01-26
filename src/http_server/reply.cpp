@@ -97,6 +97,13 @@ const char crlf[] = { '\r', '\n' };
 
 std::vector<boost::asio::const_buffer> Reply::to_buffers() const
 {
+    std::vector<boost::asio::const_buffer> buffers( to_buffers_headers_only() ); // make code simple: rely on move semantic.
+    buffers.push_back(boost::asio::buffer(content));
+    return buffers;
+}
+
+std::vector<boost::asio::const_buffer> Reply::to_buffers_headers_only() const
+{
     std::vector<boost::asio::const_buffer> buffers;
     buffers.push_back(status_strings::to_buffer(status));
     for (std::size_t i = 0; i < headers.size(); ++i) {
@@ -107,7 +114,6 @@ std::vector<boost::asio::const_buffer> Reply::to_buffers() const
         buffers.push_back(boost::asio::buffer(misc_strings::crlf));
     }
     buffers.push_back(boost::asio::buffer(misc_strings::crlf));
-    buffers.push_back(boost::asio::buffer(content));
     return buffers;
 }
 

@@ -43,10 +43,14 @@ struct Reply
     /// The content to be sent in the reply.
     std::string content;
 
+    /// The name of file to be sent in the reply instead 'content'. Used for effective sending large files.
+    std::wstring filename;
+
     /// Convert the reply into a vector of buffers. The buffers do not own the
     /// underlying memory blocks, therefore the reply object must remain valid and
     /// not be changed until the write operation has completed.
     std::vector<boost::asio::const_buffer> to_buffers() const;
+    std::vector<boost::asio::const_buffer> to_buffers_headers_only() const;
 
     /// Get a stock reply.
     static Reply stock_reply(status_type status);

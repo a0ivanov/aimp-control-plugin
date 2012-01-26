@@ -78,34 +78,22 @@ bool RequestHandler::handle_request(const Http::Request& req, Http::Reply& rep)
 
     try {
         namespace fs = boost::filesystem;
-        const std::wstring track_source_path( getTrackSourcePath(req.uri) );
-
-        // Open the file to send back.
-        const std::string full_path = StringEncoding::utf16_to_system_ansi_encoding(track_source_path);
-        std::ifstream is(full_path.c_str(), std::ios::in | std::ios::binary);
-        if (!is) {
-            rep = Reply::stock_reply(Reply::not_found);
-            return true;
-        }
-
-        // Fill out the reply to be sent to the client.
-        char buf[512];
-        while (is.read( buf, sizeof(buf) ).gcount() > 0) {
-            rep.content.append( buf, static_cast<std::size_t>( is.gcount() ) ); // cast from int64 to uint32 is safe here since we have maximum 512 bytes.
-        }
-
-        const fs::path path(full_path);
+        rep.filename = getTrackSourcePath(req.uri);
+        const fs::wpath path(rep.filename);
+        
+        const uintmax_t file_size = fs::file_size(path);
 
         // fill http headers.
         rep.status = Reply::ok;
         rep.headers.resize(3);
         rep.headers[0].name = "Content-Length";
-        rep.headers[0].value = boost::lexical_cast<std::string>( rep.content.size() );
+        rep.headers[0].value = boost::lexical_cast<std::string>(file_size);
         rep.headers[1].name = "Content-Type";
         rep.headers[1].value = mime_types::extension_to_type( path.extension().string().c_str() );
         rep.headers[2].name = "Content-Disposition";
-        rep.headers[2].value = Utilities::MakeString() << "attachment; filename=\"" << path.filename() << "\"";
+        rep.headers[2].value = Utilities::MakeString() << "attachment; filename=\"" << StringEncoding::utf16_to_utf8( path.filename().native() ) << "\"";
     } catch (std::exception&) {
+        rep.filename.clear();
         rep = Reply::stock_reply(Reply::not_found);
     }
     return true;
