@@ -9,6 +9,8 @@ Boost library
 and placed as boost library.
 3) Following libraries must be built: filesystem, date_time, thread, regex, log.
 
+For Boost Asio add directive "#define BOOST_ASIO_HAS_MOVE" to "boost\config\user.hpp" file.
+
 Note: Boost Log 1.0(not 1.1) uses Boost Filesystem v2(which was default until Boost 1.46.0), so to compile do following:
     - add macro "BOOST_FILESYSTEM_VERSION 2" to "boost\config\user.hpp" file.
     - pass --disable-filesystem3 arg to bjam for all commands.
