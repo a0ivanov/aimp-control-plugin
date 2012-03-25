@@ -2,11 +2,11 @@ Installing plugin:
 
 1) Put aimp_control_plugin.dll in AIMP player's "Plugins" directory.
 
-2) Create plugin settings.dat file
+2) Create plugin settings.dat file.
     There are two ways to do that:
-        2.1) just launch AIMP and exit, plugin will save default settings file in plugin folder("Control Plugin") in AIMP working directory.
-             Usually it is "%USERPROFILE%\AppData\Roaming\AIMP3\Control Plugin\settings.dat"
-        2.2) Copy settings.dat from 7z package to "%USERPROFILE%\AppData\Roaming\AIMP3\Control Plugin" directory.
+        2.1) Just launch AIMP and exit, plugin will save default settings file in plugin folder("Control Plugin") in AIMP Plugins directory.
+             "<installed AIMP path>\Control Plugin\settings.dat"
+        2.2) Copy settings.dat from 7z package to "<installed AIMP path>\Control Plugin" directory.
 
 3) In settings.dat set following values:
     httpserver.document_root - set full path to htdocs directory.
