@@ -1,4 +1,4 @@
-// Copyright (c) 2011, Alexey Ivanov
+// Copyright (c) 2012, Alexey Ivanov
 
 #ifndef TRACK_DESCRIPTION_H
 #define TRACK_DESCRIPTION_H

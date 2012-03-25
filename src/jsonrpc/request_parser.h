@@ -1,4 +1,4 @@
-// Copyright (c) 2011, Alexey Ivanov
+// Copyright (c) 2012, Alexey Ivanov
 
 #ifndef JSONRPC_REQUEST_PARSER_H
 #define JSONRPC_REQUEST_PARSER_H

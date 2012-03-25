@@ -1,4 +1,4 @@
-// Copyright (c) 2011, Alexey Ivanov
+// Copyright (c) 2012, Alexey Ivanov
 
 #ifndef RPC_RESPONSE_SERIALIZER_H
 #define RPC_RESPONSE_SERIALIZER_H

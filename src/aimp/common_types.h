@@ -1,4 +1,4 @@
-// Copyright (c) 2011, Alexey Ivanov
+// Copyright (c) 2012, Alexey Ivanov
 
 #ifndef AIMP_COMMON_TYPES_H
 #define AIMP_COMMON_TYPES_H

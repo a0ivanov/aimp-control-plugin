@@ -1,6 +1,6 @@
 /*
     File contains localization for AimpManager web-interface.
-    Copyright (c) 2011, Alexey Ivanov
+    Copyright (c) 2012, Alexey Ivanov
 */
 
 var language_aimp_manager = {

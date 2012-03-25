@@ -1,4 +1,4 @@
-// Copyright (c) 2011, Alexey Ivanov
+// Copyright (c) 2012, Alexey Ivanov
 
 #ifndef DOWNLOAD_TRACK_REQUEST_HANDLER_H
 #define DOWNLOAD_TRACK_REQUEST_HANDLER_H

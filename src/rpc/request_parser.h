@@ -1,4 +1,4 @@
-// Copyright (c) 2011, Alexey Ivanov
+// Copyright (c) 2012, Alexey Ivanov
 
 #ifndef RPC_REQUEST_PARSER_H
 #define RPC_REQUEST_PARSER_H

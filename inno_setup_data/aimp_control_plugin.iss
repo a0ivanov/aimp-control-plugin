@@ -27,7 +27,7 @@ OutputBaseFilename=aimp_control_plugin-{#FileVerStr}-setup
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{F171581D-00CD-4E77-8982-B1B68FDCAAFA}
 AppPublisher=Alexey Ivanov
-AppCopyright=Copyright © 2011 Alexey Ivanov
+AppCopyright=Copyright © 2012 Alexey Ivanov
 AppPublisherURL=http://code.google.com/p/aimp-control-plugin/
 AppSupportURL=http://code.google.com/p/aimp-control-plugin/w/list
 AppUpdatesURL=http://code.google.com/p/aimp-control-plugin/downloads/list

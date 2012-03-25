@@ -1,7 +1,7 @@
-AIMP Control plugin. Copyright (c) 2011, Alexey Ivanov
+AIMP Control plugin. Copyright (c) 2012, Alexey Ivanov
 
-To know about build procedure please see HowToBuild.txt file.
-Used software listed in LibrariesAndToolsUsedInProject.txt file.
+To know about build procedure please read HowToBuild.txt file.
+Used software is listed in LibrariesAndToolsUsedInProject.txt file.
 
 Content of directories in project root:
 

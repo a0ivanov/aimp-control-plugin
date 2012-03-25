@@ -19,7 +19,7 @@ set DLL_PATH=%1
 set VERSION="%2"
 set FILEVERSION=%VERSION%
 set FILEDESCR=/s desc "AIMP player plugin. Provides network access to AIMP player."
-set COPYRIGHT=/s (c) "Copyright © 2011 Alexey Ivanov"
+set COPYRIGHT=/s (c) "Copyright © 2012 Alexey Ivanov"
 set PRODINFO=/s product "AIMP Control Plugin"
 set PRODVERSION=/pv %VERSION%
 

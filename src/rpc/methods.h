@@ -1,4 +1,4 @@
-// Copyright (c) 2011, Alexey Ivanov
+// Copyright (c) 2012, Alexey Ivanov
 /*! 
     \file
     \mainpage AIMP Control RPC functionality

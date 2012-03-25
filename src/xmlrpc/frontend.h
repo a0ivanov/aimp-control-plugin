@@ -1,4 +1,4 @@
-// Copyright (c) 2011, Alexey Ivanov
+// Copyright (c) 2012, Alexey Ivanov
 
 #ifndef XMLRPCFRONTEND_H
 #define XMLRPCFRONTEND_H
