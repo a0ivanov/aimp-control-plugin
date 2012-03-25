@@ -57,11 +57,28 @@ private:
     void startTickTimer();
     void stopTickTimer();
 
-    /*! Asks AIMP about plugins working directory.
-        \return full path to plugin work directory or (in case of error) current directory ".\$(short_plugin_name)"..
+    /*! 
+        Extracts path of AIMP Profile directory. 
+            In portable mode:
+                Profile directory near AIMP3.exe file.
+            In multiuser mode:
+                AIMP3:
+                    %APPDATA%\AIMP3
+                AIMP2:
+                    %APPDATA%\AIMP
+        \return full path to aimp profile directory or (in case of error) current directory "".
     */
-    boost::filesystem::wpath makePluginWorkDirectory();
-    std::wstring getAimpDataPath();
+    std::wstring getAimpProfilePath();
+
+    /*! 
+        Extracts path of Plugins directory. Usually it's Plugins directory near AIMP3.exe file.
+        \return full path to plugins directory or (in case of error) current directory "".
+    */
+    std::wstring getAimpPluginsPath();
+    std::wstring getAimpPath(int path_id); // helper for implementation of getAimpProfilePath/getAimpPluginsPath methods.
+
+    boost::filesystem::wpath getPluginWorkDirectoryPath();
+    boost::filesystem::wpath getPluginWorkDirectoryPath(const boost::filesystem::wpath& base_directory) const;
 
     //! Checks existing of work directory and create it if it is neccessary.
     void ensureWorkDirectoryExists();
@@ -76,7 +93,9 @@ private:
         \brief Returns path to settings file.
         \return absolute path to settings file.
     */
-    boost::filesystem::wpath getSettingsFilePath();
+    boost::filesystem::wpath getSettingsFilePath() const;
+    boost::filesystem::wpath getSettingsFilePath(const boost::filesystem::wpath& plugin_work_directory) const;
+    boost::filesystem::wpath getSettingsFilePathVersion1_0_7_825_and_older();
 
     boost::shared_ptr<AIMPPlayer::AIMPManager> CreateAIMPManager(); // throws std::runtime_error
 
@@ -126,7 +145,7 @@ private:
     boost::shared_ptr<AIMPPlayer::AIMPManager> aimp_manager_; //!< AIMP player manager.
 
     // plugin settings.
-    boost::filesystem::wpath plugin_work_directory_; //!< stores path to plugin work directory. It is initialized in makePluginWorkDirectory() function.
+    boost::filesystem::wpath plugin_work_directory_; //!< stores path to plugin work directory. It is initialized in getPluginWorkDirectoryPath() function.
 
     static const std::wstring kPLUGIN_SETTINGS_FILENAME; //<! default plugin settings filename.
 

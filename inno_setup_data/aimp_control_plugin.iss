@@ -6,8 +6,7 @@
 #define StripBuild(VerStr) Copy(VerStr, 1, RPos(".", VerStr)-1)
 #define AppVerStr StripBuild(FileVerStr)
 #define PluginWorkDirectoryName "Control Plugin"
-#define PluginsDirectoryName "Plugins"
-
+#define AimpPluginsDirectoryName "Plugins"
 
 [Setup]
 
@@ -33,7 +32,7 @@ AppPublisherURL=http://code.google.com/p/aimp-control-plugin/
 AppSupportURL=http://code.google.com/p/aimp-control-plugin/w/list
 AppUpdatesURL=http://code.google.com/p/aimp-control-plugin/downloads/list
 
-DefaultDirName={#PluginsDirectoryName}
+DefaultDirName={#AimpPluginsDirectoryName}
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=true
 OutputDir=temp_build\Release\distrib\
@@ -55,7 +54,7 @@ Name: russian; MessagesFile: inno_setup_data\Russian.isl; LicenseFile: Lisense-R
 Source: {#SrcApp}; DestDir: {app}; Flags: ignoreversion
 Source: temp_build\Release\htdocs\*; DestDir: {code:GetBrowserScriptsDir}; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
-Source: inno_setup_data\default_settings.dat; DestDir: {userappdata}\{code:GetAimpPlayerAppDataDirName}\{#PluginWorkDirectoryName}; DestName: settings.dat; Flags: onlyifdoesntexist; AfterInstall: AfterInstallSettingsFile( ExpandConstant('{userappdata}\{code:GetAimpPlayerAppDataDirName}\{#PluginWorkDirectoryName}\settings.dat') )
+Source: inno_setup_data\default_settings.dat; DestDir: {code:GetPluginWorkDir}; DestName: settings.dat; Flags: onlyifdoesntexist; AfterInstall: "AfterInstallSettingsFile( ExpandConstant('{code:GetPluginWorkDir}\settings.dat') )"; 
 
 [Registry]
 ; etc.
@@ -63,50 +62,53 @@ Source: inno_setup_data\default_settings.dat; DestDir: {userappdata}\{code:GetAi
 [Code]
 var
   BrowserScriptsDirPage: TInputDirWizardPage;
-  AimpVerionSelectionPage: TInputOptionWizardPage;
+  AimpVersionSelectionPage: TInputOptionWizardPage;
   SettingsFileDestination: String;
 
 procedure InitializeWizard;
 begin
-  { Set AIMP player version, used to determine default path of Plugins directory and path to aimp AppData dir. }
-  AimpVerionSelectionPage := CreateInputOptionPage(wpLicense,
-                                                   ExpandConstant('{cm:AimpVerionSelectionMsg1}'),
-												   ExpandConstant('{cm:AimpVerionSelectionMsg2}'),
-												   ExpandConstant('{cm:AimpVerionSelectionMsg3}'),
-                                                   True,
-                                                   False
-                                                   );
-  AimpVerionSelectionPage.Add('AIMP2');
-  AimpVerionSelectionPage.Add('AIMP3');
+  { Set AIMP player version, used to determine default path of Aimp's Plugins directory. }
+  AimpVersionSelectionPage := CreateInputOptionPage(wpLicense,
+                                                    ExpandConstant('{cm:AimpVerionSelectionMsg1}'),
+                                                    ExpandConstant('{cm:AimpVerionSelectionMsg2}'),
+                                                    ExpandConstant('{cm:AimpVerionSelectionMsg3}'),
+                                                    True,
+                                                    False
+                                                    );
+  AimpVersionSelectionPage.Add('AIMP2');
+  AimpVersionSelectionPage.Add('AIMP3');
 
-  AimpVerionSelectionPage.SelectedValueIndex := 0; { default is AIMP2, change it when stable AIMP3 will be released. }
+  AimpVersionSelectionPage.SelectedValueIndex := 1; { default is AIMP3 }
 
-  { Create the pages }
   BrowserScriptsDirPage := CreateInputDirPage(wpSelectDir,
-											  ExpandConstant('{cm:BrowserScriptsDirSelectionMsg1}'),
-											  ExpandConstant('{cm:BrowserScriptsDirSelectionMsg2}'),
-											  ExpandConstant('{cm:BrowserScriptsDirSelectionMsg3}'),
-											  False, '');
+                                              ExpandConstant('{cm:BrowserScriptsDirSelectionMsg1}'),
+                                              ExpandConstant('{cm:BrowserScriptsDirSelectionMsg2}'),
+                                              ExpandConstant('{cm:BrowserScriptsDirSelectionMsg3}'),
+                                              False,
+                                              ''
+                                              );
   BrowserScriptsDirPage.Add('');
-
 end;
 
 procedure TerminateAimpExecutionIfNeedeed(); forward;
 
 procedure CurPageChanged(CurPageID: Integer);
 begin
-	if CurPageID = wpSelectDir then
-	  begin
-	  WizardForm.DirEdit.Text := ExpandConstant('{pf}\{code:GetAimpPlayerProgramDataDirName}\{#PluginsDirectoryName}')
-	  SettingsFileDestination := ExpandConstant('{userappdata}\{code:GetAimpPlayerAppDataDirName}\{#PluginWorkDirectoryName}\settings.dat');
+  if CurPageID = wpSelectDir then
+    begin
+    WizardForm.DirEdit.Text := ExpandConstant('{pf}\{code:GetAimpPlayerAppDirName}\{code:AimpPluginsDirName}')
 
-	  TerminateAimpExecutionIfNeedeed(); { must do this after WizardForm.DirEdit.Text set. }
-	  end
-	else if CurPageID = BrowserScriptsDirPage.ID then
-	  { Set default values, using settings that were stored last time if possible }
-	  BrowserScriptsDirPage.Values[0] := GetPreviousData( 'BrowserScriptsDir',
-														  ExpandConstant('{userappdata}\{code:GetAimpPlayerAppDataDirName}\{#PluginWorkDirectoryName}\htdocs\')
-														 );
+    TerminateAimpExecutionIfNeedeed(); { must do this after WizardForm.DirEdit.Text set. }
+    end
+  else if CurPageID = BrowserScriptsDirPage.ID then
+    begin
+    SettingsFileDestination := ExpandConstant('{code:GetPluginWorkDir}\settings.dat');
+  
+    { Set default values, using settings that were stored last time if possible }
+    BrowserScriptsDirPage.Values[0] := GetPreviousData( 'BrowserScriptsDir',
+                                                         ExpandConstant('{code:GetPluginWorkDir}\htdocs')
+                                                       );
+    end
 end;
 
 function GetBrowserScriptsDir(Param: String): String;
@@ -115,58 +117,73 @@ begin
   Result := BrowserScriptsDirPage.Values[0];
 end;
 
-function GetAimpPlayerAppDataDirName(Param: String): String;
+function IsAimp2(): Boolean;
 begin
-  { Return the name of AppData directory for selected AIMP player version }
-  if AimpVerionSelectionPage.SelectedValueIndex = 0 then
-	Result := 'AIMP'
-  else
-	Result := 'AIMP3';
+   Result := AimpVersionSelectionPage.SelectedValueIndex = 0;
 end;
 
-function GetAimpPlayerProgramDataDirName(Param: String): String;
+function GetPluginWorkDir(Param: String): String;
+begin
+  Result := ExpandConstant('{app}\{#PluginWorkDirectoryName}')
+end;
+
+function AimpPluginsDirName(Param: String): String;
+begin
+  { Return name of AIMP's Plugins directory. }
+  Result := ExpandConstant('{#AimpPluginsDirectoryName}')
+  { We do not distinguish between AIMP2/3 Plugins directory names 
+    since supporting of this difference is hard
+    while Windows is case insensitive.
+  if IsAimp2() then
+    Result := 'PlugIns'
+  else
+    Result := 'Plugins';
+  }
+end;
+
+function GetAimpPlayerAppDirName(Param: String): String;
 begin
   { Return the name of program directory for selected AIMP player version }
-  if AimpVerionSelectionPage.SelectedValueIndex = 0 then
-	Result := 'AIMP2'
+  if IsAimp2() then
+    Result := 'AIMP2'
   else
-	Result := 'AIMP3';
+    Result := 'AIMP3';
 end;
 
 procedure RegisterPreviousData(PreviousDataKey: Integer);
 begin
-	SetPreviousData(PreviousDataKey, 'BrowserScriptsDir', BrowserScriptsDirPage.Values[0]);
+  SetPreviousData(PreviousDataKey, 'BrowserScriptsDir', BrowserScriptsDirPage.Values[0]);
 end;
 
 procedure AfterInstallSettingsFile(Path: String);
 var
-	// See http://msdn.microsoft.com/en-us/library/ms757878(VS.85).aspx for details about
-	XMLDoc : Variant;       // IXMLDOMDocument
-	DocRootNodes : Variant; // IXMLDOMNodeList
-	DocRootNode : Variant;  // IXMLDOMNode
+  // See http://msdn.microsoft.com/en-us/library/ms757878(VS.85).aspx for details about
+  XMLDoc : Variant;       // IXMLDOMDocument
+  DocRootNodes : Variant; // IXMLDOMNodeList
+  DocRootNode : Variant;  // IXMLDOMNode
 begin
-	//MsgBox('Try to load the XML file: ' + Path, mbInformation, mb_Ok);
+  //MsgBox('Try to load the XML file: ' + Path, mbInformation, mb_Ok);
 
-	{ Load the XML File }
-	XMLDoc := CreateOleObject('MSXML2.DOMDocument');
-	XMLDoc.async := False;
-	XMLDoc.resolveExternals := False;
-	XMLDoc.setProperty('SelectionLanguage', 'XPath');
-	XMLDoc.load(Path);
-	if XMLDoc.parseError.errorCode <> 0 then
-		RaiseException('Error in xml file "' + Path + '" on line ' + IntToStr(XMLDoc.parseError.line) + ', position ' + IntToStr(XMLDoc.parseError.linepos) + ': ' + XMLDoc.parseError.reason);
+  { Load the XML File }
+  XMLDoc := CreateOleObject('MSXML2.DOMDocument');
+  XMLDoc.async := False;
+  XMLDoc.resolveExternals := False;
+  XMLDoc.setProperty('SelectionLanguage', 'XPath');
+  XMLDoc.load(Path);
+  if XMLDoc.parseError.errorCode <> 0 then
+    RaiseException('Error in xml file "' + Path + '" on line ' + IntToStr(XMLDoc.parseError.line) + ', position ' + IntToStr(XMLDoc.parseError.linepos) + ': ' + XMLDoc.parseError.reason);
 
-	//MsgBox('Loaded the XML file.', mbInformation, mb_Ok);
+  //MsgBox('Loaded the XML file.', mbInformation, mb_Ok);
 
-	{ Modify the XML document }
-	DocRootNodes := XMLDoc.selectNodes('//httpserver/document_root');
-	//MsgBox('Mathing nodes: ' + IntToStr(DocRootNodes.length), mbInformation, mb_Ok);
-	DocRootNode := DocRootNodes.item(0);
-	DocRootNode.Text := GetBrowserScriptsDir('');
+  { Modify the XML document }
+  DocRootNodes := XMLDoc.selectNodes('//httpserver/document_root');
+  //MsgBox('Mathing nodes: ' + IntToStr(DocRootNodes.length), mbInformation, mb_Ok);
+  DocRootNode := DocRootNodes.item(0);
+  DocRootNode.Text := GetBrowserScriptsDir('');
 
-	{ Save the XML document }
-	XMLDoc.Save(Path);
-	//MsgBox('Saved the modified XML as ''' + Path + '''.', mbInformation, mb_Ok);
+  { Save the XML document }
+  XMLDoc.Save(Path);
+  //MsgBox('Saved the modified XML as ''' + Path + '''.', mbInformation, mb_Ok);
 end;
 
 
@@ -185,29 +202,28 @@ end;
 
 function GetAimpHWND(): HWND;
 begin
-	Result := FindWindowByClassName('AIMP2_RemoteInfo');
+  Result := FindWindowByClassName('AIMP2_RemoteInfo');
 end;
 
 function IsAimpLaunched(): boolean;
 begin
-	Result := GetAimpHWND() <> 0;
+  Result := GetAimpHWND() <> 0;
 end;
 
 const
-	WM_AIMP_COMMAND = 1024 + $75;
-	WM_AIMP_CALLFUNC = 3;
-	AIMP_QUIT = 10;
+  WM_AIMP_COMMAND = 1024 + $75;
+  WM_AIMP_CALLFUNC = 3;
+  AIMP_QUIT = 10;
 procedure KillAimp();
 begin
-	SendMessage(GetAimpHWND(), WM_AIMP_COMMAND, WM_AIMP_CALLFUNC, AIMP_QUIT);
+  SendMessage(GetAimpHWND(), WM_AIMP_COMMAND, WM_AIMP_CALLFUNC, AIMP_QUIT);
 end;
 
 procedure TerminateAimpExecutionIfNeedeed();
 begin
-	if IsAimpLaunched() then
-		if MsgBox(ExpandConstant('{cm:AimpApplicationTerminateQuery}'),
-				  mbConfirmation,
-				  MB_YESNO) = IDYES then
-			KillAimp();
+  if IsAimpLaunched() then
+    if MsgBox(ExpandConstant('{cm:AimpApplicationTerminateQuery}'),
+          mbConfirmation,
+          MB_YESNO) = IDYES then
+      KillAimp();
 end;
-

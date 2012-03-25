@@ -101,14 +101,24 @@ AIMPControlPlugin::~AIMPControlPlugin()
     plugin_instance = nullptr;    
 }
 
-boost::filesystem::wpath AIMPControlPlugin::getSettingsFilePath()
+boost::filesystem::wpath AIMPControlPlugin::getSettingsFilePath(const boost::filesystem::wpath& plugin_work_directory) const
 {
-    return plugin_work_directory_ / kPLUGIN_SETTINGS_FILENAME;
+    return plugin_work_directory / kPLUGIN_SETTINGS_FILENAME;
 }
 
-std::wstring AIMPControlPlugin::getAimpDataPath()
+boost::filesystem::wpath AIMPControlPlugin::getSettingsFilePath() const
+{
+    return getSettingsFilePath(plugin_work_directory_);
+}
+
+boost::filesystem::wpath AIMPControlPlugin::getSettingsFilePathVersion1_0_7_825_and_older() {
+    return getSettingsFilePath( getPluginWorkDirectoryPath( getAimpProfilePath() ) );
+}
+
+std::wstring AIMPControlPlugin::getAimpPath(int path_id)
 {
     // by default return "".
+    WCHAR buffer[MAX_PATH + 1] = {0};
 
     if (aimp2_controller_) {
         using namespace AIMP2SDK;
@@ -118,8 +128,7 @@ std::wstring AIMPControlPlugin::getAimpDataPath()
             boost::intrusive_ptr<IAIMP2Extended> aimp_extended(extended);
             extended = nullptr;
 
-            WCHAR buffer[MAX_PATH + 1];
-            const int buffer_length = aimp_extended->AIMP_GetPath(AIMP_CFG_DATA, buffer, MAX_PATH);
+            const int buffer_length = aimp_extended->AIMP_GetPath(path_id, buffer, MAX_PATH);
 
             if (0 < buffer_length && buffer_length <= MAX_PATH) {
                 return std::wstring(buffer, buffer + buffer_length);
@@ -145,8 +154,7 @@ std::wstring AIMPControlPlugin::getAimpDataPath()
             boost::intrusive_ptr<IAIMPAddonsPlayerManager> player_manager(manager);
             manager = nullptr;
 
-            WCHAR buffer[MAX_PATH + 1] = {0};
-            if ( S_OK == player_manager->ConfigGetPath(AIMP_CFG_PATH_PROFILE, buffer, MAX_PATH) ) {
+            if ( S_OK == player_manager->ConfigGetPath(path_id, buffer, MAX_PATH) ) {
                 return buffer;
             }
         }
@@ -154,19 +162,32 @@ std::wstring AIMPControlPlugin::getAimpDataPath()
     return L"";
 }
 
-boost::filesystem::wpath AIMPControlPlugin::makePluginWorkDirectory()
-{   
-    // by default return ".\kPLUGIN_SHORT_NAME" directory.
-    boost::filesystem::wpath path_to_aimp_plugins_work_directory( getAimpDataPath() );
-    path_to_aimp_plugins_work_directory /= kPLUGIN_SHORT_NAME;
+std::wstring AIMPControlPlugin::getAimpProfilePath()
+{
+    const int profile_path_id = aimp2_controller_ ? AIMP2SDK::AIMP_CFG_DATA : AIMP3SDK::AIMP_CFG_PATH_PROFILE;
+    return getAimpPath(profile_path_id);
+}
 
-    return path_to_aimp_plugins_work_directory;
+std::wstring AIMPControlPlugin::getAimpPluginsPath()
+{
+    const int plugins_path_id = aimp2_controller_ ? AIMP2SDK::AIMP_CFG_PLUGINS : AIMP3SDK::AIMP_CFG_PATH_PLUGINS;
+    return getAimpPath(plugins_path_id);
+}
+
+boost::filesystem::wpath AIMPControlPlugin::getPluginWorkDirectoryPath(const boost::filesystem::wpath& base_directory) const
+{   
+    return base_directory / kPLUGIN_SHORT_NAME;
+}
+
+boost::filesystem::wpath AIMPControlPlugin::getPluginWorkDirectoryPath()
+{   
+    return getPluginWorkDirectoryPath( getAimpPluginsPath() );
 }
 
 void AIMPControlPlugin::ensureWorkDirectoryExists()
 {
     namespace fs = boost::filesystem;
-    plugin_work_directory_ = makePluginWorkDirectory();
+    plugin_work_directory_ = getPluginWorkDirectoryPath();
     /*  Logic is simple: we try to create plugin_work_directory instead of check if directory existing.
         fs::create_directory() will return false without exception if directory already exists or it returns true if directory is created successfully.
         We avoid code of existing check because of we need to create plugin work directory any way. */
@@ -198,6 +219,19 @@ void AIMPControlPlugin::loadSettings()
             // settings file reading failed. Default settings will be used.
         }
     } else {
+        
+        // For seamless transition from old version(1.0.7.825 and previous)
+        // we try to load settings from aimp profile directory.
+        const fs::wpath settings_in_profile_filepath = getSettingsFilePathVersion1_0_7_825_and_older();
+        if ( fs::exists(settings_in_profile_filepath) ) {
+            try {
+                settings_manager_.load(settings_in_profile_filepath);
+                // after loading settings from old plugin work directory we will save settings to current work directory.
+            } catch (std::exception&) {
+                // old settings file reading failed. Default settings will be used.
+            }
+        }
+
         try {
             // save the default settings file.
             settings_manager_.save(settings_filepath);
