@@ -11,6 +11,7 @@ var control_panel_state = {};
 var control_menu_state_updaters = {}; // map unique ID of context menu to notifier descriptor(object with following members: notifier - function (entry_control_menu_descriptor), control_menu_descriptor - control menu descritor).
 var track_progress_timer = null;
 var entries_requests = {}; // contains latest entry list requests to server for each playlist. Need for automatic displaying current track in playlist.
+var need_goto_current_track_once_on_page_load = true;
 
 var icon_menu_indicator_opened = 'ui-icon-minus',
 	icon_menu_indicator_closed = 'ui-icon-plus';
@@ -135,6 +136,13 @@ function createEntriesControl(index, $tab_ui)
                                 iTotalDisplayRecords : (result.count_of_found_entries !== undefined) ? result.count_of_found_entries : result.total_entries_count,
                                 aaData : result.entries
                     });
+					
+					var force_page_and_playlist_switch = false;
+					if (need_goto_current_track_once_on_page_load) {
+						force_page_and_playlist_switch = true;
+						need_goto_current_track_once_on_page_load = false;
+					}
+					gotoCurrentTrackInPlaylist(force_page_and_playlist_switch);
                 };
             }
 
@@ -167,10 +175,6 @@ function createEntriesControl(index, $tab_ui)
 											  on_complete  : undefined
 											}
             );
-			
-			if (control_panel_state.playlist_id === request_params.playlist_id) {
-				gotoCurrentTrackInPlaylist();
-			}
         },
         bProcessing : true,
         bJQueryUI : true,
@@ -178,14 +182,13 @@ function createEntriesControl(index, $tab_ui)
         bAutoWidth : false,
 		aLengthMenu : [10, 25, 50, 100] // [[10, 25, 50, -1], [10, 25, 50, getText('all_entries')]]
     } );
-
-
+	
     $table.fnSettings().aaSorting = []; // disable sorting by 0 column.
 
     $playlists_tables['entries_table_' + playlist_id] = $table;
 }
 
-function gotoCurrentTrackInPlaylist()
+function gotoCurrentTrackInPlaylist(force_page_and_playlist_switch_local)
 {
 	if (entries_requests.hasOwnProperty(control_panel_state.playlist_id) ) {
 		var request_params = entries_requests[control_panel_state.playlist_id]; // maybe we need copy this
@@ -193,8 +196,12 @@ function gotoCurrentTrackInPlaylist()
 		aimp_manager.getEntryPositionInDatatable(request_params,
 									 		 { on_success   : function (result) {
 															      if (result.page_number >= 0 && result.track_index_on_page >= 0) {
-																      gotoCurrentPlaylist(control_panel_state.playlist_id);
-																      tryToLocateCurrentTrackInPlaylist(result.page_number, result.track_index_on_page);
+																	  if (force_page_and_playlist_switch_local) {
+																          gotoCurrentPlaylist(control_panel_state.playlist_id);
+																		  tryToLocateCurrentTrackInPlaylist(result.page_number, result.track_index_on_page);
+																	  } else {
+																		  tryToLocateCurrentTrackInPlaylistOnCurrentPageOnly(result.page_number, result.track_index_on_page);
+																	  }
 																  } else {
 																	  //if ( control_panel_state.hasOwnProperty('playlist_id') ) {
 																      removeHighlightFromAllRows( getPlaylistDataTable(control_panel_state.playlist_id) );
@@ -218,13 +225,25 @@ function gotoCurrentPlaylist(playlist_id)
 	$('div[id*=playlist]', $playlists_tabs).each(function(index, tab_ui) {
 		var tab_playlist_id = getPlaylistIdFromTabId(tab_ui.id);
 		if (playlist_id == tab_playlist_id) {
-			$playlists_tabs.tabs('option', 'selected', -1); // mark all tabs as unselected to force trigger onselect event.
-															// Otherwise, in case if we select already selected tab, onselect event will not be triggered.
 			$playlists_tabs.tabs('select', index);
 			return false;
 		}
 		return true;
 	});
+}
+
+function tryToLocateCurrentTrackInPlaylistOnCurrentPageOnly(entry_page_number, entry_index_on_page)
+{
+	var $playlist_table = getPlaylistDataTable(control_panel_state.playlist_id);
+	var oSettings = $playlist_table.fnSettings();
+	
+	var index_of_first_entry_on_page = entry_page_number * oSettings._iDisplayLength;
+	if (oSettings._iDisplayStart == index_of_first_entry_on_page) {
+		// highlight current track.
+		var dt_row = $(oSettings.aoData).get(entry_index_on_page);
+		var nRow = dt_row.nTr;
+		highlightCurrentRow($playlist_table, nRow);
+	}
 }
 
 function tryToLocateCurrentTrackInPlaylist(entry_page_number, entry_index_on_page)
@@ -593,14 +612,10 @@ function createPlaylistsControls(playlists)
 {
     if ($playlists_tabs === null) {
         $playlists_tabs = $('#playlists').tabs({
-            cookie: { expires: 1 }, // store cookie for a day, without, it would be a session cookie
-			select: function(event, $ui) { // load content of playlist on tab activation, if content is not loaded yet.
-						var $tab_ui = $ui.panel;
-						if ( !isPlaylistContentLoaded($tab_ui) ) {
-							createEntriesControl($ui.index, $tab_ui);	
-						}
-					}
-        }); // necessary initialization of Tabs control.
+            cookie: { expires: 1 } // store cookie for a day, without, it would be a session cookie
+			// function 'select' will be assigned below,
+			//                   it need to be set after all tabs creaion and unselecting all tabs to avoid unexpected invocation.
+        }); // initialization of Tabs control.
     }
 
     // create tabs for each playlist.
@@ -614,6 +629,18 @@ function createPlaylistsControls(playlists)
 		 					 playlists[i].title
 							 );
     }
+	
+	$playlists_tabs.tabs('option', 'selected', null); // mark all tabs as unselected to force trigger onselect event.
+													  // Otherwise, in case if we select already selected tab, onselect event will not be triggered.
+													  // Needed to load entries on playlist activation.
+		
+	$playlists_tabs.bind('tabsselect',
+						 function(event, $ui) { // load content of playlist on tab activation, if content is not loaded yet.
+							 var $tab_ui = $ui.panel;
+						 	 if ( !isPlaylistContentLoaded($tab_ui) ) {
+								 createEntriesControl($ui.index, $tab_ui);	
+							 }
+						 });
 	
 	if (   playlists.length > 1 // here we want trigger onselect event of playlist tab. But on 1 tab event will not be tringgered, so load playlist content manually
 		&& control_panel_state.hasOwnProperty('playlist_id') ) {
@@ -812,7 +839,7 @@ function updateControlPanelState(result) {
     control_panel_state = result; // update global variable.
     updateControlPanel();
     syncronizeControlMenus();
-	gotoCurrentTrackInPlaylist();
+	gotoCurrentTrackInPlaylist(true);
 };
 
 function getFormatOfTrackInfoFromCookies()
