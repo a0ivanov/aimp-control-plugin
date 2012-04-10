@@ -285,7 +285,7 @@ boost::shared_ptr<AIMPPlayer::AIMPManager> AIMPControlPlugin::CreateAIMPManager(
 {
     boost::shared_ptr<AIMPPlayer::AIMPManager> result;
     if (aimp2_controller_) {
-        result.reset( new AIMPPlayer::AIMP2Manager(aimp2_controller_, server_io_service_) );
+        result.reset( new AIMPPlayer::AIMP2Manager(aimp2_controller_, *server_io_service_) );
     } else if (aimp3_core_unit_) {
         result.reset( new AIMPPlayer::AIMP3Manager(aimp3_core_unit_) );
     } else {
@@ -309,6 +309,8 @@ HRESULT AIMPControlPlugin::initialize()
 
     // create plugin core
     try {
+        server_io_service_ = boost::make_shared<boost::asio::io_service>();
+
         // create AIMP manager.
         aimp_manager_ = CreateAIMPManager();
 
@@ -329,7 +331,7 @@ HRESULT AIMPControlPlugin::initialize()
                                                               )
                                     );
         // create XMLRPC server.
-        server_.reset(new Http::Server( server_io_service_,
+        server_.reset(new Http::Server( *server_io_service_,
                                         settings_manager_.settings().http_server.ip_to_bind,
                                         settings_manager_.settings().http_server.port,
                                         *http_request_handler_
@@ -359,7 +361,7 @@ HRESULT AIMPControlPlugin::Finalize()
 
     stopTickTimer();
 
-    server_io_service_.stop();
+    server_io_service_->stop();
     
     if (server_) {
         // stop the server.
@@ -379,6 +381,8 @@ HRESULT AIMPControlPlugin::Finalize()
 
     aimp2_controller_.reset();
     aimp3_core_unit_.reset();
+
+    server_io_service_.reset();
 
     BOOST_LOG_SEV(logger(), info) << "Plugin finalization is finished";
 
@@ -591,7 +595,7 @@ void CALLBACK AIMPControlPlugin::onTickTimerProc(HWND /*hwnd*/,
 void AIMPControlPlugin::onTick()
 {
     try {
-        server_io_service_.poll();
+        server_io_service_->poll();
         { // for tests
             using namespace AIMPPlayer;
             if (aimp_manager_) {
@@ -601,7 +605,7 @@ void AIMPControlPlugin::onTick()
     } catch (std::exception& e) {
         // Just send error in log and stop processing.
         BOOST_LOG_SEV(logger(), critical) << "Unhandled exception inside ControlPlugin::onTick(): " << e.what();
-        server_io_service_.stop();
+        server_io_service_->stop();
         stopTickTimer();
         BOOST_LOG_SEV(logger(), info) << "Service was stopped.";
     }
