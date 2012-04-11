@@ -11,9 +11,16 @@
 #include "rpc/response_serializer.h"
 #include "utils/util.h"
 #include <boost/foreach.hpp>
+#include "plugin/logger.h"
 
 namespace Rpc
 {
+
+namespace {
+using namespace ControlPlugin::PluginLogger;
+ModuleLoggerType& logger()
+    { return getLogManager().getModuleLogger<Rpc::RequestHandler>(); }
+}
 
 const int kGENERAL_ERROR_CODE = -1;
 
@@ -95,7 +102,6 @@ boost::tribool RequestHandler::callMethod(const Value& root_request,
             response_serializer.serializeFault(root_request, method_name + ": method not found", METHOD_NOT_FOUND_ERROR, response);
             return false;
         }
-
         
         { // execute method
         //PROFILE_EXECUTION_TIME( method_name.c_str() );
@@ -120,6 +126,13 @@ boost::tribool RequestHandler::callMethod(const Value& root_request,
         }
     } catch (const Exception& e) {
         response_serializer.serializeFault(root_request, e.message(), e.code(), response);
+        return false;
+    } catch (const std::exception& e) {
+        const char* method_name =    root_request.isMember("method") 
+                                  && root_request["method"].type() == Rpc::Value::TYPE_STRING ? static_cast<const std::string&>(root_request["method"]).c_str()
+                                                                                              : "unknown";
+        BOOST_LOG_SEV(logger(), error) << "RequestHandler::callMethod: call " << method_name << " method error. Reason: " << e.what();
+        response_serializer.serializeFault(root_request, "internal error", Rpc::INTERNAL_ERROR, response);
         return false;
     }
 }

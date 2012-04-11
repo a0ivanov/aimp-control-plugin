@@ -51,7 +51,8 @@ function AimpManager() {
         // Codes in range [1-1000] for RPC methods errors.
         /*
         enum ERROR_CODES { REQUEST_PARSING_ERROR = 1, METHOD_NOT_FOUND_ERROR,
-                           TYPE_ERROR, INDEX_RANGE_ERROR, OBJECT_ACCESS_ERROR, VALUE_RANGE_ERROR
+                           TYPE_ERROR, INDEX_RANGE_ERROR, OBJECT_ACCESS_ERROR,
+                           VALUE_RANGE_ERROR, INTERNAL_ERROR
         };
         enum ERROR_CODES { WRONG_ARGUMENT = 11,
                            PLAYBACK_FAILED, SHUFFLE_MODE_SET_FAILED, REPEAT_MODE_SET_FAILED,
@@ -61,16 +62,17 @@ function AimpManager() {
                            ALBUM_COVER_LOAD_FAILED,
                            RATING_SET_FAILED,
                            STATUS_SET_FAILED
-          };
+        };
         */
 
         this.error_codes_to_messages_map = {
-            1 : 'error_request_parsing',
-            2 : 'error_method_not_found',
-            3 : 'error_type',
-            4 : 'error_index_range',
-            5 : 'error_object_access',
-            6 : 'error_value_range',
+             1 : 'error_request_parsing',
+             2 : 'error_method_not_found',
+             3 : 'error_type',
+             4 : 'error_index_range',
+             5 : 'error_object_access',
+             6 : 'error_value_range',
+			 7 : 'error_internal',
             11 : 'error_wrong_argument',
             12 : 'error_playback_failed',
             13 : 'error_shuffle_mode_set_failed',

@@ -36,6 +36,7 @@ namespace AimpRpcMethods
         - INDEX_RANGE_ERROR      = 4
         - OBJECT_ACCESS_ERROR    = 5
         - VALUE_RANGE_ERROR      = 6
+        - INTERNAL_ERROR         = 7
 */
 
 /*! 
