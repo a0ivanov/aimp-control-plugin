@@ -1233,23 +1233,23 @@ PlaylistID AIMP3Manager::getPlayingPlaylist() const
 PlaylistEntryID AIMP3Manager::getPlayingEntry() const
 {
     using namespace AIMP3SDK;
-    const PlaylistID active_playlist = getPlayingPlaylist();
+    const PlaylistID playing_playlist = getPlayingPlaylist();
 
-    if (active_playlist == 0) {
+    if (playing_playlist == 0) {
         // player is stopped.
         return 0;
     }
 
-    int internal_active_entry_index;
-    HRESULT r = aimp3_playlist_manager_->StoragePropertyGetValue( cast<AIMP3SDK::HPLS>(active_playlist), AIMP_PLAYLIST_STORAGE_PROPERTY_PLAYINGINDEX,
-                                                                  &internal_active_entry_index, sizeof(internal_active_entry_index) 
+    int internal_playing_entry_index;
+    HRESULT r = aimp3_playlist_manager_->StoragePropertyGetValue( cast<AIMP3SDK::HPLS>(playing_playlist), AIMP_PLAYLIST_STORAGE_PROPERTY_PLAYINGINDEX,
+                                                                  &internal_playing_entry_index, sizeof(internal_playing_entry_index) 
                                                                  );
     if (S_OK != r) {
         throw std::runtime_error(MakeString() << "Error " << r << " in "__FUNCTION__);
     }
 
     // internal index equals AIMP3Manager's entry ID. In other case map index<->ID(use Playlist::entries_id_list_) here in all places where TrackDescription is used.
-    const PlaylistEntryID entry_id = internal_active_entry_index;
+    const PlaylistEntryID entry_id = internal_playing_entry_index;
     return entry_id;
 }
 
