@@ -155,10 +155,10 @@ public:
     */
     virtual void removeEntryFromPlayQueue(TrackDescription track_desc) = 0; // throws std::runtime_error
 
-    //! \return current playing playlist.
+    //! \return current playing playlist. Can return 0 on from AIMP3 build 3.00.985 if there player is stopped.
     virtual PlaylistID getPlayingPlaylist() const = 0;
 
-    //! \return current playing track.
+    //! \return current playing track. Can return 0 on from AIMP3 build 3.00.985 if there player is stopped.
     virtual PlaylistEntryID getPlayingEntry() const = 0; // throws std::runtime_error
 
     //! \return descriptor of playing track.

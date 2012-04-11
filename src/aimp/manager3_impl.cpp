@@ -1234,6 +1234,12 @@ PlaylistEntryID AIMP3Manager::getPlayingEntry() const
 {
     using namespace AIMP3SDK;
     const PlaylistID active_playlist = getPlayingPlaylist();
+
+    if (active_playlist == 0) {
+        // player is stopped.
+        return 0;
+    }
+
     int internal_active_entry_index;
     HRESULT r = aimp3_playlist_manager_->StoragePropertyGetValue( cast<AIMP3SDK::HPLS>(active_playlist), AIMP_PLAYLIST_STORAGE_PROPERTY_PLAYINGINDEX,
                                                                   &internal_active_entry_index, sizeof(internal_active_entry_index) 
