@@ -40,11 +40,10 @@ SetupIconFile=inno_setup_data\icons\icon_aimp3_32x32.ico
 Compression=lzma/ultra
 SolidCompression=true
 InternalCompressLevel=ultra
-PrivilegesRequired=none
+PrivilegesRequired=admin
 DirExistsWarning=no
 AllowUNCPath=false
 AppendDefaultDirName=true
-
 
 [Languages]
 Name: english; MessagesFile: inno_setup_data\English.isl; LicenseFile: Lisense-English.txt; InfoAfterFile: inno_setup_data\InfoAfterInstall-English.txt
