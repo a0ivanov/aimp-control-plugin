@@ -15,6 +15,7 @@ AppName={#AppName}
 AppVersion={#AppVerStr}
 AppVerName={#AppName} {#AppVerStr}
 UninstallDisplayName={#AppName} {#AppVerStr}
+UninstallFilesDir={app}\{#PluginWorkDirectoryName}
 VersionInfoVersion={#FileVerStr}
 VersionInfoTextVersion={#AppVerStr}
 VersionInfoDescription=AIMP player plugin. Provides network access to AIMP player.
