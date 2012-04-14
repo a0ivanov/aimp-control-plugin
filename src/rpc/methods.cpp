@@ -1215,7 +1215,7 @@ void EmulationOfWebCtlPlugin::getPlaylistList(std::ostringstream& out)
             out << "{\"id\":" << playlist_id << ",\"duration\":" << duration << ",\"size\":" << size << ",\"name\":\"" << StringEncoding::utf16_to_utf8(playlist_name) << "\"}";
         }
         out << "]";
-    } else if (AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_)) {
+    } else if ( AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_) ) {
         using namespace AIMP3SDK;
         out << "[";
 
@@ -1368,28 +1368,29 @@ void EmulationOfWebCtlPlugin::getPlayerStatus(std::ostringstream& out)
 
 void EmulationOfWebCtlPlugin::getCurrentSong(std::ostringstream& out)
 {
-    AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_);
-    if (!aimp2_manager) {
-        assert(!"emulation of web-ctl-plugin on AIMP3 is not implemented yet");
-        throw std::runtime_error("not implemented on AIMP3: "__FUNCTION__);
+    const TrackDescription track( aimp_manager_.getPlayingTrack() );
+    std::wstring entry_title(256, 0);
+    if ( AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_) ) {
+        aimp2_manager->aimp2_playlist_manager_->AIMP_PLS_Entry_GetTitle( track.playlist_id, track.track_id, 
+                                                                         &entry_title[0], entry_title.length()
+                                                                        );
+    } else if ( AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_) ) {
+        using namespace AIMP3SDK;
+        HPLSENTRY entry_id = aimp3_manager->aimp3_playlist_manager_->StorageGetEntry(cast<AIMP3SDK::HPLS>(track.playlist_id), track.track_id);
+        aimp3_manager->aimp3_playlist_manager_->EntryPropertyGetValue( entry_id, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_DISPLAYTEXT,
+                                                                       &entry_title[0], entry_title.length()
+                                                                      );
     }
 
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp2_manager->aimp2_playlist_manager_);
-    const int playlist_id  = aimp_playlist_manager->AIMP_PLS_ID_PlayingGet(),
-              playing_file = aimp_playlist_manager->AIMP_PLS_ID_PlayingGetTrackIndex(playlist_id);
-
-    std::wstring entry_title(256, 0);
-    aimp_playlist_manager->AIMP_PLS_Entry_GetTitle( playlist_id, playing_file, &entry_title[0], entry_title.length() );
     entry_title.resize( wcslen( entry_title.c_str() ) );
     using namespace Utilities;
     replaceAll(L"\"", 1,
-               L"\\\"", 2,
-               &entry_title);
-
+                L"\\\"", 2,
+                &entry_title);
     out << "{\"status\": \"OK\", \"PlayingList\": "
-        << playlist_id
+        << track.playlist_id
         << ", \"PlayingFile\": "
-        << playing_file
+        << track.track_id
         << ", \"PlayingFileName\": \""
         << StringEncoding::utf16_to_utf8(entry_title)
         << "\", \"length\": "
