@@ -64,21 +64,6 @@ const AIMP3SDK::HPLS kInvalidPlaylistId = nullptr;
 const int kNoParam1 = 0;
 void * const kNoParam2 = nullptr;
 
-//! general tempate for convinient casting. Provide specialization for your own types.
-template<typename To, typename From> To cast(From);
-
-template<>
-PlaylistID cast(AIMP3SDK::HPLS handle)
-{
-    return reinterpret_cast<PlaylistID>(handle);
-}
-
-template<>
-AIMP3SDK::HPLS cast(PlaylistID id)
-{
-    return reinterpret_cast<AIMP3SDK::HPLS>(id);
-}
-
 // use usual functions instead template specialization since in fact PlaylistEntryID == PlaylistID == int.
 PlaylistEntryID castToPlaylistEntryID (AIMP3SDK::HPLSENTRY handle)
 {

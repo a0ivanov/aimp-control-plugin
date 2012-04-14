@@ -283,6 +283,21 @@ private:
     friend class AimpRpcMethods::EmulationOfWebCtlPlugin;
 };
 
+//! general tempate for convinient casting. Provide specialization for your own types.
+template<typename To, typename From> To cast(From);
+
+template<>
+inline PlaylistID cast(AIMP3SDK::HPLS handle)
+{
+    return reinterpret_cast<PlaylistID>(handle);
+}
+
+template<>
+inline AIMP3SDK::HPLS cast(PlaylistID id)
+{
+    return reinterpret_cast<AIMP3SDK::HPLS>(id);
+}
+
 } // namespace AIMPPlayer
 
 #endif // #ifndef AIMP_MANAGER3_IMPL_H
