@@ -1415,26 +1415,39 @@ void EmulationOfWebCtlPlugin::setPlayerStatus(const std::string& statusType, int
 
 void EmulationOfWebCtlPlugin::sortPlaylist(int playlist_id, const std::string& sortType)
 {
-    AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_);
-    if (!aimp2_manager) {
-        assert(!"emulation of web-ctl-plugin on AIMP3 is not implemented yet");
-        throw std::runtime_error("not implemented on AIMP3: "__FUNCTION__);
-    }
-
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp2_manager->aimp2_playlist_manager_);
-    using namespace AIMP2SDK;
-    if (sortType.compare("title") == 0) {
-        aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_TITLE);
-    } else if (sortType.compare("filename") == 0) {
-        aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_FILENAME);
-    } else if (sortType.compare("duration") == 0) {
-        aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_DURATION);
-    } else if (sortType.compare("artist") == 0) {
-        aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_ARTIST);
-    } else if (sortType.compare("inverse") == 0) {
-        aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_INVERSE);
-    } else if (sortType.compare("randomize") == 0) {
-        aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_RANDOMIZE);
+    if ( AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_) ) {
+        using namespace AIMP2SDK;
+        boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp2_manager->aimp2_playlist_manager_);
+        if (sortType.compare("title") == 0) {
+            aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_TITLE);
+        } else if (sortType.compare("filename") == 0) {
+            aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_FILENAME);
+        } else if (sortType.compare("duration") == 0) {
+            aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_DURATION);
+        } else if (sortType.compare("artist") == 0) {
+            aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_ARTIST);
+        } else if (sortType.compare("inverse") == 0) {
+            aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_INVERSE);
+        } else if (sortType.compare("randomize") == 0) {
+            aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_RANDOMIZE);
+        }
+    } else if ( AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_) ) {
+        using namespace AIMP3SDK;
+        boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistManager> aimp_playlist_manager(aimp3_manager->aimp3_playlist_manager_);
+        const AIMP3SDK::HPLS playlist_handle = cast<AIMP3SDK::HPLS>(playlist_id);
+        if (sortType.compare("title") == 0) {
+            aimp_playlist_manager->StorageSort(playlist_handle, AIMP_PLAYLIST_SORT_TYPE_TITLE);
+        } else if (sortType.compare("filename") == 0) {
+            aimp_playlist_manager->StorageSort(playlist_handle, AIMP_PLAYLIST_SORT_TYPE_FILENAME);
+        } else if (sortType.compare("duration") == 0) {
+            aimp_playlist_manager->StorageSort(playlist_handle, AIMP_PLAYLIST_SORT_TYPE_DURATION);
+        } else if (sortType.compare("artist") == 0) {
+            aimp_playlist_manager->StorageSort(playlist_handle, AIMP_PLAYLIST_SORT_TYPE_ARTIST);
+        } else if (sortType.compare("inverse") == 0) {
+            aimp_playlist_manager->StorageSort(playlist_handle, AIMP_PLAYLIST_SORT_TYPE_INVERSE);
+        } else if (sortType.compare("randomize") == 0) {
+            aimp_playlist_manager->StorageSort(playlist_handle, AIMP_PLAYLIST_SORT_TYPE_RANDOMIZE);
+        }
     }
 }
 
