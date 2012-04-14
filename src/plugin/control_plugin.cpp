@@ -101,20 +101,6 @@ AIMPControlPlugin::~AIMPControlPlugin()
     plugin_instance = nullptr;    
 }
 
-boost::filesystem::wpath AIMPControlPlugin::getSettingsFilePath(const boost::filesystem::wpath& plugin_work_directory) const
-{
-    return plugin_work_directory / kPLUGIN_SETTINGS_FILENAME;
-}
-
-boost::filesystem::wpath AIMPControlPlugin::getSettingsFilePath() const
-{
-    return getSettingsFilePath(plugin_work_directory_);
-}
-
-boost::filesystem::wpath AIMPControlPlugin::getSettingsFilePathVersion1_0_7_825_and_older() {
-    return getSettingsFilePath( getPluginWorkDirectoryPath( getAimpProfilePath() ) );
-}
-
 std::wstring AIMPControlPlugin::getAimpPath(int path_id)
 {
     // by default return "".
@@ -174,55 +160,94 @@ std::wstring AIMPControlPlugin::getAimpPluginsPath()
     return getAimpPath(plugins_path_id);
 }
 
-boost::filesystem::wpath AIMPControlPlugin::getPluginWorkDirectoryPath(const boost::filesystem::wpath& base_directory) const
+boost::filesystem::wpath AIMPControlPlugin::getPluginDirectoryPath(const boost::filesystem::wpath& base_directory) const
 {   
     return base_directory / kPLUGIN_SHORT_NAME;
 }
 
-boost::filesystem::wpath AIMPControlPlugin::getPluginWorkDirectoryPath()
-{   
-    return getPluginWorkDirectoryPath( getAimpPluginsPath() );
+boost::filesystem::wpath AIMPControlPlugin::getSettingsFilePath(const boost::filesystem::wpath& base_directory) const
+{
+    return base_directory / kPLUGIN_SETTINGS_FILENAME;
+}
+
+// Directory will be created if it doesn't exist.
+bool isDirectoryWriteEnabled(const boost::filesystem::wpath& directory)
+{
+    // ensure directory exists or can be created
+    try {
+        /*  Logic is simple: we try to create plugin_work_directory instead of check if directory existing.
+            fs::create_directory() will return false without exception if directory already exists or it returns true if directory is created successfully.
+            We avoid code of existing check because of we need to create plugin work directory any way. */
+        fs::create_directory(directory);
+    } catch (fs::filesystem_error&) {
+        // "directory can not be created."
+        return false;
+    }
+
+    boost::filesystem::wpath test_file_path = directory / L"testdiraccess";
+    // ensure we can create file
+    std::wofstream temp_file( test_file_path.c_str() );
+    if ( !temp_file.is_open() ) {
+        // "Log directory is read only."
+        return false;
+    }
+    temp_file.close();
+
+    // ensure we can remove files
+    try {
+        remove(test_file_path);
+    } catch (fs::filesystem_error&) {
+        // "Test file can not be removed. Directory should provide full access for correct work."
+        return false;
+    }
+
+    // ok, we have rights for directory modification.
+    return true;
 }
 
 void AIMPControlPlugin::ensureWorkDirectoryExists()
 {
     namespace fs = boost::filesystem;
-    plugin_work_directory_ = getPluginWorkDirectoryPath();
-    /*  Logic is simple: we try to create plugin_work_directory instead of check if directory existing.
-        fs::create_directory() will return false without exception if directory already exists or it returns true if directory is created successfully.
-        We avoid code of existing check because of we need to create plugin work directory any way. */
-    try {
-        fs::create_directory(plugin_work_directory_); // try to create directory unconditionally.
-    } catch (fs::filesystem_error& e) {
+
+    // check Plugins directory first, use it if it's writable.
+    const fs::wpath plugins_subdirectory = getPluginDirectoryPath( getAimpPluginsPath() ),
+                    profile_subdirectory = getPluginDirectoryPath( getAimpProfilePath() );
+    if ( isDirectoryWriteEnabled(plugins_subdirectory) ) {
+        plugin_work_directory_ = plugins_subdirectory;
+    } else if ( isDirectoryWriteEnabled(profile_subdirectory) ) {
+        plugin_work_directory_ = profile_subdirectory;
+    } else {
+        plugin_work_directory_ = plugins_subdirectory; // set work directory in any case.
+
         using namespace StringEncoding;
-        // work directory can not be created.
+        // work directory is not accessible for writing or does not exist.
         // TODO: send log to aimp internal logger.
-        BOOST_LOG_SEV(logger(), error) << "Failed to create plugin work directory \""
-                                       << utf16_to_system_ansi_encoding_safe( plugin_work_directory_.native() )
-                                       << "\". Reason:"
-                                       << e.what();
+        BOOST_LOG_SEV(logger(), error) << "Neither \""
+                                       << utf16_to_system_ansi_encoding_safe( plugins_subdirectory.native() )
+                                       << "\", nor \"" 
+                                       << utf16_to_system_ansi_encoding_safe( profile_subdirectory.native() )
+                                       << "\" are accessible for writing. Use plugins subdirectory as work directory."; 
     }
 }
 
 void AIMPControlPlugin::loadSettings()
 {
     // Note: logger is not available at this point.
-
     namespace fs = boost::filesystem;
-    const fs::wpath settings_filepath = getSettingsFilePath();
 
-    if ( fs::exists(settings_filepath) ) {
+    const fs::wpath settings_in_plugins_filepath = getSettingsFilePath( getPluginDirectoryPath( getAimpPluginsPath() ) );
+    plugin_settings_filepath_ = settings_in_plugins_filepath;
+    if ( fs::exists(settings_in_plugins_filepath) ) {
         // load settings from file.
         try {
-            settings_manager_.load(settings_filepath);
+            settings_manager_.load(settings_in_plugins_filepath);
         } catch (std::exception&) {
             // settings file reading failed. Default settings will be used.
         }
     } else {
-        
         // For seamless transition from old version(1.0.7.825 and previous)
         // we try to load settings from aimp profile directory.
-        const fs::wpath settings_in_profile_filepath = getSettingsFilePathVersion1_0_7_825_and_older();
+        const fs::wpath settings_in_profile_filepath = getSettingsFilePath( getPluginDirectoryPath( getAimpProfilePath() ) );
         if ( fs::exists(settings_in_profile_filepath) ) {
             try {
                 settings_manager_.load(settings_in_profile_filepath);
@@ -234,7 +259,7 @@ void AIMPControlPlugin::loadSettings()
 
         try {
             // save the default settings file.
-            settings_manager_.save(settings_filepath);
+            settings_manager_.save(settings_in_plugins_filepath);
         } catch (std::exception&) {
             // settings file saving failed.
             // TODO: send to internal AIMP log.
@@ -394,10 +419,10 @@ HRESULT AIMPControlPlugin::Finalize()
 HRESULT AIMPControlPlugin::ShowSettingsDialog(HWND AParentWindow)
 {
     std::wostringstream message_body;
-    message_body << L"AIMP2 Control plugin settings can be found in configuration file " << getSettingsFilePath();
+    message_body << L"AIMP Control plugin settings can be found in configuration file " << plugin_settings_filepath_;
     MessageBox( AParentWindow,
                 message_body.str().c_str(),
-                L"Information about AIMP2 Control Plugin",
+                L"Information about AIMP Control Plugin",
                 MB_ICONINFORMATION);
 
     return S_OK;
