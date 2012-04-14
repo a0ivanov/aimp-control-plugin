@@ -1289,14 +1289,15 @@ void EmulationOfWebCtlPlugin::getPlaylistSongs(int playlist_id, bool ignore_cach
     // not used, we have one thread. concurencyInstance.EnterWriter();
 
     AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_);
-    if (!aimp2_manager) {
-        assert(!"emulation of web-ctl-plugin on AIMP3 is not implemented yet");
-        throw std::runtime_error("not implemented on AIMP3: "__FUNCTION__);
+    AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_);
+
+    int fileCount = 0;
+    if (aimp2_manager) {
+        fileCount = aimp2_manager->aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
+    } else if (aimp3_manager) {
+        fileCount = aimp3_manager->aimp3_playlist_manager_->StorageGetEntryCount( cast<AIMP3SDK::HPLS>(playlist_id) );
     }
 
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp2_manager->aimp2_playlist_manager_);
-
-    int fileCount = aimp_playlist_manager->AIMP_PLS_GetFilesCount(playlist_id);
     if (size == 0) {
         size = fileCount;
     }
@@ -1313,21 +1314,49 @@ void EmulationOfWebCtlPlugin::getPlaylistSongs(int playlist_id, bool ignore_cach
 
         const unsigned int entry_title_length = 256;
         std::wstring entry_title;
-        AIMP2SDK::AIMP2FileInfo fileInfo = {0};
-        fileInfo.cbSizeOf = sizeof(fileInfo);
-        for (int i = offset; (i < fileCount) && (i < offset + size); ++i) {
-            aimp_playlist_manager->AIMP_PLS_Entry_InfoGet(playlist_id, i, &fileInfo);
-            entry_title.resize(entry_title_length, 0);
-            aimp_playlist_manager->AIMP_PLS_Entry_GetTitle( playlist_id, i, &entry_title[0], entry_title.length() );
-            entry_title.resize( wcslen( entry_title.c_str() ) );
-            using namespace Utilities;
-            replaceAll(L"\"", 1,
-                       L"\\\"", 2,
-                       &entry_title);
-            if (i != 0) {
-                out << ',';
+        if (aimp2_manager) {
+            boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp2_manager->aimp2_playlist_manager_);
+            AIMP2SDK::AIMP2FileInfo fileInfo = {0};
+            fileInfo.cbSizeOf = sizeof(fileInfo);
+            for (int i = offset; (i < fileCount) && (i < offset + size); ++i) {
+                aimp_playlist_manager->AIMP_PLS_Entry_InfoGet(playlist_id, i, &fileInfo);
+                entry_title.resize(entry_title_length, 0);
+                aimp_playlist_manager->AIMP_PLS_Entry_GetTitle( playlist_id, i, &entry_title[0], entry_title.length() );
+                entry_title.resize( wcslen( entry_title.c_str() ) );
+                using namespace Utilities;
+                replaceAll(L"\"", 1,
+                           L"\\\"", 2,
+                           &entry_title);
+                if (i != 0) {
+                    out << ',';
+                }
+                out << "{\"name\":\"" << StringEncoding::utf16_to_utf8(entry_title) << "\",\"length\":" << fileInfo.nDuration << "}";
             }
-            out << "{\"name\":\"" << StringEncoding::utf16_to_utf8(entry_title) << "\",\"length\":" << fileInfo.nDuration << "}";
+        } else if (aimp3_manager) {
+            using namespace AIMP3SDK;
+            for (int i = offset; (i < fileCount) && (i < offset + size); ++i) {
+                HPLSENTRY entry_id = aimp3_manager->aimp3_playlist_manager_->StorageGetEntry(cast<AIMP3SDK::HPLS>(playlist_id), i);
+                entry_title.resize(entry_title_length, 0);
+                //aimp3_manager->aimp3_playlist_manager_->EntryPropertyGetValue( entry_id, AIMP_PLAYLIST_ENTRY_PROPERTY_DISPLAYTEXT,
+                //                                                               &entry_title[0], entry_title.length()
+                //                                                              );
+                TAIMPFileInfo info = {0};
+                info.StructSize = sizeof(info);
+                info.Title = &entry_title[0];
+                info.TitleLength = entry_title.length();
+                aimp3_manager->aimp3_playlist_manager_->EntryPropertyGetValue( entry_id, AIMP_PLAYLIST_ENTRY_PROPERTY_INFO,
+                                                                               &info, sizeof(info)
+                                                                              );
+                entry_title.resize( wcslen( entry_title.c_str() ) );
+                using namespace Utilities;
+                replaceAll(L"\"", 1,
+                           L"\\\"", 2,
+                           &entry_title);
+                if (i != 0) {
+                    out << ',';
+                }
+                out << "{\"name\":\"" << StringEncoding::utf16_to_utf8(entry_title) << "\",\"length\":" << info.Duration << "}";
+            }
         }
         out << "]";
     }
