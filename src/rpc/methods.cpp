@@ -1190,14 +1190,13 @@ std::string urldecode(const std::string& url_src)
 
 void EmulationOfWebCtlPlugin::getPlaylistList(std::ostringstream& out)
 {
-    AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_);
-    if (aimp2_manager) {
+    if ( AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_) ) {
         out << "[";
 
         boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp2_manager->aimp2_playlist_manager_);
         const unsigned int playlist_name_length = 256;
         std::wstring playlist_name;
-        const short playlists_count = aimp2_manager->aimp2_playlist_manager_->AIMP_PLS_Count();
+        const short playlists_count = aimp_playlist_manager->AIMP_PLS_Count();
         for (short i = 0; i < playlists_count; ++i) {
             int playlist_id;
             aimp_playlist_manager->AIMP_PLS_ID_By_Index(i, &playlist_id);
@@ -1216,9 +1215,32 @@ void EmulationOfWebCtlPlugin::getPlaylistList(std::ostringstream& out)
             out << "{\"id\":" << playlist_id << ",\"duration\":" << duration << ",\"size\":" << size << ",\"name\":\"" << StringEncoding::utf16_to_utf8(playlist_name) << "\"}";
         }
         out << "]";
-    } else {
-        assert(!"emulation of web-ctl-plugin on AIMP3 is not implemented yet");
-        throw std::runtime_error("not implemented on AIMP3: "__FUNCTION__);
+    } else if (AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_)) {
+        using namespace AIMP3SDK;
+        out << "[";
+
+        boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistManager> aimp_playlist_manager(aimp3_manager->aimp3_playlist_manager_);
+        const unsigned int playlist_name_length = 256;
+        std::wstring playlist_name;
+        const int playlists_count = aimp_playlist_manager->StorageGetCount();
+        for (short i = 0; i < playlists_count; ++i) {
+            const AIMP3SDK::HPLS playlist_id =  aimp_playlist_manager->StorageGet(i);
+            INT64 duration, size;
+            aimp_playlist_manager->StoragePropertyGetValue( playlist_id, AIMP_PLAYLIST_STORAGE_PROPERTY_DURATION, &duration, sizeof(duration) );
+            aimp_playlist_manager->StoragePropertyGetValue( playlist_id, AIMP_PLAYLIST_STORAGE_PROPERTY_SIZE,     &size,     sizeof(size) );
+            playlist_name.resize(playlist_name_length, 0);
+            aimp_playlist_manager->StoragePropertyGetValue( playlist_id, AIMP_PLAYLIST_STORAGE_PROPERTY_NAME, &playlist_name[0], playlist_name.length() );
+            playlist_name.resize( wcslen( playlist_name.c_str() ) );
+            using namespace Utilities;
+            replaceAll(L"\"", 1,
+                       L"\\\"", 2,
+                       &playlist_name);
+            if (i != 0) {
+                out << ',';
+            }
+            out << "{\"id\":" << cast<PlaylistID>(playlist_id) << ",\"duration\":" << duration << ",\"size\":" << size << ",\"name\":\"" << StringEncoding::utf16_to_utf8(playlist_name) << "\"}";
+        }
+        out << "]";
     }
 }
 
