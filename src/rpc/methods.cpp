@@ -1406,9 +1406,16 @@ void EmulationOfWebCtlPlugin::getCurrentSong(std::ostringstream& out)
     } else if ( AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_) ) {
         using namespace AIMP3SDK;
         HPLSENTRY entry_id = aimp3_manager->aimp3_playlist_manager_->StorageGetEntry(cast<AIMP3SDK::HPLS>(track.playlist_id), track.track_id);
-        aimp3_manager->aimp3_playlist_manager_->EntryPropertyGetValue( entry_id, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_DISPLAYTEXT,
-                                                                       &entry_title[0], entry_title.length()
+        TAIMPFileInfo info = {0};
+        info.StructSize = sizeof(info);
+        info.Title = &entry_title[0];
+        info.TitleLength = entry_title.length();
+        aimp3_manager->aimp3_playlist_manager_->EntryPropertyGetValue( entry_id, AIMP_PLAYLIST_ENTRY_PROPERTY_INFO,
+                                                                       &info, sizeof(info)
                                                                       );
+        //aimp3_manager->aimp3_playlist_manager_->EntryPropertyGetValue( entry_id, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_DISPLAYTEXT,
+        //                                                               &entry_title[0], entry_title.length()
+        //                                                              );
     }
 
     entry_title.resize( wcslen( entry_title.c_str() ) );
