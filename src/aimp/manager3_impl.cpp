@@ -939,6 +939,12 @@ void AIMP3Manager::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValu
     throw std::runtime_error( os.str() );
 }
 
+// For some reason if IAIMPCoreUnit::MessageSend() returns -1 instead 1 for BOOL.
+AIMP3Manager::StatusValue patchBool(BOOL value)
+{
+    return value ? 1 : 0;
+}
+
 AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) const
 {
     //return aimp2_controller_->AIMP_Status_Get(status);
@@ -992,7 +998,7 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
         BOOL value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
-            return value;
+            return patchBool(value);
         }
         break;
     }
@@ -1037,7 +1043,7 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
         BOOL value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
-            return value;
+            return patchBool(value);
         }
         break;
     }
@@ -1073,7 +1079,7 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
         BOOL value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
-            return value;
+            return patchBool(value);
         }
         break;
     }
@@ -1082,7 +1088,7 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
         BOOL value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
-            return value;
+            return patchBool(value);
         }
         break;                         
     }
@@ -1122,7 +1128,7 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
         BOOL value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
-            return value;
+            return patchBool(value);
         }
         break;
     }
@@ -1138,7 +1144,7 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
         BOOL value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
-            return value;
+            return patchBool(value);
         }
         break;
     }
@@ -1149,7 +1155,7 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
         BOOL value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
-            return value;
+            return patchBool(value);
         }
         break;
     }
@@ -1181,7 +1187,7 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
         BOOL value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
-            return value;
+            return patchBool(value);
         }
         break;
     }
