@@ -232,3 +232,101 @@ begin
           MB_YESNO) = IDYES then
       KillAimp();
 end;
+
+function GetUninstallString(): String;
+var
+  sUnInstPath: String;
+  sUnInstallString: String;
+begin
+  sUnInstPath := ExpandConstant('Software\Microsoft\Windows\CurrentVersion\Uninstall\{#emit SetupSetting("AppId")}_is1');
+  sUnInstallString := '';
+  if not RegQueryStringValue(HKLM, sUnInstPath, 'UninstallString', sUnInstallString) then
+    RegQueryStringValue(HKCU, sUnInstPath, 'UninstallString', sUnInstallString);
+  Result := sUnInstallString;
+end;
+
+function GetBrowserScriptsStringDirectlyFromRegistry(): String;
+var
+  sUnInstPath: String;
+  sBrowserScriptsString: String;
+begin
+  sUnInstPath := ExpandConstant('Software\Microsoft\Windows\CurrentVersion\Uninstall\{#emit SetupSetting("AppId")}_is1');
+  sBrowserScriptsString := '';
+  if not RegQueryStringValue(HKLM, sUnInstPath, 'Inno Setup CodeFile: BrowserScriptsDir', sBrowserScriptsString) then
+    RegQueryStringValue(HKCU, sUnInstPath, 'Inno Setup CodeFile: BrowserScriptsDir', sBrowserScriptsString);
+    
+  Result := sBrowserScriptsString;
+end;
+
+function GetBrowserScriptsString(): String;
+begin
+  Result := GetPreviousData('BrowserScriptsDir', '');
+end;
+
+function IsUpgrade(): Boolean;
+begin
+  Result := (GetUninstallString() <> '');
+end;
+
+function UnInstallOldVersion(): Integer;
+var
+  sUnInstallString: String;
+  iResultCode: Integer;
+begin
+// Return Values:
+// 1 - uninstall string is empty
+// 2 - error executing the UnInstallString
+// 3 - successfully executed the UnInstallString
+
+  // default return value
+  Result := 0;
+
+  // get the uninstall string of the old app
+  sUnInstallString := GetUninstallString();
+  if sUnInstallString <> '' then begin
+    sUnInstallString := RemoveQuotes(sUnInstallString);
+    if Exec(sUnInstallString, '/SILENT /NORESTART /SUPPRESSMSGBOXES','', SW_HIDE, ewWaitUntilTerminated, iResultCode) then
+      Result := 3
+    else
+      Result := 2;
+  end else
+    Result := 1;
+end;
+
+function RemoveInstalledBrowserScripts(): Integer;
+var
+  sBrowserScriptsDir: String;
+begin
+// Return Values:
+// 1 - Browser scripts dir string is empty
+// 2 - error executing the DelTree
+// 3 - successfully executed the DelTree
+
+  // default return value
+  Result := 0;
+
+  // get the uninstall string of the old app
+  sBrowserScriptsDir := GetBrowserScriptsString();
+  if sBrowserScriptsDir <> '' then begin
+    sBrowserScriptsDir := RemoveQuotes(sBrowserScriptsDir);
+    if DelTree(sBrowserScriptsDir, True, True, True) then
+      Result := 3
+    else
+      Result := 2;
+  end else
+    Result := 1;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if (CurStep=ssInstall) then
+  begin
+    if (IsUpgrade()) then
+    begin
+      // Do not uninstall previous version till it will be posssible remain settings file.
+      // Instead old remove browser scripts.
+      // UnInstallOldVersion();
+      RemoveInstalledBrowserScripts();
+    end;
+  end;
+end;
