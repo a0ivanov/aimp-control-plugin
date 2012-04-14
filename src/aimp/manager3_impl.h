@@ -287,16 +287,10 @@ private:
 template<typename To, typename From> To cast(From);
 
 template<>
-inline PlaylistID cast(AIMP3SDK::HPLS handle)
-{
-    return reinterpret_cast<PlaylistID>(handle);
-}
+PlaylistID cast(AIMP3SDK::HPLS handle);
 
 template<>
-inline AIMP3SDK::HPLS cast(PlaylistID id)
-{
-    return reinterpret_cast<AIMP3SDK::HPLS>(id);
-}
+AIMP3SDK::HPLS cast(PlaylistID id);
 
 } // namespace AIMPPlayer
 

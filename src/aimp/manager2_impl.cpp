@@ -464,9 +464,9 @@ void AIMP2Manager::playPreviousTrack()
     aimp2_player_->PrevTrack();
 }
 
-//! general tempate for convinient casting. Provide specialization for your own types.
-template<typename To, typename From> To cast(From);
-typedef int AIMP2SDK_STATUS;
+
+//template<typename To, typename From> To cast(From);
+//typedef int AIMP2SDK_STATUS;
 
 template<>
 AIMP2SDK_STATUS cast(AIMPManager::STATUS status) // throws std::bad_cast

@@ -280,6 +280,16 @@ private:
     friend class AimpRpcMethods::EmulationOfWebCtlPlugin;
 };
 
+//! general tempate for convinient casting. Provide specialization for your own types.
+template<typename To, typename From> To cast(From);
+typedef int AIMP2SDK_STATUS;
+
+template<>
+AIMP2SDK_STATUS cast(AIMPManager::STATUS status); // throws std::bad_cast
+
+template<>
+AIMP2Manager::STATUS cast(AIMP2SDK_STATUS status); // throws std::bad_cast
+
 } // namespace AIMPPlayer
 
 #endif // #ifndef AIMP_MANAGER2_IMPL_H
