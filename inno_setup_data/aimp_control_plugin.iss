@@ -54,7 +54,7 @@ Name: russian; MessagesFile: inno_setup_data\Russian.isl; LicenseFile: Lisense-R
 Source: {#SrcApp}; DestDir: {app}; Flags: ignoreversion
 Source: temp_build\Release\htdocs\*; DestDir: {code:GetBrowserScriptsDir}; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
-Source: inno_setup_data\default_settings.dat; DestDir: {code:GetPluginWorkDir}; DestName: settings.dat; Flags: onlyifdoesntexist; AfterInstall: "AfterInstallSettingsFile( ExpandConstant('{code:GetPluginWorkDir}\settings.dat') )"; 
+Source: inno_setup_data\default_settings.dat; DestDir: {code:GetPluginSettingsDir}; DestName: settings.dat; Flags: onlyifdoesntexist; AfterInstall: "AfterInstallSettingsFile( ExpandConstant('{code:GetPluginSettingsDir}\settings.dat') )"; 
 
 [Registry]
 ; etc.
@@ -102,7 +102,7 @@ begin
     end
   else if CurPageID = BrowserScriptsDirPage.ID then
     begin
-    SettingsFileDestination := ExpandConstant('{code:GetPluginWorkDir}\settings.dat');
+    SettingsFileDestination := ExpandConstant('{code:GetPluginSettingsDir}\settings.dat');
   
     { Set default values, using settings that were stored last time if possible }
     BrowserScriptsDirPage.Values[0] := GetPreviousData( 'BrowserScriptsDir',
@@ -123,6 +123,11 @@ begin
 end;
 
 function GetPluginWorkDir(Param: String): String;
+begin
+  Result := ExpandConstant('{app}\{#PluginWorkDirectoryName}')
+end;
+
+function GetPluginSettingsDir(Param: String): String;
 begin
   Result := ExpandConstant('{app}\{#PluginWorkDirectoryName}')
 end;
