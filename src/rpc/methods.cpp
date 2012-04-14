@@ -1498,10 +1498,16 @@ void EmulationOfWebCtlPlugin::addFile(int playlist_id, const std::string& filena
         aimp2_manager->aimp2_controller_->AIMP_PLS_AddFiles(playlist_id, strings);
     } else if ( AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_) ) {
         using namespace AIMP3SDK;
-        boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistStrings> strings = aimp3_manager->getPlaylistStrings( cast<AIMP3SDK::HPLS>(playlist_id) );
+        AIMP3SDK::HPLS playlist_handle = cast<AIMP3SDK::HPLS>(playlist_id);
+        boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistStrings> strings = aimp3_manager->getPlaylistStrings(playlist_handle);
         const std::wstring filename = StringEncoding::utf8_to_utf16( WebCtl::urldecode(filename_url) );
         strings->ItemAdd(const_cast<PWCHAR>( filename.c_str() ), nullptr);
-        ///???aimp3_manager->aimp3_playlist_manager_->StorageAddEntries();
+        /*
+            ///!!! use hack here: delete all entries before adding,
+                   since I did not found way to create empty IAIMPAddonsPlaylistStrings(analog of AIMP_NewStrings).
+        */
+        aimp3_manager->aimp3_playlist_manager_->StorageDeleteAll(playlist_handle);
+        aimp3_manager->aimp3_playlist_manager_->StorageAddEntries( playlist_handle, strings.get() );
     }
 }
 
