@@ -1440,17 +1440,19 @@ void EmulationOfWebCtlPlugin::sortPlaylist(int playlist_id, const std::string& s
 
 void EmulationOfWebCtlPlugin::addFile(int playlist_id, const std::string& filename_url)
 {
-    AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_);
-    if (!aimp2_manager) {
-        assert(!"emulation of web-ctl-plugin on AIMP3 is not implemented yet");
-        throw std::runtime_error("not implemented on AIMP3: "__FUNCTION__);
+    if ( AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_) ) {
+        AIMP2SDK::IPLSStrings* strings;
+        aimp2_manager->aimp2_controller_->AIMP_NewStrings(&strings);
+        const std::wstring filename = StringEncoding::utf8_to_utf16( WebCtl::urldecode(filename_url) );
+        strings->AddFile(const_cast<PWCHAR>( filename.c_str() ), nullptr);
+        aimp2_manager->aimp2_controller_->AIMP_PLS_AddFiles(playlist_id, strings);
+    } else if ( AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_) ) {
+        using namespace AIMP3SDK;
+        boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistStrings> strings = aimp3_manager->getPlaylistStrings( cast<AIMP3SDK::HPLS>(playlist_id) );
+        const std::wstring filename = StringEncoding::utf8_to_utf16( WebCtl::urldecode(filename_url) );
+        strings->ItemAdd(const_cast<PWCHAR>( filename.c_str() ), nullptr);
+        ///???aimp3_manager->aimp3_playlist_manager_->StorageAddEntries();
     }
-
-    AIMP2SDK::IPLSStrings* strings;
-    aimp2_manager->aimp2_controller_->AIMP_NewStrings(&strings);
-    const std::wstring filename = StringEncoding::utf8_to_utf16( WebCtl::urldecode(filename_url) );
-    strings->AddFile(const_cast<PWCHAR>( filename.c_str() ), nullptr);
-    aimp2_manager->aimp2_controller_->AIMP_PLS_AddFiles(playlist_id, strings);
 }
 
 ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
