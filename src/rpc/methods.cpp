@@ -1522,6 +1522,7 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
         std::ostringstream out(std::ios::in | std::ios::out | std::ios::binary);
 
         AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_);
+        AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_);
 
         switch (*method_id) {
         case get_playlist_list:
@@ -1568,16 +1569,18 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
             out << aimp_manager_.getStatus(AIMPManager::STATUS_LENGTH);
             break;
         case get_custom_status:
-            if (aimp2_manager) {
-                out << aimp2_manager->aimp2_controller_->AIMP_Status_Get( static_cast<int>(params["status"]) ); // use native status getter since web ctl provides access to all statuses.
-            }
+            // For convenience use AIMPManager::getStatus even on AIMP2.
+            //out << aimp2_manager->aimp2_controller_->AIMP_Status_Get( static_cast<int>(params["status"]) ); // use native status getter since web ctl provides access to all statuses.
+            out << aimp_manager_.getStatus( cast<AIMPManager::STATUS>( static_cast<int>(params["status"]) ) );
             break;
         case set_custom_status:
-            if (aimp2_manager) {
-                aimp2_manager->aimp2_controller_->AIMP_Status_Set( static_cast<int>(params["status"]),
-                                                                   static_cast<int>(params["value"])
-                                                                  ); // use native status setter since web ctl provides access to all statuses.
-            }
+            // For convenience use AIMPManager::setStatus even on AIMP2.
+            //aimp2_manager->aimp2_controller_->AIMP_Status_Set( static_cast<int>(params["status"]),
+            //                                                    static_cast<int>(params["value"])
+            //                                                    ); // use native status setter since web ctl provides access to all statuses.
+            aimp_manager_.setStatus( cast<AIMPManager::STATUS>( static_cast<int>(params["status"]) ),
+                                     static_cast<int>(params["value"])
+                                    );
             break;
         case set_song_play:
             {
@@ -1587,11 +1590,19 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
             break;
         case set_song_position:
             {
+            const int playlist_id = params["playlist"],
+                      track_index = params["song"];
+            int position = params["position"];
             if (aimp2_manager) {
-                const int playlist_id = params["playlist"];
-                aimp2_manager->aimp2_playlist_manager_->AIMP_PLS_Entry_SetPosition(playlist_id, params["song"], params["position"]);
-                calcPlaylistCRC(playlist_id);
+                aimp2_manager->aimp2_playlist_manager_->AIMP_PLS_Entry_SetPosition(playlist_id, track_index, position);
+            } else if (aimp3_manager) {
+                using namespace AIMP3SDK;
+                HPLSENTRY entry_id = aimp3_manager->aimp3_playlist_manager_->StorageGetEntry(cast<AIMP3SDK::HPLS>(playlist_id),
+                                                                                             track_index
+                                                                                             );
+                aimp3_manager->aimp3_playlist_manager_->EntryPropertySetValue( entry_id, AIMP_PLAYLIST_ENTRY_PROPERTY_INDEX, &position, sizeof(position) );
             }
+            calcPlaylistCRC(playlist_id);
             }
             break;
         case set_player_status:
@@ -1628,11 +1639,18 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
             break;
         case playlist_del_file:
             {
+            const int playlist_id = params["playlist"],
+                      track_index    = params["file"];
             if (aimp2_manager) {
-                const int playlist_id = params["playlist"];
-                aimp2_manager->aimp2_playlist_manager_->AIMP_PLS_Entry_Delete(playlist_id, params["file"]);
-                calcPlaylistCRC(playlist_id);
+                aimp2_manager->aimp2_playlist_manager_->AIMP_PLS_Entry_Delete(playlist_id, track_index);
+            } else if (aimp3_manager) {
+                using namespace AIMP3SDK;
+                HPLSENTRY entry_id = aimp3_manager->aimp3_playlist_manager_->StorageGetEntry(cast<AIMP3SDK::HPLS>(playlist_id),
+                                                                                             track_index
+                                                                                             );
+                aimp3_manager->aimp3_playlist_manager_->EntryDelete(entry_id);
             }
+            calcPlaylistCRC(playlist_id);
             }
             break;
         case playlist_queue_add:
