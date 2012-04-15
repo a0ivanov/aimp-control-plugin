@@ -11,7 +11,7 @@ var control_panel_state = {};
 var control_menu_state_updaters = {}; // map unique ID of context menu to notifier descriptor(object with following members: notifier - function (entry_control_menu_descriptor), control_menu_descriptor - control menu descritor).
 var track_progress_timer = null;
 var entries_requests = {}; // contains latest entry list requests to server for each playlist. Need for automatic displaying current track in playlist.
-var need_goto_current_track_once_on_page_load = true;
+var need_goto_current_track_once_on_playlist_content_load = true;
 
 var icon_menu_indicator_opened = 'ui-icon-minus',
 	icon_menu_indicator_closed = 'ui-icon-plus';
@@ -37,7 +37,11 @@ function removeHighlightFromAllRows($table) {
 }
 
 function highlightCurrentRow($table, nRow) {
-	removeHighlightFromAllRows($table);
+	// remove highlight from all tables
+	for (table_id in $playlists_tables) {
+		removeHighlightFromAllRows($playlists_tables[table_id]);
+	}
+	//removeHighlightFromAllRows($table);
 	$(nRow).addClass('row_selected');			
 }
 
@@ -51,7 +55,7 @@ function getPlaylistIdFromTableId(table_id)
 }
 
 /* create DataTable control(jQuery plugin) for list of entries. */
-function createEntriesControl(index, playlist_id)
+function createEntriesControl(playlist_id)
 {
     var $table_with_playlist_id = $('#entries_table_' + playlist_id);
 
@@ -137,9 +141,9 @@ function createEntriesControl(index, playlist_id)
                     });
 					
 					var force_page_and_playlist_switch = false;
-					if (need_goto_current_track_once_on_page_load) {
+					if (need_goto_current_track_once_on_playlist_content_load) {
 						force_page_and_playlist_switch = true;
-						need_goto_current_track_once_on_page_load = false;
+						need_goto_current_track_once_on_playlist_content_load = false;
 					}
 					gotoCurrentTrackInPlaylist(force_page_and_playlist_switch);
                 };
@@ -183,12 +187,21 @@ function createEntriesControl(index, playlist_id)
     } );
 	
     $table.fnSettings().aaSorting = []; // disable sorting by 0 column.
-
+	
     $playlists_tables['entries_table_' + playlist_id] = $table;
+	
+	need_goto_current_track_once_on_playlist_content_load = true;
 }
 
 function gotoCurrentTrackInPlaylist(force_page_and_playlist_switch_local)
 {
+	// check if playlist content is loaded and load it if it does not.
+	if (control_panel_state.hasOwnProperty('playlist_id')) {
+		if ($playlists_tabs != null) {
+			loadPlaylistContentIfNotLoadedYet(control_panel_state.playlist_id);
+		}
+	}
+	
 	if (entries_requests.hasOwnProperty(control_panel_state.playlist_id) ) {
 		var request_params = entries_requests[control_panel_state.playlist_id]; // maybe we need copy this
 		request_params['track_id'] = control_panel_state.track_id;
@@ -601,9 +614,15 @@ function deletePlaylistsControls()
     }
 }
 
-function isPlaylistContentLoaded($tab_ui) {
-	var playlist_id = getPlaylistIdFromTabId($tab_ui.id);
+function isPlaylistContentLoaded(playlist_id) {
 	return $playlists_tables['entries_table_' + playlist_id] !== undefined;
+}
+
+function loadPlaylistContentIfNotLoadedYet(playlist_id)
+{
+	if ( !isPlaylistContentLoaded(playlist_id) ) {
+		createEntriesControl(playlist_id);	
+	}
 }
 
 /* create controls(jQuery UI Tabs) for list of playlists. */
@@ -617,7 +636,6 @@ function createPlaylistsControls(playlists)
         }); // initialization of Tabs control.
     }
 	
-	var playlist_id_tab_index_map = {};
     // create tabs for each playlist.
     for(i = 0; i < playlists.length; ++i) {
         var playlist_id_name = 'playlist_' + playlists[i].id;
@@ -628,22 +646,19 @@ function createPlaylistsControls(playlists)
 							 '#' + playlist_id_name,
 		 					 playlists[i].title
 							 );
-		playlist_id_tab_index_map[playlists[i].id] = i;
     }
 	
 	$playlists_tabs.bind('tabsselect',
 						 function(event, $ui) { // load content of playlist on tab activation, if content is not loaded yet.
 							var $tab_ui = $ui.panel;
-							if ( !isPlaylistContentLoaded($tab_ui) ) {
-								var playlist_id = getPlaylistIdFromTabId($tab_ui.id);
-								createEntriesControl($ui.index, playlist_id);	
-							}
+							loadPlaylistContentIfNotLoadedYet( getPlaylistIdFromTabId($tab_ui.id) );
 						 });
+	
 	if (   playlists.length > 1 // here we want trigger onselect event of playlist tab. But on 1 tab event will not be tringgered, so load playlist content manually
 		&& control_panel_state.hasOwnProperty('playlist_id') ) {
 		// force load playlist content due to issue with tab select event.
 		var playlist_id = control_panel_state.playlist_id;
-		createEntriesControl(playlist_id_tab_index_map[playlist_id], playlist_id);	
+		createEntriesControl(playlist_id);	
 		gotoCurrentPlaylist(playlist_id);
 	} else {
 	    // select all created playlists and init them.
