@@ -57,6 +57,10 @@ function getPlaylistIdFromTableId(table_id)
 /* create DataTable control(jQuery plugin) for list of entries. */
 function createEntriesControl(playlist_id)
 {
+	if (playlist_id == 0) {
+		return;
+	}
+	
     var $table_with_playlist_id = $('#entries_table_' + playlist_id);
 
     var $table;
@@ -845,6 +849,13 @@ function updateControlPanel()
 */
 function updateControlPanelState(result) {
     control_panel_state = result; // update global variable.
+	
+	if (control_panel_state.playlist_id == 0) { // in case when track from removed playlist is playing.
+		// TODO: ask about first available real playlist
+		//control_panel_state.playlist_id = ;
+		//control_panel_state.track_id = ;
+	}
+	
     updateControlPanel();
     syncronizeControlMenus();
 	gotoCurrentTrackInPlaylist(true);
