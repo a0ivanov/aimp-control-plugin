@@ -654,16 +654,10 @@ function createPlaylistsControls(playlists)
 							loadPlaylistContentIfNotLoadedYet( getPlaylistIdFromTabId($tab_ui.id) );
 						 });
 	
-	if (   playlists.length > 1 // here we want trigger onselect event of playlist tab. But on 1 tab event will not be tringgered, so load playlist content manually
-		&& control_panel_state.hasOwnProperty('playlist_id') ) {
-		// force load playlist content due to issue with tab select event.
-		var playlist_id = control_panel_state.playlist_id;
-		createEntriesControl(playlist_id);	
-		gotoCurrentPlaylist(playlist_id);
-	} else {
-	    // select all created playlists and init them.
-		$('#playlists > div').each(createEntriesControl);
-	}
+	// force load playlist content due to issue with tab select event.
+	var playlist_id = control_panel_state.playlist_id;
+	createEntriesControl(playlist_id);	
+	gotoCurrentPlaylist(playlist_id);
 }
 
 /*
