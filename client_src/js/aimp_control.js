@@ -51,9 +51,8 @@ function getPlaylistIdFromTableId(table_id)
 }
 
 /* create DataTable control(jQuery plugin) for list of entries. */
-function createEntriesControl(index, $tab_ui)
+function createEntriesControl(index, playlist_id)
 {
-    var playlist_id = getPlaylistIdFromTabId($tab_ui.id);
     var $table_with_playlist_id = $('#entries_table_' + playlist_id);
 
     var $table;
@@ -614,10 +613,11 @@ function createPlaylistsControls(playlists)
         $playlists_tabs = $('#playlists').tabs({
             cookie: { expires: 1 } // store cookie for a day, without, it would be a session cookie
 			// function 'select' will be assigned below,
-			//                   it need to be set after all tabs creaion and unselecting all tabs to avoid unexpected invocation.
+			//                   it need to be set after all tabs creation and unselecting all tabs to avoid unexpected invocation.
         }); // initialization of Tabs control.
     }
-
+	
+	var playlist_id_tab_index_map = {};
     // create tabs for each playlist.
     for(i = 0; i < playlists.length; ++i) {
         var playlist_id_name = 'playlist_' + playlists[i].id;
@@ -628,24 +628,23 @@ function createPlaylistsControls(playlists)
 							 '#' + playlist_id_name,
 		 					 playlists[i].title
 							 );
+		playlist_id_tab_index_map[playlists[i].id] = i;
     }
 	
-	$playlists_tabs.tabs('option', 'selected', null); // mark all tabs as unselected to force trigger onselect event.
-													  // Otherwise, in case if we select already selected tab, onselect event will not be triggered.
-													  // Needed to load entries on playlist activation.
-		
 	$playlists_tabs.bind('tabsselect',
 						 function(event, $ui) { // load content of playlist on tab activation, if content is not loaded yet.
-							 var $tab_ui = $ui.panel;
-						 	 if ( !isPlaylistContentLoaded($tab_ui) ) {
-								 createEntriesControl($ui.index, $tab_ui);	
-							 }
+							var $tab_ui = $ui.panel;
+							if ( !isPlaylistContentLoaded($tab_ui) ) {
+								var playlist_id = getPlaylistIdFromTabId($tab_ui.id);
+								createEntriesControl($ui.index, playlist_id);	
+							}
 						 });
-	
 	if (   playlists.length > 1 // here we want trigger onselect event of playlist tab. But on 1 tab event will not be tringgered, so load playlist content manually
 		&& control_panel_state.hasOwnProperty('playlist_id') ) {
-		// content will be loaded on selection.
-		gotoCurrentPlaylist(control_panel_state.playlist_id);
+		// force load playlist content due to issue with tab select event.
+		var playlist_id = control_panel_state.playlist_id;
+		createEntriesControl(playlist_id_tab_index_map[playlist_id], playlist_id);	
+		gotoCurrentPlaylist(playlist_id);
 	} else {
 	    // select all created playlists and init them.
 		$('#playlists > div').each(createEntriesControl);
