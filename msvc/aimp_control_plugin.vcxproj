@@ -166,6 +166,7 @@
     <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKInput.h" />
     <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKRemote.h" />
     <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKVisual.h" />
+    <ClInclude Include="..\src\aimp\aimp3_sdk\Helpers\AIMPSDKHelpers.h" />
     <ClInclude Include="..\src\aimp\common_types.h" />
     <ClInclude Include="..\src\aimp\entries_sorter.h" />
     <ClInclude Include="..\src\aimp\manager.h" />
@@ -206,6 +207,7 @@
     <ClInclude Include="..\src\stdafx.h" />
     <ClInclude Include="..\src\utils\base64.h" />
     <ClInclude Include="..\src\utils\image.h" />
+    <ClInclude Include="..\src\utils\iunknown_impl.h" />
     <ClInclude Include="..\src\utils\string_encoding.h" />
     <ClInclude Include="..\src\utils\util.h" />
     <ClInclude Include="..\src\webctlrpc\frontend.h" />

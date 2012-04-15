@@ -47,6 +47,9 @@
     <Filter Include="src\download_track">
       <UniqueIdentifier>{5889807d-b6c9-40a9-9087-2c7f627959bb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\aimp_manager\aimp_sdk\3\Helpers">
+      <UniqueIdentifier>{dd32e278-3942-4e84-8590-2e3c1f5e5447}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\stdafx.cpp">
@@ -335,6 +338,12 @@
     </ClInclude>
     <ClInclude Include="..\src\download_track\request_handler.h">
       <Filter>src\download_track</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3_sdk\Helpers\AIMPSDKHelpers.h">
+      <Filter>src\aimp_manager\aimp_sdk\3\Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\utils\iunknown_impl.h">
+      <Filter>src\utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
