@@ -61,6 +61,8 @@ private:
     */
     static void fillReplyWithContent(const std::string& content_type, Reply& rep);
 
+    void trySendInitCookies(const Request& req, Reply& rep);
+
     // The directory containing the files to be served.
     std::string document_root_;
 

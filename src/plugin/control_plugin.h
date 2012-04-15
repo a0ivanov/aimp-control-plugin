@@ -39,8 +39,11 @@ public:
     HRESULT Finalize();
     HRESULT ShowSettingsDialog(HWND AParentWindow);
     
+    // Objects returned by following functions are valid between Initialize and Finalize() methods calls.
     //! Returns global reference to plugin logger object.(Singleton pattern)
     static PluginLogger::LogManager& getLogManager();
+    //! Returns global reference to settings manager object.
+    static PluginSettings::Manager& getSettingsManager();
 
 private:
 

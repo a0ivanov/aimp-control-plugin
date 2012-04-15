@@ -16,6 +16,7 @@ struct Settings
         std::string ip_to_bind; //!< Address of network interface to listen by server. Use "" to bind to all network interfaces. Example: "localhost", "192.168.0.1"
         std::string port; //!< port to listen. String type was chosen since it make easy IPv6 support.
         std::wstring document_root; //!< Path to directory.
+        std::set<std::string> init_cookies; //! Cookies which server sends to client on page first load.
     } http_server;
 
     struct Logger {

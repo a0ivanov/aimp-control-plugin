@@ -88,6 +88,11 @@ PluginLogger::LogManager& AIMPControlPlugin::getLogManager()
     return plugin_instance->plugin_logger_;
 }
 
+PluginSettings::Manager& AIMPControlPlugin::getSettingsManager()
+{
+    return plugin_instance->settings_manager_;
+}
+
 AIMPControlPlugin::AIMPControlPlugin()
     :
     free_image_dll_is_available_(false),

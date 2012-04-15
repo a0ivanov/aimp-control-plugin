@@ -17,14 +17,41 @@
 #include "mime_types.h"
 #include "rpc/request_handler.h"
 #include "utils/util.h"
+#include "plugin/settings.h"
+#include "plugin/control_plugin.h"
 
 namespace Http {
 
-const std::string kDOWNLOAD_TRACK_TAG("/downloadTrack/");
+const std::string kDOWNLOAD_TRACK_TAG("/downloadTrack/"),
+                  kCookieHeaderName("Cookie");
+
+void RequestHandler::trySendInitCookies(const Request& req, Reply& rep)
+{
+    struct HeaderNameEqualsCookie {
+        bool operator()(const header& h) const {
+            return h.name == kCookieHeaderName;
+        }
+    };
+
+    const std::vector<header>& headers = req.headers;
+    if ( std::find_if(headers.begin(), headers.end(), HeaderNameEqualsCookie() ) == headers.end() ) {
+        using namespace ControlPlugin::PluginSettings;
+        const Settings& settings = ControlPlugin::AIMPControlPlugin::getSettingsManager().settings();
+        BOOST_FOREACH(auto& cookie_namevalue, settings.http_server.init_cookies) {
+            rep.headers.push_back(header());
+            header& h = rep.headers.back();
+            h.name = "Set-Cookie";
+            h.value = cookie_namevalue;
+            h.value += ';';
+        }
+    }
+}
 
 bool RequestHandler::handle_request(const Request& req, Reply& rep, ICometDelayedConnection_ptr connection)
 {
-    if ( Rpc::Frontend* frontend = rpc_request_handler_.getFrontEnd(req.uri) ) { // handle RPC call.
+    trySendInitCookies(req, rep); // try to send init cookie on any request(not only RPC) cause we should render static web-interface controls with that cookies.
+
+    if ( Rpc::Frontend* frontend = rpc_request_handler_.getFrontEnd(req.uri) ) { // handle RPC call.        
         std::string response_content_type;
         DelayedResponseSender_ptr comet_delayed_response_sender( new DelayedResponseSender(connection, *this) );
 
@@ -108,11 +135,14 @@ void RequestHandler::fillReplyWithContent(const std::string& content_type, Reply
 {
     // Fill out the reply to be sent to the client.
     rep.status = Reply::ok;
-    rep.headers.resize(2);
-    rep.headers[0].name = "Content-Length";
-    rep.headers[0].value = boost::lexical_cast<std::string>( rep.content.size() );
-    rep.headers[1].name = "Content-Type";
-    rep.headers[1].value = content_type;
+    
+    rep.headers.push_back(header());
+    rep.headers.back().name = "Content-Length";
+    rep.headers.back().value = boost::lexical_cast<std::string>( rep.content.size() );
+
+    rep.headers.push_back(header());
+    rep.headers.back().name = "Content-Type";
+    rep.headers.back().value = content_type;
 }
 
 bool RequestHandler::url_decode(const std::string& in, std::string& out)

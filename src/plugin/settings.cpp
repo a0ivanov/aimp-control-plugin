@@ -102,11 +102,22 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
 
     std::wstring server_document_root = pt.get<std::wstring>(L"settings.httpserver.document_root");
 
+    std::set<std::string> init_cookies;
+    try {
+        BOOST_FOREACH( const auto& v, pt.get_child(L"settings.httpserver.init_cookies") ) {
+            init_cookies.insert( utf16_to_system_ansi_encoding( v.second.data() ) );
+        }
+    } catch (...) {
+        // do nothing, it is optional settings.
+        init_cookies.clear();
+    }
+
     // all work has been done, save result.
     using std::swap;
     settings.http_server.ip_to_bind.swap(server_ip_to_bind);
     settings.http_server.port.swap(server_port);
     settings.http_server.document_root.swap(server_document_root);
+    settings.http_server.init_cookies.swap(init_cookies);
 
     settings.logger.severity_level = log_severity_level;
     settings.logger.directory.swap(log_directory);
