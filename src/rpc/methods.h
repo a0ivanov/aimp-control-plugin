@@ -207,17 +207,17 @@ public:
 /*! 
     \brief Gets/sets AIMP status.
     \param status_id - int: ID of required status. The following IDs are available(status ID, status value range):
-      - VOLUME      = 1,  [0,100]
-      - BALANCE     = 2,
-      - SPEED       = 3,
-      - Player      = 4,
-      - MUTE        = 5,  [0, 1]
-      - REVERB      = 6,
-      - ECHO        = 7,
-      - CHORUS      = 8,
-      - Flanger     = 9,
-      - EQ_STS      = 10,
-      - EQ_SLDR01   = 11,
+      - VOLUME      = 1,  [0,100] in percents: 0 = 0%, 100 = 100%
+      - BALANCE     = 2,  [0,100]: 0 left only, 50 left=right, 100 right.
+      - SPEED       = 3,  [0,100] in percents: 0 = 50%, 50 = 100%, 100 = 150%.
+      - Player      = 4,  [0,1,2] stop, play, pause
+      - MUTE        = 5,  [0,1] off/on
+      - REVERB      = 6,  [0,100]: 0 disabled, 6=2%, 51=46%, 100=99%
+      - ECHO        = 7,  [0,100]: 0 disabled, 6=2%, 51=46%, 100=99%
+      - CHORUS      = 8,  [0,100]: 0 disabled, 10=1%, 49=54%, 100=99%
+      - Flanger     = 9,  [0,100]: 0 disabled, 6=2%, 51=46%, 100=99%
+      - EQ_STS      = 10, [0,1] off/on
+      - EQ_SLDR01   = 11, EQ_SLDRXX [0,100]: 0 = -15db, 50 = 0db, 100 = 15db
       - EQ_SLDR02   = 12,
       - EQ_SLDR03   = 13,
       - EQ_SLDR04   = 14,
@@ -235,21 +235,21 @@ public:
       - EQ_SLDR16   = 26,
       - EQ_SLDR17   = 27,
       - EQ_SLDR18   = 28,
-      - REPEAT      = 29,  [0, 1]
+      - REPEAT      = 29,  [0,1] off/on
       - ON_STOP     = 30,
-      - POS         = 31,  [0, LENGTH)
-      - LENGTH      = 32,
-      - REPEATPLS   = 33,  [0, 1]
-      - REP_PLS_1   = 34,  [0, 1]
-      - KBPS        = 35,
-      - KHZ         = 36,
-      - MODE        = 37,
+      - POS         = 31,  [0,TRACK Length) in seconds
+      - LENGTH      = 32,  track length in seconds
+      - REPEATPLS   = 33,  [0,1,2] "Jump to the next playlist"/"Repeat playlist"/"Stand by" (AIMP2 access: Settings->Playlist->Automatics->On the end of playlist->Action)
+      - REP_PLS_1   = 34,  [0,1] Enable/Disable (AIMP2 access: Settings->Playlist->Automatics->"Disable repeat when only one file in playlist")
+      - KBPS        = 35,  bitrate in kilobits/seconds.
+      - KHZ         = 36,  sampling in Hertz, ex.: 44100
+      - MODE        = 37,  don't understand
       - RADIO       = 38,
-      - STREAM_TYPE = 39,
+      - STREAM_TYPE = 39,  0 mp3, 1 ?, 2 internet radio
       - TIMER       = 40,
-      - SHUFFLE     = 41   [0, 1]
+      - SHUFFLE     = 41   [0,1] off/on
     \param value - int, optional: new status value. Value range depends on status ID. If value is not specified, function returns current status.
-    \return object which describes current status value.
+    \return object which describes current status value. Range and meaning of value depends on status. See AIMP2 SDK for details. On AIMP3 all values are mapped to AIMP2 ranges.
             Example:\code{ "value" : 0 }\endcode
 */
 class Status : public AIMPRPCMethod
