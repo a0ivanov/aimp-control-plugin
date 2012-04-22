@@ -166,7 +166,7 @@
     <ClCompile Include="..\src\download_track\download_track_request_handler.cpp">
       <Filter>src\download_track</Filter>
     </ClCompile>
-    <ClCompile Include="..\sqlite\sqlite3.c">
+    <ClCompile Include="..\src\sqlite\sqlite3.c">
       <Filter>src\sqlite</Filter>
     </ClCompile>
   </ItemGroup>
@@ -351,10 +351,10 @@
     <ClInclude Include="..\src\utils\iunknown_impl.h">
       <Filter>src\utils</Filter>
     </ClInclude>
-    <ClInclude Include="..\sqlite\sqlite3.h">
+    <ClInclude Include="..\src\sqlite\sqlite3.h">
       <Filter>src\sqlite</Filter>
     </ClInclude>
-    <ClInclude Include="..\sqlite\sqlite3ext.h">
+    <ClInclude Include="..\src\sqlite\sqlite3ext.h">
       <Filter>src\sqlite</Filter>
     </ClInclude>
   </ItemGroup>
