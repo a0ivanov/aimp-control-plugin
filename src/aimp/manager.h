@@ -194,6 +194,7 @@ public:
             %G - genre
             %H - sample rate
             %L - duration
+            %R - artist
             %S - filesize
             %T - title
             %Y - date
