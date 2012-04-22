@@ -1028,10 +1028,15 @@ private:
 
 /*!
     \brief Set track rating.
+
     On AIMP3: full functional.
     On AIMP2: 
         Current implementation just saves path to track and rating in text file since AIMP SDK does not support rating change now.
         No checks are performed(ex. rating already exists for file and etc.) since it is temporarily stub.
+
+    \param track_id - int
+    \param playlist_id - int
+    \param rating - int. Range [0-5], zero meant rating is not set.
 */
 class SetTrackRating : public AIMPRPCMethod
 {
