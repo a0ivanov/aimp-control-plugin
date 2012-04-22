@@ -1490,7 +1490,7 @@ std::wstring AIMP3Manager::getFormattedEntryTitle(const PlaylistEntry& entry, co
 
     { // use AIMP3 format specifiers.
     using namespace Utilities;
-    // Aimp3 uses %R insteas %a as Artist.
+    // Aimp3 uses %R instead %a as Artist.
     replaceAll(L"%a", 2,
                L"%R", 2,
                &wformat_string);
