@@ -455,12 +455,12 @@ void GetPlaylistEntriesTemplateMethod::handleEntryIDs(const PlaylistEntryIDList&
 }
 
 ResponseType GetPlaylistEntriesTemplateMethod::execute(const Rpc::Value& params,
-                                                       // following needed by only by GetPlaylistEntries
+                                                       // following needed by GetPlaylistEntries only
                                                        EntriesHandler entries_handler,
                                                        EntryIDsHandler entry_ids_handler,
                                                        EntriesCountHandler total_entries_count_handler,
                                                        EntriesCountHandler filtered_entries_count_handler,
-                                                       // following needed by only by GetEntryPositionInDataTable
+                                                       // following needed by GetEntryPositionInDataTable only
                                                        EntriesHandler full_entries_list_handler,
                                                        EntryIDsHandler full_entry_ids_list_handler,
                                                        EntriesCountHandler page_size_handler
