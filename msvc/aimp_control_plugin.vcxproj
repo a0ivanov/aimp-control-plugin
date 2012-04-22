@@ -109,6 +109,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\sqlite\sqlite3.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+    </ClCompile>
     <ClCompile Include="..\src\aimp\entries_sorter.cpp" />
     <ClCompile Include="..\src\aimp\manager2_impl.cpp" />
     <ClCompile Include="..\src\aimp\manager3_impl.cpp" />
@@ -158,6 +162,8 @@
     <ClCompile Include="..\src\xmlrpc\xmlrpc_value.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\sqlite\sqlite3.h" />
+    <ClInclude Include="..\sqlite\sqlite3ext.h" />
     <ClInclude Include="..\src\aimp\aimp2_sdk.h" />
     <ClInclude Include="..\src\aimp\aimp3_sdk\aimp3_sdk.h" />
     <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKAddons.h" />
