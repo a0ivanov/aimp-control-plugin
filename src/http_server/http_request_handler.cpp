@@ -27,14 +27,12 @@ const std::string kDOWNLOAD_TRACK_TAG("/downloadTrack/"),
 
 void RequestHandler::trySendInitCookies(const Request& req, Reply& rep)
 {
-    struct HeaderNameEqualsCookie {
-        bool operator()(const header& h) const {
-            return h.name == kCookieHeaderName;
-        }
-    };
-
     const std::vector<header>& headers = req.headers;
-    if ( std::find_if(headers.begin(), headers.end(), HeaderNameEqualsCookie() ) == headers.end() ) {
+    if ( std::find_if(headers.begin(), headers.end(),
+                      [](const header& h) { return h.name == kCookieHeaderName; }
+                      ) == headers.end()
+        )
+    {
         using namespace ControlPlugin::PluginSettings;
         const Settings& settings = ControlPlugin::AIMPControlPlugin::getSettingsManager().settings();
         BOOST_FOREACH(auto& cookie_namevalue, settings.http_server.init_cookies) {
