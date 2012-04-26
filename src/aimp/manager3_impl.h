@@ -6,6 +6,8 @@
 #include "manager.h"
 #include "aimp3_sdk/aimp3_sdk.h"
 
+struct sqlite3;
+
 namespace AIMP3SDK {
     class IAIMPCoreUnit;
     class IAIMPAddonsPlayerManager;
@@ -174,6 +176,8 @@ private:
 
     EventListeners external_listeners_; //!< map of all subscribed listeners.
     EventsListenerID next_listener_id_; //!< unique ID describes external listener.
+
+    sqlite3* playlists_db_;
 
     // These class were made friend only for easy emulate web ctl plugin behavior. Remove when possible.
     friend class AimpRpcMethods::EmulationOfWebCtlPlugin;
