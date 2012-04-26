@@ -173,20 +173,22 @@ AIMP3Manager::AIMP3Manager(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_c
     // do not addref our pointer since AIMP do this itself. aimp3_playlist_manager_listener_->AddRef();
     aimp3_playlist_manager_->ListenerAdd( aimp3_playlist_manager_listener_.get() );
 
-    const int result = sqlite3_open(":memory:", &playlists_db_);
-    if (SQLITE_OK != result) {
+    const int rc = sqlite3_open(":memory:", &playlists_db_);
+    if (SQLITE_OK != rc) {
+        const std::string msg =   std::string("Error occured while AIMP3Manager initialization. Reason: sqlite3_open error ") 
+                                + (boost::lexical_cast<std::string>(rc) + ": ")
+                                + sqlite3_errmsg(playlists_db_);
+        sqlite3_close(playlists_db_);
         playlists_db_ = nullptr;
-        throw std::runtime_error(  std::string("Error occured while AIMP3Manager initialization. Reason: sqlite3_open error ") 
-                                 + boost::lexical_cast<std::string>(result)
-                                 );
+        throw std::runtime_error(msg);
     }
 }
 
 AIMP3Manager::~AIMP3Manager()
 {
-    const int result = sqlite3_close(playlists_db_);
-    if (SQLITE_OK != result) {
-        BOOST_LOG_SEV(logger(), error) << "sqlite3_close() returns error: " << result;
+    const int rc = sqlite3_close(playlists_db_);
+    if (SQLITE_OK != rc) {
+        BOOST_LOG_SEV(logger(), error) << "sqlite3_close error: " << rc;
     }
     playlists_db_ = nullptr;
 
