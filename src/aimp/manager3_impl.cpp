@@ -175,9 +175,8 @@ AIMP3Manager::AIMP3Manager(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_c
 
     const int rc = sqlite3_open(":memory:", &playlists_db_);
     if (SQLITE_OK != rc) {
-        const std::string msg =   std::string("Error occured while AIMP3Manager initialization. Reason: sqlite3_open error ") 
-                                + (boost::lexical_cast<std::string>(rc) + ": ")
-                                + sqlite3_errmsg(playlists_db_);
+        const std::string msg = MakeString() << "Error occured while AIMP3Manager initialization. Reason: sqlite3_open error "
+                                             << rc << ": " << sqlite3_errmsg(playlists_db_);
         sqlite3_close(playlists_db_);
         playlists_db_ = nullptr;
         throw std::runtime_error(msg);
