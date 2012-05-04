@@ -160,30 +160,59 @@ AIMP3Manager::AIMP3Manager(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_c
 {
     try {
         initializeAIMPObjects();
+        ///!!!register listeners here
+        aimp3_core_message_hook_.reset( new AIMPCoreUnitMessageHook(this) );
+        // do not addref our pointer since AIMP do this itself. aimp3_core_message_hook_->AddRef();
+        aimp3_core_unit_->MessageHook( aimp3_core_message_hook_.get() );
+
+        aimp3_playlist_manager_listener_.reset( new AIMPAddonsPlaylistManagerListener(this)  );
+        // do not addref our pointer since AIMP do this itself. aimp3_playlist_manager_listener_->AddRef();
+        aimp3_playlist_manager_->ListenerAdd( aimp3_playlist_manager_listener_.get() );
+
+        initPlaylistDB();
     } catch (std::runtime_error& e) {
         throw std::runtime_error( std::string("Error occured during AIMP3Manager initialization. Reason:") + e.what() );
     }
-
-    ///!!!register listeners here
-    aimp3_core_message_hook_.reset( new AIMPCoreUnitMessageHook(this) );
-    // do not addref our pointer since AIMP do this itself. aimp3_core_message_hook_->AddRef();
-    aimp3_core_unit_->MessageHook( aimp3_core_message_hook_.get() );
-
-    aimp3_playlist_manager_listener_.reset( new AIMPAddonsPlaylistManagerListener(this)  );
-    // do not addref our pointer since AIMP do this itself. aimp3_playlist_manager_listener_->AddRef();
-    aimp3_playlist_manager_->ListenerAdd( aimp3_playlist_manager_listener_.get() );
-
-    initPlaylistDB();
 }
 
 void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
 {
-    const int rc = sqlite3_open(":memory:", &playlists_db_);
+    int rc = sqlite3_open(":memory:", &playlists_db_);
     if (SQLITE_OK != rc) {
-        const std::string msg = MakeString() << "Error occured while AIMP3Manager initialization. Reason: sqlite3_open error "
+        const std::string msg = MakeString() << "Playlist database creation failure. Reason: sqlite3_open error "
                                              << rc << ": " << sqlite3_errmsg(playlists_db_);
-        sqlite3_close(playlists_db_);
-        playlists_db_ = nullptr;
+        shutdownPlaylistDB();
+        throw std::runtime_error(msg);
+    }
+
+    // create table for content of all playlists.
+    char* errmsg = nullptr;
+    rc = sqlite3_exec(playlists_db_,
+                      "CREATE TABLE PlaylistsEntries ( playlist_id    INTEGER,"
+                                                      "entry_id       INTEGER,"
+                                                      "album          VARCHAR(128),"
+                                                      "artist         VARCHAR(128),"
+                                                      "date           VARCHAR(16),"
+                                                      "filename       VARCHAR(260),"
+                                                      "genre          VARCHAR(32),"
+                                                      "title          VARCHAR(260),"
+                                                      "bitrate        INTEGER,"
+                                                      "channels_count INTEGER,"
+                                                      "duration       INTEGER,"
+                                                      "filesize       BIGINT,"
+                                                      "rating         TINYINT,"
+                                                      "samplerate     INTEGER,"
+                                                      "crc32          INTEGER,"
+                                                      "PRIMARY KEY (playlist_id, entry_id)"
+                                                      ")",
+                      nullptr, /* Callback function */
+                      nullptr, /* 1st argument to callback */
+                      &errmsg
+                      );
+    if (SQLITE_OK != rc) {
+        const std::string msg = MakeString() << "Playlist content table creation failure. Reason: sqlite3_exec(create table) error "
+                                             << rc << ": " << errmsg;
+        shutdownPlaylistDB();
         throw std::runtime_error(msg);
     }
 }
