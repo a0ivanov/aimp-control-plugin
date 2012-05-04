@@ -157,6 +157,7 @@ private:
 
     void initPlaylistDB(); // throws std::runtime_error
     void shutdownPlaylistDB();
+    void deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id);
 
     //! initializes all requiered for work AIMP SDK interfaces.
     void initializeAIMPObjects(); // throws std::runtime_error

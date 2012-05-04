@@ -553,6 +553,7 @@ void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
     entries.reserve(entries_count);
     
     ///!!! use exception safe code here: use "ScopeGuard with Dismiss()" idiom.
+    deletePlaylistEntriesFromPlaylistDB( playlist.id() ); // remove old entries before adding new ones.
     sqlite3_stmt* stmt = nullptr;
     int rc_db = sqlite3_prepare( playlists_db_,
                                  "INSERT INTO PlaylistsEntries VALUES (?,?,?,?,?,"
@@ -574,9 +575,9 @@ void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
                                             /*///!!! throw exception. */ BOOST_LOG_SEV(logger(), error) << "Error sqlite3_bind_"#type << " " << rc_db; \
                                         }
 #define bindText(field_index, info_field_name)  rc_db = sqlite3_bind_text16(stmt, field_index, info.##info_field_name, info.##info_field_name##Length * sizeof(WCHAR), SQLITE_STATIC); \
-                                            if (SQLITE_OK != rc_db) { \
-                                                /*///!!! throw exception. */ BOOST_LOG_SEV(logger(), error) << "sqlite3_bind_text16" << " " << rc_db; \
-                                            }
+                                                if (SQLITE_OK != rc_db) { \
+                                                    /*///!!! throw exception. */ BOOST_LOG_SEV(logger(), error) << "sqlite3_bind_text16" << " " << rc_db; \
+                                                }
         bind( int, 1, playlist.id() );
     }
 
@@ -1629,6 +1630,8 @@ void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
     if (SQLITE_OK != rc) {
         const std::string msg = MakeString() << "Playlist content table creation failure. Reason: sqlite3_exec(create table) error "
                                              << rc << ": " << errmsg;
+        sqlite3_free(errmsg);
+
         shutdownPlaylistDB();
         throw std::runtime_error(msg);
     }
@@ -1641,6 +1644,24 @@ void AIMP3Manager::shutdownPlaylistDB()
         BOOST_LOG_SEV(logger(), error) << "sqlite3_close error: " << rc;
     }
     playlists_db_ = nullptr;
+}
+
+void AIMP3Manager::deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id)
+{
+    const std::string stmt = MakeString() << "DELETE FROM PlaylistsEntries WHERE playlist_id=" << playlist_id;
+
+    char* errmsg = nullptr;
+    const int rc = sqlite3_exec(playlists_db_,
+                                stmt.c_str(),
+                                nullptr, /* Callback function */
+                                nullptr, /* 1st argument to callback */
+                                &errmsg
+                                );
+    if (SQLITE_OK != rc) {
+        BOOST_LOG_SEV(logger(), error) << "AIMP3Manager::deletePlaylistEntriesFromPlaylistDB() failed. Reason: sqlite3_exec(create table) error "
+                                       << rc << ": " << errmsg;
+        sqlite3_free(errmsg);
+    }
 }
 
 } // namespace AIMPPlayer
