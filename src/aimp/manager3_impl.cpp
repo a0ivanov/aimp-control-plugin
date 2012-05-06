@@ -9,6 +9,7 @@
 #include "utils/string_encoding.h"
 #include "utils/image.h"
 #include "utils/util.h"
+#include "utils/scope_guard.h"
 #include <boost/assign/std.hpp>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
@@ -552,7 +553,6 @@ void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
     EntriesListType entries;
     entries.reserve(entries_count);
     
-    ///!!! use exception safe code here: use "ScopeGuard with Dismiss()" idiom.
     deletePlaylistEntriesFromPlaylistDB( playlist.id() ); // remove old entries before adding new ones.
     sqlite3_stmt* stmt = nullptr;
     int rc_db = sqlite3_prepare( playlists_db_,
@@ -564,69 +564,77 @@ void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
                                  nullptr  // Pointer to unused portion of stmt
                                 );
     if (SQLITE_OK != rc_db) {
-        BOOST_LOG_SEV(logger(), error) << "sqlite3_prepare(INSERT INTO PlaylistsEntries) error " << rc_db << ": " << sqlite3_errmsg(playlists_db_);
-        stmt = nullptr;
-    } else {
-        BOOST_LOG_SEV(logger(), debug) << "The statement has "
-                                       << sqlite3_bind_parameter_count(stmt)
-                                       << " wildcards";
+        const std::string msg = MakeString() << "sqlite3_prepare(INSERT INTO PlaylistsEntries) error "
+                                             << rc_db << ": " << sqlite3_errmsg(playlists_db_);
+        throw std::runtime_error(msg);
+    }
+
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    //BOOST_LOG_SEV(logger(), debug) << "The statement has "
+    //                               << sqlite3_bind_parameter_count(stmt)
+    //                               << " wildcards";
+
 #define bind(type, field_index, value)  rc_db = sqlite3_bind_##type(stmt, field_index, value); \
                                         if (SQLITE_OK != rc_db) { \
-                                            /*///!!! throw exception. */ BOOST_LOG_SEV(logger(), error) << "Error sqlite3_bind_"#type << " " << rc_db; \
+                                            const std::string msg = MakeString() << "Error sqlite3_bind_"#type << " " << rc_db; \
+                                            throw std::runtime_error(msg); \
                                         }
 #define bindText(field_index, info_field_name)  rc_db = sqlite3_bind_text16(stmt, field_index, info.##info_field_name, info.##info_field_name##Length * sizeof(WCHAR), SQLITE_STATIC); \
                                                 if (SQLITE_OK != rc_db) { \
-                                                    /*///!!! throw exception. */ BOOST_LOG_SEV(logger(), error) << "sqlite3_bind_text16" << " " << rc_db; \
+                                                    const std::string msg = MakeString() << "sqlite3_bind_text16" << " " << rc_db; \
+                                                    throw std::runtime_error(msg); \
                                                 }
-        bind( int, 1, playlist.id() );
-    }
+    bind( int, 1, playlist.id() );
 
     for (int entry_index = 0; entry_index < entries_count; ++entry_index) {
         r = strings->ItemGetInfo( entry_index, &file_info_helper.getEmptyFileInfo() );
-        if (S_OK == r) {
-            entries.push_back( file_info_helper.getPlaylistEntry(entry_index) ); ///!!! Maybe we need to use this instead index: HPLSENTRY entry_id = aimp3_playlist_manager_->StorageGetEntry(playlist_id, entry_index);
+        if (S_OK != r) {
+            const std::string msg = MakeString() << "IAIMPAddonsPlaylistStrings::ItemGetInfo() error " 
+                                                 << r << " occured while getting entry info ¹" << entry_index
+                                                 << " from playlist with ID = " << playlist_id;
+            throw std::runtime_error(msg);
+        }
 
-            { // get rating manually, since AIMP3 does not fill TAIMPFileInfo::Rating value.
-                int rating = 0;
-                HPLSENTRY entry_id = aimp3_playlist_manager_->StorageGetEntry(playlist_id, entry_index);
-                r = aimp3_playlist_manager_->EntryPropertyGetValue( entry_id, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_MARK, &rating, sizeof(rating) );    
-                if (S_OK == r) {
-                    entries.back().rating(rating);
-                }
+        entries.push_back( file_info_helper.getPlaylistEntry(entry_index) ); ///!!! Maybe we need to use this instead index: HPLSENTRY entry_id = aimp3_playlist_manager_->StorageGetEntry(playlist_id, entry_index);
 
-                // special db code
-                if (stmt) {
-                    // bind all values
-                    const AIMP3SDK::TAIMPFileInfo& info = file_info_helper.getFileInfoWithCorrectStringLengths();
-                    bind(int,    2, entry_index);
-                    bindText(    3, Album);
-                    bindText(    4, Artist);
-                    bindText(    5, Date);
-                    bindText(    6, FileName);
-                    bindText(    7, Genre);
-                    bindText(    8, Title);
-                    bind(int,    9, info.BitRate);
-                    bind(int,   10, info.Channels);
-                    bind(int,   11, info.Duration);
-                    bind(int64, 12, info.FileSize);
-                    bind(int,   13, rating);
-                    bind(int,   14, info.SampleRate);
-                    bind(int,   15, crc32(info));
-
-                    rc_db = sqlite3_step(stmt);
-                    if (SQLITE_DONE != rc_db) {
-                        BOOST_LOG_SEV(logger(), error) << "Could not step (execute) stmt.";
-                    }
-                    sqlite3_reset(stmt);
-                }
+        { // get rating manually, since AIMP3 does not fill TAIMPFileInfo::Rating value.
+            int rating = 0;
+            HPLSENTRY entry_id = aimp3_playlist_manager_->StorageGetEntry(playlist_id, entry_index);
+            r = aimp3_playlist_manager_->EntryPropertyGetValue( entry_id, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_MARK, &rating, sizeof(rating) );    
+            if (S_OK == r) {
+                entries.back().rating(rating);
             }
-        } else {
-            BOOST_LOG_SEV(logger(), error) << "Error " << r << " occured while getting entry info ¹" << entry_index << " from playlist with ID = " << playlist_id;
-            throw std::runtime_error("Error occured while getting playlist entries.");
+
+            // special db code
+            {
+                // bind all values
+                const AIMP3SDK::TAIMPFileInfo& info = file_info_helper.getFileInfoWithCorrectStringLengths();
+                bind(int,    2, entry_index);
+                bindText(    3, Album);
+                bindText(    4, Artist);
+                bindText(    5, Date);
+                bindText(    6, FileName);
+                bindText(    7, Genre);
+                bindText(    8, Title);
+                bind(int,    9, info.BitRate);
+                bind(int,   10, info.Channels);
+                bind(int,   11, info.Duration);
+                bind(int64, 12, info.FileSize);
+                bind(int,   13, rating);
+                bind(int,   14, info.SampleRate);
+                bind(int,   15, crc32(info));
+
+                rc_db = sqlite3_step(stmt);
+                if (SQLITE_DONE != rc_db) {
+                    const std::string msg = MakeString() << "sqlite3_step() error "
+                                                         << rc_db << ": " << sqlite3_errmsg(playlists_db_);
+                    throw std::runtime_error(msg);
+                }
+                sqlite3_reset(stmt);
+            }
         }
     }
-
-    sqlite3_finalize(stmt);
 
     // we got list, save result
     playlist.entries().swap(entries);
