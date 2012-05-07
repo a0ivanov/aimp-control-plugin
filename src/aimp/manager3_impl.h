@@ -181,7 +181,7 @@ private:
     EventListeners external_listeners_; //!< map of all subscribed listeners.
     EventsListenerID next_listener_id_; //!< unique ID describes external listener.
 
-    sqlite3* playlists_db_;
+    public:sqlite3* playlists_db_;private:///!!!
 
     // These class were made friend only for easy emulate web ctl plugin behavior. Remove when possible.
     friend class AimpRpcMethods::EmulationOfWebCtlPlugin;
