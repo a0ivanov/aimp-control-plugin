@@ -539,8 +539,6 @@ void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
     using namespace AIMP3SDK;
     // PROFILE_EXECUTION_TIME(__FUNCTION__);
 
-    HRESULT r;
-
     const AIMP3SDK::HPLS playlist_id = cast<AIMP3SDK::HPLS>( playlist.id() );    
 
     boost::intrusive_ptr<IAIMPAddonsPlaylistStrings> strings( getPlaylistStrings(playlist_id) );
@@ -588,7 +586,7 @@ void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
     bind( int, 1, playlist.id() );
 
     for (int entry_index = 0; entry_index < entries_count; ++entry_index) {
-        r = strings->ItemGetInfo( entry_index, &file_info_helper.getEmptyFileInfo() );
+        HRESULT r = strings->ItemGetInfo( entry_index, &file_info_helper.getEmptyFileInfo() );
         if (S_OK != r) {
             const std::string msg = MakeString() << "IAIMPAddonsPlaylistStrings::ItemGetInfo() error " 
                                                  << r << " occured while getting entry info ¹" << entry_index
@@ -623,7 +621,7 @@ void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
                 bind(int64, 12, info.FileSize);
                 bind(int,   13, rating);
                 bind(int,   14, info.SampleRate);
-                bind(int,   15, crc32(info));
+                bind(int64, 15, crc32(info));
 
                 rc_db = sqlite3_step(stmt);
                 if (SQLITE_DONE != rc_db) {
@@ -1554,7 +1552,7 @@ void fillTAIMPFileInfoFromPlaylistEntry(const PlaylistEntry& entry, AIMP3SDK::TA
     fi.Title    = const_cast<PWCHAR>( entry.title().c_str() );
 }
 
-std::wstring AIMP3Manager::getFormattedEntryTitle(const PlaylistEntry& entry, const std::string& format_string_utf8) const // throw std::invalid_argument
+std::wstring AIMP3Manager::getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const // throw std::invalid_argument
 {
     std::wstring wformat_string( StringEncoding::utf8_to_utf16(format_string_utf8) );
 
@@ -1570,7 +1568,7 @@ std::wstring AIMP3Manager::getFormattedEntryTitle(const PlaylistEntry& entry, co
     const int mode = AIMP_PLAYLIST_FORMAT_MODE_FILEINFO; // since AIMP_PLAYLIST_FORMAT_MODE_PREVIEW expands %R as "Artist" and %T as "Title" we use AIMP_PLAYLIST_FORMAT_MODE_FILEINFO which works as expected.
     
     TAIMPFileInfo fi = {0};
-    fillTAIMPFileInfoFromPlaylistEntry(entry, &fi);
+    fillTAIMPFileInfoFromPlaylistEntry(getEntry(track_desc), &fi);
 
     PWCHAR formatted_string = nullptr;
     HRESULT r = aimp3_playlist_manager_->FormatString( const_cast<PWCHAR>( wformat_string.c_str() ),
@@ -1628,7 +1626,7 @@ void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
                                                       "filesize       BIGINT,"
                                                       "rating         TINYINT,"
                                                       "samplerate     INTEGER,"
-                                                      "crc32          INTEGER,"
+                                                      "crc32          BIGINT," // use BIGINT since crc32 is uint32.
                                                       "PRIMARY KEY (playlist_id, entry_id)"
                                                       ")",
                       nullptr, /* Callback function */
@@ -1666,7 +1664,7 @@ void AIMP3Manager::deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id)
                                 &errmsg
                                 );
     if (SQLITE_OK != rc) {
-        BOOST_LOG_SEV(logger(), error) << "AIMP3Manager::deletePlaylistEntriesFromPlaylistDB() failed. Reason: sqlite3_exec(create table) error "
+        BOOST_LOG_SEV(logger(), error) << __FUNCTION__" failed. Reason: sqlite3_exec(create table) error "
                                        << rc << ": " << errmsg;
         sqlite3_free(errmsg);
     }
