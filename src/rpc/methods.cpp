@@ -76,9 +76,8 @@ ResponseType GetFormattedEntryTitle::execute(const Rpc::Value& root_request, Rpc
 
     const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
     try {
-        const PlaylistEntry& entry = aimp_manager_.getEntry(track_desc);
         using namespace StringEncoding;
-        root_response["result"]["formatted_string"] = utf16_to_utf8( aimp_manager_.getFormattedEntryTitle(entry, params["format_string"]) );
+        root_response["result"]["formatted_string"] = utf16_to_utf8( aimp_manager_.getFormattedEntryTitle(track_desc, params["format_string"]) );
     } catch(std::runtime_error&) {
         throw Rpc::Exception("Specified track does not exist.", TRACK_NOT_FOUND);
     } catch (std::invalid_argument&) {
@@ -288,15 +287,15 @@ ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& r
     Rpc::Value& playlists_rpcvalue = root_response["result"];
     playlists_rpcvalue.setSize( playlists.size() );
 
-    // fill rpcvalue array of playlists.
-    size_t playlist_index = 0;
-    BOOST_FOREACH(const auto& playlist_id_obj_pair, playlists) {
-        const Playlist& playlist = playlist_id_obj_pair.second;
-        Rpc::Value& playlist_rpcvalue = playlists_rpcvalue[playlist_index];
-        // fill all requested fields for playlist.
-        playlist_fields_filler_.fillRpcArrayOfObjects(playlist, playlist_rpcvalue);
-        ++playlist_index;
-    }
+    //// fill rpcvalue array of playlists.
+    //size_t playlist_index = 0;
+    //BOOST_FOREACH(const auto& playlist_id_obj_pair, playlists) {
+    //    const Playlist& playlist = playlist_id_obj_pair.second;
+    //    Rpc::Value& playlist_rpcvalue = playlists_rpcvalue[playlist_index];
+    //    // fill all requested fields for playlist.
+    //    playlist_fields_filler_.fillRpcArrayOfObjects(playlist, playlist_rpcvalue);
+    //    ++playlist_index;
+    //}
     return RESPONSE_IMMEDIATE;
 }
 
@@ -365,37 +364,37 @@ void GetPlaylistEntriesTemplateMethod::fillFieldToOrderDescriptors(const Rpc::Va
     }
 }
 
-const PlaylistEntryIDList& GetPlaylistEntriesTemplateMethod::getEntriesIDsFilteredByStringFromEntriesList(const std::wstring& search_string,
-                                                                                                          const EntriesListType& entries)
-{
-    filtered_entries_ids_.clear();
-    filtered_entries_ids_.reserve( entries.size() );
+//const PlaylistEntryIDList& GetPlaylistEntriesTemplateMethod::getEntriesIDsFilteredByStringFromEntriesList(const std::wstring& search_string,
+//                                                                                                          const EntriesListType& entries)
+//{
+//    filtered_entries_ids_.clear();
+//    filtered_entries_ids_.reserve( entries.size() );
+//
+//    size_t entry_index = 0;
+//    BOOST_FOREACH (const PlaylistEntry& entry, entries) {
+//        if ( entry_contain_string_(entry, search_string) ) {
+//            filtered_entries_ids_.push_back(entry_index);
+//        }
+//        ++entry_index;
+//    }
+//
+//    return filtered_entries_ids_;
+//}
 
-    size_t entry_index = 0;
-    BOOST_FOREACH (const PlaylistEntry& entry, entries) {
-        if ( entry_contain_string_(entry, search_string) ) {
-            filtered_entries_ids_.push_back(entry_index);
-        }
-        ++entry_index;
-    }
-
-    return filtered_entries_ids_;
-}
-
-const PlaylistEntryIDList& GetPlaylistEntriesTemplateMethod::getEntriesIDsFilteredByStringFromEntryIDs(const std::wstring& search_string,
-                                                                                                       const PlaylistEntryIDList& entry_to_filter_ids,
-                                                                                                       const EntriesListType& entries)
-{
-    filtered_entries_ids_.clear();
-    filtered_entries_ids_.reserve( entry_to_filter_ids.size() );
-    BOOST_FOREACH (const PlaylistEntryID entry_id, entry_to_filter_ids) {
-        if ( entry_contain_string_(entries[entry_id], search_string) ) {
-            filtered_entries_ids_.push_back(entry_id);
-        }
-    }
-
-    return filtered_entries_ids_;
-}
+//const PlaylistEntryIDList& GetPlaylistEntriesTemplateMethod::getEntriesIDsFilteredByStringFromEntryIDs(const std::wstring& search_string,
+//                                                                                                       const PlaylistEntryIDList& entry_to_filter_ids,
+//                                                                                                       const EntriesListType& entries)
+//{
+//    filtered_entries_ids_.clear();
+//    filtered_entries_ids_.reserve( entry_to_filter_ids.size() );
+//    BOOST_FOREACH (const PlaylistEntryID entry_id, entry_to_filter_ids) {
+//        if ( entry_contain_string_(entries[entry_id], search_string) ) {
+//            filtered_entries_ids_.push_back(entry_id);
+//        }
+//    }
+//
+//    return filtered_entries_ids_;
+//}
 
 void GetPlaylistEntriesTemplateMethod::handleFilteredEntryIDs(const PlaylistEntryIDList& filtered_entries_ids, const EntriesListType& entries,
                                                              size_t start_entry_index, size_t entries_count,
@@ -562,8 +561,20 @@ struct Formatter {
         format_string_(format_string)
     {}
 
-    void operator()(const PlaylistEntry& entry, Rpc::Value& rpc_value) const { 
-        rpc_value = StringEncoding::utf16_to_utf8( aimp_manager_->getFormattedEntryTitle(entry, 
+    void operator()(sqlite3_stmt* stmt, int /*column_index*/, Rpc::Value& rpc_value) const {
+        /*
+            Here we use small hack: 
+                we must support signature of RpcValueSetHelpers::HelperFillRpcFields::RpcValueSetter,
+                but we need to know more than 1 field: playlist and entry ids.
+            So we treat that always have two fields in db row when format string is set in RPC request.
+        */
+        const int playlist_column_index = 0,
+                  track_column_index    = 1;
+        TrackDescription track_desc(sqlite3_column_int(stmt, playlist_column_index),
+                                    sqlite3_column_int(stmt, track_column_index)
+                                    );
+        
+        rpc_value = StringEncoding::utf16_to_utf8( aimp_manager_->getFormattedEntryTitle(track_desc, 
                                                                                          *format_string_)
                                                   );
     }
@@ -585,17 +596,22 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager,
 
     using namespace RpcValueSetHelpers;
     using namespace RpcResultUtils;
+
+    auto int_setter   = boost::bind( createSetter(&sqlite3_column_int),   _1, _2, _3 );
+    auto int64_setter = boost::bind( createSetter(&sqlite3_column_int64), _1, _2, _3 );
+    auto text_setter  = boost::bind( createSetter(&sqlite3_column_text),  _1, _2, _3 );
+
     boost::assign::insert(entry_fields_filler_.setters_)
-        ( getStringFieldID(PlaylistEntry::ID),       boost::bind( createSetter(&PlaylistEntry::id),       _1, _2 ) )  // Use plugin id of entry instead Aimp internal id( PlaylistEntry::trackID() ).
-        ( getStringFieldID(PlaylistEntry::TITLE),    boost::bind( createSetter(&PlaylistEntry::title),    _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::ARTIST),   boost::bind( createSetter(&PlaylistEntry::artist),   _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::ALBUM),    boost::bind( createSetter(&PlaylistEntry::album),    _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::DATE),     boost::bind( createSetter(&PlaylistEntry::date),     _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::GENRE),    boost::bind( createSetter(&PlaylistEntry::genre),    _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::BITRATE),  boost::bind( createSetter(&PlaylistEntry::bitrate),  _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::DURATION), boost::bind( createSetter(&PlaylistEntry::duration), _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::FILESIZE), boost::bind( createSetter(&PlaylistEntry::fileSize), _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::RATING),   boost::bind( createSetter(&PlaylistEntry::rating),   _1, _2 ) )
+        ( getStringFieldID(PlaylistEntry::ID),       int_setter )  // Use plugin id of entry instead Aimp internal id( PlaylistEntry::trackID() ).
+        ( getStringFieldID(PlaylistEntry::TITLE),    text_setter )
+        ( getStringFieldID(PlaylistEntry::ARTIST),   text_setter )
+        ( getStringFieldID(PlaylistEntry::ALBUM),    text_setter )
+        ( getStringFieldID(PlaylistEntry::DATE),     text_setter )
+        ( getStringFieldID(PlaylistEntry::GENRE),    text_setter )
+        ( getStringFieldID(PlaylistEntry::BITRATE),  int_setter )
+        ( getStringFieldID(PlaylistEntry::DURATION), int_setter )
+        ( getStringFieldID(PlaylistEntry::FILESIZE), int64_setter )
+        ( getStringFieldID(PlaylistEntry::RATING),   int_setter )
     ;
 
     // fill supported field names.
@@ -616,27 +632,27 @@ void GetPlaylistEntries::fillRpcValueEntriesFromEntriesList(EntriesRange entries
 {
     rpcvalue_entries.setSize( entries_range.size() );
 
-    size_t entry_rpcvalue_index = 0;
-    BOOST_FOREACH (const PlaylistEntry& entry, entries_range) {
-        Rpc::Value& entry_rpcvalue = rpcvalue_entries[entry_rpcvalue_index];
-        // fill all requested fields for entry.
-        entry_fields_filler_.fillRpcArrayOfArrays(entry, entry_rpcvalue);
-        ++entry_rpcvalue_index;
-    }
+    //size_t entry_rpcvalue_index = 0;
+    //BOOST_FOREACH (const PlaylistEntry& entry, entries_range) {
+    //    Rpc::Value& entry_rpcvalue = rpcvalue_entries[entry_rpcvalue_index];
+    //    // fill all requested fields for entry.
+    //    entry_fields_filler_.fillRpcArrayOfArrays(entry, entry_rpcvalue);
+    //    ++entry_rpcvalue_index;
+    //}
 }
 
-void GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs(EntriesIDsRange entries_ids_range, const EntriesListType& entries,
+void GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs(EntriesIDsRange entries_ids_range, const EntriesListType& /*entries*/,
                                                          Rpc::Value& rpcvalue_entries)
 {
     rpcvalue_entries.setSize( entries_ids_range.size() );
 
-    size_t entry_rpcvalue_index = 0;
-    BOOST_FOREACH (const PlaylistEntryID entry_id, entries_ids_range) {
-        Rpc::Value& entry_rpcvalue = rpcvalue_entries[entry_rpcvalue_index];
-        // fill all requested fields for entry.
-        entry_fields_filler_.fillRpcArrayOfArrays(entries[entry_id], entry_rpcvalue);
-        ++entry_rpcvalue_index;
-    }
+    //size_t entry_rpcvalue_index = 0;
+    //BOOST_FOREACH (const PlaylistEntryID entry_id, entries_ids_range) {
+    //    Rpc::Value& entry_rpcvalue = rpcvalue_entries[entry_rpcvalue_index];
+    //    // fill all requested fields for entry.
+    //    entry_fields_filler_.fillRpcArrayOfArrays(entries[entry_id], entry_rpcvalue);
+    //    ++entry_rpcvalue_index;
+    //}
 }
 
 void GetPlaylistEntries::initEntriesFiller(const Rpc::Value& params)
@@ -654,21 +670,19 @@ void GetPlaylistEntries::initEntriesFiller(const Rpc::Value& params)
         
         const std::string& format_string = params[kFORMAT_STRING_STRING];
         setter_it->second = boost::bind<void>(Formatter(&aimp_manager_, &format_string),
-                                              _1, _2
+                                              _1, _2, _3
                                               );
         entry_fields_filler_.setters_required_.clear();
         entry_fields_filler_.setters_required_.push_back(setter_it);
+    } else if ( params.isMember(kFIELDS_STRING) ) {
+        entry_fields_filler_.initRequiredFieldsHandlersList(params[kFIELDS_STRING]);
     } else {
-        if ( params.isMember(kFIELDS_STRING) ) {
-            entry_fields_filler_.initRequiredFieldsHandlersList(params[kFIELDS_STRING]);
-        } else {
-            // set default fields
-            Rpc::Value fields;
-            fields.setSize(2);
-            fields[0] = "id";
-            fields[1] = "title";
-            entry_fields_filler_.initRequiredFieldsHandlersList(fields);
-        }
+        // set default fields
+        Rpc::Value fields;
+        fields.setSize(2);
+        fields[0] = "id";
+        fields[1] = "title";
+        entry_fields_filler_.initRequiredFieldsHandlersList(fields);
     }
 }
 

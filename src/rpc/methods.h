@@ -18,6 +18,8 @@
 #include <boost/assign/std.hpp>
 #include <boost/bind.hpp>
 
+#include "sqlite/sqlite3.h"
+
 namespace MultiUserMode { class MultiUserModeManager; }
 
 namespace Rpc { class DelayedResponseSender; }
@@ -515,12 +517,15 @@ public:
     {
         using namespace RpcValueSetHelpers;
         using namespace RpcResultUtils;
+        auto int_setter   = boost::bind( createSetter(&sqlite3_column_int),   _1, _2, _3 );
+        auto int64_setter = boost::bind( createSetter(&sqlite3_column_int64), _1, _2, _3 );
+        auto text_setter  = boost::bind( createSetter(&sqlite3_column_text),  _1, _2, _3 );
         boost::assign::insert(playlist_fields_filler_.setters_)
-            ( getStringFieldID(Playlist::ID),                           boost::bind( createSetter(&Playlist::id),                      _1, _2 ) )
-            ( getStringFieldID(Playlist::TITLE),                        boost::bind( createSetter(&Playlist::title),                   _1, _2 ) )
-            ( getStringFieldID(Playlist::DURATION),                     boost::bind( createSetter(&Playlist::duration),                _1, _2 ) )
-            ( getStringFieldID(Playlist::ENTRIES_COUNT),                boost::bind( createSetter(&Playlist::entriesCount),            _1, _2 ) )
-            ( getStringFieldID(Playlist::SIZE_OF_ALL_ENTRIES_IN_BYTES), boost::bind( createSetter(&Playlist::sizeOfAllEntriesInBytes), _1, _2 ) )
+            ( getStringFieldID(Playlist::ID),                           int_setter )
+            ( getStringFieldID(Playlist::TITLE),                        text_setter )
+            ( getStringFieldID(Playlist::DURATION),                     int64_setter )
+            ( getStringFieldID(Playlist::ENTRIES_COUNT),                int_setter )
+            ( getStringFieldID(Playlist::SIZE_OF_ALL_ENTRIES_IN_BYTES), int64_setter )
         ;
     }
 
@@ -585,13 +590,13 @@ public:
 
         field_to_order_descriptors_.reserve( fields_to_order_.size() );
 
-        // initialization of fields available to filtering.
-        GettersOfEntryStringField& fields_to_filter_getters = entry_contain_string_.field_getters_;
-        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::title,  _1) );
-        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::artist, _1) );
-        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::album,  _1) );
-        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::date,   _1) );
-        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::genre,  _1) );
+        //// initialization of fields available to filtering.
+        //GettersOfEntryStringField& fields_to_filter_getters = entry_contain_string_.field_getters_;
+        //fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::title,  _1) );
+        //fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::artist, _1) );
+        //fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::album,  _1) );
+        //fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::date,   _1) );
+        //fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::genre,  _1) );
     }
 
     std::string help()
@@ -648,7 +653,7 @@ private:
 
     //!\return true if search string is not empty.
     bool getSearchStringFromRpcParam(const std::string& search_string_utf8);
-    FindStringOccurenceInEntryFieldsFunctor entry_contain_string_;
+    
     const PlaylistEntryIDList& getEntriesIDsFilteredByStringFromEntriesList(const std::wstring& search_string,
                                                                             const EntriesListType& entries);
     const PlaylistEntryIDList& getEntriesIDsFilteredByStringFromEntryIDs(const std::wstring& search_string,

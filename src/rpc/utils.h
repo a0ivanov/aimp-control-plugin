@@ -10,12 +10,16 @@
 #include "aimp/playlist_entry.h"
 #include "utils/string_encoding.h"
 #include "rpc/value.h"
+#include "rpc/exception.h"
+#include "rpc/methods.h"
 #include "plugin/logger.h"
 #include <vector>
 #include <map>
 #include <string>
 #include <boost/function.hpp>
 #include <boost/foreach.hpp>
+
+struct sqlite3_stmt;
 
 namespace AimpRpcMethods
 {
@@ -65,39 +69,42 @@ void setRpcValue(const T& value, Rpc::Value& rpc_value)
     rpc_value = static_cast<int>(value);
 }
 
-//! Set string field in Rpc struct. String in UTF-16 is converted to string in UTF-8.
-template <>
-inline void setRpcValue<std::wstring>(const std::wstring& value, Rpc::Value& rpc_value)
+//! Set UTF-8 string field in Rpc struct. Use unsigned char special for compatibility with "const unsigned char *sqlite3_column_text(sqlite3_stmt*, int iCol)".
+inline void setRpcValue(const unsigned char* value, Rpc::Value& rpc_value)
 {
-    rpc_value = StringEncoding::utf16_to_utf8(value);
+    rpc_value = std::string( reinterpret_cast<const char*>(value) );
 }
 
-
 //! Invoker of setRpcValue() function with value which member function of T object returns.
-template<class T, class R>
-struct AssignerObjectFieldToRpcValue : std::binary_function<const T&, Rpc::Value&, void>
+template<class R>
+struct AssignerDBFieldToRpcValue
 {
-    typedef R (T::*FieldGetter)() const;
+    typedef void result_type; // for boost bind.
 
-    AssignerObjectFieldToRpcValue(FieldGetter field_getter)
+    typedef R (*FieldValueGetter)(sqlite3_stmt*, int); // "R sqlite3_column_XXX(sqlite3_stmt*, int iCol)" family function signature.
+
+    AssignerDBFieldToRpcValue(FieldValueGetter field_getter)
         :
         field_getter_(field_getter)
     {}
 
-    void operator()(const T& object, Rpc::Value& rpc_value) const
-        { setRpcValue( (object.*field_getter_)(), rpc_value ); }
+    void operator()(sqlite3_stmt* stmt, int column_index, Rpc::Value& rpc_value) const {
+        setRpcValue( (*field_getter_)(stmt, column_index),
+                     rpc_value
+                    );
+    }
 
-    FieldGetter field_getter_;
+    FieldValueGetter field_getter_;
 };
 
 /*!
-    \brief creates AssignerObjectFieldToRpcValue object.
-    Deduces template parameters for struct AssignerObjectFieldToRpcValue from pointer to member function.
+    \brief creates AssignerDBFieldToRpcValue object.
+    Deduces template parameters for struct AssignerDBFieldToRpcValue from pointer to sqlite3_column_XXX function.
 */
-template<class T, class R>
-AssignerObjectFieldToRpcValue<T, R> createSetter(R (T::*field_getter)() const)
+template<class R>
+AssignerDBFieldToRpcValue<R> createSetter( R (*fieldValueGetter)(sqlite3_stmt*, int) )
 {
-    return AssignerObjectFieldToRpcValue<T, R>(field_getter);
+    return AssignerDBFieldToRpcValue<R>(fieldValueGetter);
 }
 
 /*!
@@ -108,11 +115,10 @@ AssignerObjectFieldToRpcValue<T, R> createSetter(R (T::*field_getter)() const)
         2) call fillRpcArray() to fill entry or playlist fields in Rpc result value.
             It fills Rpc associative array(keys are requested fields of playlist or entry) by calling data_provider_object member function.
 */
-template <class T>
+template <typename T> ///!!! TODO: avoid use template. Currently it used for compatibility. Remove it and fix compilation.
 struct HelperFillRpcFields
 {
-    //! class T is Playlist or PlaylistEntry.
-    typedef boost::function<void (const T&, Rpc::Value&)> RpcValueSetter;
+    typedef boost::function<void (sqlite3_stmt*, int, Rpc::Value&)> RpcValueSetter;
     //! map string field ID to function that can assign playlist or track field to RPC value.
     typedef std::map<std::string, RpcValueSetter> RpcValueSetters;
     //! list of pointers to setters. Filled from Rpc method parameter.
@@ -146,12 +152,12 @@ struct HelperFillRpcFields
     }
 
     //! Walks through all required field setters and fills correspond rpc field.
-    void fillRpcArrayOfObjects(const T& data_provider_object, Rpc::Value& fields)
+    void fillRpcArrayOfObjects(sqlite3_stmt* stmt, int column_index, Rpc::Value& fields)
     {
         BOOST_FOREACH (const auto& setter, setters_required_) {
             const std::string& field_id = setter->first;
             try {
-                setter->second(data_provider_object, fields[field_id]); // invoke functor, that will assign value to fields[field_id].
+                setter->second(stmt, column_index, fields[field_id]); // invoke functor, that will assign value to fields[field_id].
             } catch (std::exception& e) {
                 BOOST_LOG_SEV(logger(), error) << "Error occured while filling AIMP " << logger_msg_id_ << " field " << field_id << ". Reason: " << e.what();
                 assert(!"Error occured while filling field in"__FUNCTION__);
@@ -161,13 +167,13 @@ struct HelperFillRpcFields
     }
 
     //! Walks through all required field setters and fills correspond rpc field.
-    void fillRpcArrayOfArrays(const T& data_provider_object, Rpc::Value& fields)
+    void fillRpcArrayOfArrays(sqlite3_stmt* stmt, int column_index, Rpc::Value& fields)
     {
         int index = 0;
         fields.setSize( setters_required_.size() );
         BOOST_FOREACH (const auto& setter, setters_required_) {
             try {
-                setter->second(data_provider_object, fields[index]); // invoke functor, that will assign value to fields[field_id].
+                setter->second(stmt, column_index, fields[index]); // invoke functor, that will assign value to fields[field_id].
             } catch (std::exception& e) {
                 BOOST_LOG_SEV(logger(), error) << "Error occured while filling AIMP " << logger_msg_id_
                                                << " field " << setter->first << ", field index " << index
@@ -188,38 +194,6 @@ private:
 };
 
 } // namespace AimpRpcMethods::RpcValueSetHelpers
-
-
-//! type of functor that returns string field of specified playlist object. Concrete field to return assinged by boost::bind() in GetPlaylistEntries() ctor.
-typedef boost::function<const std::wstring& (const AIMPPlayer::PlaylistEntry& entry)> GetterOfEntryStringField;
-typedef std::vector<GetterOfEntryStringField> GettersOfEntryStringField;
-
-/*!
-    \brief search specified string occurence in any string field of PlaylistEntry object.
-           Search is case independent.
-*/
-struct FindStringOccurenceInEntryFieldsFunctor
-{
-    /*!
-        \param entry pointer to AIMPPlayer::PlaylistEntry object for search.
-        \param search_string string for search.
-        \return true if string was found otherwise false.
-    */
-    bool operator()(const AIMPPlayer::PlaylistEntry& entry, const std::wstring& search_string) const
-    {
-        BOOST_FOREACH (const auto& getter, field_getters_) {
-            const std::wstring& string_to_check = getter(entry);
-            boost::iterator_range<std::wstring::const_iterator> result = boost::ifind_first(string_to_check, search_string);
-            if ( result.begin() != result.end() ) {
-                return true; // if search_string found in one of fields of entry return success flag.
-            }
-        }
-
-        return false;
-    }
-
-    std::vector<GetterOfEntryStringField> field_getters_;
-};
 
 } // namespace AimpRpcMethods
 
