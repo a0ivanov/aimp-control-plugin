@@ -1296,9 +1296,10 @@ private:
 
 } // namespace anonymous
 
-std::wstring AIMP2Manager::getFormattedEntryTitle(const PlaylistEntry& entry, const std::string& format_string_utf8) const // throw std::invalid_argument
+std::wstring AIMP2Manager::getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const // throw std::invalid_argument
 {
-    return playlistentry_title_formatter.format(entry,
+
+    return playlistentry_title_formatter.format(getEntry(track_desc),
                                                 StringEncoding::utf8_to_utf16(format_string_utf8)
                                                 );
 }

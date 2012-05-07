@@ -72,7 +72,7 @@ public:
 
     virtual const PlaylistEntry& getEntry(TrackDescription track_desc) const; // throw std::runtime_error
 
-    virtual std::wstring getFormattedEntryTitle(const PlaylistEntry& entry, const std::string& format_string_utf8) const;
+    virtual std::wstring getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const;
 
     virtual void savePNGCoverToVector(TrackDescription track_desc, int cover_width, int cover_height, std::vector<BYTE>& image_data) const; // throw std::runtime_error
 
