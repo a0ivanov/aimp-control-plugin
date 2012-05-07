@@ -204,7 +204,7 @@ public:
         </PRE>
         \return formatted string for entry.
     */
-    virtual std::wstring getFormattedEntryTitle(const PlaylistEntry& entry, const std::string& format_string_utf8) const = 0;
+    virtual std::wstring getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const = 0; // throw std::invalid_argument
 
     /*!
         \brief Saves album cover for track to std::vector in PNG format.
