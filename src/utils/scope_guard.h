@@ -1,9 +1,5 @@
 #pragma once
 
-#pragma warning ( push )
-// warning C4180: qualifier applied to function type has no meaning; ignored
-#pragma warning( disable : 4180 )
-
 template <class T>
 class RefHolder
 {
@@ -50,6 +46,10 @@ private:
 
 typedef const ScopeGuardImplBase& ScopeGuard;
 
+#pragma warning ( push )
+// warning C4180: qualifier applied to function type has no meaning; ignored
+#pragma warning( disable : 4180 )
+
 /*
     Note: fun() must not throw exceptions.
     They will be caught silently anyway since dtors must not throw exceptions.
@@ -86,6 +86,8 @@ MakeGuard(const Fun& fun, const Parm& parm)
 {
     return ScopeGuardImpl1<Fun, Parm>(fun, parm);
 }
+
+#pragma warning (pop)
 
 /*
     Note: memFun must not throw exceptions.
@@ -127,5 +129,3 @@ MakeObjGuard(Obj& obj, MemFun fun)
 #define CONCAT_MACRO(x,y) _CONCAT_MACRO(x,y)
 #define ANONYMOUS_GUARD_NAME CONCAT_MACRO(scope_guard, __LINE__)
 #define ON_BLOCK_EXIT(...) ScopeGuard ANONYMOUS_GUARD_NAME = MakeGuard(__VA_ARGS__); ANONYMOUS_GUARD_NAME // prevent warning about unused variable.
-
-#pragma warning (pop)
