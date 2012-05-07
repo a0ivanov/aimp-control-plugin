@@ -11,7 +11,6 @@
 #include "utils/string_encoding.h"
 #include "rpc/value.h"
 #include "rpc/exception.h"
-#include "rpc/methods.h"
 #include "plugin/logger.h"
 #include <vector>
 #include <map>
