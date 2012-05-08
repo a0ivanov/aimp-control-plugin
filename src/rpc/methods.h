@@ -631,8 +631,10 @@ private:
     MapFieldnamesRPCToDB fieldnames_rpc_to_db_;
 
     std::string GetLimitString(const Rpc::Value& params);
-    std::string GetWhereString(const Rpc::Value& params);
+    std::string GetWhereString(const Rpc::Value& params, const int playlist_id);
     std::string GetColumnsString();
+    size_t GetTotalEntriesCount(sqlite3* playlists_db, const int playlist_id);
+    size_t GetFoundEntriesCount(sqlite3* playlists_db, const std::string& query_without_limit);
 
     const std::string kRQST_KEY_FORMAT_STRING,
                       kFIELDS_STRING;

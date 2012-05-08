@@ -471,10 +471,10 @@ std::string GetPlaylistEntries::GetLimitString(const Rpc::Value& params)
     return os.str();
 }
 
-std::string GetPlaylistEntries::GetWhereString(const Rpc::Value& params)
+std::string GetPlaylistEntries::GetWhereString(const Rpc::Value& params, const int playlist_id)
 {
     std::ostringstream os;
-    const int playlist_id = params["playlist_id"];
+    
     os << "WHERE playlist_id=" << playlist_id;
 	if ( params.isMember(kRQST_KEY_SEARCH_STRING) ) {
         ///!!! Avoid SQL injection here: use query args instead.
@@ -516,29 +516,13 @@ std::string GetPlaylistEntries::GetColumnsString()
     return result;
 }
 
-Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+size_t GetPlaylistEntries::GetTotalEntriesCount(sqlite3* playlists_db, const int playlist_id)
 {
-    PROFILE_EXECUTION_TIME(__FUNCTION__);
-    
-    const Rpc::Value& params = root_request["params"];
-
-    // ensure we got obligatory argument: playlist id.
-    if (params.size() < 1) {
-        throw Rpc::Exception("Wrong arguments count. Wait at least int 'playlist_id' argument.", WRONG_ARGUMENT);
-    }
-
     using namespace Utilities;
 
-    initEntriesFiller(params);
-
-    sqlite3* playlists_db = dynamic_cast<AIMPPlayer::AIMP3Manager&>(aimp_manager_).playlists_db_;
-
     std::ostringstream query;
-    query << "SELECT " << GetColumnsString() << " FROM PlaylistsEntries "
-                       << GetWhereString(params) << ' ' 
-                       << GetOrderString(params) << ' '
-                       << GetLimitString(params);
-
+    query << "SELECT COUNT(*) FROM PlaylistsEntries WHERE playlist_id=" << playlist_id;
+    
     sqlite3_stmt* stmt = nullptr;
     int rc_db = sqlite3_prepare( playlists_db,
                                  query.str().c_str(),
@@ -554,8 +538,104 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
 
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
+    size_t total_entries_count = 0;
+
+	rc_db = sqlite3_step(stmt);
+    if (SQLITE_ROW == rc_db) {
+        assert(sqlite3_column_count(stmt) > 0);
+        total_entries_count = sqlite3_column_int(stmt, 0);
+    } else {
+        const std::string msg = MakeString() << "sqlite3_step() error "
+                                             << rc_db << ": " << sqlite3_errmsg(playlists_db) << ". Query: " << query.str();
+        throw std::runtime_error(msg);
+    }
+
+    return total_entries_count;
+}
+
+size_t GetPlaylistEntries::GetFoundEntriesCount(sqlite3* playlists_db, const std::string& query_without_limit)
+{
+    using namespace Utilities;
+
+    sqlite3_stmt* stmt = nullptr;
+    int rc_db = sqlite3_prepare( playlists_db,
+                                 query_without_limit.c_str(),
+                                 -1, // If less than zero, then stmt is read up to the first nul terminator
+                                 &stmt,
+                                 nullptr  // Pointer to unused portion of stmt
+                                );
+    if (SQLITE_OK != rc_db) {
+        const std::string msg = MakeString() << "sqlite3_prepare() error "
+                                             << rc_db << ": " << sqlite3_errmsg(playlists_db) << ". Query: " << query_without_limit;
+        throw std::runtime_error(msg);
+    }
+
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    size_t entries_count = 0;
+    for(;;) {
+		rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+			++entries_count;
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                 << rc_db << ": " << sqlite3_errmsg(playlists_db) << ". Query: " << query_without_limit;
+            throw std::runtime_error(msg);
+		}
+    }
+    return entries_count;
+}
+
+Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+{
+    using namespace Utilities;
+
+    PROFILE_EXECUTION_TIME(__FUNCTION__);
+    
+    const Rpc::Value& params = root_request["params"];
+
+    // ensure we got obligatory argument: playlist id.
+    if (params.size() < 1) {
+        throw Rpc::Exception("Wrong arguments count. Wait at least int 'playlist_id' argument.", WRONG_ARGUMENT);
+    }
+
+    initEntriesFiller(params);
+
+    sqlite3* playlists_db = dynamic_cast<AIMPPlayer::AIMP3Manager&>(aimp_manager_).playlists_db_;
+
+    const int playlist_id = params["playlist_id"];
+
+    std::ostringstream query_without_limit;
+    query_without_limit << "SELECT " << GetColumnsString() << " FROM PlaylistsEntries "
+                        << GetWhereString(params, playlist_id) << ' ' 
+                        << GetOrderString(params);
+    std::ostringstream query_with_limit;
+    query_with_limit << query_without_limit.str() << ' '
+                     << GetLimitString(params);
+
+    sqlite3_stmt* stmt = nullptr;
+    int rc_db = sqlite3_prepare( playlists_db,
+                                 query_with_limit.str().c_str(),
+                                 -1, // If less than zero, then stmt is read up to the first nul terminator
+                                 &stmt,
+                                 nullptr  // Pointer to unused portion of stmt
+                                );
+    if (SQLITE_OK != rc_db) {
+        const std::string msg = MakeString() << "sqlite3_prepare() error "
+                                             << rc_db << ": " << sqlite3_errmsg(playlists_db) << ". Query: " << query_with_limit.str();
+        throw std::runtime_error(msg);
+    }
+
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
     Rpc::Value& rpc_result = root_response["result"];
     Rpc::Value& rpcvalue_entries = rpc_result[kENTRIES_STRING];
+
+    rpc_result[kTOTAL_ENTRIES_COUNT_STRING] = GetTotalEntriesCount(playlists_db, playlist_id);
+    rpc_result[kCOUNT_OF_FOUND_ENTRIES_STRING] = GetFoundEntriesCount( playlists_db, query_without_limit.str() );
+
     size_t entry_rpcvalue_index = 0;
 
     assert( static_cast<size_t>( sqlite3_column_count(stmt) ) == entry_fields_filler_.setters_required_.size() );
@@ -575,7 +655,7 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
             break;
         } else {
             const std::string msg = MakeString() << "sqlite3_step() error "
-                                                 << rc_db << ": " << sqlite3_errmsg(playlists_db);
+                                                 << rc_db << ": " << sqlite3_errmsg(playlists_db) << ". Query: " << query_with_limit.str();
             throw std::runtime_error(msg);
 		}
     }
