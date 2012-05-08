@@ -369,6 +369,7 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager,
         ( getStringFieldID(PlaylistEntry::RATING),   int_setter )
     ;
 
+    // map RPC field names to related db field names.
     BOOST_FOREACH(auto& setter_it, entry_fields_filler_.setters_) {
         fieldnames_rpc_to_db_[setter_it.first] = setter_it.first;
     }
@@ -501,8 +502,15 @@ std::string GetPlaylistEntries::GetWhereString(const Rpc::Value& params, const i
 std::string GetPlaylistEntries::GetColumnsString() const
 {
     std::string result;
-    typedef RpcValueSetHelpers::HelperFillRpcFields<PlaylistEntry>::RpcValueSettersIterators RpcValueSettersIterators;
-    const RpcValueSettersIterators& setters = entry_fields_filler_.setters_required_;
+    const auto& setters = entry_fields_filler_.setters_required_;
+    
+    // special case: format string. It is not database field and for it's work we must use playlist and entry ids.
+    if ( !setters.empty() ) {
+        if (setters.front()->first == kRQST_KEY_FORMAT_STRING) {
+            return "playlist_id,entry_id";
+        }
+    }
+
     BOOST_FOREACH(auto& setter_it, setters) {
         result += fieldnames_rpc_to_db_.find(setter_it->first)->second; // fieldnames_rpc_to_db_ is syncronized with setters.
         result += ',';
@@ -625,19 +633,22 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
     Rpc::Value& rpc_result = root_response["result"];
     Rpc::Value& rpcvalue_entries = rpc_result[kRSLT_KEY_ENTRIES];
 
-    rpc_result[kRSLT_KEY_TOTAL_ENTRIES_COUNT] = GetTotalEntriesCount(playlists_db, playlist_id);
+    rpc_result[kRSLT_KEY_TOTAL_ENTRIES_COUNT]    = GetTotalEntriesCount(playlists_db, playlist_id);
     rpc_result[kRSLT_KEY_COUNT_OF_FOUND_ENTRIES] = GetFoundEntriesCount( playlists_db, query_without_limit.str() );
 
     size_t entry_rpcvalue_index = 0;
-
-    assert( static_cast<size_t>( sqlite3_column_count(stmt) ) == entry_fields_filler_.setters_required_.size() );
+    
+    const auto& setters = entry_fields_filler_.setters_required_;
+    if ( !(    !setters.empty()
+            && setters.front()->first == kRQST_KEY_FORMAT_STRING) 
+        )
+    {
+        assert( static_cast<size_t>( sqlite3_column_count(stmt) ) == entry_fields_filler_.setters_required_.size() );
+    }
+    
     for(;;) {
 		int rc_db = sqlite3_step(stmt);
         if (SQLITE_ROW == rc_db) {
-			//for(int col_index = 0; col_index < cols; ++col_index) {
-			//	BOOST_LOG_SEV(logger(), debug) << sqlite3_column_text(stmt, col_index);
-			//}
-            
             rpcvalue_entries.setSize(entry_rpcvalue_index + 1); /// TODO: if possible resize array full count of found rows before filling.
             Rpc::Value& entry_rpcvalue = rpcvalue_entries[entry_rpcvalue_index];
             // fill all requested fields for entry.
