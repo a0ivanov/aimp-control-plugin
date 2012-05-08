@@ -71,7 +71,7 @@ void setRpcValue(const T& value, Rpc::Value& rpc_value)
 //! Set UTF-8 string field in Rpc struct. Use unsigned char special for compatibility with "const unsigned char *sqlite3_column_text(sqlite3_stmt*, int iCol)".
 inline void setRpcValue(const unsigned char* value, Rpc::Value& rpc_value)
 {
-    rpc_value = std::string( reinterpret_cast<const char*>(value) );
+    rpc_value = reinterpret_cast<const char*>(value);
 }
 
 //! Invoker of setRpcValue() function with value which member function of T object returns.
@@ -151,28 +151,31 @@ struct HelperFillRpcFields
     }
 
     //! Walks through all required field setters and fills correspond rpc field.
-    void fillRpcArrayOfObjects(sqlite3_stmt* stmt, int column_index, Rpc::Value& fields)
+    void fillRpcArrayOfObjects(sqlite3_stmt* stmt, Rpc::Value& fields)
     {
+        int index = 0;
         BOOST_FOREACH (const auto& setter, setters_required_) {
             const std::string& field_id = setter->first;
             try {
-                setter->second(stmt, column_index, fields[field_id]); // invoke functor, that will assign value to fields[field_id].
+                setter->second(stmt, index, fields[field_id]); // invoke functor, that will assign value to fields[field_id].
             } catch (std::exception& e) {
                 BOOST_LOG_SEV(logger(), error) << "Error occured while filling AIMP " << logger_msg_id_ << " field " << field_id << ". Reason: " << e.what();
                 assert(!"Error occured while filling field in"__FUNCTION__);
                 fields[field_id] = std::string();
             }
+            ++index;
         }
     }
 
     //! Walks through all required field setters and fills correspond rpc field.
-    void fillRpcArrayOfArrays(sqlite3_stmt* stmt, int column_index, Rpc::Value& fields)
+    // It's supposed that columns count in stmt is equal size of setters_required_.
+    void fillRpcArrayOfArrays(sqlite3_stmt* stmt, Rpc::Value& fields)
     {
         int index = 0;
         fields.setSize( setters_required_.size() );
         BOOST_FOREACH (const auto& setter, setters_required_) {
             try {
-                setter->second(stmt, column_index, fields[index]); // invoke functor, that will assign value to fields[field_id].
+                setter->second(stmt, index, fields[index]); // invoke functor, that will assign value to fields[field_id].
             } catch (std::exception& e) {
                 BOOST_LOG_SEV(logger(), error) << "Error occured while filling AIMP " << logger_msg_id_
                                                << " field " << setter->first << ", field index " << index

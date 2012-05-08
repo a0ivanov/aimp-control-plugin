@@ -516,7 +516,7 @@ std::string GetPlaylistEntries::GetColumnsString()
     return result;
 }
 
-Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rpc::Value& /*root_response*/)
+Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
     PROFILE_EXECUTION_TIME(__FUNCTION__);
     
@@ -530,9 +530,6 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
     using namespace Utilities;
 
     initEntriesFiller(params);
-
-    //Rpc::Value& rpc_result = root_response["result"];
-    //Rpc::Value& rpcvalue_entries = rpc_result[kENTRIES_STRING];
 
     sqlite3* playlists_db = dynamic_cast<AIMPPlayer::AIMP3Manager&>(aimp_manager_).playlists_db_;
 
@@ -557,14 +554,23 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
 
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
-    const int cols = sqlite3_column_count(stmt);
+    Rpc::Value& rpc_result = root_response["result"];
+    Rpc::Value& rpcvalue_entries = rpc_result[kENTRIES_STRING];
+    size_t entry_rpcvalue_index = 0;
+
+    assert( static_cast<size_t>( sqlite3_column_count(stmt) ) == entry_fields_filler_.setters_required_.size() );
     for(;;) {
 		rc_db = sqlite3_step(stmt);
-			
         if (SQLITE_ROW == rc_db) {
-			for(int col_index = 0; col_index < cols; ++col_index) {
-				BOOST_LOG_SEV(logger(), debug) << sqlite3_column_text(stmt, col_index);
-			}
+			//for(int col_index = 0; col_index < cols; ++col_index) {
+			//	BOOST_LOG_SEV(logger(), debug) << sqlite3_column_text(stmt, col_index);
+			//}
+            
+            rpcvalue_entries.setSize(entry_rpcvalue_index + 1); /// TODO: if possible resize array full count of found rows before filling.
+            Rpc::Value& entry_rpcvalue = rpcvalue_entries[entry_rpcvalue_index];
+            // fill all requested fields for entry.
+            entry_fields_filler_.fillRpcArrayOfArrays(stmt, entry_rpcvalue);
+            ++entry_rpcvalue_index;
         } else if (SQLITE_DONE == rc_db) {
             break;
         } else {
