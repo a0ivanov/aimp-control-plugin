@@ -336,18 +336,17 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager,
     AIMPRPCMethod("GetPlaylistEntries", aimp_manager, rpc_request_handler),
     entry_fields_filler_("entry"),
     kRQST_KEY_FORMAT_STRING("format_string"),
-    kFIELDS_STRING("fields"),
-    kTOTAL_ENTRIES_COUNT_STRING("total_entries_count"),
-    kENTRIES_STRING("entries"),
-    kCOUNT_OF_FOUND_ENTRIES_STRING("count_of_found_entries"),
-
+    kRQST_KEY_FIELDS("fields"),
     kRQST_KEY_START_INDEX("start_index"),
     kRQST_KEY_ENTRIES_COUNT("entries_count"),
     kRQST_KEY_FIELD("field"),
     kDESCENDING_ORDER_STRING("desc"),
     kRQST_KEY_ORDER_DIRECTION("dir"),
     kRQST_KEY_ORDER_FIELDS("order_fields"),
-    kRQST_KEY_SEARCH_STRING("search_string")
+    kRQST_KEY_SEARCH_STRING("search_string"),
+    kRSLT_KEY_TOTAL_ENTRIES_COUNT("total_entries_count"),
+    kRSLT_KEY_ENTRIES("entries"),
+    kRSLT_KEY_COUNT_OF_FOUND_ENTRIES("count_of_found_entries")
 {
 
     using namespace RpcValueSetHelpers;
@@ -419,8 +418,8 @@ void GetPlaylistEntries::initEntriesFiller(const Rpc::Value& params)
                                               );
         entry_fields_filler_.setters_required_.clear();
         entry_fields_filler_.setters_required_.push_back(setter_it);
-    } else if ( params.isMember(kFIELDS_STRING) ) {
-        entry_fields_filler_.initRequiredFieldsHandlersList(params[kFIELDS_STRING]);
+    } else if ( params.isMember(kRQST_KEY_FIELDS) ) {
+        entry_fields_filler_.initRequiredFieldsHandlersList(params[kRQST_KEY_FIELDS]);
     } else {
         // set default fields
         Rpc::Value fields;
@@ -431,7 +430,7 @@ void GetPlaylistEntries::initEntriesFiller(const Rpc::Value& params)
     }
 }
 
-std::string GetPlaylistEntries::GetOrderString(const Rpc::Value& params)
+std::string GetPlaylistEntries::GetOrderString(const Rpc::Value& params) const
 {
     std::string result;
 	if ( params.isMember(kRQST_KEY_ORDER_FIELDS) ) {        
@@ -458,7 +457,7 @@ std::string GetPlaylistEntries::GetOrderString(const Rpc::Value& params)
     return result;
 }
 
-std::string GetPlaylistEntries::GetLimitString(const Rpc::Value& params)
+std::string GetPlaylistEntries::GetLimitString(const Rpc::Value& params) const
 {
     std::ostringstream os;
 	if ( params.isMember(kRQST_KEY_START_INDEX) && params.isMember(kRQST_KEY_ENTRIES_COUNT) ) {
@@ -471,7 +470,7 @@ std::string GetPlaylistEntries::GetLimitString(const Rpc::Value& params)
     return os.str();
 }
 
-std::string GetPlaylistEntries::GetWhereString(const Rpc::Value& params, const int playlist_id)
+std::string GetPlaylistEntries::GetWhereString(const Rpc::Value& params, const int playlist_id) const
 {
     std::ostringstream os;
     
@@ -499,92 +498,95 @@ std::string GetPlaylistEntries::GetWhereString(const Rpc::Value& params, const i
     return os.str();
 }
 
-std::string GetPlaylistEntries::GetColumnsString()
+std::string GetPlaylistEntries::GetColumnsString() const
 {
     std::string result;
     typedef RpcValueSetHelpers::HelperFillRpcFields<PlaylistEntry>::RpcValueSettersIterators RpcValueSettersIterators;
     const RpcValueSettersIterators& setters = entry_fields_filler_.setters_required_;
     BOOST_FOREACH(auto& setter_it, setters) {
-        result += fieldnames_rpc_to_db_[setter_it->first]; // this is syncronized.
+        result += fieldnames_rpc_to_db_.find(setter_it->first)->second; // fieldnames_rpc_to_db_ is syncronized with setters.
         result += ',';
     }
 
     // erase obsolete ',' character.
-    if (!result.empty()) {
+    if ( !result.empty() ) {
         result.pop_back();
     }
     return result;
 }
 
-size_t GetPlaylistEntries::GetTotalEntriesCount(sqlite3* playlists_db, const int playlist_id)
+// Note: you should call sqlite3_finalize() after work is done.
+sqlite3_stmt* CreateStmt(sqlite3* db, const std::string& query) // throws std::runtime_error
+{
+    sqlite3_stmt* stmt = nullptr;
+    int rc_db = sqlite3_prepare( db,
+                                 query.c_str(),
+                                 -1, // If less than zero, then stmt is read up to the first nul terminator
+                                 &stmt,
+                                 nullptr  // Pointer to unused portion of stmt
+                                );
+    if (SQLITE_OK != rc_db) {
+        using namespace Utilities;
+        const std::string msg = MakeString() << "sqlite3_prepare() error "
+                                             << rc_db << ": " << sqlite3_errmsg(db)
+                                             << ". Query: " << query;
+        throw std::runtime_error(msg);
+    }
+    return stmt;
+}
+
+size_t GetPlaylistEntries::GetTotalEntriesCount(sqlite3* playlists_db, const int playlist_id) const
 {
     using namespace Utilities;
 
     std::ostringstream query;
     query << "SELECT COUNT(*) FROM PlaylistsEntries WHERE playlist_id=" << playlist_id;
     
-    sqlite3_stmt* stmt = nullptr;
-    int rc_db = sqlite3_prepare( playlists_db,
-                                 query.str().c_str(),
-                                 -1, // If less than zero, then stmt is read up to the first nul terminator
-                                 &stmt,
-                                 nullptr  // Pointer to unused portion of stmt
-                                );
-    if (SQLITE_OK != rc_db) {
-        const std::string msg = MakeString() << "sqlite3_prepare() error "
-                                             << rc_db << ": " << sqlite3_errmsg(playlists_db) << ". Query: " << query.str();
-        throw std::runtime_error(msg);
-    }
-
+    sqlite3_stmt* stmt = CreateStmt( playlists_db,
+                                     query.str()
+                                    );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
     size_t total_entries_count = 0;
 
-	rc_db = sqlite3_step(stmt);
+	const int rc_db = sqlite3_step(stmt);
     if (SQLITE_ROW == rc_db) {
         assert(sqlite3_column_count(stmt) > 0);
         total_entries_count = sqlite3_column_int(stmt, 0);
     } else {
         const std::string msg = MakeString() << "sqlite3_step() error "
-                                             << rc_db << ": " << sqlite3_errmsg(playlists_db) << ". Query: " << query.str();
+                                             << rc_db << ": " << sqlite3_errmsg(playlists_db)
+                                             << ". Query: " << query.str();
         throw std::runtime_error(msg);
     }
 
     return total_entries_count;
 }
 
-size_t GetPlaylistEntries::GetFoundEntriesCount(sqlite3* playlists_db, const std::string& query_without_limit)
+size_t GetPlaylistEntries::GetFoundEntriesCount(sqlite3* playlists_db, const std::string& query_without_limit) const
 {
     using namespace Utilities;
 
-    sqlite3_stmt* stmt = nullptr;
-    int rc_db = sqlite3_prepare( playlists_db,
-                                 query_without_limit.c_str(),
-                                 -1, // If less than zero, then stmt is read up to the first nul terminator
-                                 &stmt,
-                                 nullptr  // Pointer to unused portion of stmt
-                                );
-    if (SQLITE_OK != rc_db) {
-        const std::string msg = MakeString() << "sqlite3_prepare() error "
-                                             << rc_db << ": " << sqlite3_errmsg(playlists_db) << ". Query: " << query_without_limit;
-        throw std::runtime_error(msg);
-    }
-
+    sqlite3_stmt* stmt = CreateStmt( playlists_db,
+                                     query_without_limit
+                                    );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
     size_t entries_count = 0;
     for(;;) {
-		rc_db = sqlite3_step(stmt);
+		int rc_db = sqlite3_step(stmt);
         if (SQLITE_ROW == rc_db) {
 			++entries_count;
         } else if (SQLITE_DONE == rc_db) {
             break;
         } else {
             const std::string msg = MakeString() << "sqlite3_step() error "
-                                                 << rc_db << ": " << sqlite3_errmsg(playlists_db) << ". Query: " << query_without_limit;
+                                                 << rc_db << ": " << sqlite3_errmsg(playlists_db)
+                                                 << ". Query: " << query_without_limit;
             throw std::runtime_error(msg);
 		}
     }
+
     return entries_count;
 }
 
@@ -615,32 +617,22 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
     query_with_limit << query_without_limit.str() << ' '
                      << GetLimitString(params);
 
-    sqlite3_stmt* stmt = nullptr;
-    int rc_db = sqlite3_prepare( playlists_db,
-                                 query_with_limit.str().c_str(),
-                                 -1, // If less than zero, then stmt is read up to the first nul terminator
-                                 &stmt,
-                                 nullptr  // Pointer to unused portion of stmt
-                                );
-    if (SQLITE_OK != rc_db) {
-        const std::string msg = MakeString() << "sqlite3_prepare() error "
-                                             << rc_db << ": " << sqlite3_errmsg(playlists_db) << ". Query: " << query_with_limit.str();
-        throw std::runtime_error(msg);
-    }
-
+    sqlite3_stmt* stmt = CreateStmt( playlists_db,
+                                     query_with_limit.str().c_str()
+                                    );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
     Rpc::Value& rpc_result = root_response["result"];
-    Rpc::Value& rpcvalue_entries = rpc_result[kENTRIES_STRING];
+    Rpc::Value& rpcvalue_entries = rpc_result[kRSLT_KEY_ENTRIES];
 
-    rpc_result[kTOTAL_ENTRIES_COUNT_STRING] = GetTotalEntriesCount(playlists_db, playlist_id);
-    rpc_result[kCOUNT_OF_FOUND_ENTRIES_STRING] = GetFoundEntriesCount( playlists_db, query_without_limit.str() );
+    rpc_result[kRSLT_KEY_TOTAL_ENTRIES_COUNT] = GetTotalEntriesCount(playlists_db, playlist_id);
+    rpc_result[kRSLT_KEY_COUNT_OF_FOUND_ENTRIES] = GetFoundEntriesCount( playlists_db, query_without_limit.str() );
 
     size_t entry_rpcvalue_index = 0;
 
     assert( static_cast<size_t>( sqlite3_column_count(stmt) ) == entry_fields_filler_.setters_required_.size() );
     for(;;) {
-		rc_db = sqlite3_step(stmt);
+		int rc_db = sqlite3_step(stmt);
         if (SQLITE_ROW == rc_db) {
 			//for(int col_index = 0; col_index < cols; ++col_index) {
 			//	BOOST_LOG_SEV(logger(), debug) << sqlite3_column_text(stmt, col_index);

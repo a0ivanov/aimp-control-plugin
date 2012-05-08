@@ -623,26 +623,21 @@ private:
     typedef std::vector<std::string> FieldNames;
 
     FieldNames fields_to_order_;
-    std::string GetOrderString(const Rpc::Value& params);
+    std::string GetOrderString(const Rpc::Value& params) const;
 
     FieldNames fields_to_filter_;
 
     typedef std::map<std::string, std::string> MapFieldnamesRPCToDB;
     MapFieldnamesRPCToDB fieldnames_rpc_to_db_;
 
-    std::string GetLimitString(const Rpc::Value& params);
-    std::string GetWhereString(const Rpc::Value& params, const int playlist_id);
-    std::string GetColumnsString();
-    size_t GetTotalEntriesCount(sqlite3* playlists_db, const int playlist_id);
-    size_t GetFoundEntriesCount(sqlite3* playlists_db, const std::string& query_without_limit);
+    std::string GetLimitString(const Rpc::Value& params) const;
+    std::string GetWhereString(const Rpc::Value& params, const int playlist_id) const;
+    std::string GetColumnsString() const;
+    size_t GetTotalEntriesCount(sqlite3* playlists_db, const int playlist_id) const; // throws std::runtime_error
+    size_t GetFoundEntriesCount(sqlite3* playlists_db, const std::string& query_without_limit) const; // throws std::runtime_error
 
     const std::string kRQST_KEY_FORMAT_STRING,
-                      kFIELDS_STRING;
-
-    // rpc result struct keys.
-    const std::string kENTRIES_STRING, // key for entries array.
-                      kTOTAL_ENTRIES_COUNT_STRING, // key for total entries count.
-                      kCOUNT_OF_FOUND_ENTRIES_STRING;
+                      kRQST_KEY_FIELDS;
 
     const std::string kRQST_KEY_START_INDEX,
                       kRQST_KEY_ENTRIES_COUNT;
@@ -653,6 +648,10 @@ private:
                       kRQST_KEY_ORDER_FIELDS;
 
     const std::string kRQST_KEY_SEARCH_STRING;
+
+    const std::string kRSLT_KEY_ENTRIES,
+                      kRSLT_KEY_TOTAL_ENTRIES_COUNT,
+                      kRSLT_KEY_COUNT_OF_FOUND_ENTRIES;
 };
 
 /*! 
