@@ -162,6 +162,9 @@ AIMP3Manager::AIMP3Manager(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_c
 {
     try {
         initializeAIMPObjects();
+
+        initPlaylistDB();
+
         ///!!!register listeners here
         aimp3_core_message_hook_.reset( new AIMPCoreUnitMessageHook(this) );
         // do not addref our pointer since AIMP do this itself. aimp3_core_message_hook_->AddRef();
@@ -170,8 +173,6 @@ AIMP3Manager::AIMP3Manager(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_c
         aimp3_playlist_manager_listener_.reset( new AIMPAddonsPlaylistManagerListener(this)  );
         // do not addref our pointer since AIMP do this itself. aimp3_playlist_manager_listener_->AddRef();
         aimp3_playlist_manager_->ListenerAdd( aimp3_playlist_manager_listener_.get() );
-
-        initPlaylistDB();
     } catch (std::runtime_error& e) {
         throw std::runtime_error( std::string("Error occured during AIMP3Manager initialization. Reason:") + e.what() );
     }
@@ -429,7 +430,7 @@ Playlist AIMP3Manager::loadPlaylist(AIMP3SDK::HPLS id)
     rc_db = sqlite3_step(stmt);
     if (SQLITE_DONE != rc_db) {
         const std::string msg = MakeString() << "sqlite3_step() error "
-                                                << rc_db << ": " << sqlite3_errmsg(playlists_db_);
+                                             << rc_db << ": " << sqlite3_errmsg(playlists_db_);
         throw std::runtime_error(msg);
     }
     }
@@ -1674,12 +1675,12 @@ void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
     { // create table for playlist.
     char* errmsg = nullptr;
     rc = sqlite3_exec(playlists_db_,
-                      "CREATE TABLE Playlists ( playlist_id INTEGER,"
-                                               "title       VARCHAR(260),"
-                                               "file_count  INTEGER,"
-                                               "duration    BIGINT,"
-                                               "size_of_all_entries_in_bytes BIGINT,"
-                                               "PRIMARY KEY (playlist_id)"
+                      "CREATE TABLE Playlists ( id              INTEGER,"
+                                               "title           VARCHAR(260),"
+                                               "entries_count   INTEGER,"
+                                               "duration        BIGINT,"
+                                               "size_of_entries BIGINT,"
+                                               "PRIMARY KEY (id)"
                                                ")",
                       nullptr, /* Callback function */
                       nullptr, /* 1st argument to callback */

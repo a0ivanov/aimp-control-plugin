@@ -270,10 +270,28 @@ ResponseType RemoveTrackFromPlayQueue::execute(const Rpc::Value& root_request, R
     return RESPONSE_IMMEDIATE;
 }
 
+std::string GetPlaylists::GetColumnsString() const
+{
+    std::string result;
+    const auto& setters = playlist_fields_filler_.setters_required_;
+
+    BOOST_FOREACH(auto& setter_it, setters) {
+        result += setter_it->first;
+        result += ',';
+    }
+
+    // erase obsolete ',' character.
+    if ( !result.empty() ) {
+        result.pop_back();
+    }
+    return result;
+}
+
 ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
+    using namespace Utilities;
+
     const Rpc::Value& params = root_request["params"];
-    const AIMPManager::PlaylistsListType& playlists = aimp_manager_.getPlayLists();
 
     // get list of required pairs(field id, field getter function).    
     if ( params.isMember("fields") ) {
@@ -287,18 +305,37 @@ ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& r
         playlist_fields_filler_.initRequiredFieldsHandlersList(fields);
     }
 
-    Rpc::Value& playlists_rpcvalue = root_response["result"];
-    playlists_rpcvalue.setSize( playlists.size() );
+    std::ostringstream query;
+    query << "SELECT " << GetColumnsString() << " FROM Playlists";
 
-    //// fill rpcvalue array of playlists.
-    //size_t playlist_index = 0;
-    //BOOST_FOREACH(const auto& playlist_id_obj_pair, playlists) {
-    //    const Playlist& playlist = playlist_id_obj_pair.second;
-    //    Rpc::Value& playlist_rpcvalue = playlists_rpcvalue[playlist_index];
-    //    // fill all requested fields for playlist.
-    //    playlist_fields_filler_.fillRpcArrayOfObjects(playlist, playlist_rpcvalue);
-    //    ++playlist_index;
-    //}
+    sqlite3* playlists_db = dynamic_cast<AIMPPlayer::AIMP3Manager&>(aimp_manager_).playlists_db_;
+    sqlite3_stmt* stmt = CreateStmt( playlists_db,
+                                     query.str().c_str()
+                                    );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    assert( static_cast<size_t>( sqlite3_column_count(stmt) ) == playlist_fields_filler_.setters_required_.size() );
+
+    Rpc::Value& playlists_rpcvalue = root_response["result"];
+    size_t playlist_rpcvalue_index = 0;
+    for(;;) {
+		int rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+            playlists_rpcvalue.setSize(playlist_rpcvalue_index + 1); /// TODO: if possible resize array full count of found rows before filling.
+            Rpc::Value& playlist_rpcvalue = playlists_rpcvalue[playlist_rpcvalue_index];
+            // fill all requested fields for playlist.
+            playlist_fields_filler_.fillRpcArrayOfObjects(stmt, playlist_rpcvalue);
+            ++playlist_rpcvalue_index;
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                 << rc_db << ": " << sqlite3_errmsg(playlists_db)
+                                                 << ". Query: " << query.str();
+            throw std::runtime_error(msg);
+		}
+    }
+
     return RESPONSE_IMMEDIATE;
 }
 
@@ -598,7 +635,7 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
             && setters.front()->first == kRQST_KEY_FORMAT_STRING) 
         )
     {
-        assert( static_cast<size_t>( sqlite3_column_count(stmt) ) == entry_fields_filler_.setters_required_.size() );
+        assert( static_cast<size_t>( sqlite3_column_count(stmt) ) == setters.size() );
     }
 #endif
     

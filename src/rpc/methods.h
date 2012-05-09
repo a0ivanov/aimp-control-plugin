@@ -542,6 +542,8 @@ public:
 
 private:
 
+    std::string GetColumnsString() const;
+
     //! See HelperFillRpcFields class commentaries.
     RpcValueSetHelpers::HelperFillRpcFields<Playlist> playlist_fields_filler_;
 };
