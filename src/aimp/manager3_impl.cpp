@@ -10,6 +10,7 @@
 #include "utils/image.h"
 #include "utils/util.h"
 #include "utils/scope_guard.h"
+#include "utils/sqlite_util.h"
 #include <boost/assign/std.hpp>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
@@ -384,6 +385,7 @@ Playlist AIMP3Manager::loadPlaylist(AIMP3SDK::HPLS id)
     if (S_OK != r) {
         throw std::runtime_error(MakeString() << error_prefix << "IAIMPAddonsPlaylistManager::StoragePropertyGetValue(AIMP_PLAYLIST_STORAGE_PROPERTY_DURATION) failed. Result " << r);
     }
+
     INT64 size;
     r = aimp3_playlist_manager_->StoragePropertyGetValue( id, AIMP_PLAYLIST_STORAGE_PROPERTY_SIZE, &size, sizeof(size) );
     if (S_OK != r) {
@@ -398,6 +400,39 @@ Playlist AIMP3Manager::loadPlaylist(AIMP3SDK::HPLS id)
     }
 
     const int entries_count = aimp3_playlist_manager_->StorageGetEntryCount(id);
+
+    { // db code
+    sqlite3_stmt* stmt = CreateStmt(playlists_db_,
+                                    "REPLACE INTO Playlists VALUES (?,?,?,?,?)"
+                                    );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+#define bind(type, field_index, value)  rc_db = sqlite3_bind_##type(stmt, field_index, value); \
+                                        if (SQLITE_OK != rc_db) { \
+                                            const std::string msg = MakeString() << "Error sqlite3_bind_"#type << " " << rc_db; \
+                                            throw std::runtime_error(msg); \
+                                        }
+#define bindText(field_index, text, textLength) rc_db = sqlite3_bind_text16(stmt, field_index, text, textLength * sizeof(WCHAR), SQLITE_STATIC); \
+                                                if (SQLITE_OK != rc_db) { \
+                                                    const std::string msg = MakeString() << "sqlite3_bind_text16" << " " << rc_db; \
+                                                    throw std::runtime_error(msg); \
+                                                }
+
+    int rc_db;
+    bind( int,  1, cast<PlaylistID>(id) );
+    bindText(   2, name, wcslen(name) );
+    bind( int,  3, entries_count );
+    bind(int64, 4, duration);
+    bind(int64, 5, size);
+#undef bind
+#undef bindText
+    rc_db = sqlite3_step(stmt);
+    if (SQLITE_DONE != rc_db) {
+        const std::string msg = MakeString() << "sqlite3_step() error "
+                                                << rc_db << ": " << sqlite3_errmsg(playlists_db_);
+        throw std::runtime_error(msg);
+    }
+    }
 
     return Playlist(name,
                     entries_count,
@@ -552,21 +587,11 @@ void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
     entries.reserve(entries_count);
     
     deletePlaylistEntriesFromPlaylistDB( playlist.id() ); // remove old entries before adding new ones.
-    sqlite3_stmt* stmt = nullptr;
-    int rc_db = sqlite3_prepare( playlists_db_,
-                                 "INSERT INTO PlaylistsEntries VALUES (?,?,?,?,?,"
-                                                                      "?,?,?,?,?,"
-                                                                      "?,?,?,?,?)",
-                                 -1, // If less than zero, then stmt is read up to the first nul terminator
-                                 &stmt,
-                                 nullptr  // Pointer to unused portion of stmt
-                                );
-    if (SQLITE_OK != rc_db) {
-        const std::string msg = MakeString() << "sqlite3_prepare(INSERT INTO PlaylistsEntries) error "
-                                             << rc_db << ": " << sqlite3_errmsg(playlists_db_);
-        throw std::runtime_error(msg);
-    }
 
+    sqlite3_stmt* stmt = CreateStmt(playlists_db_, "INSERT INTO PlaylistsEntries VALUES (?,?,?,?,?,"
+                                                                                        "?,?,?,?,?,"
+                                                                                        "?,?,?,?,?)"
+                                    );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
     //BOOST_LOG_SEV(logger(), debug) << "The statement has "
@@ -583,6 +608,7 @@ void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
                                                     const std::string msg = MakeString() << "sqlite3_bind_text16" << " " << rc_db; \
                                                     throw std::runtime_error(msg); \
                                                 }
+    int rc_db;
     bind( int, 1, playlist.id() );
 
     for (int entry_index = 0; entry_index < entries_count; ++entry_index) {
@@ -633,6 +659,8 @@ void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
             }
         }
     }
+#undef bind
+#undef bindText
 
     // we got list, save result
     playlist.entries().swap(entries);
@@ -1609,7 +1637,7 @@ void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
         throw std::runtime_error(msg);
     }
 
-    // create table for content of all playlists.
+    { // create table for content of all playlists.
     char* errmsg = nullptr;
     rc = sqlite3_exec(playlists_db_,
                       "CREATE TABLE PlaylistsEntries ( playlist_id    INTEGER,"
@@ -1640,6 +1668,31 @@ void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
 
         shutdownPlaylistDB();
         throw std::runtime_error(msg);
+    }
+    }
+
+    { // create table for playlist.
+    char* errmsg = nullptr;
+    rc = sqlite3_exec(playlists_db_,
+                      "CREATE TABLE Playlists ( playlist_id INTEGER,"
+                                               "title       VARCHAR(260),"
+                                               "file_count  INTEGER,"
+                                               "duration    BIGINT,"
+                                               "size_of_all_entries_in_bytes BIGINT,"
+                                               "PRIMARY KEY (playlist_id)"
+                                               ")",
+                      nullptr, /* Callback function */
+                      nullptr, /* 1st argument to callback */
+                      &errmsg
+                      );
+    if (SQLITE_OK != rc) {
+        const std::string msg = MakeString() << "Playlist table creation failure. Reason: sqlite3_exec(create table) error "
+                                             << rc << ": " << errmsg;
+        sqlite3_free(errmsg);
+
+        shutdownPlaylistDB();
+        throw std::runtime_error(msg);
+    }
     }
 }
 

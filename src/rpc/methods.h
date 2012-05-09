@@ -634,7 +634,6 @@ private:
     std::string GetWhereString(const Rpc::Value& params, const int playlist_id) const;
     std::string GetColumnsString() const;
     size_t GetTotalEntriesCount(sqlite3* playlists_db, const int playlist_id) const; // throws std::runtime_error
-    size_t GetFoundEntriesCount(sqlite3* playlists_db, const std::string& query_without_limit) const; // throws std::runtime_error
 
     const std::string kRQST_KEY_FORMAT_STRING,
                       kRQST_KEY_FIELDS;

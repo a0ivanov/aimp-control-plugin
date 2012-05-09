@@ -360,6 +360,9 @@
     <ClInclude Include="..\src\utils\scope_guard.h">
       <Filter>src\utils</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\utils\sqlite_util.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\control_plugin.def">

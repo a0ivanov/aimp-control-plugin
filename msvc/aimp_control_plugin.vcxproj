@@ -215,6 +215,7 @@
     <ClInclude Include="..\src\utils\image.h" />
     <ClInclude Include="..\src\utils\iunknown_impl.h" />
     <ClInclude Include="..\src\utils\scope_guard.h" />
+    <ClInclude Include="..\src\utils\sqlite_util.h" />
     <ClInclude Include="..\src\utils\string_encoding.h" />
     <ClInclude Include="..\src\utils\util.h" />
     <ClInclude Include="..\src\webctlrpc\frontend.h" />

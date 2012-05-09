@@ -9,6 +9,7 @@
 #include "rpc/value.h"
 #include "rpc/request_handler.h"
 #include "utils/util.h"
+#include "utils/sqlite_util.h"
 #include "utils/scope_guard.h"
 #include "utils/string_encoding.h"
 #include <fstream>
@@ -523,26 +524,6 @@ std::string GetPlaylistEntries::GetColumnsString() const
     return result;
 }
 
-// Note: you should call sqlite3_finalize() after work is done.
-sqlite3_stmt* CreateStmt(sqlite3* db, const std::string& query) // throws std::runtime_error
-{
-    sqlite3_stmt* stmt = nullptr;
-    int rc_db = sqlite3_prepare( db,
-                                 query.c_str(),
-                                 -1, // If less than zero, then stmt is read up to the first nul terminator
-                                 &stmt,
-                                 nullptr  // Pointer to unused portion of stmt
-                                );
-    if (SQLITE_OK != rc_db) {
-        using namespace Utilities;
-        const std::string msg = MakeString() << "sqlite3_prepare() error "
-                                             << rc_db << ": " << sqlite3_errmsg(db)
-                                             << ". Query: " << query;
-        throw std::runtime_error(msg);
-    }
-    return stmt;
-}
-
 size_t GetPlaylistEntries::GetTotalEntriesCount(sqlite3* playlists_db, const int playlist_id) const
 {
     using namespace Utilities;
@@ -569,33 +550,6 @@ size_t GetPlaylistEntries::GetTotalEntriesCount(sqlite3* playlists_db, const int
     }
 
     return total_entries_count;
-}
-
-size_t GetPlaylistEntries::GetFoundEntriesCount(sqlite3* playlists_db, const std::string& query_without_limit) const
-{
-    using namespace Utilities;
-
-    sqlite3_stmt* stmt = CreateStmt( playlists_db,
-                                     query_without_limit
-                                    );
-    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
-
-    size_t entries_count = 0;
-    for(;;) {
-		int rc_db = sqlite3_step(stmt);
-        if (SQLITE_ROW == rc_db) {
-			++entries_count;
-        } else if (SQLITE_DONE == rc_db) {
-            break;
-        } else {
-            const std::string msg = MakeString() << "sqlite3_step() error "
-                                                 << rc_db << ": " << sqlite3_errmsg(playlists_db)
-                                                 << ". Query: " << query_without_limit;
-            throw std::runtime_error(msg);
-		}
-    }
-
-    return entries_count;
 }
 
 Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
@@ -634,10 +588,11 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
     Rpc::Value& rpcvalue_entries = rpc_result[kRSLT_KEY_ENTRIES];
 
     rpc_result[kRSLT_KEY_TOTAL_ENTRIES_COUNT]    = GetTotalEntriesCount(playlists_db, playlist_id);
-    rpc_result[kRSLT_KEY_COUNT_OF_FOUND_ENTRIES] = GetFoundEntriesCount( playlists_db, query_without_limit.str() );
+    rpc_result[kRSLT_KEY_COUNT_OF_FOUND_ENTRIES] = GetRowsCount( playlists_db, query_without_limit.str() );
 
     size_t entry_rpcvalue_index = 0;
     
+#ifdef _DEBUG
     const auto& setters = entry_fields_filler_.setters_required_;
     if ( !(    !setters.empty()
             && setters.front()->first == kRQST_KEY_FORMAT_STRING) 
@@ -645,6 +600,7 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
     {
         assert( static_cast<size_t>( sqlite3_column_count(stmt) ) == entry_fields_filler_.setters_required_.size() );
     }
+#endif
     
     for(;;) {
 		int rc_db = sqlite3_step(stmt);
@@ -658,7 +614,8 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
             break;
         } else {
             const std::string msg = MakeString() << "sqlite3_step() error "
-                                                 << rc_db << ": " << sqlite3_errmsg(playlists_db) << ". Query: " << query_with_limit.str();
+                                                 << rc_db << ": " << sqlite3_errmsg(playlists_db)
+                                                 << ". Query: " << query_with_limit.str();
             throw std::runtime_error(msg);
 		}
     }
