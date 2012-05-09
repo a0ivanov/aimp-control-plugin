@@ -351,7 +351,12 @@ void AIMP3Manager::onStorageChanged(AIMP3SDK::HPLS id, DWORD flags)
 void AIMP3Manager::onStorageRemoved(AIMP3SDK::HPLS id)
 {
     try {
-        playlists_.erase( cast<PlaylistID>(id) );
+        const int playlist_id = cast<PlaylistID>(id);
+        { // db code
+            deletePlaylistFromPlaylistDB(playlist_id);
+        }
+
+        playlists_.erase(playlist_id);
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     } catch (std::exception& e) {
         BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << id << ". Reason: " << e.what();
@@ -1706,20 +1711,42 @@ void AIMP3Manager::shutdownPlaylistDB()
     playlists_db_ = nullptr;
 }
 
-void AIMP3Manager::deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id)
+void AIMP3Manager::deletePlaylistFromPlaylistDB(PlaylistID playlist_id)
 {
-    const std::string stmt = MakeString() << "DELETE FROM PlaylistsEntries WHERE playlist_id=" << playlist_id;
+    deletePlaylistEntriesFromPlaylistDB(playlist_id);
+
+    const std::string query = MakeString() << "DELETE FROM Playlists WHERE playlist_id=" << playlist_id;
 
     char* errmsg = nullptr;
     const int rc = sqlite3_exec(playlists_db_,
-                                stmt.c_str(),
+                                query.c_str(),
                                 nullptr, /* Callback function */
                                 nullptr, /* 1st argument to callback */
                                 &errmsg
                                 );
     if (SQLITE_OK != rc) {
-        BOOST_LOG_SEV(logger(), error) << __FUNCTION__" failed. Reason: sqlite3_exec(create table) error "
-                                       << rc << ": " << errmsg;
+        BOOST_LOG_SEV(logger(), error) << __FUNCTION__" failed. Reason: sqlite3_exec() error "
+                                       << rc << ": " << errmsg
+                                       << ". Query: " << query;
+        sqlite3_free(errmsg);
+    }
+}
+
+void AIMP3Manager::deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id)
+{
+    const std::string query = MakeString() << "DELETE FROM PlaylistsEntries WHERE playlist_id=" << playlist_id;
+
+    char* errmsg = nullptr;
+    const int rc = sqlite3_exec(playlists_db_,
+                                query.c_str(),
+                                nullptr, /* Callback function */
+                                nullptr, /* 1st argument to callback */
+                                &errmsg
+                                );
+    if (SQLITE_OK != rc) {
+        BOOST_LOG_SEV(logger(), error) << __FUNCTION__" failed. Reason: sqlite3_exec() error "
+                                       << rc << ": " << errmsg 
+                                       << ". Query: " << query;
         sqlite3_free(errmsg);
     }
 }
