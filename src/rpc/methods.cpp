@@ -387,7 +387,6 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager,
     kRSLT_KEY_ENTRIES("entries"),
     kRSLT_KEY_COUNT_OF_FOUND_ENTRIES("count_of_found_entries")
 {
-
     using namespace RpcValueSetHelpers;
     using namespace RpcResultUtils;
 
@@ -408,7 +407,7 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager,
         ( getStringFieldID(PlaylistEntry::RATING),   int_setter )
     ;
 
-    // map RPC field names to related db field names.
+    // map RPC field names to related db field names. All field names are the same except rpc's 'id' is 'entry_id' in db.
     BOOST_FOREACH(auto& setter_it, entry_fields_filler_.setters_) {
         fieldnames_rpc_to_db_[setter_it.first] = setter_it.first;
     }
