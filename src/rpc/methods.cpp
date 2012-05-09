@@ -317,6 +317,7 @@ ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& r
     assert( static_cast<size_t>( sqlite3_column_count(stmt) ) == playlist_fields_filler_.setters_required_.size() );
 
     Rpc::Value& playlists_rpcvalue = root_response["result"];
+
     size_t playlist_rpcvalue_index = 0;
     for(;;) {
 		int rc_db = sqlite3_step(stmt);
@@ -621,14 +622,6 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
                                     );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
-    Rpc::Value& rpc_result = root_response["result"];
-    Rpc::Value& rpcvalue_entries = rpc_result[kRSLT_KEY_ENTRIES];
-
-    rpc_result[kRSLT_KEY_TOTAL_ENTRIES_COUNT]    = GetTotalEntriesCount(playlists_db, playlist_id);
-    rpc_result[kRSLT_KEY_COUNT_OF_FOUND_ENTRIES] = GetRowsCount( playlists_db, query_without_limit.str() );
-
-    size_t entry_rpcvalue_index = 0;
-    
 #ifdef _DEBUG
     const auto& setters = entry_fields_filler_.setters_required_;
     if ( !(    !setters.empty()
@@ -638,7 +631,12 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
         assert( static_cast<size_t>( sqlite3_column_count(stmt) ) == setters.size() );
     }
 #endif
-    
+
+    Rpc::Value& rpc_result = root_response["result"];
+    Rpc::Value& rpcvalue_entries = rpc_result[kRSLT_KEY_ENTRIES];
+    rpcvalue_entries.setSize(0); // return zero-length array, not null if no entires found.
+
+    size_t entry_rpcvalue_index = 0;
     for(;;) {
 		int rc_db = sqlite3_step(stmt);
         if (SQLITE_ROW == rc_db) {
@@ -656,6 +654,9 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
             throw std::runtime_error(msg);
 		}
     }
+
+    rpc_result[kRSLT_KEY_TOTAL_ENTRIES_COUNT]    = GetTotalEntriesCount(playlists_db, playlist_id);
+    rpc_result[kRSLT_KEY_COUNT_OF_FOUND_ENTRIES] = GetRowsCount( playlists_db, query_without_limit.str() );
 
     return RESPONSE_IMMEDIATE;
 }
