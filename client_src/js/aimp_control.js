@@ -660,6 +660,11 @@ function createPlaylistsControls(playlists)
 	
 	// force load playlist content due to issue with tab select event.
 	var playlist_id = control_panel_state.playlist_id;
+    if (playlist_id === 0) { // AIMP3 sends 0 if playlist played never.
+        if (playlists.length > 0) { 
+            playlist_id = playlists[0].id;
+        }
+    }
 	createEntriesControl(playlist_id);	
 	gotoCurrentPlaylist(playlist_id);
 }
