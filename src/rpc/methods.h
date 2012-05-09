@@ -10,6 +10,7 @@
 #include "method.h"
 #include "value.h"
 #include "utils.h"
+#include "utils/sqlite_util.h"
 
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int.hpp>
@@ -631,6 +632,8 @@ private:
 
     typedef std::map<std::string, std::string> MapFieldnamesRPCToDB;
     MapFieldnamesRPCToDB fieldnames_rpc_to_db_;
+
+    mutable Utilities::QueryArgSetters query_arg_setters_;
 
     std::string GetLimitString(const Rpc::Value& params) const;
     std::string GetWhereString(const Rpc::Value& params, const int playlist_id) const;

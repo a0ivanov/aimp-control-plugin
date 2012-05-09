@@ -9,7 +9,6 @@
 #include "rpc/value.h"
 #include "rpc/request_handler.h"
 #include "utils/util.h"
-#include "utils/sqlite_util.h"
 #include "utils/scope_guard.h"
 #include "utils/string_encoding.h"
 #include <fstream>
@@ -511,13 +510,33 @@ std::string GetPlaylistEntries::GetLimitString(const Rpc::Value& params) const
 
 std::string GetPlaylistEntries::GetWhereString(const Rpc::Value& params, const int playlist_id) const
 {
+    using namespace Utilities;
+
+    struct LikeArgSetter : public std::binary_function<sqlite3_stmt*, int, void>
+    {
+        std::string like_arg_;
+        LikeArgSetter(const std::string& like_arg) : like_arg_(like_arg) {}
+        void operator()(sqlite3_stmt* stmt, int bind_index) const {
+            const int rc_db = sqlite3_bind_text(stmt, bind_index,
+                                                like_arg_.c_str(),
+                                                like_arg_.size() * sizeof(std::string::value_type),
+                                                SQLITE_TRANSIENT);
+            if (SQLITE_OK != rc_db) {
+                const std::string msg = MakeString() << "Error sqlite3_bind_text: " << rc_db;
+                throw std::runtime_error(msg);
+            }
+        }
+    };
+
     std::ostringstream os;
     
     os << "WHERE playlist_id=" << playlist_id;
 	if ( params.isMember(kRQST_KEY_SEARCH_STRING) ) {
-        ///!!! Avoid SQL injection here: use query args instead.
         const std::string& search_string = params[kRQST_KEY_SEARCH_STRING];
-        if ( !search_string.empty() && !fields_to_filter_.empty() ) { ///??? search in all fields or only in requested ones.
+        if ( !search_string.empty() && !fields_to_filter_.empty() ) { ///??? search in all fields or only in requested ones.            
+            const std::string& like_arg(MakeString() << "%" << search_string << "%"); ///??? maybe we need escape %_ symbols here to emulate aimp search.
+            const QueryArgSetter& setter = boost::bind<void>(LikeArgSetter(like_arg), _1, _2);
+            
             os << " AND(";
             FieldNames::const_iterator begin = fields_to_filter_.begin(),
                                        end   = fields_to_filter_.end();
@@ -526,7 +545,9 @@ std::string GetPlaylistEntries::GetWhereString(const Rpc::Value& params, const i
                                             ++fieldname_it
                  )
             {
-                os << *fieldname_it << " LIKE '%" << search_string << "%'";
+                query_arg_setters_.push_back(setter);
+
+                os << *fieldname_it << " LIKE ?";
                 if (fieldname_it + 1 != end) {
                     os << " OR ";
                 }
@@ -608,6 +629,8 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
 
     const int playlist_id = params["playlist_id"];
 
+    query_arg_setters_.clear();
+
     std::ostringstream query_without_limit;
     query_without_limit << "SELECT " << GetColumnsString() << " FROM PlaylistsEntries "
                         << GetWhereString(params, playlist_id) << ' ' 
@@ -620,6 +643,12 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
                                      query_with_limit.str().c_str()
                                     );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    // bind all query args.
+    size_t bind_index = 1;
+    BOOST_FOREACH(auto& setter, query_arg_setters_) {
+        setter(stmt, bind_index++);
+    }
 
 #ifdef _DEBUG
     const auto& setters = entry_fields_filler_.setters_required_;
@@ -655,7 +684,7 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
     }
 
     rpc_result[kRSLT_KEY_TOTAL_ENTRIES_COUNT]    = GetTotalEntriesCount(playlists_db, playlist_id);
-    rpc_result[kRSLT_KEY_COUNT_OF_FOUND_ENTRIES] = GetRowsCount( playlists_db, query_without_limit.str() );
+    rpc_result[kRSLT_KEY_COUNT_OF_FOUND_ENTRIES] = GetRowsCount(playlists_db, query_without_limit.str(), &query_arg_setters_);
 
     return RESPONSE_IMMEDIATE;
 }

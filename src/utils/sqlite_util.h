@@ -3,6 +3,8 @@
 #include "sqlite/sqlite3.h"
 #include "util.h"
 #include "scope_guard.h"
+#include <boost/function.hpp>
+#include <list>
 
 namespace Utilities {
 
@@ -26,10 +28,20 @@ inline sqlite3_stmt* CreateStmt(sqlite3* db, const std::string& query) // throws
     return stmt;
 }
 
-inline size_t GetRowsCount(sqlite3* db, const std::string& query)
+typedef boost::function<void(sqlite3_stmt*, int)> QueryArgSetter;
+typedef std::list<QueryArgSetter> QueryArgSetters;
+
+inline size_t GetRowsCount(sqlite3* db, const std::string& query, const QueryArgSetters* query_arg_setters = nullptr)
 {
     sqlite3_stmt* stmt = CreateStmt(db, query);
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    if (query_arg_setters) { // bind all query args.
+        size_t bind_index = 1;
+        BOOST_FOREACH(auto& setter, *query_arg_setters) {
+            setter(stmt, bind_index++);
+        }
+    }
 
     size_t entries_count = 0;
     for(;;) {
