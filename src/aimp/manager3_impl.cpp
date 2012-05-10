@@ -247,14 +247,7 @@ void AIMP3Manager::onStorageAdded(AIMP3SDK::HPLS id)
 {
     try {
         playlists_[cast<PlaylistID>(id)] = loadPlaylist(id);
-
-        // force playlist content loading
-        //aimp3_playlist_manager_->StorageGetEntryCount(id);
-
-        //Playlist& playlist = playlists_[cast<PlaylistID>(id)];
-        //playlist = loadPlaylist(id);
-        //loadEntries(playlist);
-        //notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+        notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     } catch (std::exception& e) {
         BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << id << ". Reason: " << e.what();
     } catch (...) {
