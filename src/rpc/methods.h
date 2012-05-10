@@ -543,7 +543,7 @@ public:
 
 private:
 
-    std::string GetColumnsString() const;
+    std::string getColumnsString() const;
 
     //! See HelperFillRpcFields class commentaries.
     RpcValueSetHelpers::HelperFillRpcFields<Playlist> playlist_fields_filler_;
@@ -560,8 +560,6 @@ typedef boost::sub_range<const PlaylistEntryIDList> EntriesIDsRange;
 typedef boost::function<void(EntriesRange)> EntriesHandler;
 typedef boost::function<void(EntriesIDsRange, const EntriesListType&)> EntryIDsHandler;
 typedef boost::function<void(size_t)> EntriesCountHandler;
-
-
 /*! 
     \brief Returns list of playlist entries.
     \param playlist_id - int
@@ -626,7 +624,7 @@ private:
     typedef std::vector<std::string> FieldNames;
 
     FieldNames fields_to_order_;
-    std::string GetOrderString(const Rpc::Value& params) const;
+    std::string getOrderString(const Rpc::Value& params) const;
 
     FieldNames fields_to_filter_;
 
@@ -635,10 +633,10 @@ private:
 
     mutable Utilities::QueryArgSetters query_arg_setters_;
 
-    std::string GetLimitString(const Rpc::Value& params) const;
-    std::string GetWhereString(const Rpc::Value& params, const int playlist_id) const;
-    std::string GetColumnsString() const;
-    size_t GetTotalEntriesCount(sqlite3* playlists_db, const int playlist_id) const; // throws std::runtime_error
+    std::string getLimitString(const Rpc::Value& params) const;
+    std::string getWhereString(const Rpc::Value& params, const int playlist_id) const;
+    std::string getColumnsString() const;
+    size_t getTotalEntriesCount(sqlite3* playlists_db, const int playlist_id) const; // throws std::runtime_error
 
     const std::string kRQST_KEY_FORMAT_STRING,
                       kRQST_KEY_FIELDS;

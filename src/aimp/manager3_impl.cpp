@@ -401,7 +401,7 @@ Playlist AIMP3Manager::loadPlaylist(AIMP3SDK::HPLS id)
     const int entries_count = aimp3_playlist_manager_->StorageGetEntryCount(id);
 
     { // db code
-    sqlite3_stmt* stmt = CreateStmt(playlists_db_,
+    sqlite3_stmt* stmt = createStmt(playlists_db_,
                                     "REPLACE INTO Playlists VALUES (?,?,?,?,?)"
                                     );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
@@ -587,7 +587,7 @@ void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
     
     deletePlaylistEntriesFromPlaylistDB( playlist.id() ); // remove old entries before adding new ones.
 
-    sqlite3_stmt* stmt = CreateStmt(playlists_db_, "INSERT INTO PlaylistsEntries VALUES (?,?,?,?,?,"
+    sqlite3_stmt* stmt = createStmt(playlists_db_, "INSERT INTO PlaylistsEntries VALUES (?,?,?,?,?,"
                                                                                         "?,?,?,?,?,"
                                                                                         "?,?,?,?,?)"
                                     );

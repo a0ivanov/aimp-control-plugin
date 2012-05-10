@@ -269,7 +269,7 @@ ResponseType RemoveTrackFromPlayQueue::execute(const Rpc::Value& root_request, R
     return RESPONSE_IMMEDIATE;
 }
 
-std::string GetPlaylists::GetColumnsString() const
+std::string GetPlaylists::getColumnsString() const
 {
     std::string result;
     const auto& setters = playlist_fields_filler_.setters_required_;
@@ -305,10 +305,10 @@ ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& r
     }
 
     std::ostringstream query;
-    query << "SELECT " << GetColumnsString() << " FROM Playlists";
+    query << "SELECT " << getColumnsString() << " FROM Playlists";
 
     sqlite3* playlists_db = dynamic_cast<AIMPPlayer::AIMP3Manager&>(aimp_manager_).playlists_db_;
-    sqlite3_stmt* stmt = CreateStmt( playlists_db,
+    sqlite3_stmt* stmt = createStmt( playlists_db,
                                      query.str().c_str()
                                     );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
@@ -468,7 +468,7 @@ void GetPlaylistEntries::initEntriesFiller(const Rpc::Value& params)
     }
 }
 
-std::string GetPlaylistEntries::GetOrderString(const Rpc::Value& params) const
+std::string GetPlaylistEntries::getOrderString(const Rpc::Value& params) const
 {
     std::string result;
 	if ( params.isMember(kRQST_KEY_ORDER_FIELDS) ) {        
@@ -495,7 +495,7 @@ std::string GetPlaylistEntries::GetOrderString(const Rpc::Value& params) const
     return result;
 }
 
-std::string GetPlaylistEntries::GetLimitString(const Rpc::Value& params) const
+std::string GetPlaylistEntries::getLimitString(const Rpc::Value& params) const
 {
     std::ostringstream os;
 	if ( params.isMember(kRQST_KEY_START_INDEX) && params.isMember(kRQST_KEY_ENTRIES_COUNT) ) {
@@ -508,7 +508,7 @@ std::string GetPlaylistEntries::GetLimitString(const Rpc::Value& params) const
     return os.str();
 }
 
-std::string GetPlaylistEntries::GetWhereString(const Rpc::Value& params, const int playlist_id) const
+std::string GetPlaylistEntries::getWhereString(const Rpc::Value& params, const int playlist_id) const
 {
     using namespace Utilities;
 
@@ -558,7 +558,7 @@ std::string GetPlaylistEntries::GetWhereString(const Rpc::Value& params, const i
     return os.str();
 }
 
-std::string GetPlaylistEntries::GetColumnsString() const
+std::string GetPlaylistEntries::getColumnsString() const
 {
     std::string result;
     const auto& setters = entry_fields_filler_.setters_required_;
@@ -582,14 +582,14 @@ std::string GetPlaylistEntries::GetColumnsString() const
     return result;
 }
 
-size_t GetPlaylistEntries::GetTotalEntriesCount(sqlite3* playlists_db, const int playlist_id) const
+size_t GetPlaylistEntries::getTotalEntriesCount(sqlite3* playlists_db, const int playlist_id) const
 {
     using namespace Utilities;
 
     std::ostringstream query;
     query << "SELECT COUNT(*) FROM PlaylistsEntries WHERE playlist_id=" << playlist_id;
     
-    sqlite3_stmt* stmt = CreateStmt( playlists_db,
+    sqlite3_stmt* stmt = createStmt( playlists_db,
                                      query.str()
                                     );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
@@ -632,14 +632,14 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
     query_arg_setters_.clear();
 
     std::ostringstream query_without_limit;
-    query_without_limit << "SELECT " << GetColumnsString() << " FROM PlaylistsEntries "
-                        << GetWhereString(params, playlist_id) << ' ' 
-                        << GetOrderString(params);
+    query_without_limit << "SELECT " << getColumnsString() << " FROM PlaylistsEntries "
+                        << getWhereString(params, playlist_id) << ' ' 
+                        << getOrderString(params);
     std::ostringstream query_with_limit;
     query_with_limit << query_without_limit.str() << ' '
-                     << GetLimitString(params);
+                     << getLimitString(params);
 
-    sqlite3_stmt* stmt = CreateStmt( playlists_db,
+    sqlite3_stmt* stmt = createStmt( playlists_db,
                                      query_with_limit.str().c_str()
                                     );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
@@ -683,8 +683,8 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
 		}
     }
 
-    rpc_result[kRSLT_KEY_TOTAL_ENTRIES_COUNT]    = GetTotalEntriesCount(playlists_db, playlist_id);
-    rpc_result[kRSLT_KEY_COUNT_OF_FOUND_ENTRIES] = GetRowsCount(playlists_db, query_without_limit.str(), &query_arg_setters_);
+    rpc_result[kRSLT_KEY_TOTAL_ENTRIES_COUNT]    = getTotalEntriesCount(playlists_db, playlist_id);
+    rpc_result[kRSLT_KEY_COUNT_OF_FOUND_ENTRIES] = getRowsCount(playlists_db, query_without_limit.str(), &query_arg_setters_);
 
     return RESPONSE_IMMEDIATE;
 }

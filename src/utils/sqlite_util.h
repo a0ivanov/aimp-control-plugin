@@ -9,7 +9,7 @@
 namespace Utilities {
 
 // Note: you should call sqlite3_finalize() after work is done.
-inline sqlite3_stmt* CreateStmt(sqlite3* db, const std::string& query) // throws std::runtime_error
+inline sqlite3_stmt* createStmt(sqlite3* db, const std::string& query) // throws std::runtime_error
 {
     sqlite3_stmt* stmt = nullptr;
     int rc_db = sqlite3_prepare( db,
@@ -31,9 +31,9 @@ inline sqlite3_stmt* CreateStmt(sqlite3* db, const std::string& query) // throws
 typedef boost::function<void(sqlite3_stmt*, int)> QueryArgSetter;
 typedef std::list<QueryArgSetter> QueryArgSetters;
 
-inline size_t GetRowsCount(sqlite3* db, const std::string& query, const QueryArgSetters* query_arg_setters = nullptr)
+inline size_t getRowsCount(sqlite3* db, const std::string& query, const QueryArgSetters* query_arg_setters = nullptr)
 {
-    sqlite3_stmt* stmt = CreateStmt(db, query);
+    sqlite3_stmt* stmt = createStmt(db, query);
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
     if (query_arg_setters) { // bind all query args.
