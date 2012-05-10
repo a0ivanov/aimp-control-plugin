@@ -504,6 +504,10 @@ std::string GetPlaylistEntries::getLimitString(const Rpc::Value& params) const
             const int start_entry_index = params[kRQST_KEY_START_INDEX];
 	        os << "LIMIT " << start_entry_index << ',' << entries_count;
         }
+
+        if ( EntryLocationDeterminationMode() ) {
+            pagination_info_->entries_on_page_ = entries_count;
+        }
     }
     return os.str();
 }
@@ -615,7 +619,9 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
     using namespace Utilities;
 
     PROFILE_EXECUTION_TIME(__FUNCTION__);
-    
+ 
+    ON_BLOCK_EXIT_OBJ(*this, &GetPlaylistEntries::DeactivateEntryLocationDeterminationMode);
+
     const Rpc::Value& params = root_request["params"];
 
     // ensure we got obligatory argument: playlist id.
@@ -660,18 +666,29 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
     }
 #endif
 
-    Rpc::Value& rpc_result = root_response["result"];
-    Rpc::Value& rpcvalue_entries = rpc_result[kRSLT_KEY_ENTRIES];
-    rpcvalue_entries.setSize(0); // return zero-length array, not null if no entires found.
+    Rpc::Value* rpc_result = nullptr;
+    Rpc::Value* rpcvalue_entries = nullptr;
+
+    if ( !EntryLocationDeterminationMode() ) {
+        rpc_result = &root_response["result"];
+        rpcvalue_entries = &(*rpc_result)[kRSLT_KEY_ENTRIES];
+        rpcvalue_entries->setSize(0); // return zero-length array, not null if no entires found.
+    }
 
     size_t entry_rpcvalue_index = 0;
     for(;;) {
 		int rc_db = sqlite3_step(stmt);
         if (SQLITE_ROW == rc_db) {
-            rpcvalue_entries.setSize(entry_rpcvalue_index + 1); /// TODO: if possible resize array full count of found rows before filling.
-            Rpc::Value& entry_rpcvalue = rpcvalue_entries[entry_rpcvalue_index];
-            // fill all requested fields for entry.
-            entry_fields_filler_.fillRpcArrayOfArrays(stmt, entry_rpcvalue);
+            if ( !EntryLocationDeterminationMode() ) {
+                rpcvalue_entries->setSize(entry_rpcvalue_index + 1); /// TODO: if possible resize array full count of found rows before filling.
+                Rpc::Value& entry_rpcvalue = (*rpcvalue_entries)[entry_rpcvalue_index];
+                // fill all requested fields for entry.
+                entry_fields_filler_.fillRpcArrayOfArrays(stmt, entry_rpcvalue);
+            } else {
+                if (pagination_info_->entry_id == 0/*?*/) {
+                    pagination_info_->entry_index_in_current_representation_;
+                }
+            }
             ++entry_rpcvalue_index;
         } else if (SQLITE_DONE == rc_db) {
             break;
@@ -683,58 +700,41 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
 		}
     }
 
-    rpc_result[kRSLT_KEY_TOTAL_ENTRIES_COUNT]    = getTotalEntriesCount(playlists_db, playlist_id);
-    rpc_result[kRSLT_KEY_COUNT_OF_FOUND_ENTRIES] = getRowsCount(playlists_db, query_without_limit.str(), &query_arg_setters_);
+    if ( !EntryLocationDeterminationMode() ) {
+        (*rpc_result)[kRSLT_KEY_TOTAL_ENTRIES_COUNT]    = getTotalEntriesCount(playlists_db, playlist_id);
+        (*rpc_result)[kRSLT_KEY_COUNT_OF_FOUND_ENTRIES] = getRowsCount(playlists_db, query_without_limit.str(), &query_arg_setters_);
+    }
 
     return RESPONSE_IMMEDIATE;
 }
 
 GetEntryPositionInDataTable::GetEntryPositionInDataTable(AIMPManager& aimp_manager,
                                                          Rpc::RequestHandler& rpc_request_handler,
-                                                         GetPlaylistEntries& /*getplaylistentries_method*/
+                                                         GetPlaylistEntries& getplaylistentries_method
                                                          )
     :
-    AIMPRPCMethod("GetEntryPositionInDataTable", aimp_manager, rpc_request_handler)
+    AIMPRPCMethod("GetEntryPositionInDataTable", aimp_manager, rpc_request_handler),
+    getplaylistentries_method_(getplaylistentries_method)
 {
 }
 
-void GetEntryPositionInDataTable::setEntryPageInDataTableFromEntriesList(EntriesRange entries_range,
-                                                                         PlaylistEntryID entry_id
-                                                                         )
+Rpc::ResponseType GetEntryPositionInDataTable::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
-    // Note: entry_id is the same as index in entries list. Range entries_range contains full entries list.
-    if ( 0 <= entry_id && entry_id < entries_range.size() ) {
-       entry_index_in_current_representation_ = entry_id;
-    } else {
-       // do not set entry_index_in_current_representation_ in case when entry_id is out of range.
-    }
-}
+    const Rpc::Value& rpc_params = root_request["params"];
+    const PlaylistEntryID track_id(rpc_params["track_id"]);
+    
+    PaginationInfo pagination_info(track_id);
+    getplaylistentries_method_.ActivateEntryLocationDeterminationMode(&pagination_info);
+    getplaylistentries_method_.execute(root_request, root_response);
 
-void  GetEntryPositionInDataTable::setEntryPageInDataTableFromEntryIDs(EntriesIDsRange entries_ids_range, const EntriesListType& /*entries*/,
-                                                                       PlaylistEntryID entry_id)
-{
-    // Note: Range entries_ids_range contains full entries ids list for current representation(concrete filtering and sorting).
-    const auto it = std::find(entries_ids_range.begin(), entries_ids_range.end(), entry_id);
-    if ( it != entries_ids_range.end() ) {
-        entry_index_in_current_representation_ = std::distance(entries_ids_range.begin(), it);
-    } else {
-        // do not set entry_index_in_current_representation_ in case when entry_id is not in current representation.
-    }
-}
-
-Rpc::ResponseType GetEntryPositionInDataTable::execute(const Rpc::Value& /*root_request*/, Rpc::Value& root_response)
-{
-    //const Rpc::Value& rpc_params = root_request["params"];
-    //const PlaylistEntryID track_id(rpc_params["track_id"]);
-
-    entries_on_page_ = 0;
-    entry_index_in_current_representation_ = -1;
+    const size_t entries_on_page = pagination_info.entries_on_page_;
+    const int entry_index_in_current_representation = pagination_info.entry_index_in_current_representation_;
 
     //const size_t entries_count_in_representation = current_filtered_entries_count_ != 0 ? current_filtered_entries_count_ : current_total_entries_count_;
     Rpc::Value& rpc_result = root_response["result"];
-    if (entries_on_page_ > 0 && entry_index_in_current_representation_ >= 0) {
-        rpc_result["page_number"]         = static_cast<size_t>(entry_index_in_current_representation_ / entries_on_page_);
-        rpc_result["track_index_on_page"] = static_cast<size_t>(entry_index_in_current_representation_ % entries_on_page_);
+    if (entries_on_page > 0 && entry_index_in_current_representation >= 0) {
+        rpc_result["page_number"]         = static_cast<size_t>(entry_index_in_current_representation / entries_on_page);
+        rpc_result["track_index_on_page"] = static_cast<size_t>(entry_index_in_current_representation % entries_on_page);
     } else {
         rpc_result["page_number"] = -1; ///??? maybe return null here or nothing.
         rpc_result["track_index_on_page"] = -1;

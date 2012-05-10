@@ -554,12 +554,18 @@ typedef std::set<std::string> SupportedFieldNames;
 typedef std::vector<SupportedFieldNames::const_iterator> RequiredFieldNames;
 }
 
-typedef boost::sub_range<const EntriesListType> EntriesRange;
-typedef boost::sub_range<const PlaylistEntryIDList> EntriesIDsRange;
+struct PaginationInfo : boost::noncopyable {
+    PaginationInfo(int entry_id)
+        : entry_id(entry_id),
+          entries_on_page_(0),
+          entry_index_in_current_representation_(-1)
+    {}
 
-typedef boost::function<void(EntriesRange)> EntriesHandler;
-typedef boost::function<void(EntriesIDsRange, const EntriesListType&)> EntryIDsHandler;
-typedef boost::function<void(size_t)> EntriesCountHandler;
+    const int entry_id;
+    size_t entries_on_page_;
+    int entry_index_in_current_representation_; // index of entry in reperesentation(concrete filtering and sorting) of playlist entries.
+};
+
 /*! 
     \brief Returns list of playlist entries.
     \param playlist_id - int
@@ -615,7 +621,15 @@ public:
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 
+    void ActivateEntryLocationDeterminationMode(PaginationInfo* pagination_info)
+        { pagination_info_ = pagination_info; }
+
 private:
+
+    void DeactivateEntryLocationDeterminationMode()
+        { pagination_info_ = nullptr; }
+    bool EntryLocationDeterminationMode() const
+        { return pagination_info_ != nullptr; }
 
     // See HelperFillRpcFields class commentaries.
     RpcValueSetHelpers::HelperFillRpcFields<PlaylistEntry> entry_fields_filler_;
@@ -654,6 +668,8 @@ private:
     const std::string kRSLT_KEY_ENTRIES,
                       kRSLT_KEY_TOTAL_ENTRIES_COUNT,
                       kRSLT_KEY_COUNT_OF_FOUND_ENTRIES;
+
+    PaginationInfo* pagination_info_;
 };
 
 /*! 
@@ -690,21 +706,7 @@ public:
 
 private:
 
-    // following members are valid only while execute() method is running after calling getplaylistentries_method_.execute().
-    size_t entries_on_page_;
-    int entry_index_in_current_representation_; // index of entry in reperesentation(concrete filtering and sorting) of playlist entries.
-
-    void setEntryPageInDataTableFromEntriesList(EntriesRange entries_range,
-                                                PlaylistEntryID entry_id
-                                                );
-
-    void setEntryPageInDataTableFromEntryIDs(EntriesIDsRange entries_ids_range, const EntriesListType& /*entries*/,
-                                             PlaylistEntryID entry_id);
-
-    EntriesHandler entries_handler_stub_;
-    EntryIDsHandler enties_ids_handler_stub_;
-    EntriesCountHandler entries_count_handler_stub_;
-    EntriesCountHandler entries_on_page_count_handler_;
+    GetPlaylistEntries& getplaylistentries_method_;
 };
 
 /*! 
