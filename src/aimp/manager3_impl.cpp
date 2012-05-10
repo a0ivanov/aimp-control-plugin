@@ -1715,7 +1715,7 @@ void AIMP3Manager::deletePlaylistFromPlaylistDB(PlaylistID playlist_id)
 {
     deletePlaylistEntriesFromPlaylistDB(playlist_id);
 
-    const std::string query = MakeString() << "DELETE FROM Playlists WHERE playlist_id=" << playlist_id;
+    const std::string query = MakeString() << "DELETE FROM Playlists WHERE id=" << playlist_id;
 
     char* errmsg = nullptr;
     const int rc = sqlite3_exec(playlists_db_,
