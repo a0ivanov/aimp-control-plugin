@@ -105,7 +105,7 @@ public:
     {
         if (!dismissed_) {
             try {
-                (obj_.*fun_)();
+                (obj_.*memFun_)();
             } catch(...) {
                 // hide all exceptions.
             }
@@ -129,3 +129,4 @@ MakeObjGuard(Obj& obj, MemFun fun)
 #define CONCAT_MACRO(x,y) _CONCAT_MACRO(x,y)
 #define ANONYMOUS_GUARD_NAME CONCAT_MACRO(scope_guard, __LINE__)
 #define ON_BLOCK_EXIT(...) ScopeGuard ANONYMOUS_GUARD_NAME = MakeGuard(__VA_ARGS__); ANONYMOUS_GUARD_NAME // prevent warning about unused variable.
+#define ON_BLOCK_EXIT_OBJ(object,...) ScopeGuard ANONYMOUS_GUARD_NAME = MakeObjGuard(object, __VA_ARGS__); ANONYMOUS_GUARD_NAME // prevent warning about unused variable.
