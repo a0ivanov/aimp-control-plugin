@@ -555,13 +555,15 @@ typedef std::vector<SupportedFieldNames::const_iterator> RequiredFieldNames;
 }
 
 struct PaginationInfo : boost::noncopyable {
-    PaginationInfo(int entry_id)
+    PaginationInfo(int entry_id, size_t id_field_index)
         : entry_id(entry_id),
+          id_field_index(id_field_index),
           entries_on_page_(0),
           entry_index_in_current_representation_(-1)
     {}
 
     const int entry_id;
+    const size_t id_field_index;
     size_t entries_on_page_;
     int entry_index_in_current_representation_; // index of entry in reperesentation(concrete filtering and sorting) of playlist entries.
 };
@@ -688,6 +690,8 @@ private:
 class GetEntryPositionInDataTable : public AIMPRPCMethod
 {
 public:
+
+    // Note: we pass GetPlaylistEntries object by reference here, so we need to guaranty that it's lifetime is longer than lifetime of this object.
     GetEntryPositionInDataTable(AIMPManager& aimp_manager,
                                 Rpc::RequestHandler& rpc_request_handler,
                                 GetPlaylistEntries& getplaylistentries_method
@@ -707,6 +711,7 @@ public:
 private:
 
     GetPlaylistEntries& getplaylistentries_method_;
+    const std::string kFIELD_ID;
 };
 
 /*! 

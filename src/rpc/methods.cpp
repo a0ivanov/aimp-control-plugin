@@ -384,7 +384,8 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager,
     kRQST_KEY_SEARCH_STRING("search_string"),
     kRSLT_KEY_TOTAL_ENTRIES_COUNT("total_entries_count"),
     kRSLT_KEY_ENTRIES("entries"),
-    kRSLT_KEY_COUNT_OF_FOUND_ENTRIES("count_of_found_entries")
+    kRSLT_KEY_COUNT_OF_FOUND_ENTRIES("count_of_found_entries"),
+    pagination_info_(nullptr)
 {
     using namespace RpcValueSetHelpers;
     using namespace RpcResultUtils;
@@ -675,21 +676,23 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
         rpcvalue_entries->setSize(0); // return zero-length array, not null if no entires found.
     }
 
-    size_t entry_rpcvalue_index = 0;
+    size_t entry_index = 0;
     for(;;) {
 		int rc_db = sqlite3_step(stmt);
         if (SQLITE_ROW == rc_db) {
             if ( !EntryLocationDeterminationMode() ) {
-                rpcvalue_entries->setSize(entry_rpcvalue_index + 1); /// TODO: if possible resize array full count of found rows before filling.
-                Rpc::Value& entry_rpcvalue = (*rpcvalue_entries)[entry_rpcvalue_index];
+                rpcvalue_entries->setSize(entry_index + 1); /// TODO: if possible resize array full count of found rows before filling.
+                Rpc::Value& entry_rpcvalue = (*rpcvalue_entries)[entry_index];
                 // fill all requested fields for entry.
                 entry_fields_filler_.fillRpcArrayOfArrays(stmt, entry_rpcvalue);
             } else {
-                if (pagination_info_->entry_id == 0/*?*/) {
-                    pagination_info_->entry_index_in_current_representation_;
+                const int entry_id = sqlite3_column_int(stmt, pagination_info_->id_field_index);
+                if (pagination_info_->entry_id == entry_id) {
+                    pagination_info_->entry_index_in_current_representation_ = entry_index;
+                    break;
                 }
             }
-            ++entry_rpcvalue_index;
+            ++entry_index;
         } else if (SQLITE_DONE == rc_db) {
             break;
         } else {
@@ -714,18 +717,36 @@ GetEntryPositionInDataTable::GetEntryPositionInDataTable(AIMPManager& aimp_manag
                                                          )
     :
     AIMPRPCMethod("GetEntryPositionInDataTable", aimp_manager, rpc_request_handler),
-    getplaylistentries_method_(getplaylistentries_method)
+    getplaylistentries_method_(getplaylistentries_method),
+    kFIELD_ID("id")
 {
 }
 
 Rpc::ResponseType GetEntryPositionInDataTable::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
-    const Rpc::Value& rpc_params = root_request["params"];
+    Rpc::Value root_request_copy = root_request;
+
+    Rpc::Value& rpc_params = root_request_copy["params"];
     const PlaylistEntryID track_id(rpc_params["track_id"]);
-    
-    PaginationInfo pagination_info(track_id);
+
+    int id_field_index = -1;
+    Rpc::Value& fields = rpc_params["fields"];
+    for (int i = 0, end = fields.size(); i != end; ++i) {
+        const std::string& field = fields[i];
+        if (field == kFIELD_ID) {
+            id_field_index = i;
+            break;
+        }
+    }
+    if (id_field_index < 0) {
+        id_field_index = fields.size();
+        fields.setSize(id_field_index + 1);
+        fields[id_field_index] = kFIELD_ID;
+    }
+
+    PaginationInfo pagination_info(track_id, id_field_index);
     getplaylistentries_method_.ActivateEntryLocationDeterminationMode(&pagination_info);
-    getplaylistentries_method_.execute(root_request, root_response);
+    getplaylistentries_method_.execute(root_request_copy, root_response);
 
     const size_t entries_on_page = pagination_info.entries_on_page_;
     const int entry_index_in_current_representation = pagination_info.entry_index_in_current_representation_;
