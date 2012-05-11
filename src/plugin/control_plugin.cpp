@@ -472,7 +472,6 @@ void AIMPControlPlugin::createRpcMethods()
     // playlists
     REGISTER_AIMP_RPC_METHOD(GetPlaylists);
     // tracks
-    REGISTER_AIMP_RPC_METHOD(GetPlaylistEntries);
     REGISTER_AIMP_RPC_METHOD(EnqueueTrack);
     REGISTER_AIMP_RPC_METHOD(RemoveTrackFromPlayQueue);
     { // register this way since GetEntryPositionInDataTable depends from GetPlaylistEntries 
