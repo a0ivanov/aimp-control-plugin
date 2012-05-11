@@ -18,8 +18,7 @@ namespace AIMPPlayer
 
 Playlist::Playlist()
     : 
-    entries_( boost::make_shared<EntriesListType>() ),
-    entries_sorter_(entries_)
+    entries_( boost::make_shared<EntriesListType>() )
 {}
 
 Playlist::Playlist( const WCHAR* title,
@@ -34,8 +33,7 @@ Playlist::Playlist( const WCHAR* title,
     duration_(duration),
     size_of_all_entries_in_bytes_(size_of_all_entries_in_bytes),
     id_(id),
-    entries_( boost::make_shared<EntriesListType>() ),
-    entries_sorter_(entries_)
+    entries_( boost::make_shared<EntriesListType>() )
 {
 }
 
@@ -46,8 +44,7 @@ Playlist::Playlist(Playlist&& rhs)
     duration_(rhs.duration_),
     size_of_all_entries_in_bytes_(rhs.size_of_all_entries_in_bytes_),
     id_(rhs.id_),
-    entries_( std::move(rhs.entries_) ),
-    entries_sorter_( std::move(rhs.entries_sorter_) )
+    entries_( std::move(rhs.entries_) )
 {}
 
 Playlist& Playlist::operator=(Playlist&& rhs)
@@ -66,7 +63,6 @@ void Playlist::swap(Playlist& rhs)
     swap(size_of_all_entries_in_bytes_, rhs.size_of_all_entries_in_bytes_);
     swap(id_, rhs.id_);
     swap(entries_, rhs.entries_);
-    swap(entries_sorter_, rhs.entries_sorter_);
 }
 
 const EntriesListType& Playlist::entries() const
@@ -78,19 +74,8 @@ const EntriesListType& Playlist::entries() const
 EntriesListType& Playlist::entries()
 {
     // every time when entry list is changed we need to perform reset to be sure it does not use old cache.
-    entries_sorter_.reset();
     assert(entries_);
     return *entries_;
-}
-
-const PlaylistEntryIDList& Playlist::getEntriesSortedByField(EntriesSortUtil::FieldToOrderDescriptor order_descriptor) const
-{
-    return entries_sorter_.getEntriesSortedByField(order_descriptor);
-}
-
-const PlaylistEntryIDList& Playlist::getEntriesSortedByMultipleFields(const EntriesSortUtil::FieldToOrderDescriptors& field_to_order_descriptors) const
-{
-    return entries_sorter_.getEntriesSortedByMultipleFields(field_to_order_descriptors);
 }
 
 } // namespace AIMPPlayer
