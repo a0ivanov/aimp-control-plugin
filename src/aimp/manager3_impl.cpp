@@ -1626,9 +1626,9 @@ void AIMP3Manager::setTrackRating(TrackDescription track_desc, int rating)
     // entry.rating(rating);
 }
 
-static void string_dtor(void* p)
+static void wstring_dtor(void* p)
 {
-    delete static_cast<std::string*>(p);
+    delete static_cast<std::wstring*>(p);
 }
 
 /*
@@ -1641,21 +1641,21 @@ static void MatchFunc(sqlite3_context* context,
 {
     assert(argc == 2);
 
-    std::string* pattern = static_cast<std::string*>( sqlite3_get_auxdata(context, 0) );
+    std::wstring* pattern = static_cast<std::wstring*>( sqlite3_get_auxdata(context, 0) );
     if (!pattern) {
-        const char* pattern_raw = reinterpret_cast<const char*>( sqlite3_value_text(argv[0]) );
+        const wchar_t* pattern_raw = reinterpret_cast<const wchar_t*>( sqlite3_value_text16(argv[0]) );
         if (!pattern_raw) {
             return;
         }
-        pattern = new std::string(pattern_raw);
-        sqlite3_set_auxdata(context, 0, pattern, string_dtor);
+        pattern = new std::wstring(pattern_raw);
+        sqlite3_set_auxdata(context, 0, pattern, wstring_dtor);
     }
-    const char* string_raw = reinterpret_cast<const char*>( sqlite3_value_text(argv[1]) );
+    const wchar_t* string_raw = reinterpret_cast<const wchar_t*>( sqlite3_value_text16(argv[1]) );
     if (!string_raw) {
         return;
     }
-    const std::string string(string_raw);
-    boost::iterator_range<std::string::const_iterator> result = boost::ifind_first(string, *pattern);
+    const std::wstring string(string_raw);
+    boost::iterator_range<std::wstring::const_iterator> result = boost::ifind_first(string, *pattern);
     sqlite3_result_int(context,
                        result.begin() != result.end()
                        );
@@ -1730,7 +1730,9 @@ void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
     }
 
     { // add MATCH operator support(used for search tracks instead LIKE operator since it supports case-insensetive search only on ASCII chars by default).
-    rc = sqlite3_create_function(playlists_db_, "match", 2, SQLITE_UTF8, nullptr, MatchFunc, nullptr, nullptr);
+    rc = sqlite3_create_function(playlists_db_, "match", 2,
+                                 SQLITE_ANY, // SQLITE_UTF16,
+                                 nullptr, MatchFunc, nullptr, nullptr);
     if (SQLITE_OK != rc) {
         const std::string msg = MakeString() << "MATCH operator support enabling failure. Reason: sqlite3_create_function(match) error "
                                              << rc << ": " << sqlite3_errmsg(playlists_db_);
