@@ -1626,6 +1626,41 @@ void AIMP3Manager::setTrackRating(TrackDescription track_desc, int rating)
     // entry.rating(rating);
 }
 
+static void string_dtor(void* p)
+{
+    delete static_cast<std::string*>(p);
+}
+
+/*
+    Compares two UTF-8 strings for equality where the first string is "MATCH" expression.
+    Returns true (1) if they are the same and false (0) if they are different.
+*/
+static void MatchFunc(sqlite3_context* context, 
+                      int argc, 
+                      sqlite3_value** argv)
+{
+    assert(argc == 2);
+
+    std::string* pattern = static_cast<std::string*>( sqlite3_get_auxdata(context, 0) );
+    if (!pattern) {
+        const char* pattern_raw = reinterpret_cast<const char*>( sqlite3_value_text(argv[0]) );
+        if (!pattern_raw) {
+            return;
+        }
+        pattern = new std::string(pattern_raw);
+        sqlite3_set_auxdata(context, 0, pattern, string_dtor);
+    }
+    const char* string_raw = reinterpret_cast<const char*>( sqlite3_value_text(argv[1]) );
+    if (!string_raw) {
+        return;
+    }
+    const std::string string(string_raw);
+    boost::iterator_range<std::string::const_iterator> result = boost::ifind_first(string, *pattern);
+    sqlite3_result_int(context,
+                       result.begin() != result.end()
+                       );
+}
+
 void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
 {
     int rc = sqlite3_open(":memory:", &playlists_db_);
@@ -1689,6 +1724,16 @@ void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
                                              << rc << ": " << errmsg;
         sqlite3_free(errmsg);
 
+        shutdownPlaylistDB();
+        throw std::runtime_error(msg);
+    }
+    }
+
+    { // add MATCH operator support(used for search tracks instead LIKE operator since it supports case-insensetive search only on ASCII chars by default).
+    rc = sqlite3_create_function(playlists_db_, "match", 2, SQLITE_UTF8, nullptr, MatchFunc, nullptr, nullptr);
+    if (SQLITE_OK != rc) {
+        const std::string msg = MakeString() << "MATCH operator support enabling failure. Reason: sqlite3_create_function(match) error "
+                                             << rc << ": " << sqlite3_errmsg(playlists_db_);
         shutdownPlaylistDB();
         throw std::runtime_error(msg);
     }

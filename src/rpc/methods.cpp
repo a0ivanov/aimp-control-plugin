@@ -517,10 +517,10 @@ std::string GetPlaylistEntries::getWhereString(const Rpc::Value& params, const i
 {
     using namespace Utilities;
 
-    struct LikeArgSetter : public std::binary_function<sqlite3_stmt*, int, void>
+    struct MatchArgSetter : public std::binary_function<sqlite3_stmt*, int, void>
     {
         std::string like_arg_;
-        LikeArgSetter(const std::string& like_arg) : like_arg_(like_arg) {}
+        MatchArgSetter(const std::string& like_arg) : like_arg_(like_arg) {}
         void operator()(sqlite3_stmt* stmt, int bind_index) const {
             const int rc_db = sqlite3_bind_text(stmt, bind_index,
                                                 like_arg_.c_str(),
@@ -539,8 +539,7 @@ std::string GetPlaylistEntries::getWhereString(const Rpc::Value& params, const i
 	if ( params.isMember(kRQST_KEY_SEARCH_STRING) ) {
         const std::string& search_string = params[kRQST_KEY_SEARCH_STRING];
         if ( !search_string.empty() && !fields_to_filter_.empty() ) { ///??? search in all fields or only in requested ones.            
-            const std::string& like_arg(MakeString() << "%" << search_string << "%"); ///??? maybe we need escape %_ symbols here to emulate aimp search.
-            const QueryArgSetter& setter = boost::bind<void>(LikeArgSetter(like_arg), _1, _2);
+            const QueryArgSetter& setter = boost::bind<void>(MatchArgSetter(search_string), _1, _2);
             
             os << " AND(";
             FieldNames::const_iterator begin = fields_to_filter_.begin(),
@@ -552,7 +551,7 @@ std::string GetPlaylistEntries::getWhereString(const Rpc::Value& params, const i
             {
                 query_arg_setters_.push_back(setter);
 
-                os << *fieldname_it << " LIKE ?";
+                os << *fieldname_it << " MATCH ?";
                 if (fieldname_it + 1 != end) {
                     os << " OR ";
                 }
