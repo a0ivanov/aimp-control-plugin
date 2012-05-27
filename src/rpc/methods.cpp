@@ -519,12 +519,13 @@ std::string GetPlaylistEntries::getWhereString(const Rpc::Value& params, const i
 
     struct MatchArgSetter : public std::binary_function<sqlite3_stmt*, int, void>
     {
-        std::string like_arg_;
-        MatchArgSetter(const std::string& like_arg) : like_arg_(like_arg) {}
+        typedef std::string StringT;
+        StringT match_arg_;
+        MatchArgSetter(const StringT& match_arg) : match_arg_(match_arg) {}
         void operator()(sqlite3_stmt* stmt, int bind_index) const {
             const int rc_db = sqlite3_bind_text(stmt, bind_index,
-                                                like_arg_.c_str(),
-                                                like_arg_.size() * sizeof(std::string::value_type),
+                                                match_arg_.c_str(),
+                                                match_arg_.size() * sizeof(StringT::value_type),
                                                 SQLITE_TRANSIENT);
             if (SQLITE_OK != rc_db) {
                 const std::string msg = MakeString() << "Error sqlite3_bind_text: " << rc_db;

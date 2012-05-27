@@ -20,6 +20,8 @@
 #include <iomanip>
 #include <algorithm>
 #include "sqlite/sqlite3.h"
+#include <unicode/utypes.h>
+#include <unicode/uchar.h>
 
 namespace {
 using namespace ControlPlugin::PluginLogger;
@@ -1626,14 +1628,31 @@ void AIMP3Manager::setTrackRating(TrackDescription track_desc, int rating)
     // entry.rating(rating);
 }
 
-static void wstring_dtor(void* p)
+static bool Find(const uint8_t* zPattern, const uint8_t* zString, int iString)
 {
-    delete static_cast<std::wstring*>(p);
+    int iPattern = 0;       /* Current byte index in zPattern */
+
+    while (zPattern[iPattern] != 0 && zString[iString] != 0) {
+        /* Read (and consume) the next character from the input pattern. */
+        UChar32 uPattern;
+        U8_NEXT_UNSAFE(zPattern, iPattern, uPattern);
+        assert(uPattern != 0);
+
+        UChar32 uString;
+        U8_NEXT_UNSAFE(zString, iString, uString);
+        uString  = u_foldCase(uString,  U_FOLD_CASE_DEFAULT);
+        uPattern = u_foldCase(uPattern, U_FOLD_CASE_DEFAULT);
+        if (uString != uPattern) {
+            return false;
+        }
+    }
+
+    return zPattern[iPattern] == 0;
 }
 
 /*
-    Compares two UTF-8 strings for equality where the first string is "MATCH" expression.
-    Returns true (1) if they are the same and false (0) if they are different.
+    Implements "MATCH" expression: checks if first string is substring of second string. Encoding is UTF-8.
+    Returns true (1) or false (0).
 */
 static void MatchFunc(sqlite3_context* context, 
                       int argc, 
@@ -1641,24 +1660,22 @@ static void MatchFunc(sqlite3_context* context,
 {
     assert(argc == 2);
 
-    std::wstring* pattern = static_cast<std::wstring*>( sqlite3_get_auxdata(context, 0) );
-    if (!pattern) {
-        const wchar_t* pattern_raw = reinterpret_cast<const wchar_t*>( sqlite3_value_text16(argv[0]) );
-        if (!pattern_raw) {
-            return;
+    const uint8_t *zPattern = reinterpret_cast<const uint8_t*>( sqlite3_value_text(argv[0]) ),
+                  *zString  = reinterpret_cast<const uint8_t*>( sqlite3_value_text(argv[1]) );
+
+    int iString = 0;        /* Current byte index in zString */
+    bool found = false;
+    while (zString[iString] != 0) {
+        found = Find(zPattern, zString, iString);
+        if (found) {
+            break;
         }
-        pattern = new std::wstring(pattern_raw);
-        sqlite3_set_auxdata(context, 0, pattern, wstring_dtor);
+        // move to next character.
+        UChar32 uString;
+        U8_NEXT_UNSAFE(zString, iString, uString);
     }
-    const wchar_t* string_raw = reinterpret_cast<const wchar_t*>( sqlite3_value_text16(argv[1]) );
-    if (!string_raw) {
-        return;
-    }
-    const std::wstring string(string_raw);
-    boost::iterator_range<std::wstring::const_iterator> result = boost::ifind_first(string, *pattern);
-    sqlite3_result_int(context,
-                       result.begin() != result.end()
-                       );
+    
+    sqlite3_result_int(context, found);
 }
 
 void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
@@ -1729,9 +1746,9 @@ void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
     }
     }
 
-    { // add MATCH operator support(used for search tracks instead LIKE operator since it supports case-insensetive search only on ASCII chars by default).
+    { // add MATCH operator support(used for search tracks instead LIKE operator since it supports case-insensitive search only on ASCII chars by default).
     rc = sqlite3_create_function(playlists_db_, "match", 2,
-                                 SQLITE_ANY, // SQLITE_UTF16,
+                                 SQLITE_UTF8,
                                  nullptr, MatchFunc, nullptr, nullptr);
     if (SQLITE_OK != rc) {
         const std::string msg = MakeString() << "MATCH operator support enabling failure. Reason: sqlite3_create_function(match) error "
