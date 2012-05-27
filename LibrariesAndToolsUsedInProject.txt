@@ -16,6 +16,8 @@ http://xmlrpcpp.sourceforge.net
 4) The FreeImage open source image library. See http://freeimage.sourceforge.net for details.
 FreeImage is used under the (GNU GPL or FIPL), version (license version).
 
+5) ICU library
+http://site.icu-project.org
 
 Client code uses:
 
