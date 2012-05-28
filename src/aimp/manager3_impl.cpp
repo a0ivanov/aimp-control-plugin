@@ -1655,10 +1655,10 @@ static bool Find(const uint8_t* zPattern, const uint8_t* zString, int iString)
     Returns true (1) or false (0).
 */
 static void MatchFunc(sqlite3_context* context, 
-                      int /*argc*/, 
+                      int argc, 
                       sqlite3_value** argv)
 {
-    assert(argc == 2);
+    assert(argc == 2); (void)argc;
 
     const uint8_t *zPattern = reinterpret_cast<const uint8_t*>( sqlite3_value_text(argv[0]) ),
                   *zString  = reinterpret_cast<const uint8_t*>( sqlite3_value_text(argv[1]) );
