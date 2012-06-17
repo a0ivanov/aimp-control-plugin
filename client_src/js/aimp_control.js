@@ -419,14 +419,6 @@ function onContextMenuButtonClick() {
 
 		initTrackControlMenu(entry_control_menu_descriptor);
 		updateTrackControlMenu(entry_control_menu_descriptor);
-		/*
-			Use details of DataTables implementation to correct work of $table.fnClose() function:
-			if DataTable bServerSide flag is set, $table.fnOpen() will not add new row in aoOpenRows array.
-		*/
-		$table.fnSettings().aoOpenRows.push({
-			'nTr': entry_control_menu_descriptor.nTr,
-			'nParent': nTr
-		});
 	}
 }
 
