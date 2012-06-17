@@ -369,14 +369,11 @@ function getControlMenuDescriptor(nTr)
 	var enqueue_entry_button_id = 'enqueue_entry_' + entry_id;
 	var remove_from_queue_entry_button_id = 'remove_from_queue_entry_' + entry_id;
 	var download_track_button_id = 'download_track_entry_' + entry_id;
-	var control_menu_html =   '<table cellpadding="5" cellspacing="0" border="0">'
-							+ '<tr>'
-							+ '<td><button id="' + play_button_id + '"></button></td>'
-							+ '<td><button id="' + enqueue_entry_button_id + '"></button></td>'
-							+ '<td><button id="' + remove_from_queue_entry_button_id + '"></button></td>'
-							+ '<td><button id="' + download_track_button_id + '"></button></td>'
-							+ '</tr>'
-							+ '</table>';
+	var control_menu_html = '<button id="' + play_button_id + '"></button>'
+							+ '<button id="' + enqueue_entry_button_id + '"></button>'
+							+ '<button id="' + remove_from_queue_entry_button_id + '"></button>'
+							+ '<button id="' + download_track_button_id + '"></button>'
+                            ;
 
 	return {
 		html : control_menu_html,
@@ -408,6 +405,7 @@ function onContextMenuButtonClick() {
 								   label: getText('track_contol_menu_open')
 								 }
 		);
+        $(entry_control_menu_descriptor.nTr).removeClass('control_menu');
 		$table.fnClose(nTr);
 	} else {
 		/* Open control menu for this entry */
@@ -417,6 +415,7 @@ function onContextMenuButtonClick() {
 								 }
 		);
 		entry_control_menu_descriptor.nTr = $table.fnOpen(nTr, entry_control_menu_descriptor.html, 'entry_control_menu');
+        $(entry_control_menu_descriptor.nTr).addClass('control_menu');
 
 		initTrackControlMenu(entry_control_menu_descriptor);
 		updateTrackControlMenu(entry_control_menu_descriptor);

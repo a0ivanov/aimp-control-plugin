@@ -4,19 +4,31 @@ body {
     font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
 }
 
+.paging_full_numbers span.paginate_button,
+.paging_full_numbers span.paginate_active,
+#playlists table.display thead th,
+#playback_panel_container  {
+    cursor: pointer;
+}
+
 /* Control panel */
 #control_panel_buttons {
     padding : 5px 4px;
+    margin: 0;
 }
 
 #volume_controls {
     float: right;
-    margin-top: -4px;
+    /*margin-top: -4px;*/
+    margin: 7px 7px 7px 0;
+    cursor: pointer;
 }
 
-#mute_button_holder { /* need specify size to prevent volume slider moving on mouse over this control. */
-    width: 20px;
-    height: 20px;
+#mute_button_holder {
+    float: left;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
 }
 
 #mute_button {
@@ -34,13 +46,54 @@ body {
 }
 
 #volume_slider {
-    width: 100px;
+    width: 85px;
+    float: right;
+    margin: 3px 0;
+    margin-left: 6px;
 }
 
 /* Control and Playback panels */
 .aimp-panel {
     width: 310px;
     height: 38px;
+}
+
+/* Playlists */
+#playlists .ui-icon {
+    display: inline-block;
+    width: 12px;
+    height: 13px;
+}
+
+#playlists table  tr:not(.control_menu):hover {
+    border:1px solid #59b4d4;
+    background:#0078a3;
+    color:#fff;
+    cursor: pointer;
+}
+
+#playlists .dataTables_paginate .ui-button {
+    padding: 0 4px;
+}
+
+#playlists .dataTables_info {
+    line-height: 22px;
+    width: auto;
+    margin-left: 4px;
+}
+
+#playlists .dataTables_length,
+#playlists .dataTables_filter  {
+    width: auto;
+}
+
+#playlists .dataTables_length {
+    margin-left: 4px;
+}
+
+#playlists .paging_full_numbers {
+    width: 435px;
+    height: auto;
 }
 
 /* Playback panel, current track scroller */
