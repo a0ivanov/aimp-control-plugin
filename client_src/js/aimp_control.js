@@ -415,8 +415,12 @@ function onContextMenuButtonClick() {
 								 }
 		);
 		entry_control_menu_descriptor.nTr = $table.fnOpen(nTr, entry_control_menu_descriptor.html, 'entry_control_menu');
-        $(entry_control_menu_descriptor.nTr).addClass('control_menu');
-
+        $nTr = $(entry_control_menu_descriptor.nTr);
+        $nTr.addClass('control_menu');
+        // use internal details of fnOpen to set colspan member to right value: fix vertical alignment of context menu when only one field of track is visible.
+        var cols_count_total = $table[0].rows[0].cells.length;
+        $nTr[0].children[0].colSpan = cols_count_total;
+        
 		initTrackControlMenu(entry_control_menu_descriptor);
 		updateTrackControlMenu(entry_control_menu_descriptor);
 	}
