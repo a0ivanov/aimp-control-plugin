@@ -264,12 +264,25 @@ void AIMP2Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
 
 #ifdef MANUAL_PLAYLISTS_CONTENT_CHANGES_DETERMINATION
 
+bool playlist_exist(PlaylistID playlist_id, boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp2_playlist_manager) 
+{
+    const size_t playlists_count = aimp2_playlist_manager->AIMP_PLS_Count();
+    for (size_t playlist_index = 0; playlist_index < playlists_count; ++playlist_index) {
+        int id;
+        int result = aimp2_playlist_manager->AIMP_PLS_ID_By_Index(playlist_index, &id);
+        assert(S_OK == result);
+        if (id == playlist_id) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void AIMP2Manager::checkIfPlaylistsChanged()
 {
     std::vector<PlaylistID> playlists_to_reload;
-
-    const short playlists_count = aimp2_playlist_manager_->AIMP_PLS_Count();
-    for (short playlist_index = 0; playlist_index < playlists_count; ++playlist_index) {
+    const size_t playlists_count = aimp2_playlist_manager_->AIMP_PLS_Count();
+    for (size_t playlist_index = 0; playlist_index < playlists_count; ++playlist_index) {
         int current_playlist_id;
         if ( S_OK != aimp2_playlist_manager_->AIMP_PLS_ID_By_Index(playlist_index, &current_playlist_id) ) {
             throw std::runtime_error(MakeString() << "checkIfPlaylistsChanged() failed. Reason: AIMP_PLS_ID_By_Index failed");
@@ -304,7 +317,23 @@ void AIMP2Manager::checkIfPlaylistsChanged()
         }
     }
 
-    if ( !playlists_to_reload.empty() ) {
+    bool playlists_content_changed = !playlists_to_reload.empty();
+
+    // handle closed playlists.
+    if (playlists_count < playlists_.size()) { 
+        playlists_content_changed = true;
+        PlaylistsListType::iterator it = playlists_.begin();
+        while (it != playlists_.end()) {
+            // try to find id of current playlist in existing playlists.
+            if (!playlist_exist(it->first, aimp2_playlist_manager_) ) {
+                it = playlists_.erase(it);
+            } else {
+                ++it;            
+            }
+        }
+    }
+ 
+    if (playlists_content_changed) {
         notifyAboutInternalEvent(PLAYLISTS_CONTENT_CHANGED_EVENT);
     }
 }
