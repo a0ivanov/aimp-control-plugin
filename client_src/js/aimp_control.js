@@ -281,7 +281,8 @@ function tryToLocateCurrentTrackInPlaylist(entry_page_number, entry_index_on_pag
 	}
 }
 
-function getTrackForRatingSetTable(rating_div) {    
+function getTrackForRatingSetTable(node) {
+    var rating_div = node.parentNode;
     var parts = rating_div.id.split('_');
 
     var playlist_id = parseInt(parts[2]);
@@ -1118,11 +1119,12 @@ function initTrackInfoDialog()
 
 /*
     Hanldes rating set to track by rating widget click.
-    track_getter - function that returns {'playlist_id': xx, 'track_id':xx} object that specifies track to set it's rating
+    track_getter - function with one argument: rating widget element which was clicked.
+		   returns {'playlist_id': xx, 'track_id':xx} object that specifies track to set it's rating.
 */
 function RatingChangeHandler(track_getter) {
     function onRatingWidgetClick(value, link) {
-	    var track_desc = track_getter(this.parentNode);
+	    var track_desc = track_getter(this);
 	    var playlist_id = track_desc.playlist_id;
 	    var track_id    = track_desc.track_id;
 
@@ -1146,7 +1148,8 @@ function RatingChangeHandler(track_getter) {
 
 /*
     Init star rating widget.
-    track_getter - function that returns {'playlist_id': xx, 'track_id':xx} object that specifies track to set it's rating.
+    track_getter - function with one argument: rating widget element which was clicked.
+		   returns {'playlist_id': xx, 'track_id':xx} object that specifies track to set it's rating.
     Returns rating widget.
 */
 function initStarRatingWidget(div_id, track_getter)
