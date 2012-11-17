@@ -270,7 +270,7 @@ bool playlist_exist(PlaylistID playlist_id, boost::intrusive_ptr<AIMP2SDK::IAIMP
     for (size_t playlist_index = 0; playlist_index < playlists_count; ++playlist_index) {
         int id;
         int result = aimp2_playlist_manager->AIMP_PLS_ID_By_Index(playlist_index, &id);
-        assert(S_OK == result);
+        assert(S_OK == result); (void)result;
         if (id == playlist_id) {
             return true;
         }
