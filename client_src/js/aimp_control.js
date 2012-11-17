@@ -1118,7 +1118,7 @@ function initTrackInfoDialog()
 }
 
 /*
-    Hanldes rating set to track by rating widget click.
+    Handles rating set to track by rating widget click.
     track_getter - function with one argument: rating widget element which was clicked.
 		   returns {'playlist_id': xx, 'track_id':xx} object that specifies track to set it's rating.
 */
@@ -1138,7 +1138,14 @@ function RatingChangeHandler(track_getter) {
 					  {
 					    on_success : undefined,
 					    on_exception : undefined,
-					    on_complete : undefined
+					    on_complete : function (response) {
+							    if ( $('#track_info_dialog').dialog('isOpen') ) {
+								updateTrackInfoDialogContent({
+								    callback: function (param) {},
+								    param: {}
+								});
+							    }
+							 }
 					  }
 	    );
     }
