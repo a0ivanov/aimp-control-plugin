@@ -121,19 +121,33 @@ class AIMP3Manager::AIMPAddonsPlaylistManagerListener : public IUnknownInterface
 public:
     explicit AIMPAddonsPlaylistManagerListener(AIMP3Manager* aimp3_manager)
         : 
-        aimp3_manager_(aimp3_manager)
+        aimp3_manager_(aimp3_manager),
+        playlist_add_in_progress_(nullptr)
     {}
 
     virtual void WINAPI StorageActivated(AIMP3SDK::HPLS ID) {
         aimp3_manager_->onStorageActivated(ID);
     }
     virtual void WINAPI StorageAdded(AIMP3SDK::HPLS ID) {
-        added_playlists_.insert(ID);
+        playlist_add_in_progress_ = ID;
         aimp3_manager_->onStorageAdded(ID);
+        added_playlists_.insert(ID);
+        if (store_change_args_) {
+            aimp3_manager_->onStorageChanged(store_change_args_->id, store_change_args_->flags);
+            store_change_args_.reset();
+        }
+        playlist_add_in_progress_ = nullptr;
     }
     virtual void WINAPI StorageChanged(AIMP3SDK::HPLS ID, DWORD AFlags) {
         if ( playlistAdded(ID) ) {
             aimp3_manager_->onStorageChanged(ID, AFlags);
+        } else {
+            if (playlist_add_in_progress_ == ID) {
+                if (!store_change_args_) {
+                    store_change_args_ = boost::make_shared<StorageChangeArgs>(ID, AFlags);
+                }
+                store_change_args_->flags |= AFlags;
+            }
         }
     }
     virtual void WINAPI StorageRemoved(AIMP3SDK::HPLS ID) {
@@ -149,6 +163,18 @@ private:
     AIMP3Manager* aimp3_manager_;
     typedef std::set<AIMP3SDK::HPLS> PlayListHandles;
     PlayListHandles added_playlists_;
+
+    // properly load playlist in AIMP 3.20: it calls StorageChanged() from StorageAdded() function.
+    // We should load entries after adding playlist manually.
+    AIMP3SDK::HPLS playlist_add_in_progress_;
+
+    struct StorageChangeArgs {
+        AIMP3SDK::HPLS id;
+        DWORD flags;
+        StorageChangeArgs(AIMP3SDK::HPLS id, DWORD flags) : id(id), flags(flags) {}
+    };
+    boost::shared_ptr<StorageChangeArgs> store_change_args_;
+
 };
 
 AIMP3Manager::AIMP3Manager(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_core_unit)
@@ -237,6 +263,7 @@ void AIMP3Manager::onStorageActivated(AIMP3SDK::HPLS /*id*/)
 
 void AIMP3Manager::onStorageAdded(AIMP3SDK::HPLS id)
 {
+
     try {
         playlists_[cast<PlaylistID>(id)] = loadPlaylist(id);
 
