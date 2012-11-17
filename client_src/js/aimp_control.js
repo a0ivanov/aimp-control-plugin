@@ -281,6 +281,16 @@ function tryToLocateCurrentTrackInPlaylist(entry_page_number, entry_index_on_pag
 	}
 }
 
+function getTrackForRatingSetTable(rating_div) {    
+    var parts = rating_div.id.split('_');
+
+    var playlist_id = parseInt(parts[2]);
+    var track_id    = parseInt(parts[3]);
+    return { 'playlist_id': playlist_id,
+	     'track_id': track_id
+	   };
+}	
+
 function onPlaylistTableDraw(oSettings) {
 	addControlMenuToEachEntry(oSettings);
 	
@@ -295,7 +305,7 @@ function onPlaylistTableDraw(oSettings) {
 	
 	// init all rating widgets in table
 	$('div[id^="track_rating_"]', $table).each(function(index, rating_div) {
-		initStarRatingWidget(rating_div.id);
+	    initStarRatingWidget(rating_div.id, getTrackForRatingSetTable);
 	});
 }
 
@@ -1097,42 +1107,52 @@ function initTrackInfoDialog()
         );
         return false;
     });
-	
-	initStarRatingWidget('track_info_rating');
-}
 
-function onRatingWidgetClick(value, link) {
-	var rating_div = this.parentNode;
-	if (rating_div === undefined) {
-		return;
-	}
-	var parts = rating_div.id.split('_');
-	var playlist_id = parts.length > 2 ? parseInt(parts[2]) : control_panel_state.playlist_id;
-	var track_id = parts.length > 3 ? parseInt(parts[3]) : track_desc.playlist_id;
-	
-	aimp_manager.setTrackRating({
-								  track_id: track_id,
-								  playlist_id: playlist_id,
-								  rating: (value !== undefined ? parseInt(value) // value range is [1, 5].
-															   : 0 // set 0 rating, for AIMP it means "rating is not set".
-										  )
-								},
-								{
-								  on_success : undefined,
-								  on_exception : undefined,
-								  on_complete : undefined
-								}
-	);
+    function getTrackForRatingSet(rating_div) {
+	return { 'playlist_id': control_panel_state.playlist_id,
+		 'track_id': control_panel_state.track_id
+	       };
+    }	
+    initStarRatingWidget('track_info_rating', getTrackForRatingSet);
 }
 
 /*
-	Init star rating widget.
-	Returns rating widget.
+    Hanldes rating set to track by rating widget click.
+    track_getter - function that returns {'playlist_id': xx, 'track_id':xx} object that specifies track to set it's rating
 */
-function initStarRatingWidget(div_id)
+function RatingChangeHandler(track_getter) {
+    function onRatingWidgetClick(value, link) {
+	    var track_desc = track_getter(this.parentNode);
+	    var playlist_id = track_desc.playlist_id;
+	    var track_id    = track_desc.track_id;
+
+	    aimp_manager.setTrackRating(  {
+					    track_id: track_id,
+					    playlist_id: playlist_id,
+					    rating: (value !== undefined ? parseInt(value) // value range is [1, 5].
+									 : 0 // set 0 rating, for AIMP it means "rating is not set".
+						     )
+					  },
+					  {
+					    on_success : undefined,
+					    on_exception : undefined,
+					    on_complete : undefined
+					  }
+	    );
+    }
+
+    return onRatingWidgetClick;
+}
+
+/*
+    Init star rating widget.
+    track_getter - function that returns {'playlist_id': xx, 'track_id':xx} object that specifies track to set it's rating.
+    Returns rating widget.
+*/
+function initStarRatingWidget(div_id, track_getter)
 {
     return $('#' + div_id + ' .rating_star').rating({
-        callback: onRatingWidgetClick,
+        callback: RatingChangeHandler(track_getter),
         cancel: getText('track_info_dialog_cancel_rating'),
         cancelValue: 0
     });
