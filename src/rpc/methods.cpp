@@ -9,12 +9,14 @@
 #include "rpc/value.h"
 #include "rpc/request_handler.h"
 #include "utils/util.h"
+#include "utils/scope_guard.h"
 #include "utils/string_encoding.h"
 #include <fstream>
 #include <boost/range.hpp>
 #include <boost/bind.hpp>
 #include <boost/assign/std.hpp>
 #include <boost/foreach.hpp>
+#include <boost/assign/std/vector.hpp>
 #include <string.h>
 
 namespace {
@@ -76,9 +78,8 @@ ResponseType GetFormattedEntryTitle::execute(const Rpc::Value& root_request, Rpc
 
     const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
     try {
-        const PlaylistEntry& entry = aimp_manager_.getEntry(track_desc);
         using namespace StringEncoding;
-        root_response["result"]["formatted_string"] = utf16_to_utf8( aimp_manager_.getFormattedEntryTitle(entry, params["format_string"]) );
+        root_response["result"]["formatted_string"] = utf16_to_utf8( aimp_manager_.getFormattedEntryTitle(track_desc, params["format_string"]) );
     } catch(std::runtime_error&) {
         throw Rpc::Exception("Specified track does not exist.", TRACK_NOT_FOUND);
     } catch (std::invalid_argument&) {
@@ -268,10 +269,28 @@ ResponseType RemoveTrackFromPlayQueue::execute(const Rpc::Value& root_request, R
     return RESPONSE_IMMEDIATE;
 }
 
+std::string GetPlaylists::getColumnsString() const
+{
+    std::string result;
+    const auto& setters = playlist_fields_filler_.setters_required_;
+
+    BOOST_FOREACH(auto& setter_it, setters) {
+        result += setter_it->first;
+        result += ',';
+    }
+
+    // erase obsolete ',' character.
+    if ( !result.empty() ) {
+        result.pop_back();
+    }
+    return result;
+}
+
 ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
+    using namespace Utilities;
+
     const Rpc::Value& params = root_request["params"];
-    const AIMPManager::PlaylistsListType& playlists = aimp_manager_.getPlayLists();
 
     // get list of required pairs(field id, field getter function).    
     if ( params.isMember("fields") ) {
@@ -285,273 +304,40 @@ ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& r
         playlist_fields_filler_.initRequiredFieldsHandlersList(fields);
     }
 
+    std::ostringstream query;
+    query << "SELECT " << getColumnsString() << " FROM Playlists";
+
+    sqlite3* playlists_db = dynamic_cast<AIMPPlayer::AIMP3Manager&>(aimp_manager_).playlists_db_;
+    sqlite3_stmt* stmt = createStmt( playlists_db,
+                                     query.str().c_str()
+                                    );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    assert( static_cast<size_t>( sqlite3_column_count(stmt) ) == playlist_fields_filler_.setters_required_.size() );
+
     Rpc::Value& playlists_rpcvalue = root_response["result"];
-    playlists_rpcvalue.setSize( playlists.size() );
 
-    // fill rpcvalue array of playlists.
-    size_t playlist_index = 0;
-    BOOST_FOREACH(const auto& playlist_id_obj_pair, playlists) {
-        const Playlist& playlist = playlist_id_obj_pair.second;
-        Rpc::Value& playlist_rpcvalue = playlists_rpcvalue[playlist_index];
-        // fill all requested fields for playlist.
-        playlist_fields_filler_.fillRpcArrayOfObjects(playlist, playlist_rpcvalue);
-        ++playlist_index;
+    size_t playlist_rpcvalue_index = 0;
+    for(;;) {
+		int rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+            playlists_rpcvalue.setSize(playlist_rpcvalue_index + 1); /// TODO: if possible resize array full count of found rows before filling.
+            Rpc::Value& playlist_rpcvalue = playlists_rpcvalue[playlist_rpcvalue_index];
+            // fill all requested fields for playlist.
+            playlist_fields_filler_.fillRpcArrayOfObjects(stmt, playlist_rpcvalue);
+            ++playlist_rpcvalue_index;
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                 << rc_db << ": " << sqlite3_errmsg(playlists_db)
+                                                 << ". Query: " << query.str();
+            throw std::runtime_error(msg);
+		}
     }
+
     return RESPONSE_IMMEDIATE;
 }
-
-const size_t GetPlaylistEntriesTemplateMethod::getStartFromIndexFromRpcParam(int start_from_index, size_t max_value) // throws Rpc::Exception
-{
-    if (start_from_index < 0 || static_cast<size_t>(start_from_index) > max_value) {
-        throw Rpc::Exception("Wrong argument: start_index out of bound.", WRONG_ARGUMENT);
-    }
-
-    return static_cast<size_t>(start_from_index);
-}
-
-const size_t GetPlaylistEntriesTemplateMethod::getEntriesCountFromRpcParam(int entries_count, size_t max_value) // throws Rpc::Exception
-{
-    if (entries_count == -1) {
-        // -1 is special value which means "all available items". Included to support jQuery Datatables 1.7.6.
-        entries_count = max_value;
-    } else if (entries_count < 0) {
-        throw Rpc::Exception("Wrong argument: entries_count should be positive value or -1(for request all entries).", WRONG_ARGUMENT);
-    }
-
-    return static_cast<size_t>(entries_count) < max_value ? static_cast<size_t>(entries_count)
-                                                          : max_value;
-}
-
-bool GetPlaylistEntriesTemplateMethod::getSearchStringFromRpcParam(const std::string& search_string_utf8)
-{
-    using namespace StringEncoding;
-    try {
-        search_string_ = utf8_to_utf16(search_string_utf8);
-    } catch (EncodingException& e) {
-        BOOST_LOG_SEV(logger(), error) << "Error of convertation UTF8 search string to UTF16 in "__FUNCTION__". Reason: " << e.what();
-        search_string_.clear();
-    }
-
-    return !search_string_.empty();
-}
-
-void GetPlaylistEntriesTemplateMethod::fillFieldToOrderDescriptors(const Rpc::Value& entry_fields_to_order)
-{
-    using namespace EntriesSortUtil;
-    field_to_order_descriptors_.clear();
-    const size_t fields_count = entry_fields_to_order.size();
-    
-    for (size_t field_index = 0; field_index < fields_count; ++field_index) {
-       const Rpc::Value& field_desc = entry_fields_to_order[field_index];
-        try {
-            const std::string& field_to_order = field_desc[kFIELD_STRING];
-            
-            const auto supported_field_it = fields_to_order_.find(field_to_order);
-            if ( supported_field_it != fields_to_order_.end() ) {
-                // TODO: avoid duplicates
-                field_to_order_descriptors_.push_back( FieldToOrderDescriptor( supported_field_it->second,
-                                                                               (field_desc[kORDER_DIRECTION_STRING] == kDESCENDING_ORDER_STRING) ? DESCENDING 
-                                                                                                                                                 : ASCENDING
-                                                                              )
-                                                      );
-            } else {
-                std::ostringstream msg;
-                msg << "Wrong argument: ordering by field " << field_to_order << " is not supported.";
-                throw Rpc::Exception(msg.str(), WRONG_ARGUMENT);
-            }
-        } catch (Rpc::Exception&) {
-            // just ignore wrong order field description, ordering is not necessary.
-        }
-    }
-}
-
-const PlaylistEntryIDList& GetPlaylistEntriesTemplateMethod::getEntriesIDsFilteredByStringFromEntriesList(const std::wstring& search_string,
-                                                                                                          const EntriesListType& entries)
-{
-    filtered_entries_ids_.clear();
-    filtered_entries_ids_.reserve( entries.size() );
-
-    size_t entry_index = 0;
-    BOOST_FOREACH (const PlaylistEntry& entry, entries) {
-        if ( entry_contain_string_(entry, search_string) ) {
-            filtered_entries_ids_.push_back(entry_index);
-        }
-        ++entry_index;
-    }
-
-    return filtered_entries_ids_;
-}
-
-const PlaylistEntryIDList& GetPlaylistEntriesTemplateMethod::getEntriesIDsFilteredByStringFromEntryIDs(const std::wstring& search_string,
-                                                                                                       const PlaylistEntryIDList& entry_to_filter_ids,
-                                                                                                       const EntriesListType& entries)
-{
-    filtered_entries_ids_.clear();
-    filtered_entries_ids_.reserve( entry_to_filter_ids.size() );
-    BOOST_FOREACH (const PlaylistEntryID entry_id, entry_to_filter_ids) {
-        if ( entry_contain_string_(entries[entry_id], search_string) ) {
-            filtered_entries_ids_.push_back(entry_id);
-        }
-    }
-
-    return filtered_entries_ids_;
-}
-
-void GetPlaylistEntriesTemplateMethod::handleFilteredEntryIDs(const PlaylistEntryIDList& filtered_entries_ids, const EntriesListType& entries,
-                                                             size_t start_entry_index, size_t entries_count,
-                                                             EntryIDsHandler entry_ids_handler,
-                                                             EntryIDsHandler full_entry_ids_list_handler,
-                                                             EntriesCountHandler filtered_entries_count_handler)
-{
-    filtered_entries_count_handler( filtered_entries_ids.size() );
-
-    const size_t filtered_start_entry_index = std::min(start_entry_index,
-                                                       filtered_entries_ids.empty() ? 0 
-                                                                                    : filtered_entries_ids.size() - 1
-                                                       );
-    const size_t filtered_entries_count = std::min(entries_count,
-                                                   filtered_entries_ids.size() - filtered_start_entry_index);
-    handleEntryIDs(filtered_entries_ids, entries,
-                   filtered_start_entry_index, filtered_entries_count,
-                   entry_ids_handler,
-                   full_entry_ids_list_handler);
-}
-
-void GetPlaylistEntriesTemplateMethod::handleEntries(const EntriesListType& entries, size_t start_entry_index, size_t entries_count,
-                                                     EntriesHandler entries_handler, 
-                                                     EntriesHandler full_entries_list_handler)
-{
-    full_entries_list_handler( EntriesRange( entries.begin(), entries.end() ) );
-
-    EntriesListType::const_iterator entries_iterator_begin( entries.begin() );
-    std::advance(entries_iterator_begin, start_entry_index); // go to first requested entry.
-    EntriesListType::const_iterator entries_iterator_end(entries_iterator_begin);
-    std::advance(entries_iterator_end, entries_count); // go to entry next to last requested.
-    EntriesRange entries_range(entries_iterator_begin, entries_iterator_end);
-    
-    entries_handler(entries_range);
-}
-
-void GetPlaylistEntriesTemplateMethod::handleEntryIDs(const PlaylistEntryIDList& entries_ids, const EntriesListType& entries,
-                                                      size_t start_entry_index, size_t entries_count,
-                                                      EntryIDsHandler entry_ids_handler,
-                                                      EntryIDsHandler full_entry_ids_list_handler
-                                                      )
-{
-    assert(entries_ids.size() >= start_entry_index + entries_count);
-
-    full_entry_ids_list_handler(EntriesIDsRange( entries_ids.begin(), 
-                                                 entries_ids.end() 
-                                                ),
-                                entries);
-
-    PlaylistEntryIDList::const_iterator entry_id_iter_begin( entries_ids.begin() );
-    std::advance(entry_id_iter_begin, start_entry_index); // go to first requested entry.
-    PlaylistEntryIDList::const_iterator entry_id_iter_end(entry_id_iter_begin);
-    std::advance(entry_id_iter_end, entries_count); // go to entry next to last requested.
-    EntriesIDsRange entry_ids_range(entry_id_iter_begin, entry_id_iter_end);
-    
-    entry_ids_handler(entry_ids_range, entries);
-}
-
-ResponseType GetPlaylistEntriesTemplateMethod::execute(const Rpc::Value& params,
-                                                       // following needed by GetPlaylistEntries only
-                                                       EntriesHandler entries_handler,
-                                                       EntryIDsHandler entry_ids_handler,
-                                                       EntriesCountHandler total_entries_count_handler,
-                                                       EntriesCountHandler filtered_entries_count_handler,
-                                                       // following needed by GetEntryPositionInDataTable only
-                                                       EntriesHandler full_entries_list_handler,
-                                                       EntryIDsHandler full_entry_ids_list_handler,
-                                                       EntriesCountHandler page_size_handler
-                                                       )
-{
-    // ensure we got obligatory argument: playlist id.
-    if (params.size() < 1) {
-        throw Rpc::Exception("Wrong arguments count. Wait at least int 'playlist_id' argument.", WRONG_ARGUMENT);
-    }
-
-    const Playlist& playlist = getPlayListFromRpcParam(aimp_manager_, params["playlist_id"]);
-    const EntriesListType& entries = playlist.entries();
-
-    total_entries_count_handler( entries.size() );
-
-    const size_t start_entry_index = params.isMember("start_index") ? getStartFromIndexFromRpcParam(params["start_index"],
-                                                                                                    (entries.size() == 0) ? 0
-                                                                                                                          : entries.size() - 1
-                                                                                                    )
-                                                                    : 0; // by default return entries from start.
-
-    const size_t entries_count = params.isMember(kENTRIES_COUNT_STRING) ? getEntriesCountFromRpcParam(params[kENTRIES_COUNT_STRING],
-                                                                                                      entries.size() - start_entry_index
-                                                                                                      )
-                                                                        : entries.size() - start_entry_index; // by default return entries from start_entry_index to end of entries list.
-
-    if ( params.isMember(kENTRIES_COUNT_STRING) ) {
-        const int entries_count = params[kENTRIES_COUNT_STRING];
-        page_size_handler( static_cast<size_t>(entries_count) );
-    }
-
-    if ( !params.isMember(kORDER_FIELDS_STRING) && !params.isMember(kSEARCH_STRING_STRING) ) { // return entries in default order.
-        handleEntries(entries, start_entry_index, entries_count, entries_handler, full_entries_list_handler);
-    } else if ( params.isMember(kORDER_FIELDS_STRING) ) { // return entries in specified order if order descriptors are valid.
-        fillFieldToOrderDescriptors(params[kORDER_FIELDS_STRING]);
-        if ( !field_to_order_descriptors_.empty() ) { // return entries in specified order.
-            // get entries ids in specified ordering.
-            const PlaylistEntryIDList& sorted_entries_ids = (field_to_order_descriptors_.size() == 1) ? playlist.getEntriesSortedByField(field_to_order_descriptors_[0])
-                                                                                                      : playlist.getEntriesSortedByMultipleFields(field_to_order_descriptors_)
-            ;
-
-            if ( params.isMember(kSEARCH_STRING_STRING) && getSearchStringFromRpcParam(params[kSEARCH_STRING_STRING]) ) { // return entries in specified order and filtered by search string.
-                handleFilteredEntryIDs(getEntriesIDsFilteredByStringFromEntryIDs(search_string_, sorted_entries_ids, entries),
-                                       entries,
-                                       start_entry_index,
-                                       entries_count,
-                                       entry_ids_handler,
-                                       full_entry_ids_list_handler,
-                                       filtered_entries_count_handler
-                                      );
-            } else { // return entries in specified order.
-                handleEntryIDs(sorted_entries_ids, entries, start_entry_index, entries_count, entry_ids_handler, full_entry_ids_list_handler);
-            }
-        } else { // return entries in default order.
-            if ( params.isMember(kSEARCH_STRING_STRING) && getSearchStringFromRpcParam(params[kSEARCH_STRING_STRING]) ) { // return entries in default order and filtered by search string.
-                handleFilteredEntryIDs(getEntriesIDsFilteredByStringFromEntriesList(search_string_, entries),
-                                       entries,
-                                       start_entry_index,
-                                       entries_count,
-                                       entry_ids_handler,
-                                       full_entry_ids_list_handler,
-                                       filtered_entries_count_handler
-                                      );
-            } else { // return entries in default order.
-                handleEntries(entries, start_entry_index, entries_count, entries_handler, full_entries_list_handler);
-            }
-        }
-    } else if ( params.isMember(kSEARCH_STRING_STRING) && getSearchStringFromRpcParam(params[kSEARCH_STRING_STRING]) ) {
-        handleFilteredEntryIDs(getEntriesIDsFilteredByStringFromEntriesList(search_string_, entries),
-                               entries,
-                               start_entry_index,
-                               entries_count,
-                               entry_ids_handler,
-                               full_entry_ids_list_handler,
-                               filtered_entries_count_handler
-                               );
-    }
-    return RESPONSE_IMMEDIATE;
-}
-
-struct EntriesHandlerStub {
-    void operator()(const EntriesRange& /*range*/) const {}
-};
-
-struct EntryIDsHandlerStub {
-    void operator()(const EntriesIDsRange& /*range*/, const EntriesListType& /*entries*/) const {}
-};
-
-struct EntriesCountHandlerStub {
-    void operator()(size_t /*count*/) const {}
-};
 
 struct Formatter {
     const AIMPManager* aimp_manager_;
@@ -562,8 +348,20 @@ struct Formatter {
         format_string_(format_string)
     {}
 
-    void operator()(const PlaylistEntry& entry, Rpc::Value& rpc_value) const { 
-        rpc_value = StringEncoding::utf16_to_utf8( aimp_manager_->getFormattedEntryTitle(entry, 
+    void operator()(sqlite3_stmt* stmt, int /*column_index*/, Rpc::Value& rpc_value) const {
+        /*
+            Here we use small hack: 
+                we must support signature of RpcValueSetHelpers::HelperFillRpcFields::RpcValueSetter,
+                but we need to know more than 1 field: playlist and entry ids.
+            So we treat that always have two fields in db row when format string is set in RPC request.
+        */
+        const int playlist_column_index = 0,
+                  track_column_index    = 1;
+        TrackDescription track_desc(sqlite3_column_int(stmt, playlist_column_index),
+                                    sqlite3_column_int(stmt, track_column_index)
+                                    );
+        
+        rpc_value = StringEncoding::utf16_to_utf8( aimp_manager_->getFormattedEntryTitle(track_desc, 
                                                                                          *format_string_)
                                                   );
     }
@@ -574,141 +372,343 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager,
                                        )
     :
     AIMPRPCMethod("GetPlaylistEntries", aimp_manager, rpc_request_handler),
-    get_playlist_entries_templatemethod_( new GetPlaylistEntriesTemplateMethod(aimp_manager) ),
     entry_fields_filler_("entry"),
-    kFORMAT_STRING_STRING("format_string"),
-    kFIELDS_STRING("fields"),
-    kTOTAL_ENTRIES_COUNT_STRING("total_entries_count"),
-    kENTRIES_STRING("entries"),
-    kCOUNT_OF_FOUND_ENTRIES_STRING("count_of_found_entries")
+    kRQST_KEY_FORMAT_STRING("format_string"),
+    kRQST_KEY_FIELDS("fields"),
+    kRQST_KEY_START_INDEX("start_index"),
+    kRQST_KEY_ENTRIES_COUNT("entries_count"),
+    kRQST_KEY_FIELD("field"),
+    kDESCENDING_ORDER_STRING("desc"),
+    kRQST_KEY_ORDER_DIRECTION("dir"),
+    kRQST_KEY_ORDER_FIELDS("order_fields"),
+    kRQST_KEY_SEARCH_STRING("search_string"),
+    kRSLT_KEY_TOTAL_ENTRIES_COUNT("total_entries_count"),
+    kRSLT_KEY_ENTRIES("entries"),
+    kRSLT_KEY_COUNT_OF_FOUND_ENTRIES("count_of_found_entries"),
+    pagination_info_(nullptr)
 {
-
     using namespace RpcValueSetHelpers;
     using namespace RpcResultUtils;
+
+    auto int_setter   = boost::bind( createSetter(&sqlite3_column_int),   _1, _2, _3 );
+    auto int64_setter = boost::bind( createSetter(&sqlite3_column_int64), _1, _2, _3 );
+    auto text_setter  = boost::bind( createSetter(&sqlite3_column_text),  _1, _2, _3 );
+
     boost::assign::insert(entry_fields_filler_.setters_)
-        ( getStringFieldID(PlaylistEntry::ID),       boost::bind( createSetter(&PlaylistEntry::id),       _1, _2 ) )  // Use plugin id of entry instead Aimp internal id( PlaylistEntry::trackID() ).
-        ( getStringFieldID(PlaylistEntry::TITLE),    boost::bind( createSetter(&PlaylistEntry::title),    _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::ARTIST),   boost::bind( createSetter(&PlaylistEntry::artist),   _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::ALBUM),    boost::bind( createSetter(&PlaylistEntry::album),    _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::DATE),     boost::bind( createSetter(&PlaylistEntry::date),     _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::GENRE),    boost::bind( createSetter(&PlaylistEntry::genre),    _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::BITRATE),  boost::bind( createSetter(&PlaylistEntry::bitrate),  _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::DURATION), boost::bind( createSetter(&PlaylistEntry::duration), _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::FILESIZE), boost::bind( createSetter(&PlaylistEntry::fileSize), _1, _2 ) )
-        ( getStringFieldID(PlaylistEntry::RATING),   boost::bind( createSetter(&PlaylistEntry::rating),   _1, _2 ) )
+        ( getStringFieldID(PlaylistEntry::ID),       int_setter )
+        ( getStringFieldID(PlaylistEntry::TITLE),    text_setter )
+        ( getStringFieldID(PlaylistEntry::ARTIST),   text_setter )
+        ( getStringFieldID(PlaylistEntry::ALBUM),    text_setter )
+        ( getStringFieldID(PlaylistEntry::DATE),     text_setter )
+        ( getStringFieldID(PlaylistEntry::GENRE),    text_setter )
+        ( getStringFieldID(PlaylistEntry::BITRATE),  int_setter )
+        ( getStringFieldID(PlaylistEntry::DURATION), int_setter )
+        ( getStringFieldID(PlaylistEntry::FILESIZE), int64_setter )
+        ( getStringFieldID(PlaylistEntry::RATING),   int_setter )
     ;
 
-    // fill supported field names.
-    PlaylistEntries::SupportedFieldNames fields_names;
+    // map RPC field names to related db field names. All field names are the same except rpc's 'id' is 'entry_id' in db.
     BOOST_FOREACH(auto& setter_it, entry_fields_filler_.setters_) {
-        fields_names.insert(setter_it.first);
+        fieldnames_rpc_to_db_[setter_it.first] = setter_it.first;
     }
-    get_playlist_entries_templatemethod_->setSupportedFieldNames(fields_names);
+    fieldnames_rpc_to_db_[getStringFieldID(PlaylistEntry::ID)] = "entry_id";
 
-    // create handlers for passing into get_playlist_entries_templatemethod_'s execute().
-    entries_handler_stub_       = boost::bind<void>(EntriesHandlerStub(), _1);
-    enties_ids_handler_stub_    = boost::bind<void>(EntryIDsHandlerStub(), _1, _2);
-    entries_count_handler_stub_ = boost::bind<void>(EntriesCountHandlerStub(), _1);
-}
+    // fields available for order.
+    using namespace boost::assign;
+    fields_to_order_ += 
+        getStringFieldID(PlaylistEntry::ID),
+        getStringFieldID(PlaylistEntry::TITLE),
+        getStringFieldID(PlaylistEntry::ARTIST),
+        getStringFieldID(PlaylistEntry::ALBUM),
+        getStringFieldID(PlaylistEntry::DATE),
+        getStringFieldID(PlaylistEntry::GENRE),
+        getStringFieldID(PlaylistEntry::BITRATE),
+        getStringFieldID(PlaylistEntry::DURATION),
+        getStringFieldID(PlaylistEntry::FILESIZE),
+        getStringFieldID(PlaylistEntry::RATING)
+    ;
 
-void GetPlaylistEntries::fillRpcValueEntriesFromEntriesList(EntriesRange entries_range,
-                                                            Rpc::Value& rpcvalue_entries)
-{
-    rpcvalue_entries.setSize( entries_range.size() );
-
-    size_t entry_rpcvalue_index = 0;
-    BOOST_FOREACH (const PlaylistEntry& entry, entries_range) {
-        Rpc::Value& entry_rpcvalue = rpcvalue_entries[entry_rpcvalue_index];
-        // fill all requested fields for entry.
-        entry_fields_filler_.fillRpcArrayOfArrays(entry, entry_rpcvalue);
-        ++entry_rpcvalue_index;
-    }
-}
-
-void GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs(EntriesIDsRange entries_ids_range, const EntriesListType& entries,
-                                                         Rpc::Value& rpcvalue_entries)
-{
-    rpcvalue_entries.setSize( entries_ids_range.size() );
-
-    size_t entry_rpcvalue_index = 0;
-    BOOST_FOREACH (const PlaylistEntryID entry_id, entries_ids_range) {
-        Rpc::Value& entry_rpcvalue = rpcvalue_entries[entry_rpcvalue_index];
-        // fill all requested fields for entry.
-        entry_fields_filler_.fillRpcArrayOfArrays(entries[entry_id], entry_rpcvalue);
-        ++entry_rpcvalue_index;
-    }
+    // fields available to filtering.
+    fields_to_filter_ +=
+        getStringFieldID(PlaylistEntry::TITLE),
+        getStringFieldID(PlaylistEntry::ARTIST),
+        getStringFieldID(PlaylistEntry::ALBUM),
+        getStringFieldID(PlaylistEntry::DATE),
+        getStringFieldID(PlaylistEntry::GENRE)
+    ;
 }
 
 void GetPlaylistEntries::initEntriesFiller(const Rpc::Value& params)
 {
-    if ( params.isMember(kFORMAT_STRING_STRING) ) { // 'format_string' param has priority over 'fields' param.
+    if ( params.isMember(kRQST_KEY_FORMAT_STRING) ) { // 'format_string' param has priority over 'fields' param.
         typedef RpcValueSetHelpers::HelperFillRpcFields<PlaylistEntry>::RpcValueSetters RpcValueSetters;
-        RpcValueSetters::iterator setter_it = entry_fields_filler_.setters_.find(kFORMAT_STRING_STRING);
+        RpcValueSetters::iterator setter_it = entry_fields_filler_.setters_.find(kRQST_KEY_FORMAT_STRING);
         if ( setter_it == entry_fields_filler_.setters_.end() ) {
             // add filler if it does not exist yet.
-            setter_it = entry_fields_filler_.setters_.insert( std::make_pair(kFORMAT_STRING_STRING,
-                                                              RpcValueSetHelpers::HelperFillRpcFields<PlaylistEntry>::RpcValueSetter()
+            setter_it = entry_fields_filler_.setters_.insert( std::make_pair(kRQST_KEY_FORMAT_STRING,
+                                                                             RpcValueSetHelpers::HelperFillRpcFields<PlaylistEntry>::RpcValueSetter()
                                                                              )
                                                              ).first;
         }
         
-        const std::string& format_string = params[kFORMAT_STRING_STRING];
+        const std::string& format_string = params[kRQST_KEY_FORMAT_STRING];
         setter_it->second = boost::bind<void>(Formatter(&aimp_manager_, &format_string),
-                                              _1, _2
+                                              _1, _2, _3
                                               );
         entry_fields_filler_.setters_required_.clear();
         entry_fields_filler_.setters_required_.push_back(setter_it);
+    } else if ( params.isMember(kRQST_KEY_FIELDS) ) {
+        entry_fields_filler_.initRequiredFieldsHandlersList(params[kRQST_KEY_FIELDS]);
     } else {
-        if ( params.isMember(kFIELDS_STRING) ) {
-            entry_fields_filler_.initRequiredFieldsHandlersList(params[kFIELDS_STRING]);
-        } else {
-            // set default fields
-            Rpc::Value fields;
-            fields.setSize(2);
-            fields[0] = "id";
-            fields[1] = "title";
-            entry_fields_filler_.initRequiredFieldsHandlersList(fields);
+        // set default fields
+        Rpc::Value fields;
+        fields.setSize(2);
+        fields[0] = "id";
+        fields[1] = "title";
+        entry_fields_filler_.initRequiredFieldsHandlersList(fields);
+    }
+}
+
+std::string GetPlaylistEntries::getOrderString(const Rpc::Value& params) const
+{
+    std::string result;
+	if ( params.isMember(kRQST_KEY_ORDER_FIELDS) ) {        
+        const Rpc::Value& entry_fields_to_order = params[kRQST_KEY_ORDER_FIELDS];
+        const size_t fields_count = entry_fields_to_order.size();
+        for (size_t field_index = 0; field_index < fields_count; ++field_index) {
+            const Rpc::Value& field_desc = entry_fields_to_order[field_index];
+            const std::string& field_to_order = field_desc[kRQST_KEY_FIELD];
+            const auto supported_field_it = std::find(fields_to_order_.begin(), fields_to_order_.end(), field_to_order);
+            if ( supported_field_it != fields_to_order_.end() ) {
+                if ( result.empty() ) {
+                    result = "ORDER BY ";
+                }
+                result += field_to_order;
+                result += (field_desc[kRQST_KEY_ORDER_DIRECTION] == kDESCENDING_ORDER_STRING) ? " DESC," 
+                                                                                              : " ASC,";
+            }
+        }
+
+        if (!result.empty() && result.back() == ',') {
+            result.pop_back();
         }
     }
+    return result;
+}
+
+std::string GetPlaylistEntries::getLimitString(const Rpc::Value& params) const
+{
+    std::ostringstream os;
+	if ( params.isMember(kRQST_KEY_START_INDEX) && params.isMember(kRQST_KEY_ENTRIES_COUNT) ) {
+        const int entries_count = params[kRQST_KEY_ENTRIES_COUNT];
+        if (entries_count != -1) { // -1 is special value which means "all available items". Included to support jQuery Datatables 1.7.6.
+            const int start_entry_index = params[kRQST_KEY_START_INDEX];
+	        os << "LIMIT " << start_entry_index << ',' << entries_count;
+        }
+
+        if ( EntryLocationDeterminationMode() ) {
+            pagination_info_->entries_on_page_ = entries_count;
+        }
+    }
+    return os.str();
+}
+
+std::string GetPlaylistEntries::getWhereString(const Rpc::Value& params, const int playlist_id) const
+{
+    using namespace Utilities;
+
+    struct MatchArgSetter : public std::binary_function<sqlite3_stmt*, int, void>
+    {
+        typedef std::string StringT;
+        StringT match_arg_;
+        MatchArgSetter(const StringT& match_arg) : match_arg_(match_arg) {}
+        void operator()(sqlite3_stmt* stmt, int bind_index) const {
+            const int rc_db = sqlite3_bind_text(stmt, bind_index,
+                                                match_arg_.c_str(),
+                                                match_arg_.size() * sizeof(StringT::value_type),
+                                                SQLITE_TRANSIENT);
+            if (SQLITE_OK != rc_db) {
+                const std::string msg = MakeString() << "Error sqlite3_bind_text: " << rc_db;
+                throw std::runtime_error(msg);
+            }
+        }
+    };
+
+    std::ostringstream os;
+    
+    os << "WHERE playlist_id=" << playlist_id;
+	if ( params.isMember(kRQST_KEY_SEARCH_STRING) ) {
+        const std::string& search_string = params[kRQST_KEY_SEARCH_STRING];
+        if ( !search_string.empty() && !fields_to_filter_.empty() ) { ///??? search in all fields or only in requested ones.            
+            const QueryArgSetter& setter = boost::bind<void>(MatchArgSetter(search_string), _1, _2);
+            
+            os << " AND(";
+            FieldNames::const_iterator begin = fields_to_filter_.begin(),
+                                       end   = fields_to_filter_.end();
+            for (FieldNames::const_iterator fieldname_it = begin;
+                                            fieldname_it != end;
+                                            ++fieldname_it
+                 )
+            {
+                query_arg_setters_.push_back(setter);
+
+                os << *fieldname_it << " MATCH ?";
+                if (fieldname_it + 1 != end) {
+                    os << " OR ";
+                }
+            }
+            os << ")";
+        }
+    }
+    return os.str();
+}
+
+std::string GetPlaylistEntries::getColumnsString() const
+{
+    std::string result;
+    const auto& setters = entry_fields_filler_.setters_required_;
+    
+    // special case: format string. It is not database field and for it's work we must use playlist and entry ids.
+    if ( !setters.empty() ) {
+        if (setters.front()->first == kRQST_KEY_FORMAT_STRING) {
+            return "playlist_id,entry_id";
+        }
+    }
+
+    BOOST_FOREACH(auto& setter_it, setters) {
+        result += fieldnames_rpc_to_db_.find(setter_it->first)->second; // fieldnames_rpc_to_db_ is syncronized with setters.
+        result += ',';
+    }
+
+    // erase obsolete ',' character.
+    if ( !result.empty() ) {
+        result.pop_back();
+    }
+    return result;
+}
+
+size_t GetPlaylistEntries::getTotalEntriesCount(sqlite3* playlists_db, const int playlist_id) const
+{
+    using namespace Utilities;
+
+    std::ostringstream query;
+    query << "SELECT COUNT(*) FROM PlaylistsEntries WHERE playlist_id=" << playlist_id;
+    
+    sqlite3_stmt* stmt = createStmt( playlists_db,
+                                     query.str()
+                                    );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    size_t total_entries_count = 0;
+
+	const int rc_db = sqlite3_step(stmt);
+    if (SQLITE_ROW == rc_db) {
+        assert(sqlite3_column_count(stmt) > 0);
+        total_entries_count = sqlite3_column_int(stmt, 0);
+    } else {
+        const std::string msg = MakeString() << "sqlite3_step() error "
+                                             << rc_db << ": " << sqlite3_errmsg(playlists_db)
+                                             << ". Query: " << query.str();
+        throw std::runtime_error(msg);
+    }
+
+    return total_entries_count;
 }
 
 Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
+    using namespace Utilities;
+
     PROFILE_EXECUTION_TIME(__FUNCTION__);
+ 
+    ON_BLOCK_EXIT_OBJ(*this, &GetPlaylistEntries::DeactivateEntryLocationDeterminationMode);
 
-    const Rpc::Value& rpc_params = root_request["params"];
+    const Rpc::Value& params = root_request["params"];
 
-    initEntriesFiller(rpc_params);
+    // ensure we got obligatory argument: playlist id.
+    if (params.size() < 1) {
+        throw Rpc::Exception("Wrong arguments count. Wait at least int 'playlist_id' argument.", WRONG_ARGUMENT);
+    }
 
-    Rpc::Value& rpc_result = root_response["result"];
-    Rpc::Value& rpcvalue_entries = rpc_result[kENTRIES_STRING];
+    initEntriesFiller(params);
 
-    struct SetEntriesCount {
-        mutable Rpc::Value* value_;
-        const std::string* member_name_;
-        SetEntriesCount(Rpc::Value& value, const std::string& member_name)
-            : value_(&value),
-              member_name_(&member_name)
-        {}
-        void operator()(size_t count) const
-            { (*value_)[*member_name_] = count; }
-    };
+    sqlite3* playlists_db = dynamic_cast<AIMPPlayer::AIMP3Manager&>(aimp_manager_).playlists_db_;
 
-    Rpc::ResponseType response_type = get_playlist_entries_templatemethod_->execute(rpc_params, 
-                                                                                    boost::bind(&GetPlaylistEntries::fillRpcValueEntriesFromEntriesList,
-                                                                                                this, _1, boost::ref(rpcvalue_entries)
-                                                                                                ),
-                                                                                    boost::bind(&GetPlaylistEntries::fillRpcValueEntriesFromEntryIDs,
-                                                                                                this, _1, _2, boost::ref(rpcvalue_entries)
-                                                                                                ),
-                                                                                    boost::bind<void>(SetEntriesCount(rpc_result, kTOTAL_ENTRIES_COUNT_STRING), _1),
-                                                                                    boost::bind<void>(SetEntriesCount(rpc_result, kCOUNT_OF_FOUND_ENTRIES_STRING), _1),
-                                                                                    // use stubs instead not used callbacks.
-                                                                                    entries_handler_stub_,
-                                                                                    enties_ids_handler_stub_,
-                                                                                    entries_count_handler_stub_
-                                                                                    );
-    return response_type;
+    const int playlist_id = params["playlist_id"];
+
+    query_arg_setters_.clear();
+
+    std::ostringstream query_without_limit;
+    query_without_limit << "SELECT " << getColumnsString() << " FROM PlaylistsEntries "
+                        << getWhereString(params, playlist_id) << ' ' 
+                        << getOrderString(params);
+    std::ostringstream query_with_limit;
+    query_with_limit << query_without_limit.str() << ' '
+                     << getLimitString(params);
+
+    sqlite3_stmt* stmt = createStmt( playlists_db,
+                                     query_with_limit.str().c_str()
+                                    );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    // bind all query args.
+    size_t bind_index = 1;
+    BOOST_FOREACH(auto& setter, query_arg_setters_) {
+        setter(stmt, bind_index++);
+    }
+
+#ifdef _DEBUG
+    const auto& setters = entry_fields_filler_.setters_required_;
+    if ( !(    !setters.empty()
+            && setters.front()->first == kRQST_KEY_FORMAT_STRING) 
+        )
+    {
+        assert( static_cast<size_t>( sqlite3_column_count(stmt) ) == setters.size() );
+    }
+#endif
+
+    Rpc::Value* rpc_result = nullptr;
+    Rpc::Value* rpcvalue_entries = nullptr;
+
+    if ( !EntryLocationDeterminationMode() ) {
+        rpc_result = &root_response["result"];
+        rpcvalue_entries = &(*rpc_result)[kRSLT_KEY_ENTRIES];
+        rpcvalue_entries->setSize(0); // return zero-length array, not null if no entires found.
+    }
+
+    size_t entry_index = 0;
+    for(;;) {
+		int rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+            if ( !EntryLocationDeterminationMode() ) {
+                rpcvalue_entries->setSize(entry_index + 1); /// TODO: if possible resize array full count of found rows before filling.
+                Rpc::Value& entry_rpcvalue = (*rpcvalue_entries)[entry_index];
+                // fill all requested fields for entry.
+                entry_fields_filler_.fillRpcArrayOfArrays(stmt, entry_rpcvalue);
+            } else {
+                const int entry_id = sqlite3_column_int(stmt, pagination_info_->id_field_index);
+                if (pagination_info_->entry_id == entry_id) {
+                    pagination_info_->entry_index_in_current_representation_ = entry_index;
+                    break;
+                }
+            }
+            ++entry_index;
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                 << rc_db << ": " << sqlite3_errmsg(playlists_db)
+                                                 << ". Query: " << query_with_limit.str();
+            throw std::runtime_error(msg);
+		}
+    }
+
+    if ( !EntryLocationDeterminationMode() ) {
+        (*rpc_result)[kRSLT_KEY_TOTAL_ENTRIES_COUNT]    = getTotalEntriesCount(playlists_db, playlist_id);
+        (*rpc_result)[kRSLT_KEY_COUNT_OF_FOUND_ENTRIES] = getRowsCount(playlists_db, query_without_limit.str(), &query_arg_setters_);
+    }
+
+    return RESPONSE_IMMEDIATE;
 }
 
 GetEntryPositionInDataTable::GetEntryPositionInDataTable(AIMPManager& aimp_manager,
@@ -717,76 +717,45 @@ GetEntryPositionInDataTable::GetEntryPositionInDataTable(AIMPManager& aimp_manag
                                                          )
     :
     AIMPRPCMethod("GetEntryPositionInDataTable", aimp_manager, rpc_request_handler),
-    get_playlist_entries_templatemethod_( getplaylistentries_method.getPlaylistEntriesTemplateMethod() )
+    getplaylistentries_method_(getplaylistentries_method),
+    kFIELD_ID("id")
 {
-    // create handlers for passing into get_playlist_entries_templatemethod_'s execute().
-    entries_handler_stub_          = boost::bind<void>(EntriesHandlerStub(), _1);
-    enties_ids_handler_stub_       = boost::bind<void>(EntryIDsHandlerStub(), _1, _2);
-    entries_count_handler_stub_    = boost::bind<void>(EntriesCountHandlerStub(), _1);
-    struct SetEntriesCount {
-        mutable size_t* entries_count_;
-        SetEntriesCount(size_t* entries_count)
-            : entries_count_(entries_count)
-        {}
-        void operator()(size_t count) const
-            { *entries_count_ = count; }
-    };
-    entries_on_page_count_handler_ = boost::bind<void>(SetEntriesCount(&entries_on_page_), _1);
-}
-
-void GetEntryPositionInDataTable::setEntryPageInDataTableFromEntriesList(EntriesRange entries_range,
-                                                                         PlaylistEntryID entry_id
-                                                                         )
-{
-    // Note: entry_id is the same as index in entries list. Range entries_range contains full entries list.
-    if ( 0 <= entry_id && entry_id < entries_range.size() ) {
-       entry_index_in_current_representation_ = entry_id;
-    } else {
-       // do not set entry_index_in_current_representation_ in case when entry_id is out of range.
-    }
-}
-
-void  GetEntryPositionInDataTable::setEntryPageInDataTableFromEntryIDs(EntriesIDsRange entries_ids_range, const EntriesListType& /*entries*/,
-                                                                       PlaylistEntryID entry_id)
-{
-    // Note: Range entries_ids_range contains full entries ids list for current representation(concrete filtering and sorting).
-    const auto it = std::find(entries_ids_range.begin(), entries_ids_range.end(), entry_id);
-    if ( it != entries_ids_range.end() ) {
-        entry_index_in_current_representation_ = std::distance(entries_ids_range.begin(), it);
-    } else {
-        // do not set entry_index_in_current_representation_ in case when entry_id is not in current representation.
-    }
 }
 
 Rpc::ResponseType GetEntryPositionInDataTable::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
-    const Rpc::Value& rpc_params = root_request["params"];
+    Rpc::Value root_request_copy = root_request;
+
+    Rpc::Value& rpc_params = root_request_copy["params"];
     const PlaylistEntryID track_id(rpc_params["track_id"]);
 
-    entries_on_page_ = 0;
-    entry_index_in_current_representation_ = -1;
+    int id_field_index = -1;
+    Rpc::Value& fields = rpc_params["fields"];
+    for (int i = 0, end = fields.size(); i != end; ++i) {
+        const std::string& field = fields[i];
+        if (field == kFIELD_ID) {
+            id_field_index = i;
+            break;
+        }
+    }
+    if (id_field_index < 0) {
+        id_field_index = fields.size();
+        fields.setSize(id_field_index + 1);
+        fields[id_field_index] = kFIELD_ID;
+    }
 
-    get_playlist_entries_templatemethod_->execute(rpc_params, 
-                                                  // use stubs instead not used callbacks.
-                                                  entries_handler_stub_,
-                                                  enties_ids_handler_stub_,
-                                                  entries_count_handler_stub_,
-                                                  entries_count_handler_stub_,
+    PaginationInfo pagination_info(track_id, id_field_index);
+    getplaylistentries_method_.ActivateEntryLocationDeterminationMode(&pagination_info);
+    getplaylistentries_method_.execute(root_request_copy, root_response);
 
-                                                  boost::bind(&GetEntryPositionInDataTable::setEntryPageInDataTableFromEntriesList,
-                                                              this, _1, track_id
-                                                              ),
-                                                  boost::bind(&GetEntryPositionInDataTable::setEntryPageInDataTableFromEntryIDs,
-                                                              this, _1, _2, track_id
-                                                              ),
-                                                  entries_on_page_count_handler_
-                                                  );
+    const size_t entries_on_page = pagination_info.entries_on_page_;
+    const int entry_index_in_current_representation = pagination_info.entry_index_in_current_representation_;
 
     //const size_t entries_count_in_representation = current_filtered_entries_count_ != 0 ? current_filtered_entries_count_ : current_total_entries_count_;
     Rpc::Value& rpc_result = root_response["result"];
-    if (entries_on_page_ > 0 && entry_index_in_current_representation_ >= 0) {
-        rpc_result["page_number"]         = static_cast<size_t>(entry_index_in_current_representation_ / entries_on_page_);
-        rpc_result["track_index_on_page"] = static_cast<size_t>(entry_index_in_current_representation_ % entries_on_page_);
+    if (entries_on_page > 0 && entry_index_in_current_representation >= 0) {
+        rpc_result["page_number"]         = static_cast<size_t>(entry_index_in_current_representation / entries_on_page);
+        rpc_result["track_index_on_page"] = static_cast<size_t>(entry_index_in_current_representation % entries_on_page);
     } else {
         rpc_result["page_number"] = -1; ///??? maybe return null here or nothing.
         rpc_result["track_index_on_page"] = -1;

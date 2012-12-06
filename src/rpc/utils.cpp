@@ -120,9 +120,9 @@ void setPlaylistsContentChangeInfo(const AIMPPlayer::AIMPManager& /*aimp_manager
 const std::string& getStringFieldID(PlaylistEntry::FIELD_IDs id)
 {
     // Notice, order and count of should be syncronized with PlaylistEntry::FIELD_IDs.
-    static std::string fields_ids[] = { "id", "title", "artist", "album", "date", "genre", "bitrate", "duration", "filename", "filesize", "rating", "internal_aimp_id", "activity_flag" };
+    static std::string fields_ids[] = {"id", "title", "artist", "album", "date", "genre", "bitrate", "duration", "filename", "filesize", "rating", "internal_aimp_id", "activity_flag" };
     //enum PlaylistEntry::FIELD_IDs   { ID,   TITLE,   ARTIST,   ALBUM,   DATE,   GENRE,   BITRATE,   DURATION,   FILENAME,   FILESIZE,   RATING,   INTERNAL_AIMP_ID,   ACTIVITY_FLAG,   FIELDS_COUNT };
-    assert(sizeof(fields_ids) / sizeof(*fields_ids) == PlaylistEntry::FIELDS_COUNT);
+    Utilities::AssertArraySize<PlaylistEntry::FIELDS_COUNT>(fields_ids);
     assert(0 <= id && id < PlaylistEntry::FIELDS_COUNT);
     return fields_ids[id];
 }
@@ -132,7 +132,7 @@ const std::string& getStringFieldID(Playlist::FIELD_IDs id)
     // Notice, order and count of should be syncronized with Playlist::FIELD_IDs.
     static std::string fields_ids[] = { "id", "title", "entries_count", "duration", "size_of_entries" };
     //enum Playlist::FIELD_IDs        { ID,   TITLE,   ENTRIES_COUNT,   DURATION,   SIZE_OF_ALL_ENTRIES_IN_BYTES, FIELDS_COUNT };
-    assert(sizeof(fields_ids) / sizeof(*fields_ids) == Playlist::FIELDS_COUNT);
+    Utilities::AssertArraySize<Playlist::FIELDS_COUNT>(fields_ids);
     assert(0 <= id && id < Playlist::FIELDS_COUNT);
     return fields_ids[id];
 }

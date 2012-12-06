@@ -10,6 +10,7 @@
 #include "method.h"
 #include "value.h"
 #include "utils.h"
+#include "utils/sqlite_util.h"
 
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int.hpp>
@@ -17,6 +18,8 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/assign/std.hpp>
 #include <boost/bind.hpp>
+
+#include "sqlite/sqlite3.h"
 
 namespace MultiUserMode { class MultiUserModeManager; }
 
@@ -515,12 +518,15 @@ public:
     {
         using namespace RpcValueSetHelpers;
         using namespace RpcResultUtils;
+        auto int_setter   = boost::bind( createSetter(&sqlite3_column_int),   _1, _2, _3 );
+        auto int64_setter = boost::bind( createSetter(&sqlite3_column_int64), _1, _2, _3 );
+        auto text_setter  = boost::bind( createSetter(&sqlite3_column_text),  _1, _2, _3 );
         boost::assign::insert(playlist_fields_filler_.setters_)
-            ( getStringFieldID(Playlist::ID),                           boost::bind( createSetter(&Playlist::id),                      _1, _2 ) )
-            ( getStringFieldID(Playlist::TITLE),                        boost::bind( createSetter(&Playlist::title),                   _1, _2 ) )
-            ( getStringFieldID(Playlist::DURATION),                     boost::bind( createSetter(&Playlist::duration),                _1, _2 ) )
-            ( getStringFieldID(Playlist::ENTRIES_COUNT),                boost::bind( createSetter(&Playlist::entriesCount),            _1, _2 ) )
-            ( getStringFieldID(Playlist::SIZE_OF_ALL_ENTRIES_IN_BYTES), boost::bind( createSetter(&Playlist::sizeOfAllEntriesInBytes), _1, _2 ) )
+            ( getStringFieldID(Playlist::ID),                           int_setter )
+            ( getStringFieldID(Playlist::TITLE),                        text_setter )
+            ( getStringFieldID(Playlist::DURATION),                     int64_setter )
+            ( getStringFieldID(Playlist::ENTRIES_COUNT),                int_setter )
+            ( getStringFieldID(Playlist::SIZE_OF_ALL_ENTRIES_IN_BYTES), int64_setter )
         ;
     }
 
@@ -537,6 +543,8 @@ public:
 
 private:
 
+    std::string getColumnsString() const;
+
     //! See HelperFillRpcFields class commentaries.
     RpcValueSetHelpers::HelperFillRpcFields<Playlist> playlist_fields_filler_;
 };
@@ -546,130 +554,18 @@ typedef std::set<std::string> SupportedFieldNames;
 typedef std::vector<SupportedFieldNames::const_iterator> RequiredFieldNames;
 }
 
-typedef boost::sub_range<const EntriesListType> EntriesRange;
-typedef boost::sub_range<const PlaylistEntryIDList> EntriesIDsRange;
+struct PaginationInfo : boost::noncopyable {
+    PaginationInfo(int entry_id, size_t id_field_index)
+        : entry_id(entry_id),
+          id_field_index(id_field_index),
+          entries_on_page_(0),
+          entry_index_in_current_representation_(-1)
+    {}
 
-typedef boost::function<void(EntriesRange)> EntriesHandler;
-typedef boost::function<void(EntriesIDsRange, const EntriesListType&)> EntryIDsHandler;
-typedef boost::function<void(size_t)> EntriesCountHandler;
-
-
-// Fetches list of entries to further processing by GetPlaylistEntries and GetDataTablePageForEntry methods.
-class GetPlaylistEntriesTemplateMethod : boost::noncopyable
-{
-public:
-
-    GetPlaylistEntriesTemplateMethod(AIMPManager& aimp_manager)
-        :
-        aimp_manager_(aimp_manager),
-        kENTRIES_COUNT_STRING("entries_count"),
-        kFIELD_STRING("field"),
-        kDESCENDING_ORDER_STRING("desc"),
-        kORDER_DIRECTION_STRING("dir"),
-        kORDER_FIELDS_STRING("order_fields"),
-        kSEARCH_STRING_STRING("search_string")
-    {
-        using namespace RpcResultUtils;
-
-        // initialization of fields available to order.
-        fields_to_order_[ getStringFieldID(PlaylistEntry::ID)       ] = AIMPPlayer::ID;
-        fields_to_order_[ getStringFieldID(PlaylistEntry::TITLE)    ] = AIMPPlayer::TITLE;
-        fields_to_order_[ getStringFieldID(PlaylistEntry::ARTIST)   ] = AIMPPlayer::ARTIST;
-        fields_to_order_[ getStringFieldID(PlaylistEntry::ALBUM)    ] = AIMPPlayer::ALBUM;
-        fields_to_order_[ getStringFieldID(PlaylistEntry::DATE)     ] = AIMPPlayer::DATE;
-        fields_to_order_[ getStringFieldID(PlaylistEntry::GENRE)    ] = AIMPPlayer::GENRE;
-        fields_to_order_[ getStringFieldID(PlaylistEntry::BITRATE)  ] = AIMPPlayer::BITRATE;
-        fields_to_order_[ getStringFieldID(PlaylistEntry::DURATION) ] = AIMPPlayer::DURATION;
-        fields_to_order_[ getStringFieldID(PlaylistEntry::FILESIZE) ] = AIMPPlayer::FILESIZE;
-        fields_to_order_[ getStringFieldID(PlaylistEntry::RATING)   ] = AIMPPlayer::RATING;
-
-        field_to_order_descriptors_.reserve( fields_to_order_.size() );
-
-        // initialization of fields available to filtering.
-        GettersOfEntryStringField& fields_to_filter_getters = entry_contain_string_.field_getters_;
-        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::title,  _1) );
-        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::artist, _1) );
-        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::album,  _1) );
-        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::date,   _1) );
-        fields_to_filter_getters.push_back( boost::bind(&PlaylistEntry::genre,  _1) );
-    }
-
-    std::string help()
-    {
-        return "Get sub range of entries: start_index and entries_count used to get part of entries instead whole playlist. "
-               "Ordering: order_fields is array of field descriptions, used to order entries by multiple fields. Each descriptor is associative array with keys: "
-               "    'field' - field to order name. Available fields are: id, title, artist, album, date, genre, bitrate, duration, filename, rating; "
-               "    'dir'   - order('asc' - ascending, 'desc' - descending); "
-               "Filtering: only those entries will be returned which have at least one occurence of search_string in one of entry string field (title, artist, album, data, genre).";
-    }
-
-    Rpc::ResponseType execute(const Rpc::Value& params,
-                              // following needed by only by GetPlaylistEntries
-                              EntriesHandler entries_handler,
-                              EntryIDsHandler entry_ids_handler,
-                              EntriesCountHandler total_entries_count_handler,
-                              EntriesCountHandler filtered_entries_count_handler,
-                              // following needed by only by GetEntryPositionInDataTable
-                              EntriesHandler full_entries_list_handler,
-                              EntryIDsHandler full_entry_ids_list_handler,
-                              EntriesCountHandler page_size_handler
-                              );
-
-    void setSupportedFieldNames(const PlaylistEntries::SupportedFieldNames& supported_fields_names)
-        { supported_fields_names_ = supported_fields_names; }
-
-private:
-    
-    AIMPManager& aimp_manager_;
-
-    PlaylistEntries::SupportedFieldNames supported_fields_names_; // list of entry field names which can be handled.
-    
-    //! \return start entry index.
-    const size_t getStartFromIndexFromRpcParam(int start_from_index, size_t max_value); // throws Rpc::Exception
-
-    //! \return count of entries to process.
-    const size_t getEntriesCountFromRpcParam(int entries_count, size_t max_value); // throws Rpc::Exception
-    const std::string kENTRIES_COUNT_STRING;
-
-    // entries ordering
-    const std::string kFIELD_STRING,
-                      kDESCENDING_ORDER_STRING,
-                      kORDER_DIRECTION_STRING,
-                      kORDER_FIELDS_STRING;
-    typedef std::map<std::string, ENTRY_FIELDS_ORDERABLE> FieldsToOrderMap;
-    FieldsToOrderMap fields_to_order_;
-    EntriesSortUtil::FieldToOrderDescriptors field_to_order_descriptors_;
-    void fillFieldToOrderDescriptors(const Rpc::Value& entry_fields_to_order);
-
-    // entries filtering
-    const std::string kSEARCH_STRING_STRING;
-    PlaylistEntryIDList filtered_entries_ids_;
-    std::wstring search_string_;
-
-    //!\return true if search string is not empty.
-    bool getSearchStringFromRpcParam(const std::string& search_string_utf8);
-    FindStringOccurenceInEntryFieldsFunctor entry_contain_string_;
-    const PlaylistEntryIDList& getEntriesIDsFilteredByStringFromEntriesList(const std::wstring& search_string,
-                                                                            const EntriesListType& entries);
-    const PlaylistEntryIDList& getEntriesIDsFilteredByStringFromEntryIDs(const std::wstring& search_string,
-                                                                         const PlaylistEntryIDList& entry_to_filter_ids,
-                                                                         const EntriesListType& entries);
-
-    // entries handling
-    void handleFilteredEntryIDs(const PlaylistEntryIDList& filtered_entries_ids, const EntriesListType& entries,
-                                size_t start_entry_index, size_t entries_count,
-                                EntryIDsHandler entry_ids_handler,
-                                EntryIDsHandler full_entry_ids_list_handler,
-                                EntriesCountHandler filtered_entries_count_handler);
-
-    void handleEntries(const EntriesListType& entries, size_t start_entry_index, size_t entries_count,
-                       EntriesHandler entries_handler,
-                       EntriesHandler full_entries_list_handler);
-
-    void handleEntryIDs(const PlaylistEntryIDList& entries_ids, const EntriesListType& entries,
-                        size_t start_entry_index, size_t entries_count,
-                        EntryIDsHandler entry_ids_handler,
-                        EntryIDsHandler full_entry_ids_list_handler);
+    const int entry_id;
+    const size_t id_field_index;
+    size_t entries_on_page_;
+    int entry_index_in_current_representation_; // index of entry in reperesentation(concrete filtering and sorting) of playlist entries.
 };
 
 /*! 
@@ -722,43 +618,60 @@ public:
                "    'count_of_found_entries' - (optional value. Defined if params.search_string is not empty) - count of entries "
                                                "which match params.search_string. See params.search_string param description for details. "
                "    'entries' - array of entries. Entry is object with members specified by params.fields. "
-               + get_playlist_entries_templatemethod_->help();
+               ;//+ get_playlist_entries_templatemethod_->help();
     }
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 
-    // we must share this object with GetEntryPositionInDataTable method.
-    boost::shared_ptr<GetPlaylistEntriesTemplateMethod> getPlaylistEntriesTemplateMethod()
-        { return get_playlist_entries_templatemethod_; };
+    void ActivateEntryLocationDeterminationMode(PaginationInfo* pagination_info)
+        { pagination_info_ = pagination_info; }
 
 private:
 
-    boost::shared_ptr<GetPlaylistEntriesTemplateMethod> get_playlist_entries_templatemethod_;
+    void DeactivateEntryLocationDeterminationMode()
+        { pagination_info_ = nullptr; }
+    bool EntryLocationDeterminationMode() const
+        { return pagination_info_ != nullptr; }
 
     // See HelperFillRpcFields class commentaries.
     RpcValueSetHelpers::HelperFillRpcFields<PlaylistEntry> entry_fields_filler_;
     void initEntriesFiller(const Rpc::Value& params);
 
-    const std::string kFORMAT_STRING_STRING;
+    typedef std::vector<std::string> FieldNames;
 
-    const std::string kFIELDS_STRING;
+    FieldNames fields_to_order_;
+    std::string getOrderString(const Rpc::Value& params) const;
 
-    // rpc result struct keys.
-    const std::string kENTRIES_STRING; // key for entries array.
-    const std::string kTOTAL_ENTRIES_COUNT_STRING; // key for total entries count.
-    const std::string kCOUNT_OF_FOUND_ENTRIES_STRING;
+    FieldNames fields_to_filter_;
 
-    //! Fills rpcvalue array of entries from entries objects.
-    void fillRpcValueEntriesFromEntriesList(EntriesRange entries_range,
-                                            Rpc::Value& rpcvalue_entries);
+    typedef std::map<std::string, std::string> MapFieldnamesRPCToDB;
+    MapFieldnamesRPCToDB fieldnames_rpc_to_db_;
 
-    //! Fills rpcvalue array of entries from entries IDs.
-    void fillRpcValueEntriesFromEntryIDs(EntriesIDsRange entries_ids_range, const EntriesListType& entries,
-                                         Rpc::Value& rpcvalue_entries);
-    
-    EntriesHandler entries_handler_stub_;
-    EntryIDsHandler enties_ids_handler_stub_;
-    EntriesCountHandler entries_count_handler_stub_;
+    mutable Utilities::QueryArgSetters query_arg_setters_;
+
+    std::string getLimitString(const Rpc::Value& params) const;
+    std::string getWhereString(const Rpc::Value& params, const int playlist_id) const;
+    std::string getColumnsString() const;
+    size_t getTotalEntriesCount(sqlite3* playlists_db, const int playlist_id) const; // throws std::runtime_error
+
+    const std::string kRQST_KEY_FORMAT_STRING,
+                      kRQST_KEY_FIELDS;
+
+    const std::string kRQST_KEY_START_INDEX,
+                      kRQST_KEY_ENTRIES_COUNT;
+
+    const std::string kRQST_KEY_FIELD,
+                      kDESCENDING_ORDER_STRING,
+                      kRQST_KEY_ORDER_DIRECTION,
+                      kRQST_KEY_ORDER_FIELDS;
+
+    const std::string kRQST_KEY_SEARCH_STRING;
+
+    const std::string kRSLT_KEY_ENTRIES,
+                      kRSLT_KEY_TOTAL_ENTRIES_COUNT,
+                      kRSLT_KEY_COUNT_OF_FOUND_ENTRIES;
+
+    PaginationInfo* pagination_info_;
 };
 
 /*! 
@@ -777,6 +690,8 @@ private:
 class GetEntryPositionInDataTable : public AIMPRPCMethod
 {
 public:
+
+    // Note: we pass GetPlaylistEntries object by reference here, so we need to guaranty that it's lifetime is longer than lifetime of this object.
     GetEntryPositionInDataTable(AIMPManager& aimp_manager,
                                 Rpc::RequestHandler& rpc_request_handler,
                                 GetPlaylistEntries& getplaylistentries_method
@@ -795,23 +710,8 @@ public:
 
 private:
 
-    boost::shared_ptr<GetPlaylistEntriesTemplateMethod> get_playlist_entries_templatemethod_;
-
-    // following members are valid only while execute() method is running after calling getplaylistentries_method_.execute().
-    size_t entries_on_page_;
-    int entry_index_in_current_representation_; // index of entry in reperesentation(concrete filtering and sorting) of playlist entries.
-
-    void setEntryPageInDataTableFromEntriesList(EntriesRange entries_range,
-                                                PlaylistEntryID entry_id
-                                                );
-
-    void setEntryPageInDataTableFromEntryIDs(EntriesIDsRange entries_ids_range, const EntriesListType& /*entries*/,
-                                             PlaylistEntryID entry_id);
-
-    EntriesHandler entries_handler_stub_;
-    EntryIDsHandler enties_ids_handler_stub_;
-    EntriesCountHandler entries_count_handler_stub_;
-    EntriesCountHandler entries_on_page_count_handler_;
+    GetPlaylistEntries& getplaylistentries_method_;
+    const std::string kFIELD_ID;
 };
 
 /*! 

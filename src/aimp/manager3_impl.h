@@ -6,6 +6,8 @@
 #include "manager.h"
 #include "aimp3_sdk/aimp3_sdk.h"
 
+struct sqlite3;
+
 namespace AIMP3SDK {
     class IAIMPCoreUnit;
     class IAIMPAddonsPlayerManager;
@@ -70,7 +72,7 @@ public:
 
     virtual const PlaylistEntry& getEntry(TrackDescription track_desc) const; // throw std::runtime_error
 
-    virtual std::wstring getFormattedEntryTitle(const PlaylistEntry& entry, const std::string& format_string_utf8) const;
+    virtual std::wstring getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const;
 
     virtual void savePNGCoverToVector(TrackDescription track_desc, int cover_width, int cover_height, std::vector<BYTE>& image_data) const; // throw std::runtime_error
 
@@ -153,6 +155,11 @@ private:
     boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistStrings> getPlaylistStrings(const AIMP3SDK::HPLS playlist_id); // throws std::runtime_error
     PlaylistEntry& getEntry(TrackDescription track_desc); // throws std::runtime_error
 
+    void initPlaylistDB(); // throws std::runtime_error
+    void shutdownPlaylistDB();
+    void deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id);
+    void deletePlaylistFromPlaylistDB(PlaylistID playlist_id);
+
     //! initializes all requiered for work AIMP SDK interfaces.
     void initializeAIMPObjects(); // throws std::runtime_error
 
@@ -174,6 +181,8 @@ private:
 
     EventListeners external_listeners_; //!< map of all subscribed listeners.
     EventsListenerID next_listener_id_; //!< unique ID describes external listener.
+
+    public:sqlite3* playlists_db_;private:///!!!
 
     // These class were made friend only for easy emulate web ctl plugin behavior. Remove when possible.
     friend class AimpRpcMethods::EmulationOfWebCtlPlugin;

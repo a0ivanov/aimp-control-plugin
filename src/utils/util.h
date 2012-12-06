@@ -109,6 +109,30 @@ void replaceAll(const T* toreplace, size_t toreplace_length,
 // Returns true if string is started with search_string.
 bool stringStartsWith(const std::string& string, const std::string& search_string);
 
+// Array Size utils:
+
+// will be ideal when vs will support c++11 constexpr.
+//template<typename T, size_t N> 
+//size_t ArraySize(T (&/*array*/)[N])
+//{
+//    return N;
+//}
+
+template<
+    int TestSize, 
+    typename T, 
+    int N>
+inline void AssertArraySize(T(&/*arr*/)[N])
+{
+    // generate compile-time error if values mismatch:
+    // (Static assertions provide a better alternative but
+    // are not always available)
+    //int t[TestSize == N];
+    //t[0] = 1;
+    static_assert(TestSize == N, "Unexpected array size");
+}
+// End of Array Size utils.
+
 } // namespace Utilities
 
 #endif // #ifndef UTILITIES_H

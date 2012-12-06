@@ -40,6 +40,7 @@
 #include <boost/range.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/assign/std.hpp>
+#include <boost/assign/std/vector.hpp>
 
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string/predicate.hpp>

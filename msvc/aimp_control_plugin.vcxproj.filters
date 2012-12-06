@@ -50,6 +50,9 @@
     <Filter Include="src\aimp_manager\aimp_sdk\3\Helpers">
       <UniqueIdentifier>{dd32e278-3942-4e84-8590-2e3c1f5e5447}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\sqlite">
+      <UniqueIdentifier>{49dc5284-c8e9-471f-9f24-a4cf8fc422ad}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\stdafx.cpp">
@@ -96,9 +99,6 @@
     </ClCompile>
     <ClCompile Include="..\src\http_server\server.cpp">
       <Filter>src\http server</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\aimp\entries_sorter.cpp">
-      <Filter>src\aimp_manager</Filter>
     </ClCompile>
     <ClCompile Include="..\src\aimp\playlist.cpp">
       <Filter>src\aimp_manager</Filter>
@@ -162,6 +162,9 @@
     </ClCompile>
     <ClCompile Include="..\src\download_track\download_track_request_handler.cpp">
       <Filter>src\download_track</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\sqlite\sqlite3.c">
+      <Filter>src\sqlite</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -258,9 +261,6 @@
     <ClInclude Include="..\src\aimp\common_types.h">
       <Filter>src\aimp_manager</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\aimp\entries_sorter.h">
-      <Filter>src\aimp_manager</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\aimp\manager.h">
       <Filter>src\aimp_manager</Filter>
     </ClInclude>
@@ -343,6 +343,18 @@
       <Filter>src\aimp_manager\aimp_sdk\3\Helpers</Filter>
     </ClInclude>
     <ClInclude Include="..\src\utils\iunknown_impl.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\sqlite\sqlite3.h">
+      <Filter>src\sqlite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\sqlite\sqlite3ext.h">
+      <Filter>src\sqlite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\utils\scope_guard.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\utils\sqlite_util.h">
       <Filter>src\utils</Filter>
     </ClInclude>
   </ItemGroup>

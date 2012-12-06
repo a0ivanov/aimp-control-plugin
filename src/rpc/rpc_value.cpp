@@ -416,7 +416,7 @@ void Value::assertIndexIsInRange(int index) const
     const Array& array = *value_.array_;
     if (index < 0 || (size_t)index >= array.size() ) {
         std::ostringstream os;
-        os << "array index out of bound: array size %u, index %i" << array.size() << index;
+        os << "array index out of bound: array size " << array.size() << ", index " << index;
         throw Exception(os.str(), INDEX_RANGE_ERROR);
     }
 }
