@@ -3,85 +3,84 @@ Visual Studio
 Download and install Visual C++ Express 2010 from http://www.microsoft.com/express/Downloads/#2010-Visual-CPP
 
 Boost library
+    1) Visual Studio project uses environment variable BOOST_DIR which points to root of Boost library.
+    2) Boost Log library should be downloaded from http://sourceforge.net/projects/boost-log/
+    and placed as boost library.
+    3) Following libraries must be built: filesystem, date_time, thread, regex, log.
+        For Boost Asio add directive "#define BOOST_ASIO_HAS_MOVE" to "boost\config\user.hpp" file.
 
-1) Visual Studio project uses environment variable BOOST_DIR which points to root of Boost library.
-2) Boost Log library should be downloaded from http://sourceforge.net/projects/boost-log/
-and placed as boost library.
-3) Following libraries must be built: filesystem, date_time, thread, regex, log.
+        Note: Boost Log 1.0(not 1.1) uses Boost Filesystem v2(which was default until Boost 1.46.0), so to compile do following:
+            - add macro "BOOST_FILESYSTEM_VERSION 2" to "boost\config\user.hpp" file.
+            - pass --disable-filesystem3 arg to bjam for all commands.
+                The one way to define that macro is add it to "boost\config\user.hpp" file.
+                More info at http://www.boost.org/doc/libs/1_46_1/libs/filesystem/v2/doc/index.htm.
+                Strange but bjam arg "define='BOOST_FILESYSTEM_VERSION=2'" does not work.
 
-For Boost Asio add directive "#define BOOST_ASIO_HAS_MOVE" to "boost\config\user.hpp" file.
+        Commands sequence without explanation(see details below):
+            3.1) for Release config:
+                 bjam --with-date_time --with-thread --with-regex --with-filesystem  link=static runtime-link=static
+                 bjam --with-log define=BOOST_LOG_NO_COMPILER_TLS link=static runtime-link=static 
+            3.2) for Debug config:
+                 bjam --with-date_time --with-thread --with-regex --with-filesystem 
+                 bjam --with-log define=BOOST_LOG_NO_COMPILER_TLS
+                 
+        Details:
+            To build as "Multi-threaded DLL" (currently used by Debug configuration) use command:
+                    bjam --with-filesystem --with-date_time --with-thread --with-regex
+                Boost Log must be built with BOOST_LOG_NO_COMPILER_TLS define, since crash occurs inside void boost::log::source::aux::set_severity_level(int level) without it on Windows XP(on Windows Vista/7 works fine).
+                See details at http://msdn.microsoft.com/ru-ru/library/2s9wt68x.aspx, note about __declspec(thread) in DLL on Windows before Vista.
+                    bjam --with-log define=BOOST_LOG_NO_COMPILER_TLS
+            To build with "Multi-threaded" runtime (currently used by Release configuration) add options to bjam:
+                link=static runtime-link=static
+            To rebuild library use "bjam --with-XXX --clean" command, then build as usual.
+            To choose VS version use "--toolset=XXX", when XXX can be following: msvc-9.0, msvc-10.0.
 
-Note: Boost Log 1.0(not 1.1) uses Boost Filesystem v2(which was default until Boost 1.46.0), so to compile do following:
-    - add macro "BOOST_FILESYSTEM_VERSION 2" to "boost\config\user.hpp" file.
-    - pass --disable-filesystem3 arg to bjam for all commands.
-        The one way to define that macro is add it to "boost\config\user.hpp" file.
-        More info at http://www.boost.org/doc/libs/1_46_1/libs/filesystem/v2/doc/index.htm.
-        Strange but bjam arg "define='BOOST_FILESYSTEM_VERSION=2'" does not work.
-
-Commands sequence without explanation(see details below):
-    3.1) for Release config:
-         bjam --with-date_time --with-thread --with-regex --with-filesystem  link=static runtime-link=static
-         bjam --with-log define=BOOST_LOG_NO_COMPILER_TLS link=static runtime-link=static 
-    3.2) for Debug config:
-         bjam --with-date_time --with-thread --with-regex --with-filesystem 
-         bjam --with-log define=BOOST_LOG_NO_COMPILER_TLS
-4) ICU library
-    4.1) Download ICU windows src from here: http://download.icu-project.org/files/icu4c/49.1.1/icu4c-49_1_1-src.zip
-    4.2) Open src\source\allinone\allinone.sln
-    4.3) Tune common project both in Debug and Release configurations:
-            4.3.1) Define macro U_STATIC_IMPLEMENTATION.
-            4.3.2) Set Target name(in Configuration properties->General) to:
-                    "icu_$(ProjectName)d" in Debug mode
-                    "icu_$(ProjectName)" in Release mode
-            4.3.3) Set Configuration type(in Configuration properties->General) to Static library.
-            4.3.4) In Relese config only: set Configuration properties->C++->Code Generation->Runtime library to Multi-threaded.
-         
-Details:
-    To build as "Multi-threaded DLL" (currently used by Debug configuration) use command:
-            bjam --with-filesystem --with-date_time --with-thread --with-regex
-        Boost Log must be built with BOOST_LOG_NO_COMPILER_TLS define, since crash occurs inside void boost::log::source::aux::set_severity_level(int level) without it on Windows XP(on Windows Vista/7 works fine).
-        See details at http://msdn.microsoft.com/ru-ru/library/2s9wt68x.aspx, note about __declspec(thread) in DLL on Windows before Vista.
-            bjam --with-log define=BOOST_LOG_NO_COMPILER_TLS
-    To build with "Multi-threaded" runtime (currently used by Release configuration) add options to bjam:
-        link=static runtime-link=static
-    To rebuild library use "bjam --with-XXX --clean" command, then build as usual.
-    To choose VS version use "--toolset=XXX", when XXX can be following: msvc-9.0, msvc-10.0.
-
+ICU library
+    1) Download ICU windows src from here: http://download.icu-project.org/files/icu4c/49.1.1/icu4c-49_1_1-src.zip
+    2) Open src\source\allinone\allinone.sln
+    3) Tune common project both in Debug and Release configurations:
+        3.1) Define macro U_STATIC_IMPLEMENTATION.
+        3.2) Set Target name(in Configuration properties->General) to:
+            "icu_$(ProjectName)d" in Debug mode
+            "icu_$(ProjectName)" in Release mode
+        3.3) Set Configuration type(in Configuration properties->General) to Static library.
+        3.4) In Relese config only: set Configuration properties->C++->Code Generation->Runtime library to Multi-threaded.    
+    
 Python
 
-Download and install Python 2.7 and module lxml for this version.
-Required to run tools\html_optimizer.py script which makes release version of client scripts.
+    Download and install Python 2.7 and module lxml for this version.
+    Required to run tools\html_optimizer.py script which makes release version of client scripts.
 
 SubWCRev
 
-This tool is used to update build version of project in version.txt file.
-It is included in TortoiseSVN client, but can be downloaded separately from http://sourceforge.net/projects/tortoisesvn/files/Tools
-If you don't care about build version just comment out UPDATE_PROJECT_BUILD_VERSION code in build_installer.bat script.
+    This tool is used to update build version of project in version.txt file.
+    It is included in TortoiseSVN client, but can be downloaded separately from http://sourceforge.net/projects/tortoisesvn/files/Tools
+    If you don't care about build version just comment out UPDATE_PROJECT_BUILD_VERSION code in build_installer.bat script.
 
 Inno Setup
 
-Download and install Inno Setup QuickStart Pack from here: http://www.jrsoftware.org/isdl.php#qsp
-This pack includes preprocessor(which is not included in Inno Setup distrib) used by aimp_control_plugin.iss script.
+    Download and install Inno Setup QuickStart Pack from here: http://www.jrsoftware.org/isdl.php#qsp
+    This pack includes preprocessor(which is not included in Inno Setup distrib) used by aimp_control_plugin.iss script.
 
 Perl
 
-Download and install Perl from http://www.activestate.com/activeperl
-Used to create PDB file which usefull for debugging release version of plugin DLL.
+    Download and install Perl from http://www.activestate.com/activeperl
+    Used to create PDB file which usefull for debugging release version of plugin DLL.
 
 Debugging Tools for Windows
 
-Download and install from http://msdn.microsoft.com/en-us/windows/hardware/gg463009
-Contains symbol server which syncronizes plugin DLL with it's PDB file. Usefull for debugging.
+    Download and install from http://msdn.microsoft.com/en-us/windows/hardware/gg463009
+    Contains symbol server which syncronizes plugin DLL with it's PDB file. Usefull for debugging.
 
 Win32 build of Subversion
 
-Download and install from http://sourceforge.net/projects/win32svn
-Used for creating PDB file with links to source files in SVN repository. Usefull for debugging.
+    Download and install from http://sourceforge.net/projects/win32svn
+    Used for creating PDB file with links to source files in SVN repository. Usefull for debugging.
 
 FreeImage
-Download FreeImage DLL(for example, FreeImage 3.15.0 [WIN32]) from http://freeimage.sourceforge.net/download.html and unzip to some folder.
-If you do not want use precompiled package you can download source distribution.
-Requiired only for enabling Rpc function which extracts album cover.
+    Download FreeImage DLL(for example, FreeImage 3.15.0 [WIN32]) from http://freeimage.sourceforge.net/download.html and unzip to some folder.
+    If you do not want use precompiled package you can download source distribution.
+    Requiired only for enabling Rpc function which extracts album cover.
 
 After installing software mentioned above set actual paths in setup_environment.bat and setup_vs_project_variables.bat scripts.
 
