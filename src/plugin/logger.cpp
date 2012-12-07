@@ -107,10 +107,10 @@ void LogManager::startLog(const fs::wpath& log_directory,
         core->set_filter(flt::attr< SEVERITY_LEVELS >("Severity") >= severity_);
 
         // add a time stamp attribute.
-        core->add_global_attribute( "TimeStamp", boost::make_shared< attrs::local_clock >() );
+        core->add_global_attribute("TimeStamp", attrs::local_clock());
 
         // add a thread ID attribute.
-        core->add_global_attribute( "ThreadID", boost::make_shared< attrs::current_thread_id >() );
+        core->add_global_attribute("ThreadID", attrs::current_thread_id());
 
         // Setup a global exception handler that will call BoostLogExceptionHandler::operator()
         // for the specified exception types. Note the std::nothrow argument that
@@ -121,18 +121,19 @@ void LogManager::startLog(const fs::wpath& log_directory,
     }
 
     // use macro since sinks::debug_output_backend need newline character at the end.
+    // Thread id format syntax is got from http://sourceforge.net/projects/boost-log/forums/forum/710021/topic/5064327. Old syntax generates exception of first use.
 #define AIMP_FORMATTER fmt::stream \
         << fmt::date_time< boost::posix_time::ptime >("TimeStamp", "%d.%m.%Y %H:%M:%S.%f") \
-        << " [Thread " << fmt::attr< boost::thread::id >("ThreadID") << "] " \
+        << " [Thread " << fmt::attr< attrs::current_thread_id::value_type >("ThreadID") << "] " \
         << fmt::attr< SEVERITY_LEVELS >("Severity", std::nothrow) << " " \
         << fmt::attr< std::string >("Channel") << " : " \
         << fmt::message()
 
     // create debug sink
     {
-        sink_dbg_.reset(new debug_sink);
+        sink_dbg_ = boost::make_shared<debug_sink>();
 
-        sink_dbg_->locked_backend()->set_formatter(AIMP_FORMATTER << "\n"); // notice, that debug_output_backend requires newline character.
+        sink_dbg_->set_formatter(AIMP_FORMATTER << "\n"); // notice, that debug_output_backend requires newline character.
 
         // Set the special filter to the frontend
         // in order to skip the sink when no debugger is available
@@ -173,9 +174,9 @@ void LogManager::startLog(const fs::wpath& log_directory,
         // Enable auto-flushing after each log record written
         backend_file->auto_flush(true);
 
-        backend_file->set_formatter(AIMP_FORMATTER);
+        sink_file_ = boost::make_shared<sink_file_t>(backend_file);
 
-        sink_file_.reset( new sink_file_t(backend_file) );
+        sink_file_->set_formatter(AIMP_FORMATTER);
 
         // add module filter
         sink_file_->set_filter(
