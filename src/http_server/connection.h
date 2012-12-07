@@ -59,7 +59,7 @@ private:
     boost::asio::io_service::strand strand_;
 
     /// Socket for the connection.
-    SocketT socket_;
+    boost::shared_ptr<SocketT> socket_; // use pointer to be able pass it to another connection without copying. Boost 1.52.0's asio do not allow it.
 
     /// The handler used to process the incoming request.
     RequestHandler& request_handler_;
@@ -91,7 +91,7 @@ public:
 typedef boost::shared_ptr<ICometDelayedConnection> ICometDelayedConnection_ptr;
 
 template<typename SocketT>
-class CometDelayedConnection : public ICometDelayedConnection, public boost::enable_shared_from_this< CometDelayedConnection<SocketT> >
+class CometDelayedConnection : public ICometDelayedConnection, public boost::enable_shared_from_this< CometDelayedConnection<SocketT> >, private boost::noncopyable
 {
     typedef Connection<SocketT> ConnectionType;
     typedef boost::shared_ptr<ConnectionType> ConnectionType_ptr;

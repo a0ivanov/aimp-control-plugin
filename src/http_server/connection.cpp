@@ -57,20 +57,23 @@ void transmit_file(SocketT& socket,
 
 template <typename SocketT>
 class connection
-  : public boost::enable_shared_from_this< connection<SocketT> >
+  : public boost::enable_shared_from_this< connection<SocketT> >,
+	private boost::noncopyable
 {
 public:
   typedef boost::shared_ptr< connection<SocketT> > pointer;
 
   static pointer create(boost::asio::io_service& io_service,
+						boost::shared_ptr<SocketT> socket,
                         const std::wstring& filename)
   {
-    return pointer(new connection(io_service, filename));
+    return pointer(new connection(io_service, socket, filename));
   }
 
   SocketT& socket()
   {
-    return socket_;
+    assert(socket_);
+    return *socket_;
   }
 
   void start()
@@ -80,7 +83,7 @@ public:
           OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0), ec);
     if (file_.is_open())
     {
-      transmit_file(socket_, file_,
+      transmit_file(socket(), file_,
           boost::bind(&connection::handle_write, shared_from_this(),
             boost::asio::placeholders::error,
             boost::asio::placeholders::bytes_transferred));
@@ -88,21 +91,22 @@ public:
   }
 
 private:
-  connection(boost::asio::io_service& io_service, const std::wstring& filename)
-    : socket_(io_service),
+  connection(boost::asio::io_service& io_service, boost::shared_ptr<SocketT> socket, const std::wstring& filename)
+    : socket_(socket),
       filename_(filename),
       file_(io_service)
   {
+	assert(socket_);
   }
 
   void handle_write(const boost::system::error_code& /*error*/,
       size_t /*bytes_transferred*/)
   {
     boost::system::error_code ignored_ec;
-    socket_.shutdown(SocketT::shutdown_both, ignored_ec);
+    socket_->shutdown(SocketT::shutdown_both, ignored_ec);
   }
 
-  SocketT socket_;
+  boost::shared_ptr<SocketT> socket_;
   std::wstring filename_;
   random_access_handle file_;
 };
@@ -117,7 +121,7 @@ template <typename SocketT>
 Connection<SocketT>::Connection(boost::asio::io_service& io_service, RequestHandler& handler)
     :
     strand_(io_service),
-    socket_(io_service),
+    socket_(boost::make_shared<SocketT>(io_service)),
     request_handler_(handler)
 {
     try {
@@ -140,7 +144,8 @@ Connection<SocketT>::~Connection()
 template <typename SocketT>
 SocketT& Connection<SocketT>::socket()
 {
-    return socket_;
+    assert(socket_);
+    return *socket_;
 }
 
 template <typename SocketT>
@@ -152,7 +157,7 @@ void Connection<SocketT>::start()
 template <typename SocketT>
 void Connection<SocketT>::read_some_to_buffer()
 {
-    socket_.async_read_some(boost::asio::buffer(buffer_),
+    socket().async_read_some(boost::asio::buffer(buffer_),
                             strand_.wrap(boost::bind(&Connection<SocketT>::handle_read,
                                                      shared_from_this(),
                                                      boost::asio::placeholders::error,
@@ -167,7 +172,7 @@ void Connection<SocketT>::write_reply_content()
 {
     if ( !reply_.filename.empty() ) {
         // send large file.
-        boost::asio::async_write(socket_,
+        boost::asio::async_write(socket(),
                                  reply_.to_buffers_headers_only(),
                                  strand_.wrap(boost::bind(&Connection<SocketT>::handle_write_headers_on_file_sending,
                                                           shared_from_this(),
@@ -177,7 +182,7 @@ void Connection<SocketT>::write_reply_content()
                                  );
     } else {
         // send small string data.
-        boost::asio::async_write(socket_,
+        boost::asio::async_write(socket(),
                                  reply_.to_buffers(),
                                  strand_.wrap(boost::bind(&Connection<SocketT>::handle_write,
                                                           shared_from_this(),
@@ -226,7 +231,7 @@ void Connection<SocketT>::handle_write(const boost::system::error_code& e)
     if (!e) {
         // Initiate graceful connection closure.
         boost::system::error_code ignored_ec;
-        socket_.shutdown(SocketT::shutdown_both, ignored_ec);
+        socket().shutdown(SocketT::shutdown_both, ignored_ec);
     }
 
     // No new asynchronous operations are started. This means that all shared_ptr
@@ -241,9 +246,12 @@ void Connection<SocketT>::handle_write_headers_on_file_sending(const boost::syst
     if (!e) {
         // http headers were sent successfully, now send file content.
         typedef TransmitFile::connection<SocketT> TransmitFileConnection;
-        TransmitFileConnection::pointer tfc = TransmitFileConnection::create(strand_.get_io_service(), reply_.filename);
+        TransmitFileConnection::pointer tfc = TransmitFileConnection::create(strand_.get_io_service(),
+                                                                             socket_,
+																		     reply_.filename);
         
-        tfc->socket() = std::move(this->socket_); // this is move assign, this object is not socket owner.
+        socket_.reset(); // this object is not socket owner anymore.
+
         tfc->start();
     }
 
@@ -278,7 +286,7 @@ void CometDelayedConnection<SocketT>::handle_write(DelayedResponseSender_ptr com
         connection_->socket().shutdown(SocketT::shutdown_both, ignored_ec);
     } else {
         BOOST_LOG_SEV(logger(), debug) << "CometDelayedConnection::fail to send response to "
-                                       << connection_->socket_.remote_endpoint()
+                                       << connection_->socket().remote_endpoint()
                                        << ". Reason: " << e.message();
     }
 
