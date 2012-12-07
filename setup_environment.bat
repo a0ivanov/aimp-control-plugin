@@ -1,7 +1,8 @@
 :: setup paths of all tools used in plugin build process.
 
 rem call "c:\Program Files\Microsoft Visual Studio 9.0\VC\bin\vcvars32.bat"
-call "c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\vcvars32.bat"
+rem call "c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\vcvars32.bat"
+call "c:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\vcvars32.bat"
 
 :: java runtime is used by yui_compressor and google closure compiler in MINIMIZE_CLIENT_SRC task.
 rem set JAVA_HOME=%JAVA_HOME%

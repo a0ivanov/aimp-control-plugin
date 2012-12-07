@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual C++ Express 2010
+# Visual C++ Express 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aimp_control_plugin", "aimp_control_plugin.vcxproj", "{FAEE3ABF-3697-4B07-8971-1EBD7B2994A1}"
 EndProject
 Global
