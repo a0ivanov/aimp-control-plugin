@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sqlite/sqlite3.h"
+#include "sqlite/sqlite.h"
 #include "util.h"
 #include "scope_guard.h"
 #include <boost/function.hpp>

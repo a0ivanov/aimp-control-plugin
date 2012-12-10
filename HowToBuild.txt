@@ -26,17 +26,6 @@ Boost library
             To rebuild library use "bjam --with-XXX --clean" command, then build as usual.
             To choose VS version use "--toolset=XXX", when XXX can be following: msvc-9.0, msvc-10.0, msvc-11.0.
 
-ICU library
-    1) Download ICU windows src from here: http://download.icu-project.org/files/icu4c/49.1.1/icu4c-49_1_1-src.zip
-    2) Open src\source\allinone\allinone.sln
-    3) Tune common project both in Debug and Release configurations:
-        3.1) Define macro U_STATIC_IMPLEMENTATION.
-        3.2) Set Target name(in Configuration properties->General) to:
-            "icu_$(ProjectName)d" in Debug mode
-            "icu_$(ProjectName)" in Release mode
-        3.3) Set Configuration type(in Configuration properties->General) to Static library.
-        3.4) In Relese config only: set Configuration properties->C++->Code Generation->Runtime library to Multi-threaded.    
-    
 Python
 
     Download and install Python 2.7 and module lxml for this version.

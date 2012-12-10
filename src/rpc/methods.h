@@ -19,7 +19,7 @@
 #include <boost/assign/std.hpp>
 #include <boost/bind.hpp>
 
-#include "sqlite/sqlite3.h"
+#include "sqlite/sqlite.h"
 
 namespace MultiUserMode { class MultiUserModeManager; }
 

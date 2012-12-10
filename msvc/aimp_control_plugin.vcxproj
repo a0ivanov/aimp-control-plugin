@@ -58,7 +58,7 @@
     <ClCompile>
       <AdditionalOptions>-Zm149 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\src;$(BOOST_DIR);$(ICULIB_DIR)\include;$(FREEIMAGELIB_DIR)\Dist;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\Dist;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\src;$(BOOST_DIR);$(FREEIMAGELIB_DIR)\Dist;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\Dist;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;AIMP_CONTROL_PLUGIN_EXPORTS;BOOST_NO_POINTER_TO_MEMBER_TEMPLATE_PARAMETERS;U_STATIC_IMPLEMENTATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -70,8 +70,8 @@
       <DisableSpecificWarnings>4503;4714</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>Ws2_32.lib;FreeImagePlus.lib;DelayImp.lib;icu_commond.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(BOOST_DIR)\stage\lib;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\dist;$(ICULIB_DIR)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Ws2_32.lib;FreeImagePlus.lib;DelayImp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(BOOST_DIR)\stage\lib;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\dist;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ModuleDefinitionFile>..\src\control_plugin.def</ModuleDefinitionFile>
       <DelayLoadDLLs>FreeImagePlus.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
@@ -87,7 +87,7 @@
       <AdditionalOptions>/MP$(NUMBER_OF_PROCESSORS) -Zm149 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\src;$(BOOST_DIR);$(ICULIB_DIR)\include;$(FREEIMAGELIB_DIR)\Dist;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\Dist;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\src;$(BOOST_DIR);$(FREEIMAGELIB_DIR)\Dist;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\Dist;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;AIMP_CONTROL_PLUGIN_EXPORTS;BOOST_NO_POINTER_TO_MEMBER_TEMPLATE_PARAMETERS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -99,9 +99,9 @@
       <DisableSpecificWarnings>4503;4714</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>Ws2_32.lib;FreeImagePlus.lib;DelayImp.lib;icu_common.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;FreeImagePlus.lib;DelayImp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(AIMP_PLUGINS_DIR)\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>$(BOOST_DIR)\stage\lib;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\dist;$(ICULIB_DIR)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(BOOST_DIR)\stage\lib;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\dist;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>..\src\control_plugin.def</ModuleDefinitionFile>
       <DelayLoadDLLs>FreeImagePlus.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -112,11 +112,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\sqlite\sqlite3.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
-    </ClCompile>
     <ClCompile Include="..\src\aimp\manager2_impl.cpp" />
     <ClCompile Include="..\src\aimp\manager3_impl.cpp" />
     <ClCompile Include="..\src\aimp\playlist.cpp" />
@@ -149,6 +144,16 @@
     <ClCompile Include="..\src\rpc\rpc_request_handler.cpp" />
     <ClCompile Include="..\src\rpc\rpc_value.cpp" />
     <ClCompile Include="..\src\rpc\utils.cpp" />
+    <ClCompile Include="..\src\sqlite\sqlite.c">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\src\sqlite\sqlite3.c">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\src\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -165,8 +170,6 @@
     <ClCompile Include="..\src\xmlrpc\xmlrpc_value.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\sqlite\sqlite3.h" />
-    <ClInclude Include="..\src\sqlite\sqlite3ext.h" />
     <ClInclude Include="..\src\aimp\aimp2_sdk.h" />
     <ClInclude Include="..\src\aimp\aimp3_sdk\aimp3_sdk.h" />
     <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKAddons.h" />
@@ -212,6 +215,8 @@
     <ClInclude Include="..\src\rpc\response_serializer.h" />
     <ClInclude Include="..\src\rpc\utils.h" />
     <ClInclude Include="..\src\rpc\value.h" />
+    <ClInclude Include="..\src\sqlite\config.h" />
+    <ClInclude Include="..\src\sqlite\sqlite.h" />
     <ClInclude Include="..\src\stdafx.h" />
     <ClInclude Include="..\src\utils\base64.h" />
     <ClInclude Include="..\src\utils\image.h" />

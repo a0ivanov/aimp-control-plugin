@@ -517,15 +517,15 @@ std::string GetPlaylistEntries::getWhereString(const Rpc::Value& params, const i
 {
     using namespace Utilities;
 
-    struct MatchArgSetter : public std::binary_function<sqlite3_stmt*, int, void>
+    struct LikeArgSetter : public std::binary_function<sqlite3_stmt*, int, void>
     {
         typedef std::string StringT;
-        StringT match_arg_;
-        MatchArgSetter(const StringT& match_arg) : match_arg_(match_arg) {}
+        StringT like_arg_;
+        LikeArgSetter(const StringT& like_arg) : like_arg_(like_arg) {}
         void operator()(sqlite3_stmt* stmt, int bind_index) const {
             const int rc_db = sqlite3_bind_text(stmt, bind_index,
-                                                match_arg_.c_str(),
-                                                match_arg_.size() * sizeof(StringT::value_type),
+                                                like_arg_.c_str(),
+                                                like_arg_.size() * sizeof(StringT::value_type),
                                                 SQLITE_TRANSIENT);
             if (SQLITE_OK != rc_db) {
                 const std::string msg = MakeString() << "Error sqlite3_bind_text: " << rc_db;
@@ -539,8 +539,9 @@ std::string GetPlaylistEntries::getWhereString(const Rpc::Value& params, const i
     os << "WHERE playlist_id=" << playlist_id;
 	if ( params.isMember(kRQST_KEY_SEARCH_STRING) ) {
         const std::string& search_string = params[kRQST_KEY_SEARCH_STRING];
-        if ( !search_string.empty() && !fields_to_filter_.empty() ) { ///??? search in all fields or only in requested ones.            
-            const QueryArgSetter& setter = boost::bind<void>(MatchArgSetter(search_string), _1, _2);
+        if ( !search_string.empty() && !fields_to_filter_.empty() ) { ///??? search in all fields or only in requested ones.
+            const std::string like_arg = '%' + search_string + '%';
+            const QueryArgSetter& setter = boost::bind<void>(LikeArgSetter(like_arg), _1, _2);
             
             os << " AND(";
             FieldNames::const_iterator begin = fields_to_filter_.begin(),
@@ -552,7 +553,7 @@ std::string GetPlaylistEntries::getWhereString(const Rpc::Value& params, const i
             {
                 query_arg_setters_.push_back(setter);
 
-                os << *fieldname_it << " MATCH ?";
+                os << *fieldname_it << " LIKE ?";
                 if (fieldname_it + 1 != end) {
                     os << " OR ";
                 }

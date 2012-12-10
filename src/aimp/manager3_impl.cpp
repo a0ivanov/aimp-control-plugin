@@ -19,9 +19,8 @@
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
-#include "sqlite/sqlite3.h"
-#include <unicode/utypes.h>
-#include <unicode/uchar.h>
+#include "sqlite/sqlite.h"
+
 
 namespace {
 using namespace ControlPlugin::PluginLogger;
@@ -1655,56 +1654,6 @@ void AIMP3Manager::setTrackRating(TrackDescription track_desc, int rating)
     // entry.rating(rating);
 }
 
-static bool Find(const uint8_t* zPattern, const uint8_t* zString, int iString)
-{
-    int iPattern = 0;       /* Current byte index in zPattern */
-
-    while (zPattern[iPattern] != 0 && zString[iString] != 0) {
-        /* Read (and consume) the next character from the input pattern. */
-        UChar32 uPattern;
-        U8_NEXT_UNSAFE(zPattern, iPattern, uPattern);
-        assert(uPattern != 0);
-
-        UChar32 uString;
-        U8_NEXT_UNSAFE(zString, iString, uString);
-        uString  = u_foldCase(uString,  U_FOLD_CASE_DEFAULT);
-        uPattern = u_foldCase(uPattern, U_FOLD_CASE_DEFAULT);
-        if (uString != uPattern) {
-            return false;
-        }
-    }
-
-    return zPattern[iPattern] == 0;
-}
-
-/*
-    Implements "MATCH" expression: checks if first string is substring of second string. Encoding is UTF-8.
-    Returns true (1) or false (0).
-*/
-static void MatchFunc(sqlite3_context* context, 
-                      int argc, 
-                      sqlite3_value** argv)
-{
-    assert(argc == 2); (void)argc;
-
-    const uint8_t *zPattern = reinterpret_cast<const uint8_t*>( sqlite3_value_text(argv[0]) ),
-                  *zString  = reinterpret_cast<const uint8_t*>( sqlite3_value_text(argv[1]) );
-
-    int iString = 0;        /* Current byte index in zString */
-    bool found = false;
-    while (zString[iString] != 0) {
-        found = Find(zPattern, zString, iString);
-        if (found) {
-            break;
-        }
-        // move to next character.
-        UChar32 uString;
-        U8_NEXT_UNSAFE(zString, iString, uString);
-    }
-    
-    sqlite3_result_int(context, found);
-}
-
 void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
 {
     int rc = sqlite3_open(":memory:", &playlists_db_);
@@ -1713,6 +1662,16 @@ void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
                                              << rc << ": " << sqlite3_errmsg(playlists_db_);
         shutdownPlaylistDB();
         throw std::runtime_error(msg);
+    }
+
+    { // add case-insensitivity support to LIKE operator (used for search tracks) since default LIKE operator since it supports case-insensitive search only on ASCII chars by default).
+    rc = sqlite3_unicode_init(playlists_db_);
+    if (SQLITE_OK != rc) {
+        const std::string msg = MakeString() << "unicode support enabling failure. Reason: sqlite3_unicode_init() error "
+                                             << rc << ": " << sqlite3_errmsg(playlists_db_);
+        shutdownPlaylistDB();
+        throw std::runtime_error(msg);
+    }
     }
 
     { // create table for content of all playlists.
@@ -1768,18 +1727,6 @@ void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
                                              << rc << ": " << errmsg;
         sqlite3_free(errmsg);
 
-        shutdownPlaylistDB();
-        throw std::runtime_error(msg);
-    }
-    }
-
-    { // add MATCH operator support(used for search tracks instead LIKE operator since it supports case-insensitive search only on ASCII chars by default).
-    rc = sqlite3_create_function(playlists_db_, "match", 2,
-                                 SQLITE_UTF8,
-                                 nullptr, MatchFunc, nullptr, nullptr);
-    if (SQLITE_OK != rc) {
-        const std::string msg = MakeString() << "MATCH operator support enabling failure. Reason: sqlite3_create_function(match) error "
-                                             << rc << ": " << sqlite3_errmsg(playlists_db_);
         shutdownPlaylistDB();
         throw std::runtime_error(msg);
     }
