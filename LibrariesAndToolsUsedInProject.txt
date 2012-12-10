@@ -62,4 +62,11 @@ http://www.jrsoftware.org/isinfo.php
 5) 7Zip
 http://www.7-zip.org
 
+Documentation generation:
+1) Doxygen
+http://www.stack.nl/~dimitri/doxygen/index.html
+2) HTML Help Workshop and Documentation
+http://www.microsoft.com/en-us/download/details.aspx?id=21138
+
+
 Great thanks to all the people who created these libraries and tools, and to all people who support them.

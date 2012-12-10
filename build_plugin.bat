@@ -10,6 +10,14 @@ set CLIENT_SRC_RELEASE_DIR=%TEMP_BUILD_DIR%\htdocs
 
 setlocal ENABLEDELAYEDEXPANSION
 
+:: This task can be skipped actual version does not matter. Uncomment version below instead.
+:UPDATE_PROJECT_BUILD_VERSION
+    echo Updating project build version...
+    SubWCRev .\ version_template.txt %PROJECT_VERSION_FILE% || goto ERROR_HANDLER
+    set /p PROJECT_VERSION= < %PROJECT_VERSION_FILE% || set PROJECT_VERSION=unknown_version
+:: :UPDATE_PROJECT_BUILD_VERSION 
+::    set PROJECT_VERSION=unknown_version
+
 :MINIMIZE_CLIENT_SRC
     :: prepare release version of client side src.
     echo Minimizing of browser scripts...

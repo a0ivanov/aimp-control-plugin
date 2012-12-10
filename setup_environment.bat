@@ -24,3 +24,7 @@ set SYMBOL_STORE=C:\Symbols
 :: following variables are used for documentation generation.
 set DOXYGEN_PATH=%ProgramFiles%\doxygen\bin
 set PATH=%DOXYGEN_PATH%;%PATH%
+:: used by DoxyfileRpcFunctions file. 
+set HHC_EXECUTABLE_PATH=%ProgramFiles(x86)%\HTML Help Workshop\hhc.exe
+
+set PROJECT_VERSION_FILE=version.txt

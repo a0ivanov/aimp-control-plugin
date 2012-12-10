@@ -3,15 +3,15 @@ setlocal ENABLEDELAYEDEXPANSION
 
 call build_plugin.bat || goto ERROR_HANDLER
 
-:: Notice that variables TEMP_BUILD_DIR and CLIENT_SRC_RELEASE_DIR are set in build_plugin.bat script.
+call setup_environment.bat
 
-set PROJECT_VERSION_FILE=version.txt
+:: Notice that variables TEMP_BUILD_DIR and CLIENT_SRC_RELEASE_DIR are set in build_plugin.bat script.
 
 :CREATE_ARCHIEVE
     echo Creating archieve...
-    set /p PROJECT_VERSION_TEMP= < %PROJECT_VERSION_FILE% || set PROJECT_VERSION_TEMP=unknown_version
-    set PROJECT_VERSION=!PROJECT_VERSION_TEMP:.=_!
-    set FULLPATH_ZIP=%TEMP_BUILD_DIR%\aimp_control_plugin_!PROJECT_VERSION!.7z
+    set /p PROJECT_VERSION= < %PROJECT_VERSION_FILE% || set PROJECT_VERSION=unknown_version
+    set PROJECT_VERSION_NODOTS=!PROJECT_VERSION:.=_!
+    set FULLPATH_ZIP=%TEMP_BUILD_DIR%\aimp_control_plugin_!PROJECT_VERSION_NODOTS!.7z
     
     :: add htdocs
     tools\7z a -t7z !FULLPATH_ZIP! ^

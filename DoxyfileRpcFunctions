@@ -31,7 +31,7 @@ PROJECT_NAME           = "Aimp Control Plugin"
 # This could be handy for archiving the generated documentation or 
 # if some version control system is used.
 
-PROJECT_NUMBER         = 1.0.4
+PROJECT_NUMBER         = $(PROJECT_VERSION)
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) 
 # base path where the generated documentation will be put. 
@@ -869,7 +869,7 @@ CHM_FILE               = PluginRpcFunctions.chm
 # the HTML help compiler (hhc.exe). If non-empty doxygen will try to run 
 # the HTML help compiler on the generated index.hhp.
 
-HHC_LOCATION           = "c:\Program Files\HTML Help Workshop\hhc.exe"
+HHC_LOCATION           = $(HHC_EXECUTABLE_PATH)
 
 # If the GENERATE_HTMLHELP tag is set to YES, the GENERATE_CHI flag 
 # controls if a separate .chi index file is generated (YES) or that 

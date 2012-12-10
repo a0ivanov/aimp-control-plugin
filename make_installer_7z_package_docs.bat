@@ -1,9 +1,15 @@
 @echo off
 setlocal ENABLEDELAYEDEXPANSION
 
-call build_installer.bat || goto ERROR_HANDLER
-call make_7z_package.bat || goto ERROR_HANDLER
-call doxygen DoxyfileRpcFunctions || goto ERROR_HANDLER
+call setup_environment.bat
+
+:MAKE_INSTALLER
+    call build_installer.bat || goto ERROR_HANDLER
+:MAKE_7Z_PACKAGE:
+    call make_7z_package.bat || goto ERROR_HANDLER
+:MAKE_DOCS:
+    set /p PROJECT_VERSION= < %PROJECT_VERSION_FILE% || set PROJECT_VERSION=unknown_version
+    call doxygen DoxyfileRpcFunctions || goto ERROR_HANDLER
 
 exit /B
 
