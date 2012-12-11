@@ -94,6 +94,9 @@ public:
     */
     virtual void setTrackRating(TrackDescription track_desc, int rating); // throw std::runtime_error
 
+    sqlite3* playlists_db()
+        { return playlists_db_; }
+
 private:
 
     void onAimpCoreMessage(DWORD AMessage, int AParam1, void *AParam2, HRESULT *AResult);
@@ -182,7 +185,7 @@ private:
     EventListeners external_listeners_; //!< map of all subscribed listeners.
     EventsListenerID next_listener_id_; //!< unique ID describes external listener.
 
-    public:sqlite3* playlists_db_;private:///!!!
+    sqlite3* playlists_db_;
 
     // These class were made friend only for easy emulate web ctl plugin behavior. Remove when possible.
     friend class AimpRpcMethods::EmulationOfWebCtlPlugin;

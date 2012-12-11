@@ -307,7 +307,7 @@ ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& r
     std::ostringstream query;
     query << "SELECT " << getColumnsString() << " FROM Playlists";
 
-    sqlite3* playlists_db = dynamic_cast<AIMPPlayer::AIMP3Manager&>(aimp_manager_).playlists_db_;
+    sqlite3* playlists_db = dynamic_cast<AIMPPlayer::AIMP3Manager&>(aimp_manager_).playlists_db();
     sqlite3_stmt* stmt = createStmt( playlists_db,
                                      query.str().c_str()
                                     );
@@ -633,7 +633,7 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
 
     initEntriesFiller(params);
 
-    sqlite3* playlists_db = dynamic_cast<AIMPPlayer::AIMP3Manager&>(aimp_manager_).playlists_db_;
+    sqlite3* playlists_db = dynamic_cast<AIMPPlayer::AIMP3Manager&>(aimp_manager_).playlists_db();
 
     const int playlist_id = params["playlist_id"];
 
