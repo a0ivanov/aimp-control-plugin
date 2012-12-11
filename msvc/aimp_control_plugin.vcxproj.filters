@@ -166,7 +166,7 @@
     <ClCompile Include="..\src\sqlite\sqlite.c">
       <Filter>src\sqlite</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\sqlite\sqlite3.c">
+    <ClCompile Include="..\src\sqlite\sqlite_unicode.c">
       <Filter>src\sqlite</Filter>
     </ClCompile>
   </ItemGroup>
@@ -357,7 +357,7 @@
     <ClInclude Include="..\src\sqlite\sqlite.h">
       <Filter>src\sqlite</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\sqlite\config.h">
+    <ClInclude Include="..\src\sqlite\sqlite_unicode.h">
       <Filter>src\sqlite</Filter>
     </ClInclude>
   </ItemGroup>

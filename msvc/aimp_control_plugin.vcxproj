@@ -146,14 +146,15 @@
     <ClCompile Include="..\src\rpc\utils.cpp" />
     <ClCompile Include="..\src\sqlite\sqlite.c">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\src\sqlite\sqlite3.c">
+    <ClCompile Include="..\src\sqlite\sqlite_unicode.c">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\src\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -216,8 +217,8 @@
     <ClInclude Include="..\src\rpc\response_serializer.h" />
     <ClInclude Include="..\src\rpc\utils.h" />
     <ClInclude Include="..\src\rpc\value.h" />
-    <ClInclude Include="..\src\sqlite\config.h" />
     <ClInclude Include="..\src\sqlite\sqlite.h" />
+    <ClInclude Include="..\src\sqlite\sqlite_unicode.h" />
     <ClInclude Include="..\src\stdafx.h" />
     <ClInclude Include="..\src\utils\base64.h" />
     <ClInclude Include="..\src\utils\image.h" />
