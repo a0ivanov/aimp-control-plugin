@@ -1656,26 +1656,25 @@ void AIMP3Manager::setTrackRating(TrackDescription track_desc, int rating)
 
 void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
 {
+#define THROW_IF_NOT_OK_WITH_MSG(rc, msg_expr)  if (SQLITE_OK != rc) { \
+                                                    const std::string msg = msg_expr; \
+                                                    shutdownPlaylistDB(); \
+                                                    throw std::runtime_error(msg); \
+                                                }
+
     int rc = sqlite3_open(":memory:", &playlists_db_);
-    if (SQLITE_OK != rc) {
-        const std::string msg = MakeString() << "Playlist database creation failure. Reason: sqlite3_open error "
-                                             << rc << ": " << sqlite3_errmsg(playlists_db_);
-        shutdownPlaylistDB();
-        throw std::runtime_error(msg);
-    }
+    THROW_IF_NOT_OK_WITH_MSG( rc, MakeString() << "Playlist database creation failure. Reason: sqlite3_open error "
+                                               << rc << ": " << sqlite3_errmsg(playlists_db_) );
 
     { // add case-insensitivity support to LIKE operator (used for search tracks) since default LIKE operator since it supports case-insensitive search only on ASCII chars by default).
     rc = sqlite3_unicode_init(playlists_db_);
-    if (SQLITE_OK != rc) {
-        const std::string msg = MakeString() << "unicode support enabling failure. Reason: sqlite3_unicode_init() error "
-                                             << rc << ": " << sqlite3_errmsg(playlists_db_);
-        shutdownPlaylistDB();
-        throw std::runtime_error(msg);
-    }
+    THROW_IF_NOT_OK_WITH_MSG( rc, MakeString() << "unicode support enabling failure. Reason: sqlite3_unicode_init() error "
+                                               << rc << ": " << sqlite3_errmsg(playlists_db_) );
     }
 
     { // create table for content of all playlists.
     char* errmsg = nullptr;
+    ON_BLOCK_EXIT(&sqlite3_free, errmsg);
     rc = sqlite3_exec(playlists_db_,
                       "CREATE TABLE PlaylistsEntries ( playlist_id    INTEGER,"
                                                       "entry_id       INTEGER,"
@@ -1698,18 +1697,13 @@ void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
                       nullptr, /* 1st argument to callback */
                       &errmsg
                       );
-    if (SQLITE_OK != rc) {
-        const std::string msg = MakeString() << "Playlist content table creation failure. Reason: sqlite3_exec(create table) error "
-                                             << rc << ": " << errmsg;
-        sqlite3_free(errmsg);
-
-        shutdownPlaylistDB();
-        throw std::runtime_error(msg);
-    }
+    THROW_IF_NOT_OK_WITH_MSG( rc, MakeString() << "Playlist content table creation failure. Reason: sqlite3_exec(create table) error "
+                                               << rc << ": " << errmsg );
     }
 
     { // create table for playlist.
     char* errmsg = nullptr;
+    ON_BLOCK_EXIT(&sqlite3_free, errmsg);
     rc = sqlite3_exec(playlists_db_,
                       "CREATE TABLE Playlists ( id              INTEGER,"
                                                "title           VARCHAR(260),"
@@ -1722,15 +1716,11 @@ void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
                       nullptr, /* 1st argument to callback */
                       &errmsg
                       );
-    if (SQLITE_OK != rc) {
-        const std::string msg = MakeString() << "Playlist table creation failure. Reason: sqlite3_exec(create table) error "
-                                             << rc << ": " << errmsg;
-        sqlite3_free(errmsg);
+    THROW_IF_NOT_OK_WITH_MSG( rc, MakeString() << "Playlist table creation failure. Reason: sqlite3_exec(create table) error "
+                                               << rc << ": " << errmsg );
+    }
 
-        shutdownPlaylistDB();
-        throw std::runtime_error(msg);
-    }
-    }
+#undef THROW_IF_NOT_OK_WITH_MSG
 }
 
 void AIMP3Manager::shutdownPlaylistDB()
