@@ -14,7 +14,7 @@ inline sqlite3_stmt* createStmt(sqlite3* db, const std::string& query) // throws
     sqlite3_stmt* stmt = nullptr;
     int rc_db = sqlite3_prepare( db,
                                  query.c_str(),
-                                 -1, // If less than zero, then stmt is read up to the first nul terminator
+                                 query.length() + 1, // If the caller knows that the supplied string is nul-terminated, then there is a small performance advantage to be gained by passing an nByte parameter that is equal to the number of bytes in the input string including the nul-terminator bytes as this saves SQLite from having to make a copy of the input string.
                                  &stmt,
                                  nullptr  // Pointer to unused portion of stmt
                                 );
