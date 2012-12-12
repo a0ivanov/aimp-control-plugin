@@ -9,6 +9,9 @@
 #include "utils/string_encoding.h"
 #include "utils/image.h"
 #include "utils/util.h"
+#include "utils/scope_guard.h"
+#include "utils/sqlite_util.h"
+#include "sqlite/sqlite.h"
 #include <boost/assign/std.hpp>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
@@ -70,10 +73,14 @@ AIMP2Manager::AIMP2Manager(boost::intrusive_ptr<AIMP2SDK::IAIMP2Controller> aimp
 #ifdef MANUAL_PLAYLISTS_CONTENT_CHANGES_DETERMINATION
     playlists_check_timer_( io_service_, boost::posix_time::seconds(kPLAYLISTS_CHECK_PERIOD_SEC) ),
 #endif
-    next_listener_id_(0)
+    next_listener_id_(0),
+    playlists_db_(nullptr)
 {
     try {
         initializeAIMPObjects();
+
+        initPlaylistDB();
+
 #ifdef MANUAL_PLAYLISTS_CONTENT_CHANGES_DETERMINATION
         // set timer which will periodically check when AIMP has load playlists.
         playlists_check_timer_.async_wait( boost::bind(&AIMP2Manager::onTimerPlaylistsChangeCheck, this, _1) );
@@ -94,6 +101,8 @@ AIMP2Manager::~AIMP2Manager()
     playlists_check_timer_.cancel();
     BOOST_LOG_SEV(logger(), info) << "Playlists check timer was stopped.";
 #endif
+
+    shutdownPlaylistDB();
 }
 
 Playlist AIMP2Manager::loadPlaylist(int playlist_index)
@@ -117,6 +126,39 @@ Playlist AIMP2Manager::loadPlaylist(int playlist_index)
     }
 
     const int files_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(id);
+
+    { // db code
+    sqlite3_stmt* stmt = createStmt(playlists_db_,
+                                    "REPLACE INTO Playlists VALUES (?,?,?,?,?)"
+                                    );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+#define bind(type, field_index, value)  rc_db = sqlite3_bind_##type(stmt, field_index, value); \
+                                        if (SQLITE_OK != rc_db) { \
+                                            const std::string msg = MakeString() << "Error sqlite3_bind_"#type << " " << rc_db; \
+                                            throw std::runtime_error(msg); \
+                                        }
+#define bindText(field_index, text, textLength) rc_db = sqlite3_bind_text16(stmt, field_index, text, textLength * sizeof(WCHAR), SQLITE_STATIC); \
+                                                if (SQLITE_OK != rc_db) { \
+                                                    const std::string msg = MakeString() << "sqlite3_bind_text16" << " " << rc_db; \
+                                                    throw std::runtime_error(msg); \
+                                                }
+
+    int rc_db;
+    bind( int,  1, id );
+    bindText(   2, name, wcslen(name) );
+    bind( int,  3, files_count );
+    bind(int64, 4, duration);
+    bind(int64, 5, size);
+#undef bind
+#undef bindText
+    rc_db = sqlite3_step(stmt);
+    if (SQLITE_DONE != rc_db) {
+        const std::string msg = MakeString() << "sqlite3_step() error "
+                                             << rc_db << ": " << sqlite3_errmsg(playlists_db_);
+        throw std::runtime_error(msg);
+    }
+    }
 
     return Playlist(name,
                     files_count,
@@ -243,6 +285,31 @@ void AIMP2Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
     EntriesListType entries;
     entries.reserve(entries_count);
     
+    deletePlaylistEntriesFromPlaylistDB( playlist.id() ); // remove old entries before adding new ones.
+
+    sqlite3_stmt* stmt = createStmt(playlists_db_, "INSERT INTO PlaylistsEntries VALUES (?,?,?,?,?,"
+                                                                                        "?,?,?,?,?,"
+                                                                                        "?,?,?,?,?)"
+                                    );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    //BOOST_LOG_SEV(logger(), debug) << "The statement has "
+    //                               << sqlite3_bind_parameter_count(stmt)
+    //                               << " wildcards";
+
+#define bind(type, field_index, value)  rc_db = sqlite3_bind_##type(stmt, field_index, value); \
+                                        if (SQLITE_OK != rc_db) { \
+                                            const std::string msg = MakeString() << "Error sqlite3_bind_"#type << " " << rc_db; \
+                                            throw std::runtime_error(msg); \
+                                        }
+#define bindText(field_index, info_field_name)  rc_db = sqlite3_bind_text16(stmt, field_index, info.s##info_field_name, info.n##info_field_name##Len * sizeof(WCHAR), SQLITE_STATIC); \
+                                                if (SQLITE_OK != rc_db) { \
+                                                    const std::string msg = MakeString() << "sqlite3_bind_text16" << " " << rc_db; \
+                                                    throw std::runtime_error(msg); \
+                                                }
+    int rc_db;
+    bind( int, 1, playlist.id() );
+
     for (int entry_index = 0; entry_index < entries_count; ++entry_index) {
         // aimp2_playlist_manager_->AIMP_PLS_Entry_ReloadInfo(id_, entry_index); // try to make AIMP update track info: this takes significant time and some tracks are not updated anyway.
         if ( aimp2_playlist_manager_->AIMP_PLS_Entry_InfoGet(playlist_id,
@@ -252,11 +319,41 @@ void AIMP2Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
             )
         {
             entries.push_back( file_info_helper.getPlaylistEntry(entry_index) );
+
+            // special db code
+            {
+                // bind all values
+                const AIMP2SDK::AIMP2FileInfo& info = file_info_helper.getFileInfoWithCorrectStringLengths();
+                bind(int,    2, entry_index);
+                bindText(    3, Album);
+                bindText(    4, Artist);
+                bindText(    5, Date);
+                bindText(    6, FileName);
+                bindText(    7, Genre);
+                bindText(    8, Title);
+                bind(int,    9, info.nBitRate);
+                bind(int,   10, info.nChannels);
+                bind(int,   11, info.nDuration);
+                bind(int64, 12, info.nFileSize);
+                bind(int,   13, info.nRating);
+                bind(int,   14, info.nSampleRate);
+                bind(int64, 15, crc32(info));
+
+                rc_db = sqlite3_step(stmt);
+                if (SQLITE_DONE != rc_db) {
+                    const std::string msg = MakeString() << "sqlite3_step() error "
+                                                         << rc_db << ": " << sqlite3_errmsg(playlists_db_);
+                    throw std::runtime_error(msg);
+                }
+                sqlite3_reset(stmt);
+            }
         } else {
             BOOST_LOG_SEV(logger(), error) << "Error occured while getting entry info ¹" << entry_index << " from playlist with ID = " << playlist_id;
             throw std::runtime_error("Error occured while getting playlist entries.");
         }
     }
+#undef bind
+#undef bindText
 
     // we got list, save result
     playlist.entries().swap(entries);
@@ -326,6 +423,9 @@ void AIMP2Manager::checkIfPlaylistsChanged()
         while (it != playlists_.end()) {
             // try to find id of current playlist in existing playlists.
             if (!playlist_exist(it->first, aimp2_playlist_manager_) ) {
+                { // db code
+                    deletePlaylistFromPlaylistDB(it->second.id());
+                }
                 it = playlists_.erase(it);
             } else {
                 ++it;            
@@ -1331,6 +1431,125 @@ std::wstring AIMP2Manager::getFormattedEntryTitle(TrackDescription track_desc, c
     return playlistentry_title_formatter.format(getEntry(track_desc),
                                                 StringEncoding::utf8_to_utf16(format_string_utf8)
                                                 );
+}
+
+
+void AIMP2Manager::initPlaylistDB() // throws std::runtime_error
+{
+#define THROW_IF_NOT_OK_WITH_MSG(rc, msg_expr)  if (SQLITE_OK != rc) { \
+                                                    const std::string msg = msg_expr; \
+                                                    shutdownPlaylistDB(); \
+                                                    throw std::runtime_error(msg); \
+                                                }
+
+    int rc = sqlite3_open(":memory:", &playlists_db_);
+    THROW_IF_NOT_OK_WITH_MSG( rc, MakeString() << "Playlist database creation failure. Reason: sqlite3_open error "
+                                               << rc << ": " << sqlite3_errmsg(playlists_db_) );
+
+    { // add case-insensitivity support to LIKE operator (used for search tracks) since default LIKE operator since it supports case-insensitive search only on ASCII chars by default).
+    rc = sqlite3_unicode_init(playlists_db_);
+    THROW_IF_NOT_OK_WITH_MSG( rc, MakeString() << "unicode support enabling failure. Reason: sqlite3_unicode_init() error "
+                                               << rc << ": " << sqlite3_errmsg(playlists_db_) );
+    }
+
+    { // create table for content of all playlists.
+    char* errmsg = nullptr;
+    ON_BLOCK_EXIT(&sqlite3_free, errmsg);
+    rc = sqlite3_exec(playlists_db_,
+                      "CREATE TABLE PlaylistsEntries ( playlist_id    INTEGER,"
+                                                      "entry_id       INTEGER,"
+                                                      "album          VARCHAR(128),"
+                                                      "artist         VARCHAR(128),"
+                                                      "date           VARCHAR(16),"
+                                                      "filename       VARCHAR(260),"
+                                                      "genre          VARCHAR(32),"
+                                                      "title          VARCHAR(260),"
+                                                      "bitrate        INTEGER,"
+                                                      "channels_count INTEGER,"
+                                                      "duration       INTEGER,"
+                                                      "filesize       BIGINT,"
+                                                      "rating         TINYINT,"
+                                                      "samplerate     INTEGER,"
+                                                      "crc32          BIGINT," // use BIGINT since crc32 is uint32.
+                                                      "PRIMARY KEY (playlist_id, entry_id)"
+                                                      ")",
+                      nullptr, /* Callback function */
+                      nullptr, /* 1st argument to callback */
+                      &errmsg
+                      );
+    THROW_IF_NOT_OK_WITH_MSG( rc, MakeString() << "Playlist content table creation failure. Reason: sqlite3_exec(create table) error "
+                                               << rc << ": " << errmsg );
+    }
+
+    { // create table for playlist.
+    char* errmsg = nullptr;
+    ON_BLOCK_EXIT(&sqlite3_free, errmsg);
+    rc = sqlite3_exec(playlists_db_,
+                      "CREATE TABLE Playlists ( id              INTEGER,"
+                                               "title           VARCHAR(260),"
+                                               "entries_count   INTEGER,"
+                                               "duration        BIGINT,"
+                                               "size_of_entries BIGINT,"
+                                               "PRIMARY KEY (id)"
+                                               ")",
+                      nullptr, /* Callback function */
+                      nullptr, /* 1st argument to callback */
+                      &errmsg
+                      );
+    THROW_IF_NOT_OK_WITH_MSG( rc, MakeString() << "Playlist table creation failure. Reason: sqlite3_exec(create table) error "
+                                               << rc << ": " << errmsg );
+    }
+
+#undef THROW_IF_NOT_OK_WITH_MSG
+}
+
+void AIMP2Manager::shutdownPlaylistDB()
+{
+    const int rc = sqlite3_close(playlists_db_);
+    if (SQLITE_OK != rc) {
+        BOOST_LOG_SEV(logger(), error) << "sqlite3_close error: " << rc;
+    }
+    playlists_db_ = nullptr;
+}
+
+void AIMP2Manager::deletePlaylistFromPlaylistDB(PlaylistID playlist_id)
+{
+    deletePlaylistEntriesFromPlaylistDB(playlist_id);
+
+    const std::string query = MakeString() << "DELETE FROM Playlists WHERE id=" << playlist_id;
+
+    char* errmsg = nullptr;
+    const int rc = sqlite3_exec(playlists_db_,
+                                query.c_str(),
+                                nullptr, /* Callback function */
+                                nullptr, /* 1st argument to callback */
+                                &errmsg
+                                );
+    if (SQLITE_OK != rc) {
+        BOOST_LOG_SEV(logger(), error) << __FUNCTION__" failed. Reason: sqlite3_exec() error "
+                                       << rc << ": " << errmsg
+                                       << ". Query: " << query;
+        sqlite3_free(errmsg);
+    }
+}
+
+void AIMP2Manager::deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id)
+{
+    const std::string query = MakeString() << "DELETE FROM PlaylistsEntries WHERE playlist_id=" << playlist_id;
+
+    char* errmsg = nullptr;
+    const int rc = sqlite3_exec(playlists_db_,
+                                query.c_str(),
+                                nullptr, /* Callback function */
+                                nullptr, /* 1st argument to callback */
+                                &errmsg
+                                );
+    if (SQLITE_OK != rc) {
+        BOOST_LOG_SEV(logger(), error) << __FUNCTION__" failed. Reason: sqlite3_exec() error "
+                                       << rc << ": " << errmsg 
+                                       << ". Query: " << query;
+        sqlite3_free(errmsg);
+    }
 }
 
 } // namespace AIMPPlayer

@@ -8,6 +8,8 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/asio.hpp>
 
+struct sqlite3;
+
 namespace AIMP2SDK {
     class IAIMP2Controller;
     class IAIMP2Player;
@@ -87,6 +89,9 @@ public:
     virtual void unRegisterListener(EventsListenerID listener_id);
 
     virtual void onTick();
+
+    sqlite3* playlists_db()
+        { return playlists_db_; }
 
 private:
 
@@ -178,12 +183,18 @@ private:
 
 #endif // #ifdef MANUAL_PLAYLISTS_CONTENT_CHANGES_DETERMINATION
 
+    void initPlaylistDB(); // throws std::runtime_error
+    void shutdownPlaylistDB();
+    void deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id);
+    void deletePlaylistFromPlaylistDB(PlaylistID playlist_id);
+
     // types for notifications of external event listeners.
     typedef std::map<EventsListenerID, EventsListener> EventListeners;
 
     EventListeners external_listeners_; //!< map of all subscribed listeners.
     EventsListenerID next_listener_id_; //!< unique ID describes external listener.
 
+    sqlite3* playlists_db_;
 
     // These class were made friend only for easy emulate web ctl plugin behavior. Remove when possible.
     friend class AimpRpcMethods::EmulationOfWebCtlPlugin;

@@ -4,6 +4,7 @@
 #include "methods.h"
 #include "aimp/manager.h"
 #include "aimp/manager3_impl.h"
+#include "aimp/manager2_impl.h"
 #include "plugin/logger.h"
 #include "rpc/exception.h"
 #include "rpc/value.h"
@@ -286,6 +287,18 @@ std::string GetPlaylists::getColumnsString() const
     return result;
 }
 
+sqlite3* getPlaylistsDB(AIMPPlayer::AIMPManager& aimp_manager) {
+    if (       AIMPPlayer::AIMP3Manager* mgr3 = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager) ) {
+        return mgr3->playlists_db();
+    } else if (AIMPPlayer::AIMP2Manager* mgr2 = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager) ) {
+        return mgr2->playlists_db();
+    } else {
+        using namespace Utilities;
+        const std::string msg = MakeString() << __FUNCTION__ ": invalid AIMPManager object. AIMP3Manager and AIMP2Manager are only supported.";
+        throw std::runtime_error(msg);
+    }
+}
+
 ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
     using namespace Utilities;
@@ -307,7 +320,7 @@ ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& r
     std::ostringstream query;
     query << "SELECT " << getColumnsString() << " FROM Playlists";
 
-    sqlite3* playlists_db = dynamic_cast<AIMPPlayer::AIMP3Manager&>(aimp_manager_).playlists_db();
+    sqlite3* playlists_db = getPlaylistsDB(aimp_manager_);
     sqlite3_stmt* stmt = createStmt( playlists_db,
                                      query.str().c_str()
                                     );
@@ -633,7 +646,7 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
 
     initEntriesFiller(params);
 
-    sqlite3* playlists_db = dynamic_cast<AIMPPlayer::AIMP3Manager&>(aimp_manager_).playlists_db();
+    sqlite3* playlists_db = getPlaylistsDB(aimp_manager_);
 
     const int playlist_id = params["playlist_id"];
 
