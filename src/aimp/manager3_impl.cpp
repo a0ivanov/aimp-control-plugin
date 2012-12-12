@@ -11,6 +11,7 @@
 #include "utils/util.h"
 #include "utils/scope_guard.h"
 #include "utils/sqlite_util.h"
+#include "sqlite/sqlite.h"
 #include <boost/assign/std.hpp>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
@@ -19,8 +20,6 @@
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
-#include "sqlite/sqlite.h"
-
 
 namespace {
 using namespace ControlPlugin::PluginLogger;
