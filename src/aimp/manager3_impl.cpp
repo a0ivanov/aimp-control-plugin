@@ -206,14 +206,14 @@ AIMP3Manager::AIMP3Manager(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_c
 
 AIMP3Manager::~AIMP3Manager()
 {
-    shutdownPlaylistDB();
-
     ///!!!unregister listeners here
     aimp3_playlist_manager_->ListenerRemove( aimp3_playlist_manager_listener_.get() );
     aimp3_playlist_manager_listener_.reset();
 
     aimp3_core_unit_->MessageUnhook( aimp3_core_message_hook_.get() );
     aimp3_core_message_hook_.reset();
+
+    shutdownPlaylistDB();
 }
 
 void AIMP3Manager::initializeAIMPObjects()
