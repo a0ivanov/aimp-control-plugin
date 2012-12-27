@@ -395,8 +395,10 @@ class IAIMPAddonsPlaylistManager: public IUnknown
 class IAIMPAddonsCoverArtManager: public IUnknown
 {
 	public:
-		// Picture will be proportional stretched to ADisplaySize value, if it assigned
-		// ACoverArtFileName: can be NULL (todo: doc)
+		// AFileName - [in] Full file name for audio track
+		// ACoverArtFileName - [out] buffer for cover art file name, can be NULL; 
+		//                     Filled only if cover art loaded from the separate file
+		// ACoverArtFileNameBufferSizeInChars - [in] size of ACoverArtFileName buffer in chars (should be 0, if ACoverArtFileName == NULL)
 		virtual HBITMAP WINAPI CoverArtGetForFile(PWCHAR AFileName, SIZE *ADisplaySize,
 			PWCHAR ACoverArtFileNameBuffer, int ACoverArtFileNameBufferSizeInChars) = 0;
 		// Work with CoverArt of playing file,
