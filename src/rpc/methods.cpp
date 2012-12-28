@@ -875,7 +875,7 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
     } catch (StringEncoding::EncodingError&) {
         throw Rpc::Exception("Getting cover failed. Reason: bad temporary directory for store covers.", ALBUM_COVER_LOAD_FAILED);
     } catch (std::runtime_error&) {
-        throw Rpc::Exception("Getting cover failed. Reason: internal AIMP error.", ALBUM_COVER_LOAD_FAILED);
+        throw Rpc::Exception("Getting cover failed. Reason: album cover extraction or saving error.", ALBUM_COVER_LOAD_FAILED);
     }
     return RESPONSE_IMMEDIATE;
 }
