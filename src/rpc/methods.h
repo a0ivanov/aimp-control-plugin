@@ -749,14 +749,15 @@ public:
 class GetCover : public AIMPRPCMethod
 {
 public:
-    GetCover(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request_handler, const std::wstring& document_root, const std::wstring& cover_directory)
+    GetCover(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request_handler, const boost::filesystem::wpath& document_root, const boost::filesystem::wpath& cover_directory)
         :
         AIMPRPCMethod("GetCover", aimp_manager, rpc_request_handler),
         document_root_(document_root),
-        cover_directory_(cover_directory),
         die_( rng_engine_, random_range_ ) // init generator by range[0, 9]
     {
         random_file_part_.resize(kRANDOM_FILENAME_PART_LENGTH);
+        cover_directory_relative_ = cover_directory;
+        prepare_cover_directory();
     }
 
     std::string help()
@@ -770,13 +771,18 @@ public:
 
 private:
 
-    std::wstring document_root_;
-    std::wstring cover_directory_;
-
     /*
         Generate filename in format cover_playlistID_trackID_widthxheight_random. Ex: cover_2222222_01_100x100_45730.
     */
     std::wstring getTempFileNameForAlbumCover(TrackDescription track_desc, std::size_t width, std::size_t height);
+
+    void prepare_cover_directory(); // throws runtime_error
+
+    boost::filesystem::wpath document_root_,
+                             cover_directory_relative_;
+
+    boost::filesystem::wpath cover_directory() const
+        { return document_root_ / cover_directory_relative_; }
 
     //  random utils
     typedef boost::variate_generator<boost::mt19937&, boost::uniform_int<> > RandomNumbersGenerator;

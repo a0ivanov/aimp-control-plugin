@@ -495,19 +495,26 @@ void AIMPControlPlugin::createRpcMethods()
     REGISTER_AIMP_RPC_METHOD(GetPlaylistEntriesCount);
     REGISTER_AIMP_RPC_METHOD(GetFormattedEntryTitle);
     REGISTER_AIMP_RPC_METHOD(GetPlaylistEntryInfo);
+
     // track's album cover.
-    if (free_image_dll_is_available_) {
+    try {
+        if (!free_image_dll_is_available_) {
+            throw std::runtime_error("FreeImage DLL is not available");
+        }
+
         // add document root and path to directory for storing album covers in GetCover method.
         rpc_request_handler_->addMethod( std::auto_ptr<Rpc::Method>(
                                                 new GetCover(*aimp_manager_,
                                                              *rpc_request_handler_,
-                                                             getWebServerDocumentRoot().native(),
-                                                             L"tmp" // directory in document root to store temp image files.
+                                                             getWebServerDocumentRoot(),
+                                                             L"album_covers_cache" // directory in document root to store temp image files.
                                                              )
                                                                     )
                                         );
-    } else {
-        BOOST_LOG_SEV(logger(), info) << "Album cover processing was disabled.";
+    } catch(std::exception& e) {
+        BOOST_LOG_SEV(logger(), info) << "Album cover processing was disabled. Reason: " << e.what();
+    } catch (...) {
+        BOOST_LOG_SEV(logger(), info) << "Album cover processing was disabled. Reason unknown.";
     }
 
     // Comet technique, "subscribe" method.

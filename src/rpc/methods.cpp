@@ -20,6 +20,51 @@
 #include <boost/assign/std/vector.hpp>
 #include <string.h>
 
+namespace Utilities {
+
+namespace fs = boost::filesystem;
+
+fs::path relativePath( const fs::path &path, const fs::path &relative_to )
+{
+    // create absolute paths
+    fs::path p = fs::absolute(path);
+    fs::path r = fs::absolute(relative_to);
+
+    // if root paths are different, return absolute path
+    if( p.root_path() != r.root_path() )
+        return p;
+
+    // initialize relative path
+    fs::path result;
+
+    // find out where the two paths diverge
+    fs::path::const_iterator itr_path = p.begin();
+    fs::path::const_iterator itr_relative_to = r.begin();
+    while( *itr_path == *itr_relative_to && itr_path != p.end() && itr_relative_to != r.end() ) {
+        ++itr_path;
+        ++itr_relative_to;
+    }
+
+    // add "../" for each remaining token in relative_to
+    if( itr_relative_to != r.end() ) {
+        ++itr_relative_to;
+        while( itr_relative_to != r.end() ) {
+            result /= "..";
+            ++itr_relative_to;
+        }
+    }
+
+    // add remaining path
+    while( itr_path != p.end() ) {
+        result /= *itr_path;
+        ++itr_path;
+    }
+
+    return result;
+}
+
+} // namespace Utilities
+
 namespace {
 using namespace ControlPlugin::PluginLogger;
 ModuleLoggerType& logger()
@@ -790,6 +835,38 @@ ResponseType GetPlaylistEntriesCount::execute(const Rpc::Value& root_request, Rp
     return RESPONSE_IMMEDIATE;
 }
 
+ResponseType GetPlaylistEntryInfo::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+{
+    const Rpc::Value& params = root_request["params"];
+    if (params.type() != Rpc::Value::TYPE_OBJECT || params.size() != 2) {
+        throw Rpc::Exception("Wrong arguments count. Wait 2 int values: track_id, playlist_id.", WRONG_ARGUMENT);
+    }
+
+    const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
+
+    try {
+        const PlaylistEntry& entry = aimp_manager_.getEntry(track_desc);
+
+        using namespace RpcResultUtils;
+        using namespace StringEncoding;
+        Value& result = root_response["result"];
+        result[getStringFieldID(PlaylistEntry::ID)      ] = entry.id();
+        result[getStringFieldID(PlaylistEntry::TITLE)   ] = utf16_to_utf8( entry.title() );
+        result[getStringFieldID(PlaylistEntry::ARTIST)  ] = utf16_to_utf8( entry.artist() );
+        result[getStringFieldID(PlaylistEntry::ALBUM)   ] = utf16_to_utf8( entry.album() );
+        result[getStringFieldID(PlaylistEntry::DATE)    ] = utf16_to_utf8( entry.date() );
+        result[getStringFieldID(PlaylistEntry::GENRE)   ] = utf16_to_utf8( entry.genre() );
+        result[getStringFieldID(PlaylistEntry::BITRATE) ] = static_cast<unsigned int>( entry.bitrate() );
+        result[getStringFieldID(PlaylistEntry::DURATION)] = static_cast<unsigned int>( entry.duration() );
+        result[getStringFieldID(PlaylistEntry::FILESIZE)] = static_cast<unsigned int>( entry.fileSize() );
+        result[getStringFieldID(PlaylistEntry::RATING)  ] = static_cast<unsigned int>( entry.rating() );
+
+    } catch (std::runtime_error&) {
+        throw Rpc::Exception("Getting info about track failed. Reason: track not found.", TRACK_NOT_FOUND);
+    }
+    return RESPONSE_IMMEDIATE;
+}
+
 ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
     const Rpc::Value& params = root_request["params"];
@@ -829,57 +906,42 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
         return RESPONSE_IMMEDIATE;
     }
 
-
     // save cover to temp directory with unique filename.
-    std::wstring cover_uri (cover_directory_);
-                    cover_uri += L'/';
-                    cover_uri += getTempFileNameForAlbumCover(track_desc, cover_width, cover_height);
-                    cover_uri += L".png";
-    std::wstring temp_unique_filename (document_root_);
-                    temp_unique_filename += L'/';
-                    temp_unique_filename += cover_uri;
+    boost::filesystem::wpath cover_uri (cover_directory_relative_ / getTempFileNameForAlbumCover(track_desc, cover_width, cover_height));
+    cover_uri.replace_extension(L".png");
+
+    const boost::filesystem::wpath temp_unique_filename (document_root_ / cover_uri);
+
     try {
-        aimp_manager_.savePNGCoverToFile(track_desc, cover_width, cover_height, temp_unique_filename);
-        root_response["result"]["album_cover_uri"] = StringEncoding::utf16_to_utf8(cover_uri);
-        cover_filenames_[track_desc].push_back(cover_uri);
+        aimp_manager_.savePNGCoverToFile(track_desc, cover_width, cover_height, temp_unique_filename.native());
+        const std::wstring& cover_uri_generic = cover_uri.generic_wstring();
+        root_response["result"]["album_cover_uri"] = StringEncoding::utf16_to_utf8(cover_uri_generic);
+        cover_filenames_[track_desc].push_back(cover_uri_generic);
     } catch (StringEncoding::EncodingError&) {
-        throw Rpc::Exception("Getting cover failed. Reason: bad temporarily directory for store covers.", ALBUM_COVER_LOAD_FAILED);
+        throw Rpc::Exception("Getting cover failed. Reason: bad temporary directory for store covers.", ALBUM_COVER_LOAD_FAILED);
     } catch (std::runtime_error&) {
         throw Rpc::Exception("Getting cover failed. Reason: internal AIMP error.", ALBUM_COVER_LOAD_FAILED);
     }
     return RESPONSE_IMMEDIATE;
 }
 
-ResponseType GetPlaylistEntryInfo::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+void GetCover::prepare_cover_directory() // throws runtime_error
 {
-    const Rpc::Value& params = root_request["params"];
-    if (params.type() != Rpc::Value::TYPE_OBJECT || params.size() != 2) {
-        throw Rpc::Exception("Wrong arguments count. Wait 2 int values: track_id, playlist_id.", WRONG_ARGUMENT);
-    }
-
-    const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
+    namespace fs = boost::filesystem;
+    using namespace Utilities;
 
     try {
-        const PlaylistEntry& entry = aimp_manager_.getEntry(track_desc);
-
-        using namespace RpcResultUtils;
-        using namespace StringEncoding;
-        Value& result = root_response["result"];
-        result[getStringFieldID(PlaylistEntry::ID)      ] = entry.id();
-        result[getStringFieldID(PlaylistEntry::TITLE)   ] = utf16_to_utf8( entry.title() );
-        result[getStringFieldID(PlaylistEntry::ARTIST)  ] = utf16_to_utf8( entry.artist() );
-        result[getStringFieldID(PlaylistEntry::ALBUM)   ] = utf16_to_utf8( entry.album() );
-        result[getStringFieldID(PlaylistEntry::DATE)    ] = utf16_to_utf8( entry.date() );
-        result[getStringFieldID(PlaylistEntry::GENRE)   ] = utf16_to_utf8( entry.genre() );
-        result[getStringFieldID(PlaylistEntry::BITRATE) ] = static_cast<unsigned int>( entry.bitrate() );
-        result[getStringFieldID(PlaylistEntry::DURATION)] = static_cast<unsigned int>( entry.duration() );
-        result[getStringFieldID(PlaylistEntry::FILESIZE)] = static_cast<unsigned int>( entry.fileSize() );
-        result[getStringFieldID(PlaylistEntry::RATING)  ] = static_cast<unsigned int>( entry.rating() );
-
-    } catch (std::runtime_error&) {
-        throw Rpc::Exception("Getting info about track failed. Reason: track not found.", TRACK_NOT_FOUND);
+        // cleare cache before using.
+        const fs::wpath& cover_dir = cover_directory();
+        if (fs::exists(cover_dir)) {
+            fs::remove_all(cover_dir);
+        }
+    
+        // create cache directory
+        fs::create_directory(cover_dir);
+    } catch (fs::filesystem_error& e) {
+        throw std::runtime_error( MakeString() << "album cover cache directory preparation failure. Reason: " << e.what() );
     }
-    return RESPONSE_IMMEDIATE;
 }
 
 const std::wstring* GetCover::isCoverExistsInCoverDirectory(TrackDescription track_desc, std::size_t width, std::size_t height) const
