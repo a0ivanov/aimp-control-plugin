@@ -945,7 +945,7 @@ std::wstring GetCover::getTempFileNameForAlbumCover(TrackDescription track_desc,
     std::generate(random_file_part_.begin(), random_file_part_.end(), RandomDigitCharGenerator(&die_) );
 
     std::wostringstream filename;
-    filename << L"cover_" << track_desc.track_id << L"_" << track_desc.playlist_id << "_" << width << "x" << height << "_" << random_file_part_;
+    filename << L"cover_" << L"_" << track_desc.playlist_id << "_" << track_desc.track_id << width << "x" << height << "_" << random_file_part_;
     return filename.str();
 }
 
