@@ -64,7 +64,7 @@ public:
   typedef boost::shared_ptr< connection<SocketT> > pointer;
 
   static pointer create(boost::asio::io_service& io_service,
-						boost::shared_ptr<SocketT> socket,
+						SocketT* socket,
                         const std::wstring& filename)
   {
     return pointer(new connection(io_service, socket, filename));
@@ -91,7 +91,7 @@ public:
   }
 
 private:
-  connection(boost::asio::io_service& io_service, boost::shared_ptr<SocketT> socket, const std::wstring& filename)
+  connection(boost::asio::io_service& io_service, SocketT* socket, const std::wstring& filename)
     : socket_(socket),
       filename_(filename),
       file_(io_service)
@@ -100,13 +100,13 @@ private:
   }
 
   void handle_write(const boost::system::error_code& /*error*/,
-      size_t /*bytes_transferred*/)
+                    size_t /*bytes_transferred*/)
   {
     boost::system::error_code ignored_ec;
     socket_->shutdown(SocketT::shutdown_both, ignored_ec);
   }
 
-  boost::shared_ptr<SocketT> socket_;
+  std::unique_ptr<SocketT> socket_;
   std::wstring filename_;
   random_access_handle file_;
 };
@@ -121,7 +121,7 @@ template <typename SocketT>
 Connection<SocketT>::Connection(boost::asio::io_service& io_service, RequestHandler& handler)
     :
     strand_(io_service),
-    socket_(boost::make_shared<SocketT>(io_service)),
+    socket_(std::unique_ptr<SocketT>(new SocketT(io_service))),
     request_handler_(handler)
 {
     try {
@@ -134,10 +134,15 @@ Connection<SocketT>::Connection(boost::asio::io_service& io_service, RequestHand
 template <typename SocketT>
 Connection<SocketT>::~Connection()
 {
-    try {
-        BOOST_LOG_SEV(logger(), info) << "Destroying connection to host " << socket().remote_endpoint();
-    } catch (boost::system::system_error&) {
-        BOOST_LOG_SEV(logger(), info) << "Destroying connection.";
+    ///!!! TODO: avoid pointer.
+    if (socket_) {
+        try {
+            BOOST_LOG_SEV(logger(), info) << "Destroying connection to host " << socket().remote_endpoint();
+        } catch (boost::system::system_error&) {
+            BOOST_LOG_SEV(logger(), info) << "Destroying connection.";
+        }
+    } else {
+        BOOST_LOG_SEV(logger(), info) << "Socket was passed to another connection.";
     }
 }
 
@@ -247,11 +252,9 @@ void Connection<SocketT>::handle_write_headers_on_file_sending(const boost::syst
         // http headers were sent successfully, now send file content.
         typedef TransmitFile::connection<SocketT> TransmitFileConnection;
         TransmitFileConnection::pointer tfc = TransmitFileConnection::create(strand_.get_io_service(),
-                                                                             socket_,
+                                                                             socket_.release(), // this object is not socket owner anymore.
 																		     reply_.filename);
         
-        socket_.reset(); // this object is not socket owner anymore.
-
         tfc->start();
     }
 

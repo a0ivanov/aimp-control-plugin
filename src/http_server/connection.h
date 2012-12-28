@@ -59,7 +59,7 @@ private:
     boost::asio::io_service::strand strand_;
 
     /// Socket for the connection.
-    boost::shared_ptr<SocketT> socket_; // use pointer to be able pass it to another connection without copying. Boost 1.52.0's asio do not allow it.
+    std::unique_ptr<SocketT> socket_; // use pointer to be able pass it to another connection without copying.
 
     /// The handler used to process the incoming request.
     RequestHandler& request_handler_;
