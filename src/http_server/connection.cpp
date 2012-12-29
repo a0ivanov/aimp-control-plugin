@@ -91,7 +91,7 @@ public:
   }
 
 private:
-  connection(boost::asio::io_service& io_service, SocketT* socket, const std::wstring& filename)
+  connection(boost::asio::io_service& io_service, std::unique_ptr<SocketT> socket, const std::wstring& filename)
     : socket_(socket),
       filename_(filename),
       file_(io_service)
@@ -252,8 +252,9 @@ void Connection<SocketT>::handle_write_headers_on_file_sending(const boost::syst
         // http headers were sent successfully, now send file content.
         typedef TransmitFile::connection<SocketT> TransmitFileConnection;
         TransmitFileConnection::pointer tfc = TransmitFileConnection::create(strand_.get_io_service(),
-                                                                             socket_.release(), // this object is not socket owner anymore.
+                                                                             std::move(socket_), // this object is not socket owner anymore.
 																		     reply_.filename);
+        assert(!socket_);
         
         tfc->start();
     }
