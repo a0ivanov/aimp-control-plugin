@@ -743,8 +743,8 @@ void AIMP3Manager::onAimpCoreMessage(DWORD AMessage, int AParam1, void* /*AParam
         EVENT_EFFECT_CHANGED,
     */
     switch (AMessage) {
-    case AIMP_MSG_PROPERTY_RADIOCAP: // this sent every second in aimp v961
-        AMessage = AMessage;
+    case AIMP_MSG_PROPERTY_RADIOCAP: // this is sent every second in aimp 3 v961
+        notifyAllExternalListeners(EVENT_RADIO_CAPTURE);
         break;
     case AIMP_MSG_EVENT_PLAYER_STATE:
         notifyAllExternalListeners(EVENT_PLAYER_STATE);
