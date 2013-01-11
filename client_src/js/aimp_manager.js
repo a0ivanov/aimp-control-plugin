@@ -36,11 +36,12 @@ function AimpManager() {
                                           'ShufflePlaybackMode', 'RepeatPlaybackMode',
                                           'GetPlayerControlPanelState',
                                           'VolumeLevel', 'Mute', // volume utils
+					  'RadioCaptureMode',
                                           'Status', // get/set various aspects of player
                                           'EnqueueTrack', 'RemoveTrackFromPlayQueue', // queue tracks
                                           'GetPlaylists', 'GetPlaylistEntries', 'GetEntryPositionInDataTable', 'GetPlaylistEntriesCount', 'GetFormattedEntryTitle', 'GetPlaylistEntryInfo', 'SetTrackRating', // playlists and tracks utils
                                           'GetCover', // album cover URI getter
-										  'DownloadTrack', // track URI getter
+					  'DownloadTrack', // track URI getter
                                           'SubscribeOnAIMPStateUpdateEvent' // subscribe for AIMP player state notifications
                                          ]
                                }
@@ -72,7 +73,7 @@ function AimpManager() {
              4 : 'error_index_range',
              5 : 'error_object_access',
              6 : 'error_value_range',
-			 7 : 'error_internal',
+	     7 : 'error_internal',
             11 : 'error_wrong_argument',
             12 : 'error_playback_failed',
             13 : 'error_shuffle_mode_set_failed',
@@ -369,7 +370,8 @@ removeTrackFromPlayQueue : function(params, callbacks) {
         RADIO       = 38,
         STREAM_TYPE = 39,
         TIMER       = 40,
-        SHUFFLE     = 41   [0, 1]
+        SHUFFLE     = 41,   [0, 1]
+        RADIO_CAPTURE = 48  [0, 1]
     Returns current value of status if params.value is not specified.
 */
 status : function(params, callbacks) {
@@ -428,6 +430,16 @@ volume : function(params, callbacks) {
 */
 mute : function(params, callbacks) {
     this.callRpc(this.aimp_service.Mute, params, callbacks);
+},
+
+/*
+    Sets radio capture mode.
+        Param params.radio_capture_on - string flag: 'on', 'off'.
+        Param callbacks - see description in AimpManager comments.
+    With empty params returns current mode.
+*/
+radio_capture : function(params, callbacks) {
+    this.callRpc(this.aimp_service.RadioCaptureMode, params, callbacks);
 },
 
 /*
