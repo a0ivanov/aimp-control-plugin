@@ -36,12 +36,12 @@ function AimpManager() {
                                           'ShufflePlaybackMode', 'RepeatPlaybackMode',
                                           'GetPlayerControlPanelState',
                                           'VolumeLevel', 'Mute', // volume utils
-					  'RadioCaptureMode',
+                                          'RadioCaptureMode',
                                           'Status', // get/set various aspects of player
                                           'EnqueueTrack', 'RemoveTrackFromPlayQueue', // queue tracks
                                           'GetPlaylists', 'GetPlaylistEntries', 'GetEntryPositionInDataTable', 'GetPlaylistEntriesCount', 'GetFormattedEntryTitle', 'GetPlaylistEntryInfo', 'SetTrackRating', // playlists and tracks utils
                                           'GetCover', // album cover URI getter
-					  'DownloadTrack', // track URI getter
+                                          'DownloadTrack', // track URI getter
                                           'SubscribeOnAIMPStateUpdateEvent' // subscribe for AIMP player state notifications
                                          ]
                                }
@@ -73,7 +73,7 @@ function AimpManager() {
              4 : 'error_index_range',
              5 : 'error_object_access',
              6 : 'error_value_range',
-	     7 : 'error_internal',
+             7 : 'error_internal',
             11 : 'error_wrong_argument',
             12 : 'error_playback_failed',
             13 : 'error_shuffle_mode_set_failed',
@@ -165,7 +165,7 @@ getPlaylists : function(params, callbacks) {
             Available fields are: 'id', 'title', 'artist', 'album', 'date', 'genre', 'bitrate', 'duration', 'filesize', 'rating'.
             If param fields is not specified, following fields will be filled: id, title.
         Param params.format_string - optional. If it is specified params.fields are ignored and all entries will represented by array [getFormattedTrackTitle(params.format_string)].
-			See docs about getFormattedTrackTitle() method for details.
+            See docs about getFormattedTrackTitle() method for details.
         Param params.start_index - index of first entry. Default: 0.
         Param params.entries_count - count of entries. Default: all entries.
         Param params.order_fields - array of field descriptions, used to order entries by multiple fields.
@@ -187,11 +187,11 @@ getPlaylistEntries : function(params, callbacks) {
 },
 
 /*
-	Returns number of page and index inside page for specified track.
-	Client must provide all params from getPlaylistEntries() function and additional parameter:
-		Param params.track_id - id of track.
-	Result is object with following members:
-		page_number - if track is not found this value is -1.
+    Returns number of page and index inside page for specified track.
+    Client must provide all params from getPlaylistEntries() function and additional parameter:
+        Param params.track_id - id of track.
+    Result is object with following members:
+        page_number - if track is not found this value is -1.
         track_index_on_page - if track is not found this value is -1.
 */
 getEntryPositionInDatatable : function(params, callbacks) {
@@ -385,10 +385,10 @@ status : function(params, callbacks) {
     With empty params returns current position.
 */
 trackPosition : function(params, callbacks) {
-	var status_params = params.hasOwnProperty('position') ? { status_id : 31,
-														      value : params.position
-															}
-													      : {};
+    var status_params = params.hasOwnProperty('position') ? { status_id : 31,
+                                                              value : params.position
+                                                            }
+                                                          : {};
     this.callRpc(this.aimp_service.Status, status_params, callbacks);
 },
 
@@ -448,8 +448,8 @@ radio_capture : function(params, callbacks) {
         Param callbacks - see description in AimpManager comments.
     Result is object with following members:
         playback_state - 'playing', 'stopped', 'paused';
-		track_position - current track position. Exist only if it has sense.
-		track_length - current track length. Exist only if it has sense.
+        track_position - current track position. Exist only if it has sense.
+        track_length - current track length. Exist only if it has sense.
         playlist_id - playlist ID;
         track_id - track ID;
         volume - volume level in range [0-100];
@@ -468,8 +468,8 @@ getControlPanelState : function(params, callbacks) {
             1) 'play_state_change' - playback state change event (player switch to playing/paused/stopped state)
             Response will contain following members:
                 'playback_state', string - playback state (playing, stopped, paused)
-				track_position, int - current track position. Exist only if it has sense.
-				track_length, int - current track length. Exist only if it has sense.
+                track_position, int - current track position. Exist only if it has sense.
+                track_length, int - current track length. Exist only if it has sense.
             2) 'current_track_change' - current track change event (player switched track)
             Response will contain following members:
                 1) 'playlist_id', int - playlist ID
