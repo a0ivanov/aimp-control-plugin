@@ -1052,6 +1052,7 @@ void SubscribeOnAIMPStateUpdateEvent::aimpEventHandler(AIMPManager::EVENTS event
     case AIMPManager::EVENT_MUTE:
     case AIMPManager::EVENT_SHUFFLE:
     case AIMPManager::EVENT_REPEAT:
+    case AIMPManager::EVENT_RADIO_CAPTURE:
         sendNotifications(CONTROL_PANEL_STATE_CHANGE_EVENT);
         break;
     default:
