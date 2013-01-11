@@ -235,6 +235,25 @@ ResponseType Mute::execute(const Rpc::Value& root_request, Rpc::Value& root_resp
     return RESPONSE_IMMEDIATE;
 }
 
+ResponseType RadioCaptureMode::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+{
+    const Rpc::Value& params = root_request["params"];
+    if (params.type() == Rpc::Value::TYPE_OBJECT && params.size() == 1) { // set mode if argument was passed.
+        const bool value = params["radio_capture_on"];
+        try {
+            aimp_manager_.setStatus(AIMPManager::STATUS_RADIO_CAPTURE, value);
+        } catch (std::runtime_error& e) {
+            std::stringstream msg;
+            msg << "Error occured while set radio capture mode. Reason:" << e.what();
+            throw Rpc::Exception(msg.str(), SHUFFLE_MODE_SET_FAILED);
+        }
+    }
+
+    // return current mode.
+    RpcResultUtils::setCurrentShuffleMode(aimp_manager_.getStatus(AIMPManager::STATUS_RADIO_CAPTURE) != 0, root_response["result"]);
+    return RESPONSE_IMMEDIATE;
+}
+
 ResponseType EnqueueTrack::execute(const Rpc::Value& root_request, Rpc::Value& /*root_response*/)
 {
     const Rpc::Value& params = root_request["params"];

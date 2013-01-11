@@ -250,7 +250,9 @@ public:
       - RADIO       = 38,
       - STREAM_TYPE = 39,  0 mp3, 1 ?, 2 internet radio
       - TIMER       = 40,
-      - SHUFFLE     = 41   [0,1] off/on
+      - SHUFFLE     = 41,   [0,1] off/on
+// following supported since AIMP SDK 3:
+      - STATUS_RADIO_CAPTURE = 48  [0,1] off/on
     \param value - int, optional: new status value. Value range depends on status ID. If value is not specified, function returns current status.
     \return object which describes current status value. Range and meaning of value depends on status. See AIMP2 SDK for details. On AIMP3 all values are mapped to AIMP2 ranges.
             Example:\code{ "value" : 0 }\endcode
@@ -361,6 +363,29 @@ public:
     {
         return "bool Mute(bool mute_on) activates or deactivates mute mode. "
                "If no arguments are passed returns current state of repeat mode.";
+    }
+
+    Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
+};
+
+/*! 
+    \brief Gets/sets radio capture mode.
+    \param radio_capture_on - boolean, optional.
+    \return object which describes current shuffle mode.
+            Example:\code{ "radio_capture_on" : false }\endcode
+    \remark it's equivalent to Status function called with status ID RADIO_CAPTURE.
+*/
+class RadioCaptureMode : public AIMPRPCMethod
+{
+public:
+    RadioCaptureMode(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request_handler)
+        : AIMPRPCMethod("RadioCaptureMode", aimp_manager, rpc_request_handler)
+    {}
+
+    std::string help()
+    {
+        return "bool RadioCaptureMode(bool radio_capture_on) activates or deactivates radio capture mode. "
+               "If no arguments are passed returns current state of radio capture mode.";
     }
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);

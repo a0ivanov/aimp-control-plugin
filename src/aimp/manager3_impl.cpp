@@ -1021,8 +1021,16 @@ void AIMP3Manager::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValu
     }
     //STATUS_STREAM_TYPE,
     case STATUS_REVERSETIME:
-    case STATUS_SHUFFLE: {
-        msg = status == STATUS_SHUFFLE ? AIMP_MSG_PROPERTY_SHUFFLE : AIMP_MSG_PROPERTY_REVERSETIME;
+    case STATUS_SHUFFLE:
+    case STATUS_RADIO_CAPTURE: {
+        switch (status) {
+        case STATUS_REVERSETIME:   msg = AIMP_MSG_PROPERTY_REVERSETIME; break;
+        case STATUS_SHUFFLE:       msg = AIMP_MSG_PROPERTY_SHUFFLE;     break;
+        case STATUS_RADIO_CAPTURE: msg = AIMP_MSG_PROPERTY_RADIOCAP;    break;
+        default:
+            assert(!"unknown status");
+            break;
+        }
         BOOL value = status_value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
@@ -1272,8 +1280,16 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
     }
     //STATUS_STREAM_TYPE,
     case STATUS_REVERSETIME:
-    case STATUS_SHUFFLE: {
-        msg = status == STATUS_SHUFFLE ? AIMP_MSG_PROPERTY_SHUFFLE : AIMP_MSG_PROPERTY_REVERSETIME;
+    case STATUS_SHUFFLE:
+    case STATUS_RADIO_CAPTURE: {
+        switch (status) {
+        case STATUS_REVERSETIME:   msg = AIMP_MSG_PROPERTY_REVERSETIME; break;
+        case STATUS_SHUFFLE:       msg = AIMP_MSG_PROPERTY_SHUFFLE;     break;
+        case STATUS_RADIO_CAPTURE: msg = AIMP_MSG_PROPERTY_RADIOCAP;    break;
+        default:
+            assert(!"unknown status");
+            break;
+        }
         BOOL value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
@@ -1295,6 +1311,7 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
         case STATUS_PL_HWND:   param1 = AIMP_MPH_PLAYLISTFORM; break;
         case STATUS_EQ_HWND:   param1 = AIMP_MPH_EQUALIZERFORM; break;
         default:
+            assert(!"unknown status");
             break;
         }
         HWND value;

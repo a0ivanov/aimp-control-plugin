@@ -467,6 +467,7 @@ void AIMPControlPlugin::createRpcMethods()
     REGISTER_AIMP_RPC_METHOD(RepeatPlaybackMode);
     REGISTER_AIMP_RPC_METHOD(VolumeLevel);
     REGISTER_AIMP_RPC_METHOD(Mute);
+    REGISTER_AIMP_RPC_METHOD(RadioCaptureMode);
     REGISTER_AIMP_RPC_METHOD(Status);
     REGISTER_AIMP_RPC_METHOD(GetPlayerControlPanelState);
     // playlists

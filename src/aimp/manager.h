@@ -72,6 +72,8 @@ public:
         STATUS_PL_HWND,
         STATUS_EQ_HWND,
         STATUS_TRAY, // [0,1] false/true.
+// supported since AIMP SDK 3
+        STATUS_RADIO_CAPTURE, // [0,1] off/on.
         STATUS_LAST // not a status.
     };
 
