@@ -79,19 +79,24 @@ void setCurrentVolume(int volume, Rpc::Value& result)
     result["volume"] = volume;
 }
 
-void setCurrentMuteMode(bool mute_on, Rpc::Value& result)
+void setCurrentMuteMode(bool value, Rpc::Value& result)
 {
-    result["mute_mode_on"] = mute_on;
+    result["mute_mode_on"] = value;
 }
 
-void setCurrentRepeatMode(bool repeat_on, Rpc::Value& result)
+void setCurrentRepeatMode(bool value, Rpc::Value& result)
 {
-    result["repeat_mode_on"] = repeat_on;
+    result["repeat_mode_on"] = value;
 }
 
-void setCurrentShuffleMode(bool shuffle_on, Rpc::Value& result)
+void setCurrentShuffleMode(bool value, Rpc::Value& result)
 {
-    result["shuffle_mode_on"] = shuffle_on;
+    result["shuffle_mode_on"] = value;
+}
+
+void setCurrentRadioCaptureMode(bool value, Rpc::Value& result)
+{
+    result["radio_capture_mode_on"] = value;
 }
 
 void setCurrentPlayingSourceInfo(const AIMPManager& aimp_manager, Rpc::Value& result)
@@ -105,10 +110,11 @@ void setControlPanelInfo(const AIMPManager& aimp_manager, Rpc::Value& result)
     setCurrentPlaybackState(aimp_manager.getPlaybackState(), result);
     setCurrentTrackProgressIfPossible(aimp_manager, result);
     setCurrentPlayingSourceInfo(aimp_manager, result);
-    setCurrentVolume     (aimp_manager.getStatus(AIMPManager::STATUS_VOLUME),       result);
-    setCurrentMuteMode   (aimp_manager.getStatus(AIMPManager::STATUS_MUTE) != 0,    result);
-    setCurrentRepeatMode (aimp_manager.getStatus(AIMPManager::STATUS_REPEAT) != 0,  result);
-    setCurrentShuffleMode(aimp_manager.getStatus(AIMPManager::STATUS_SHUFFLE) != 0, result);
+    setCurrentVolume          (aimp_manager.getStatus(AIMPManager::STATUS_VOLUME),             result);
+    setCurrentMuteMode        (aimp_manager.getStatus(AIMPManager::STATUS_MUTE) != 0,          result);
+    setCurrentRepeatMode      (aimp_manager.getStatus(AIMPManager::STATUS_REPEAT) != 0,        result);
+    setCurrentShuffleMode     (aimp_manager.getStatus(AIMPManager::STATUS_SHUFFLE) != 0,       result);
+    setCurrentRadioCaptureMode(aimp_manager.getStatus(AIMPManager::STATUS_RADIO_CAPTURE) != 0, result);
 }
 
 void setPlaylistsContentChangeInfo(const AIMPPlayer::AIMPManager& /*aimp_manager*/, Rpc::Value& result)

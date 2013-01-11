@@ -250,7 +250,7 @@ ResponseType RadioCaptureMode::execute(const Rpc::Value& root_request, Rpc::Valu
     }
 
     // return current mode.
-    RpcResultUtils::setCurrentShuffleMode(aimp_manager_.getStatus(AIMPManager::STATUS_RADIO_CAPTURE) != 0, root_response["result"]);
+    RpcResultUtils::setCurrentRadioCaptureMode(aimp_manager_.getStatus(AIMPManager::STATUS_RADIO_CAPTURE) != 0, root_response["result"]);
     return RESPONSE_IMMEDIATE;
 }
 

@@ -39,11 +39,13 @@ void setCurrentPlaylistEntry(AIMPPlayer::PlaylistEntryID track_id, Rpc::Value& r
 
 void setCurrentVolume(int volume, Rpc::Value& result);
 
-void setCurrentMuteMode(bool mute_on, Rpc::Value& result);
+void setCurrentMuteMode(bool value, Rpc::Value& result);
 
-void setCurrentRepeatMode(bool repeat_on, Rpc::Value& result);
+void setCurrentRepeatMode(bool value, Rpc::Value& result);
 
-void setCurrentShuffleMode(bool shuffle_on, Rpc::Value& result);
+void setCurrentShuffleMode(bool value, Rpc::Value& result);
+
+void setCurrentRadioCaptureMode(bool value, Rpc::Value& result);
 
 void setCurrentPlayingSourceInfo(const AIMPPlayer::AIMPManager& aimp_manager, Rpc::Value& result);
 
