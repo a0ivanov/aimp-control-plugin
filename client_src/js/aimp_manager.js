@@ -438,7 +438,7 @@ mute : function(params, callbacks) {
         Param callbacks - see description in AimpManager comments.
     With empty params returns current mode.
 */
-radio_capture : function(params, callbacks) {
+radioCapture : function(params, callbacks) {
     this.callRpc(this.aimp_service.RadioCaptureMode, params, callbacks);
 },
 

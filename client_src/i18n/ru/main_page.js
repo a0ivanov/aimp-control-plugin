@@ -33,6 +33,8 @@ control_panel_shuffle_off : 'Отключить случайное воспро�
 control_panel_repeat : 'Повторение трека',
 control_panel_repeat_on : 'Включить режим повторения трека',
 control_panel_repeat_off : 'Отключить режим повторения трека',
+control_panel_radio_capture_on: 'Включить захват радио',
+control_panel_radio_capture_off: 'Отключить захват радио',
 control_panel_settings : 'Настройки',
 control_panel_volume : 'Громкость',
 control_panel_mute : 'Беззвучный режим',

@@ -759,7 +759,16 @@ function initControlPanel()
                                         { on_exception : on_control_panel_command }
         ); // activate/deactivate repeat playback mode.
     });
-
+    
+    $('#radio_capture').button({
+        text: false,
+        icons: { primary: 'ui-icon-signal-diag' }
+    }).click(function() {
+        aimp_manager.radioCapture({ radio_capture_on : !control_panel_state.radio_capture_on },
+                                  { on_exception : on_control_panel_command }
+        ); // activate/deactivate radio capture mode.
+    });
+    
     $('#show_settings_form').button({
         text: false,
         icons: { primary: 'ui-icon-wrench' },
@@ -853,6 +862,15 @@ function updateControlPanel()
     );
     repeat_button.attr('checked', control_panel.repeat_mode_on);
     repeat_button.button('refresh');
+    
+    // radio capture button
+    var radio_capture_button = $('#radio_capture');
+    radio_capture_button.button('option', {
+                                        label: getText(control_panel.radio_capture_mode_on ? 'control_panel_radio_capture_off' : 'control_panel_radio_capture_on')
+                                    }
+    );
+    radio_capture_button.attr('checked', control_panel.radio_capture_mode_on);
+    radio_capture_button.button('refresh');
 }
 
 /*
