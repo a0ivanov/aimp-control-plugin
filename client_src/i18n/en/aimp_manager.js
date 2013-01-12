@@ -24,6 +24,6 @@ error_playlist_not_found : 'Playlist not found',
 error_track_not_found : 'Track not found',
 error_album_cover_load_failed : 'Album cover loading failed',
 error_rating_set_failed : 'Rating set failed',
-error_status_set_failed : 'Status set failed'
-
+error_status_set_failed : 'Status set failed',
+error_radio_capture_set_failed : 'Radio capture mode set failed'
 }

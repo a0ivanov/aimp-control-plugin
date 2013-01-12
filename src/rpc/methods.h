@@ -55,7 +55,8 @@ enum ERROR_CODES { WRONG_ARGUMENT = 11, /*!< returned when arguments passed in f
                    TRACK_NOT_FOUND,
                    ALBUM_COVER_LOAD_FAILED,
                    RATING_SET_FAILED,
-                   STATUS_SET_FAILED
+                   STATUS_SET_FAILED,
+                   RADIO_CAPTURE_MODE_SET_FAILED
 };
 
 using namespace AIMPPlayer;

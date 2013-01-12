@@ -245,7 +245,7 @@ ResponseType RadioCaptureMode::execute(const Rpc::Value& root_request, Rpc::Valu
         } catch (std::runtime_error& e) {
             std::stringstream msg;
             msg << "Error occured while set radio capture mode. Reason:" << e.what();
-            throw Rpc::Exception(msg.str(), SHUFFLE_MODE_SET_FAILED);
+            throw Rpc::Exception(msg.str(), RADIO_CAPTURE_MODE_SET_FAILED);
         }
     }
 
