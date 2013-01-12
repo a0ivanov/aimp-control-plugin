@@ -14,7 +14,7 @@ var entries_requests = {}; // contains latest entry list requests to server for 
 var need_goto_current_track_once_on_playlist_content_load = true;
 
 var icon_menu_indicator_opened = 'ui-icon-minus',
-	icon_menu_indicator_closed = 'ui-icon-plus';
+    icon_menu_indicator_closed = 'ui-icon-plus';
 
 /* Invoke notifiers for all control menus. */
 function syncronizeControlMenus() {
@@ -25,84 +25,84 @@ function syncronizeControlMenus() {
 }
 
 function getPlaylistDataTable(playlist_id) {
-	return $playlists_tables['entries_table_' + playlist_id];
+    return $playlists_tables['entries_table_' + playlist_id];
 }
 
 function removeHighlightFromAllRows($table) {
-	$($table.fnSettings().aoData).each(
-		function () {
-			$(this.nTr).removeClass('row_selected');
-		}
-	);
+    $($table.fnSettings().aoData).each(
+        function () {
+            $(this.nTr).removeClass('row_selected');
+        }
+    );
 }
 
 function highlightCurrentRow($table, nRow) {
-	// remove highlight from all tables
-	for (table_id in $playlists_tables) {
-		removeHighlightFromAllRows($playlists_tables[table_id]);
-	}
-	//removeHighlightFromAllRows($table);
-	$(nRow).addClass('row_selected');			
+    // remove highlight from all tables
+    for (table_id in $playlists_tables) {
+        removeHighlightFromAllRows($playlists_tables[table_id]);
+    }
+    //removeHighlightFromAllRows($table);
+    $(nRow).addClass('row_selected');           
 }
 
 function getPlaylistIdFromTabId(tab_id) {
-	return tab_id.split('_')[1];
+    return tab_id.split('_')[1];
 }
 
 function getPlaylistIdFromTableId(table_id)
 {
-	return table_id.split('_')[2]; // get id of playlist HTML table.(Ex.: id = 123 from string like this "entries_table_123" )
+    return table_id.split('_')[2]; // get id of playlist HTML table.(Ex.: id = 123 from string like this "entries_table_123" )
 }
 
 /* create DataTable control(jQuery plugin) for list of entries. */
 function createEntriesControl(playlist_id)
 {
-	if (playlist_id == 0) {
-		return;
-	}
-	
+    if (playlist_id == 0) {
+        return;
+    }
+    
     var $table_with_playlist_id = $('#entries_table_' + playlist_id);
 
     var $table;
 
-	// Return track desc which linked with string.
-	function getDescriptionTrackOfRow(nTr) {
-		var playlist_id = getPlaylistIdFromTableId(nTr.parentNode.parentNode.id);
-		var row_index = $table.fnGetPosition(nTr);
-		if (row_index !== null) {
-			var aData = $table.fnGetData(row_index);
-			var track_id = aData[0];
-			return { playlist_id : parseInt(playlist_id),
-					 track_id    : parseInt(track_id)
-				   };	
-		}
-		return null;
-	}
+    // Return track desc which linked with string.
+    function getDescriptionTrackOfRow(nTr) {
+        var playlist_id = getPlaylistIdFromTableId(nTr.parentNode.parentNode.id);
+        var row_index = $table.fnGetPosition(nTr);
+        if (row_index !== null) {
+            var aData = $table.fnGetData(row_index);
+            var track_id = aData[0];
+            return { playlist_id : parseInt(playlist_id),
+                     track_id    : parseInt(track_id)
+                   };   
+        }
+        return null;
+    }
 
     /* Add a click handler to the rows - this could be used as a callback */
     $('#entries_table_' + playlist_id + ' tbody').click(
         function(event) {
-			// need to filter out invalid type and non track rows(context menu rows)
-			if (   event.target.parentNode !== null
-				&& event.target.parentNode.nodeName === 'TR'
-				&& $table.fnSettings().aoData.length > 0
-				)
-			{
-				highlightCurrentRow($table, event.target.parentNode);
-    			var track_desc = getDescriptionTrackOfRow(event.target.parentNode);
-				if (track_desc !== null) {
-					if (   track_desc.track_id !== control_panel_state.track_id
-						|| track_desc.playlist_id !== control_panel_state.playlist_id
-						)
-					{
-						aimp_manager.play(track_desc,
-										  { on_exception : function(error, localized_message) {
-															   alert(localized_message);
-														   }
-										  }); // start playback.
-					}
-				}	
-			}
+            // need to filter out invalid type and non track rows(context menu rows)
+            if (   event.target.parentNode !== null
+                && event.target.parentNode.nodeName === 'TR'
+                && $table.fnSettings().aoData.length > 0
+                )
+            {
+                highlightCurrentRow($table, event.target.parentNode);
+                var track_desc = getDescriptionTrackOfRow(event.target.parentNode);
+                if (track_desc !== null) {
+                    if (   track_desc.track_id !== control_panel_state.track_id
+                        || track_desc.playlist_id !== control_panel_state.playlist_id
+                        )
+                    {
+                        aimp_manager.play(track_desc,
+                                          { on_exception : function(error, localized_message) {
+                                                               alert(localized_message);
+                                                           }
+                                          }); // start playback.
+                    }
+                }   
+            }
         }
     );
 
@@ -143,17 +143,17 @@ function createEntriesControl(playlist_id)
                                 iTotalDisplayRecords : (result.count_of_found_entries !== undefined) ? result.count_of_found_entries : result.total_entries_count,
                                 aaData : result.entries
                     });
-					
-					var force_page_and_playlist_switch = false;
-					if (need_goto_current_track_once_on_playlist_content_load) {
-						force_page_and_playlist_switch = true;
-						need_goto_current_track_once_on_playlist_content_load = false;
-					}
-					gotoCurrentTrackInPlaylist(force_page_and_playlist_switch);
+                    
+                    var force_page_and_playlist_switch = false;
+                    if (need_goto_current_track_once_on_playlist_content_load) {
+                        force_page_and_playlist_switch = true;
+                        need_goto_current_track_once_on_playlist_content_load = false;
+                    }
+                    gotoCurrentTrackInPlaylist(force_page_and_playlist_switch);
                 };
             }
 
-			var fields = fnGetKey(aoData, 'sColumns').split(',');
+            var fields = fnGetKey(aoData, 'sColumns').split(',');
             /* Sort descriptors */
             var order_fields = [];
             var iSortingCols = fnGetKey(aoData, 'iSortingCols');
@@ -167,118 +167,118 @@ function createEntriesControl(playlist_id)
                 }
             }
 
-			var request_params = {  playlist_id   : parseInt(playlist_id),
-									fields        : fields,
-									order_fields  : order_fields,
-									start_index   : fnGetKey(aoData, 'iDisplayStart'),
-									entries_count : fnGetKey(aoData, 'iDisplayLength'),
-									search_string : fnGetKey(aoData, 'sSearch')
-								 };
-			entries_requests[request_params.playlist_id] = request_params;
+            var request_params = {  playlist_id   : parseInt(playlist_id),
+                                    fields        : fields,
+                                    order_fields  : order_fields,
+                                    start_index   : fnGetKey(aoData, 'iDisplayStart'),
+                                    entries_count : fnGetKey(aoData, 'iDisplayLength'),
+                                    search_string : fnGetKey(aoData, 'sSearch')
+                                 };
+            entries_requests[request_params.playlist_id] = request_params;
             aimp_manager.getPlaylistEntries(request_params,
-											{
-											  on_success   : on_success(fnCallback),
-											  on_exception : on_error,
-											  on_complete  : undefined
-											}
+                                            {
+                                              on_success   : on_success(fnCallback),
+                                              on_exception : on_error,
+                                              on_complete  : undefined
+                                            }
             );
         },
         bProcessing : true,
         bJQueryUI : true,
         sPaginationType : 'full_numbers',
         bAutoWidth : false,
-		aLengthMenu : [10, 25, 50, 100] // [[10, 25, 50, -1], [10, 25, 50, getText('all_entries')]]
+        aLengthMenu : [10, 25, 50, 100] // [[10, 25, 50, -1], [10, 25, 50, getText('all_entries')]]
     } );
-	
+    
     $table.fnSettings().aaSorting = []; // disable sorting by 0 column.
-	
+    
     $playlists_tables['entries_table_' + playlist_id] = $table;
-	
-	need_goto_current_track_once_on_playlist_content_load = true;
+    
+    need_goto_current_track_once_on_playlist_content_load = true;
 }
 
 function gotoCurrentTrackInPlaylist(force_page_and_playlist_switch_local)
 {
-	// check if playlist content is loaded and load it if it does not.
-	if (control_panel_state.hasOwnProperty('playlist_id')) {
-		if ($playlists_tabs != null) {
-			loadPlaylistContentIfNotLoadedYet(control_panel_state.playlist_id);
-		}
-	}
-	
-	if (entries_requests.hasOwnProperty(control_panel_state.playlist_id) ) {
-		var request_params = entries_requests[control_panel_state.playlist_id]; // maybe we need copy this
-		request_params['track_id'] = control_panel_state.track_id;
-		aimp_manager.getEntryPositionInDatatable(request_params,
-									 		 { on_success   : function (result) {
-															      if (result.page_number >= 0 && result.track_index_on_page >= 0) {
-																	  if (force_page_and_playlist_switch_local) {
-																          gotoCurrentPlaylist(control_panel_state.playlist_id);
-																		  tryToLocateCurrentTrackInPlaylist(result.page_number, result.track_index_on_page);
-																	  } else {
-																		  tryToLocateCurrentTrackInPlaylistOnCurrentPageOnly(result.page_number, result.track_index_on_page);
-																	  }
-																  } else {
-																	  //if ( control_panel_state.hasOwnProperty('playlist_id') ) {
-																      removeHighlightFromAllRows( getPlaylistDataTable(control_panel_state.playlist_id) );
-																	  //}
-																  }
-															  },
-											   on_exception : function(error, localized_message) {
-   															      //alert(localized_message);
-																  //if ( control_panel_state.hasOwnProperty('playlist_id') ) {
-																  removeHighlightFromAllRows( getPlaylistDataTable(control_panel_state.playlist_id) );
-																  //}
-														      },
-											   on_complete  : undefined
-											 }
-											 );
-	}
+    // check if playlist content is loaded and load it if it does not.
+    if (control_panel_state.hasOwnProperty('playlist_id')) {
+        if ($playlists_tabs != null) {
+            loadPlaylistContentIfNotLoadedYet(control_panel_state.playlist_id);
+        }
+    }
+    
+    if (entries_requests.hasOwnProperty(control_panel_state.playlist_id) ) {
+        var request_params = entries_requests[control_panel_state.playlist_id]; // maybe we need copy this
+        request_params['track_id'] = control_panel_state.track_id;
+        aimp_manager.getEntryPositionInDatatable(request_params,
+                                             { on_success   : function (result) {
+                                                                  if (result.page_number >= 0 && result.track_index_on_page >= 0) {
+                                                                      if (force_page_and_playlist_switch_local) {
+                                                                          gotoCurrentPlaylist(control_panel_state.playlist_id);
+                                                                          tryToLocateCurrentTrackInPlaylist(result.page_number, result.track_index_on_page);
+                                                                      } else {
+                                                                          tryToLocateCurrentTrackInPlaylistOnCurrentPageOnly(result.page_number, result.track_index_on_page);
+                                                                      }
+                                                                  } else {
+                                                                      //if ( control_panel_state.hasOwnProperty('playlist_id') ) {
+                                                                      removeHighlightFromAllRows( getPlaylistDataTable(control_panel_state.playlist_id) );
+                                                                      //}
+                                                                  }
+                                                              },
+                                               on_exception : function(error, localized_message) {
+                                                                  //alert(localized_message);
+                                                                  //if ( control_panel_state.hasOwnProperty('playlist_id') ) {
+                                                                  removeHighlightFromAllRows( getPlaylistDataTable(control_panel_state.playlist_id) );
+                                                                  //}
+                                                              },
+                                               on_complete  : undefined
+                                             }
+                                             );
+    }
 }
 
 function gotoCurrentPlaylist(playlist_id)
 {
-	$('div[id*=playlist]', $playlists_tabs).each(function(index, tab_ui) {
-		var tab_playlist_id = getPlaylistIdFromTabId(tab_ui.id);
-		if (playlist_id == tab_playlist_id) {
-			$playlists_tabs.tabs('select', index);
-			return false;
-		}
-		return true;
-	});
+    $('div[id*=playlist]', $playlists_tabs).each(function(index, tab_ui) {
+        var tab_playlist_id = getPlaylistIdFromTabId(tab_ui.id);
+        if (playlist_id == tab_playlist_id) {
+            $playlists_tabs.tabs('select', index);
+            return false;
+        }
+        return true;
+    });
 }
 
 function tryToLocateCurrentTrackInPlaylistOnCurrentPageOnly(entry_page_number, entry_index_on_page)
 {
-	var $playlist_table = getPlaylistDataTable(control_panel_state.playlist_id);
-	var oSettings = $playlist_table.fnSettings();
-	
-	var index_of_first_entry_on_page = entry_page_number * oSettings._iDisplayLength;
-	if (oSettings._iDisplayStart == index_of_first_entry_on_page) {
-		// highlight current track.
-		var dt_row = $(oSettings.aoData).get(entry_index_on_page);
-		var nRow = dt_row.nTr;
-		highlightCurrentRow($playlist_table, nRow);
-	}
+    var $playlist_table = getPlaylistDataTable(control_panel_state.playlist_id);
+    var oSettings = $playlist_table.fnSettings();
+    
+    var index_of_first_entry_on_page = entry_page_number * oSettings._iDisplayLength;
+    if (oSettings._iDisplayStart == index_of_first_entry_on_page) {
+        // highlight current track.
+        var dt_row = $(oSettings.aoData).get(entry_index_on_page);
+        var nRow = dt_row.nTr;
+        highlightCurrentRow($playlist_table, nRow);
+    }
 }
 
 function tryToLocateCurrentTrackInPlaylist(entry_page_number, entry_index_on_page)
 {
-	var $playlist_table = getPlaylistDataTable(control_panel_state.playlist_id);
-	var oSettings = $playlist_table.fnSettings();
-	var index_of_first_entry_on_page = entry_page_number * oSettings._iDisplayLength;
-	if (oSettings._iDisplayStart != index_of_first_entry_on_page) {
-		// move to page where current track is visible.
-		oSettings._iDisplayStart = index_of_first_entry_on_page;
-		oSettings._iDisplayEnd = oSettings._iDisplayStart + oSettings._iDisplayLength;
-		$playlist_table.entry_index_on_page_to_highlight_on_update = entry_index_on_page;
-		$playlist_table.fnDraw(false);
-	} else {
-		// highlight current track.
-		var dt_row = $(oSettings.aoData).get(entry_index_on_page);
-		var nRow = dt_row.nTr;
-		highlightCurrentRow($playlist_table, nRow);
-	}
+    var $playlist_table = getPlaylistDataTable(control_panel_state.playlist_id);
+    var oSettings = $playlist_table.fnSettings();
+    var index_of_first_entry_on_page = entry_page_number * oSettings._iDisplayLength;
+    if (oSettings._iDisplayStart != index_of_first_entry_on_page) {
+        // move to page where current track is visible.
+        oSettings._iDisplayStart = index_of_first_entry_on_page;
+        oSettings._iDisplayEnd = oSettings._iDisplayStart + oSettings._iDisplayLength;
+        $playlist_table.entry_index_on_page_to_highlight_on_update = entry_index_on_page;
+        $playlist_table.fnDraw(false);
+    } else {
+        // highlight current track.
+        var dt_row = $(oSettings.aoData).get(entry_index_on_page);
+        var nRow = dt_row.nTr;
+        highlightCurrentRow($playlist_table, nRow);
+    }
 }
 
 function getTrackForRatingSetTable(node) {
@@ -288,26 +288,26 @@ function getTrackForRatingSetTable(node) {
     var playlist_id = parseInt(parts[2]);
     var track_id    = parseInt(parts[3]);
     return { 'playlist_id': playlist_id,
-	     'track_id': track_id
-	   };
-}	
+         'track_id': track_id
+       };
+}   
 
 function onPlaylistTableDraw(oSettings) {
-	addControlMenuToEachEntry(oSettings);
-	
-	var $table = getPlaylistDataTable( getPlaylistIdFromTableId(oSettings.nTable.id) );
-	
-	if ( $table.hasOwnProperty('entry_index_on_page_to_highlight_on_update') ) {
-		highlightCurrentRow($table,
-							$table.fnGetNodes($table.entry_index_on_page_to_highlight_on_update)
-							);
-		delete $table.entry_index_on_page_to_highlight_on_update;
-	}
-	
-	// init all rating widgets in table
-	$('div[id^="track_rating_"]', $table).each(function(index, rating_div) {
-	    initStarRatingWidget(rating_div.id, getTrackForRatingSetTable);
-	});
+    addControlMenuToEachEntry(oSettings);
+    
+    var $table = getPlaylistDataTable( getPlaylistIdFromTableId(oSettings.nTable.id) );
+    
+    if ( $table.hasOwnProperty('entry_index_on_page_to_highlight_on_update') ) {
+        highlightCurrentRow($table,
+                            $table.fnGetNodes($table.entry_index_on_page_to_highlight_on_update)
+                            );
+        delete $table.entry_index_on_page_to_highlight_on_update;
+    }
+    
+    // init all rating widgets in table
+    $('div[id^="track_rating_"]', $table).each(function(index, rating_div) {
+        initStarRatingWidget(rating_div.id, getTrackForRatingSetTable);
+    });
 }
 
 /* Add control menu switcher and menu itself to all entries. */
@@ -360,70 +360,70 @@ function addControlMenuToEachEntry(oSettings)
 
 function getControlMenuDescriptor(nTr)
 {
-	var playlist_id = getPlaylistIdFromTableId(nTr.parentNode.parentNode.id);
-	var $table = getPlaylistDataTable(playlist_id);
-	var aData = $table.fnGetData(nTr);
-	var entry_id = aData[0];
+    var playlist_id = getPlaylistIdFromTableId(nTr.parentNode.parentNode.id);
+    var $table = getPlaylistDataTable(playlist_id);
+    var aData = $table.fnGetData(nTr);
+    var entry_id = aData[0];
 
-	var play_button_id          = 'play_entry_' + entry_id;
-	var enqueue_entry_button_id = 'enqueue_entry_' + entry_id;
-	var remove_from_queue_entry_button_id = 'remove_from_queue_entry_' + entry_id;
-	var download_track_button_id = 'download_track_entry_' + entry_id;
-	var control_menu_html = '<button id="' + play_button_id + '"></button>'
-							+ '<button id="' + enqueue_entry_button_id + '"></button>'
-							+ '<button id="' + remove_from_queue_entry_button_id + '"></button>'
-							+ '<button id="' + download_track_button_id + '"></button>'
+    var play_button_id          = 'play_entry_' + entry_id;
+    var enqueue_entry_button_id = 'enqueue_entry_' + entry_id;
+    var remove_from_queue_entry_button_id = 'remove_from_queue_entry_' + entry_id;
+    var download_track_button_id = 'download_track_entry_' + entry_id;
+    var control_menu_html = '<button id="' + play_button_id + '"></button>'
+                            + '<button id="' + enqueue_entry_button_id + '"></button>'
+                            + '<button id="' + remove_from_queue_entry_button_id + '"></button>'
+                            + '<button id="' + download_track_button_id + '"></button>'
                             ;
 
-	return {
-		html : control_menu_html,
-		entry_id : entry_id,
-		playlist_id : playlist_id,
-		nTr : null,
-		play_button_id : play_button_id,
-		enqueue_button_id : enqueue_entry_button_id,
-		remove_from_queue_button_id : remove_from_queue_entry_button_id,
-		download_track_button_id : download_track_button_id
-	};
+    return {
+        html : control_menu_html,
+        entry_id : entry_id,
+        playlist_id : playlist_id,
+        nTr : null,
+        play_button_id : play_button_id,
+        enqueue_button_id : enqueue_entry_button_id,
+        remove_from_queue_button_id : remove_from_queue_entry_button_id,
+        download_track_button_id : download_track_button_id
+    };
 }
 
 function onContextMenuButtonClick() {
-	var nTr = this.parentNode.parentNode;
-	var entry_control_menu_descriptor = getControlMenuDescriptor(nTr);
-	
-	var playlist_id = getPlaylistIdFromTableId(nTr.parentNode.parentNode.id);
-	var $table = getPlaylistDataTable(playlist_id);
-	
-	if ( $(this).button('option', 'icons').primary == icon_menu_indicator_opened ) {
-		// remove menu updater from global list.
-		var notifier_id = entry_control_menu_descriptor.entry_id + '_' + entry_control_menu_descriptor.playlist_id;
-		delete control_menu_state_updaters[notifier_id]; // entry_control_menu_descriptor was initialized on menu open.
+    var nTr = this.parentNode.parentNode;
+    var entry_control_menu_descriptor = getControlMenuDescriptor(nTr);
+    
+    var playlist_id = getPlaylistIdFromTableId(nTr.parentNode.parentNode.id);
+    var $table = getPlaylistDataTable(playlist_id);
+    
+    if ( $(this).button('option', 'icons').primary == icon_menu_indicator_opened ) {
+        // remove menu updater from global list.
+        var notifier_id = entry_control_menu_descriptor.entry_id + '_' + entry_control_menu_descriptor.playlist_id;
+        delete control_menu_state_updaters[notifier_id]; // entry_control_menu_descriptor was initialized on menu open.
 
-		/* Control menu for this entry is already open - close it */
-		$(this).button('option', {
-								   icons: { primary: icon_menu_indicator_closed },
-								   label: getText('track_contol_menu_open')
-								 }
-		);
+        /* Control menu for this entry is already open - close it */
+        $(this).button('option', {
+                                   icons: { primary: icon_menu_indicator_closed },
+                                   label: getText('track_contol_menu_open')
+                                 }
+        );
         $(entry_control_menu_descriptor.nTr).removeClass('control_menu');
-		$table.fnClose(nTr);
-	} else {
-		/* Open control menu for this entry */
-		$(this).button('option', {
-								   icons: { primary: icon_menu_indicator_opened },
-								   label: getText('track_contol_menu_close')
-								 }
-		);
-		entry_control_menu_descriptor.nTr = $table.fnOpen(nTr, entry_control_menu_descriptor.html, 'entry_control_menu');
+        $table.fnClose(nTr);
+    } else {
+        /* Open control menu for this entry */
+        $(this).button('option', {
+                                   icons: { primary: icon_menu_indicator_opened },
+                                   label: getText('track_contol_menu_close')
+                                 }
+        );
+        entry_control_menu_descriptor.nTr = $table.fnOpen(nTr, entry_control_menu_descriptor.html, 'entry_control_menu');
         $nTr = $(entry_control_menu_descriptor.nTr);
         $nTr.addClass('control_menu');
         // use internal details of fnOpen to set colspan member to right value: fix vertical alignment of context menu when only one field of track is visible.
         var cols_count_total = $table[0].rows[0].cells.length;
         $nTr[0].children[0].colSpan = cols_count_total;
         
-		initTrackControlMenu(entry_control_menu_descriptor);
-		updateTrackControlMenu(entry_control_menu_descriptor);
-	}
+        initTrackControlMenu(entry_control_menu_descriptor);
+        updateTrackControlMenu(entry_control_menu_descriptor);
+    }
 }
 
 /* Returns true if playback is active now. */
@@ -469,7 +469,7 @@ function initTrackControlMenu(control_menu_descriptor)
             ;
             aimp_manager.play(play_args,
                               { on_exception : on_control_menu_command }
-							  ); // start playback.
+                              ); // start playback.
         } else {
             aimp_manager.pause({}, { on_exception : on_control_menu_command }); // pause playback
         }
@@ -478,44 +478,44 @@ function initTrackControlMenu(control_menu_descriptor)
     var enqueue_button = $('#' + control_menu_descriptor.enqueue_button_id, control_menu_descriptor.nTr);
     enqueue_button.button({
         text : false,
-		icons: { primary: 'ui-icon-circlesmall-plus' },
-		label : getText('track_contol_menu_enqueue')		
+        icons: { primary: 'ui-icon-circlesmall-plus' },
+        label : getText('track_contol_menu_enqueue')        
     }).click(function() {
-		var args = { track_id    : parseInt(control_menu_descriptor.entry_id),
-					 playlist_id : parseInt(control_menu_descriptor.playlist_id)
-				   }
-		aimp_manager.enqueueTrack(args,
-								  { on_exception : on_control_menu_command }
-								  );
+        var args = { track_id    : parseInt(control_menu_descriptor.entry_id),
+                     playlist_id : parseInt(control_menu_descriptor.playlist_id)
+                   }
+        aimp_manager.enqueueTrack(args,
+                                  { on_exception : on_control_menu_command }
+                                  );
     });
 
     var remove_from_queue_button = $('#' + control_menu_descriptor.remove_from_queue_button_id , control_menu_descriptor.nTr);
     remove_from_queue_button.button({
         text : false,
-		icons: { primary: 'ui-icon-circlesmall-minus' },
-		label : getText('track_contol_menu_remove_from_queue')
+        icons: { primary: 'ui-icon-circlesmall-minus' },
+        label : getText('track_contol_menu_remove_from_queue')
     }).click(function() {
-		var args = { track_id    : parseInt(control_menu_descriptor.entry_id),
-					 playlist_id : parseInt(control_menu_descriptor.playlist_id)
-				   }
-		aimp_manager.removeTrackFromPlayQueue(args,
-									          { on_exception : on_control_menu_command }
-											  );
+        var args = { track_id    : parseInt(control_menu_descriptor.entry_id),
+                     playlist_id : parseInt(control_menu_descriptor.playlist_id)
+                   }
+        aimp_manager.removeTrackFromPlayQueue(args,
+                                              { on_exception : on_control_menu_command }
+                                              );
     });
-	
+    
     var download_track_button = $('#' + control_menu_descriptor.download_track_button_id , control_menu_descriptor.nTr);
     download_track_button.button({
         text : false,
-		icons: { primary: 'ui-icon-arrowthick-1-s' },
-		label : getText('track_contol_menu_download_track')
+        icons: { primary: 'ui-icon-arrowthick-1-s' },
+        label : getText('track_contol_menu_download_track')
     }).click(function() {
-		var args = { track_id    : parseInt(control_menu_descriptor.entry_id),
-					 playlist_id : parseInt(control_menu_descriptor.playlist_id)
-				   }
-		var uri = '/downloadTrack/playlist_id/' + args.playlist_id + '/track_id/' + args.track_id;
-		window.location = uri; // start downloading.
+        var args = { track_id    : parseInt(control_menu_descriptor.entry_id),
+                     playlist_id : parseInt(control_menu_descriptor.playlist_id)
+                   }
+        var uri = '/downloadTrack/playlist_id/' + args.playlist_id + '/track_id/' + args.track_id;
+        window.location = uri; // start downloading.
     });
-	
+    
     // add updater to global list.
     var notifier_id = control_menu_descriptor.entry_id + '_' + control_menu_descriptor.playlist_id;
     control_menu_state_updaters[notifier_id] = { notifier : updateTrackControlMenu, control_menu_descriptor : control_menu_descriptor };
@@ -553,20 +553,20 @@ function getDataTablesColumnsDescriptors()
             initBitrateField(field_settings);
         } else if (entry_fields[field_index] == 'rating') {
             initRatingField(field_settings);
-		}
+        }
         columns_desc.push( field_settings );
     }
     return columns_desc;
 }
 
 function initDurationField(field_settings) {
-	/*
-		oObj members:
-			"iDataRow": iRow,
-			"iDataColumn": iColumn,
-			"aData": oSettings.aoData[iRow]._aData,
-			"oSettings": oSettings
-	*/
+    /*
+        oObj members:
+            "iDataRow": iRow,
+            "iDataColumn": iColumn,
+            "aData": oSettings.aoData[iRow]._aData,
+            "oSettings": oSettings
+    */
     field_settings.fnRender = function ( oObj ) {
         var time_ms = oObj.aData[oObj.iDataColumn];
         return formatTime(time_ms);
@@ -585,7 +585,7 @@ function initFileSizeField(field_settings) {
 }
 
 function initBitrateField(field_settings) {
-	// display units only in table header.
+    // display units only in table header.
     field_settings.sTitle = field_settings.sTitle + ', ' + getText('kilobits_per_second');
 
     // align in cell center.
@@ -596,21 +596,21 @@ function initRatingField(field_settings) {
     field_settings.fnRender = function ( oObj ) {
         var aimp_rating = oObj.aData[oObj.iDataColumn];
         var playlist_id = getPlaylistIdFromTableId(oObj.oSettings.sTableId);
-		var track_id = oObj.aData[0];
-		var div_id = 'track_rating_' + playlist_id + '_' + track_id;
+        var track_id = oObj.aData[0];
+        var div_id = 'track_rating_' + playlist_id + '_' + track_id;
 
-		var html = '<div id="' + div_id + '">';
-		for (var i = 1; i <= 5; i++) {
-			html += '<input type="radio" class="rating_star" value="' + i + '"'
-					+ (i == aimp_rating ? ' checked="true"' : '')
-					+ '/>';
-		}
-		html += '</div>';
-		return html;
+        var html = '<div id="' + div_id + '">';
+        for (var i = 1; i <= 5; i++) {
+            html += '<input type="radio" class="rating_star" value="' + i + '"'
+                    + (i == aimp_rating ? ' checked="true"' : '')
+                    + '/>';
+        }
+        html += '</div>';
+        return html;
     }
     // align in cell center.
     field_settings.sClass = 'center';
-	field_settings.sWidth = (16 * 6) + 'px';
+    field_settings.sWidth = (16 * 6) + 'px';
 }
 
 /* Deletes all playlists controls(jQuery UI Tabs) */
@@ -620,19 +620,19 @@ function deletePlaylistsControls()
         $playlists_tables = {}; // clear
         $('#playlists > div').remove();
         $playlists_tabs.tabs('destroy'); // if tabs control is already created - destroy all tabs.
-		$playlists_tabs = null;
+        $playlists_tabs = null;
     }
 }
 
 function isPlaylistContentLoaded(playlist_id) {
-	return $playlists_tables['entries_table_' + playlist_id] !== undefined;
+    return $playlists_tables['entries_table_' + playlist_id] !== undefined;
 }
 
 function loadPlaylistContentIfNotLoadedYet(playlist_id)
 {
-	if ( !isPlaylistContentLoaded(playlist_id) ) {
-		createEntriesControl(playlist_id);	
-	}
+    if ( !isPlaylistContentLoaded(playlist_id) ) {
+        createEntriesControl(playlist_id);  
+    }
 }
 
 /* create controls(jQuery UI Tabs) for list of playlists. */
@@ -641,11 +641,11 @@ function createPlaylistsControls(playlists)
     if ($playlists_tabs === null) {
         $playlists_tabs = $('#playlists').tabs({
             cookie: { expires: 1 } // store cookie for a day, without, it would be a session cookie
-			// function 'select' will be assigned below,
-			//                   it need to be set after all tabs creation and unselecting all tabs to avoid unexpected invocation.
+            // function 'select' will be assigned below,
+            //                   it need to be set after all tabs creation and unselecting all tabs to avoid unexpected invocation.
         }); // initialization of Tabs control.
     }
-	
+    
     // create tabs for each playlist.
     for(i = 0; i < playlists.length; ++i) {
         var playlist_id_name = 'playlist_' + playlists[i].id;
@@ -653,26 +653,26 @@ function createPlaylistsControls(playlists)
         var div_html = '<div id="' + playlist_id_name + '">' + createTemplateEntriesTable(playlists[i].id) + '</div>';
         $(div_html).appendTo('body');
         $playlists_tabs.tabs('add',
-							 '#' + playlist_id_name,
-		 					 playlists[i].title
-							 );
+                             '#' + playlist_id_name,
+                             playlists[i].title
+                             );
     }
-	
-	$playlists_tabs.bind('tabsselect',
-						 function(event, $ui) { // load content of playlist on tab activation, if content is not loaded yet.
-							var $tab_ui = $ui.panel;
-							loadPlaylistContentIfNotLoadedYet( getPlaylistIdFromTabId($tab_ui.id) );
-						 });
-	
-	// force load playlist content due to issue with tab select event.
-	var playlist_id = control_panel_state.playlist_id;
+    
+    $playlists_tabs.bind('tabsselect',
+                         function(event, $ui) { // load content of playlist on tab activation, if content is not loaded yet.
+                            var $tab_ui = $ui.panel;
+                            loadPlaylistContentIfNotLoadedYet( getPlaylistIdFromTabId($tab_ui.id) );
+                         });
+    
+    // force load playlist content due to issue with tab select event.
+    var playlist_id = control_panel_state.playlist_id;
     if (playlist_id === 0) { // AIMP3 sends 0 if playlist played never.
         if (playlists.length > 0) { 
             playlist_id = playlists[0].id;
         }
     }
-	createEntriesControl(playlist_id);	
-	gotoCurrentPlaylist(playlist_id);
+    createEntriesControl(playlist_id);  
+    gotoCurrentPlaylist(playlist_id);
 }
 
 /*
@@ -764,7 +764,7 @@ function initControlPanel()
         text: false,
         icons: { primary: 'ui-icon-signal-diag' }
     }).click(function() {
-        aimp_manager.radioCapture({ radio_capture_on : !control_panel_state.radio_capture_on },
+        aimp_manager.radioCapture({ radio_capture_on : !control_panel_state.radio_capture_mode_on },
                                   { on_exception : on_control_panel_command }
         ); // activate/deactivate radio capture mode.
     });
@@ -841,9 +841,9 @@ function updateControlPanel()
     // volume slider
     var volume_slider = $('#volume_slider');
     volume_slider.slider('value', control_panel.volume);
-	volume_slider.attr('title',
-					   getText('control_panel_volume') + ' ' + control_panel.volume + '/100'
-                       );
+    volume_slider.attr('title',
+               getText('control_panel_volume') + ' ' + control_panel.volume + '/100'
+    );
 
     // shuffle button
     var shuffle_button = $('#shuffle');
@@ -866,8 +866,8 @@ function updateControlPanel()
     // radio capture button
     var radio_capture_button = $('#radio_capture');
     radio_capture_button.button('option', {
-                                        label: getText(control_panel.radio_capture_mode_on ? 'control_panel_radio_capture_off' : 'control_panel_radio_capture_on')
-                                    }
+                                              label: getText(control_panel.radio_capture_mode_on ? 'control_panel_radio_capture_off' : 'control_panel_radio_capture_on')
+                                          }
     );
     radio_capture_button.attr('checked', control_panel.radio_capture_mode_on);
     radio_capture_button.button('refresh');
@@ -878,16 +878,16 @@ function updateControlPanel()
 */
 function updateControlPanelState(result) {
     control_panel_state = result; // update global variable.
-	
-	if (control_panel_state.playlist_id == 0) { // in case when track from removed playlist is playing.
-		// TODO: ask about first available real playlist
-		//control_panel_state.playlist_id = ;
-		//control_panel_state.track_id = ;
-	}
-	
+    
+    if (control_panel_state.playlist_id == 0) { // in case when track from removed playlist is playing.
+        // TODO: ask about first available real playlist
+        //control_panel_state.playlist_id = ;
+        //control_panel_state.track_id = ;
+    }
+    
     updateControlPanel();
     syncronizeControlMenus();
-	gotoCurrentTrackInPlaylist(true);
+    gotoCurrentTrackInPlaylist(true);
 };
 
 function getFormatOfTrackInfoFromCookies()
@@ -896,7 +896,7 @@ function getFormatOfTrackInfoFromCookies()
     if (track_info_format_string !== null) {
         return track_info_format_string;
     }
-	return '%IF(%a,%a - %T,%T)';
+    return '%IF(%a,%a - %T,%T)';
 }
 
 /* Updates state of Playback(current playback state and scrolling track info) Panel controls to be sync with Aimp. */
@@ -922,78 +922,78 @@ function updatePlaybackPanelState(control_panel_state)
         $('#playback_state_label').text( getText('playback_state_stopped') );
         $scroll_text_div.text('');
     }
-	
-	updateTrackProgressBarState(control_panel_state);
+    
+    updateTrackProgressBarState(control_panel_state);
 }
 
 /* Updates state track progress bar controls to be sync with Aimp. */
 function updateTrackProgressBarState(control_panel_state)
 {
     var $track_progress_bar = $('#track_progress_bar');
-	
-	if ($track_progress_bar[0].className == '') { // first time initialization.
-		$track_progress_bar.slider({ min : 0,
-								     max : control_panel_state.track_length,
-									 value : control_panel_state.track_position,
-									 animate : true,
-								  	 stop : function(event, ui) {
-									 	 aimp_manager.trackPosition({ position : ui.value },
-																	{ on_exception : function(error, localized_message) {
-																						 alert(localized_message);
-																					 }
-																	}
-										 ); // set track position
-									 }
-								   });
-	}
-	
-	if ( control_panel_state.hasOwnProperty('track_length') ) {
-		setTrackProgressBarState($track_progress_bar, 'enabled');
-		
-		$track_progress_bar.slider('option', 'value', control_panel_state.track_position);
-		$track_progress_bar.slider('option', 'max',   control_panel_state.track_length);
-		
-		updateTrackProgressBarHintText($track_progress_bar);
-	} else {
-		setTrackProgressBarState($track_progress_bar, 'disabled');
-	}
+    
+    if ($track_progress_bar[0].className == '') { // first time initialization.
+        $track_progress_bar.slider({ min : 0,
+                                     max : control_panel_state.track_length,
+                                     value : control_panel_state.track_position,
+                                     animate : true,
+                                     stop : function(event, ui) {
+                                         aimp_manager.trackPosition({ position : ui.value },
+                                                                    { on_exception : function(error, localized_message) {
+                                                                                         alert(localized_message);
+                                                                                     }
+                                                                    }
+                                         ); // set track position
+                                     }
+                                   });
+    }
+    
+    if ( control_panel_state.hasOwnProperty('track_length') ) {
+        setTrackProgressBarState($track_progress_bar, 'enabled');
+        
+        $track_progress_bar.slider('option', 'value', control_panel_state.track_position);
+        $track_progress_bar.slider('option', 'max',   control_panel_state.track_length);
+        
+        updateTrackProgressBarHintText($track_progress_bar);
+    } else {
+        setTrackProgressBarState($track_progress_bar, 'disabled');
+    }
 }
 
 // Activates or deactivates track progress bar.
 function setTrackProgressBarState($track_progress_bar, state) {
-	var enabled = (state === 'enabled');
-	$('.ui-slider-handle', $track_progress_bar).css('visibility', enabled ? 'visible': 'hidden'); // we need to hide progress pointer, since progress has no sense.
-	$track_progress_bar.slider('option', 'disabled', !enabled);
-	
-	if (track_progress_timer !== null) {
-		window.clearInterval(track_progress_timer);
-	}
-	
-	if (enabled) {
-		if ( isPlaybackActive() ) {
-			var refresh_time_ms = 1000;
-			track_progress_timer = window.setInterval(function () {
-														var old_value_sec = $track_progress_bar.slider('option', 'value');
-														var new_value_sec = old_value_sec + refresh_time_ms / 1000;
-														$track_progress_bar.slider('option', 'value', new_value_sec);
-														updateTrackProgressBarHintText($track_progress_bar);
-													  },
-													  refresh_time_ms
-													  );
-		}
-	} else {
-		$track_progress_bar.attr('title', '');
-	}
+    var enabled = (state === 'enabled');
+    $('.ui-slider-handle', $track_progress_bar).css('visibility', enabled ? 'visible': 'hidden'); // we need to hide progress pointer, since progress has no sense.
+    $track_progress_bar.slider('option', 'disabled', !enabled);
+    
+    if (track_progress_timer !== null) {
+        window.clearInterval(track_progress_timer);
+    }
+    
+    if (enabled) {
+        if ( isPlaybackActive() ) {
+            var refresh_time_ms = 1000;
+            track_progress_timer = window.setInterval(function () {
+                                                        var old_value_sec = $track_progress_bar.slider('option', 'value');
+                                                        var new_value_sec = old_value_sec + refresh_time_ms / 1000;
+                                                        $track_progress_bar.slider('option', 'value', new_value_sec);
+                                                        updateTrackProgressBarHintText($track_progress_bar);
+                                                      },
+                                                      refresh_time_ms
+                                                      );
+        }
+    } else {
+        $track_progress_bar.attr('title', '');
+    }
 }
 
 function updateTrackProgressBarHintText($track_progress_bar) {
-	var progress_sec = $track_progress_bar.slider('option', 'value');
-	var length_sec = $track_progress_bar.slider('option', 'max');
-	$track_progress_bar.attr('title',
-							 formatTime(progress_sec * 1000) // represent seconds as milliseconds.
-							 + '/'
-							 + formatTime(length_sec * 1000) // represent seconds as milliseconds.
-							 );	
+    var progress_sec = $track_progress_bar.slider('option', 'value');
+    var length_sec = $track_progress_bar.slider('option', 'max');
+    $track_progress_bar.attr('title',
+                             formatTime(progress_sec * 1000) // represent seconds as milliseconds.
+                             + '/'
+                             + formatTime(length_sec * 1000) // represent seconds as milliseconds.
+                             ); 
 }
 
 /*
@@ -1099,7 +1099,7 @@ function initAimpControlPage()
     subscribeOnControlPanelChangeEvent();
     syncronizeControlPanelStateWithAimp();
     subscribeOnPlaylistsContentChangeEvent();
-	subscribeOnTrackPositionChangeEvent(); ///!!! this can be done on track playing start.
+    subscribeOnTrackPositionChangeEvent(); ///!!! this can be done on track playing start.
     initSettingsDialog();
     loadPlaylists();
 }
@@ -1128,44 +1128,44 @@ function initTrackInfoDialog()
     });
 
     function getTrackForRatingSet(rating_div) {
-	return { 'playlist_id': control_panel_state.playlist_id,
-		 'track_id': control_panel_state.track_id
-	       };
-    }	
+    return { 'playlist_id': control_panel_state.playlist_id,
+         'track_id': control_panel_state.track_id
+           };
+    }   
     initStarRatingWidget('track_info_rating', getTrackForRatingSet);
 }
 
 /*
     Handles rating set to track by rating widget click.
     track_getter - function with one argument: rating widget element which was clicked.
-		   returns {'playlist_id': xx, 'track_id':xx} object that specifies track to set it's rating.
+           returns {'playlist_id': xx, 'track_id':xx} object that specifies track to set it's rating.
 */
 function RatingChangeHandler(track_getter) {
     function onRatingWidgetClick(value, link) {
-	    var track_desc = track_getter(this);
-	    var playlist_id = track_desc.playlist_id;
-	    var track_id    = track_desc.track_id;
+        var track_desc = track_getter(this);
+        var playlist_id = track_desc.playlist_id;
+        var track_id    = track_desc.track_id;
 
-	    aimp_manager.setTrackRating(  {
-					    track_id: track_id,
-					    playlist_id: playlist_id,
-					    rating: (value !== undefined ? parseInt(value) // value range is [1, 5].
-									 : 0 // set 0 rating, for AIMP it means "rating is not set".
-						     )
-					  },
-					  {
-					    on_success : undefined,
-					    on_exception : undefined,
-					    on_complete : function (response) {
-							    if ( $('#track_info_dialog').dialog('isOpen') ) {
-								updateTrackInfoDialogContent({
-								    callback: function (param) {},
-								    param: {}
-								});
-							    }
-							 }
-					  }
-	    );
+        aimp_manager.setTrackRating(  {
+                        track_id: track_id,
+                        playlist_id: playlist_id,
+                        rating: (value !== undefined ? parseInt(value) // value range is [1, 5].
+                                     : 0 // set 0 rating, for AIMP it means "rating is not set".
+                             )
+                      },
+                      {
+                        on_success : undefined,
+                        on_exception : undefined,
+                        on_complete : function (response) {
+                                if ( $('#track_info_dialog').dialog('isOpen') ) {
+                                updateTrackInfoDialogContent({
+                                    callback: function (param) {},
+                                    param: {}
+                                });
+                                }
+                             }
+                      }
+        );
     }
 
     return onRatingWidgetClick;
@@ -1174,7 +1174,7 @@ function RatingChangeHandler(track_getter) {
 /*
     Init star rating widget.
     track_getter - function with one argument: rating widget element which was clicked.
-		   returns {'playlist_id': xx, 'track_id':xx} object that specifies track to set it's rating.
+           returns {'playlist_id': xx, 'track_id':xx} object that specifies track to set it's rating.
     Returns rating widget.
 */
 function initStarRatingWidget(div_id, track_getter)
@@ -1188,15 +1188,15 @@ function initStarRatingWidget(div_id, track_getter)
 
 function setRatingWidgetValue(div_id, value)
 {
-	$('#' + div_id + ' .rating_star').rating('select',
-											 value,
-											 false // do not invoke callback on 'select'
+    $('#' + div_id + ' .rating_star').rating('select',
+                                             value,
+                                             false // do not invoke callback on 'select'
                                              );
 }
 
 function resetRatingWidgetValue(div_id)
 {
-	$('#' + div_id + ' .rating_star').rating('drain');
+    $('#' + div_id + ' .rating_star').rating('drain');
 }
 
 /* Shows dialog in position (coordX, coordY) on page. */
@@ -1255,9 +1255,9 @@ function fillTrackInfoTable(track_info)
     if (0 <= rating_value && rating_value <= 5) {
         if (rating_value > 0) {
             // set rating.
-			setRatingWidgetValue('track_info_rating', rating_value - 1); // AIMP rating is in range [0(not set), 5(max rating)]. But we must use range [0, 4] for this control.
+            setRatingWidgetValue('track_info_rating', rating_value - 1); // AIMP rating is in range [0(not set), 5(max rating)]. But we must use range [0, 4] for this control.
         } else {
-			resetRatingWidgetValue('track_info_rating');
+            resetRatingWidgetValue('track_info_rating');
         }
     }
 
@@ -1277,12 +1277,12 @@ function localizePage()
     $('#settings-dialog-form').attr( 'title', getText('settings_dialog_title') );
     $('#settings-dialog-tab-playlistview-label').text( getText('settings_dialog_playlist_view_tab_title') );
     $('#settings-dialog-tab-language-label').text( getText('settings_dialog_language_tab_title') );
-	$('#settings-dialog-tab-trackinfo-label').text( getText('settings_dialog_trackinfo_tab_title') );
+    $('#settings-dialog-tab-trackinfo-label').text( getText('settings_dialog_trackinfo_tab_title') );
 
     $('#entry_fields_label_show').text( getText('settings_dialog_playlist_view_tab_show_fields') );
     $('#entry_fields_label_hide').text( getText('settings_dialog_playlist_view_tab_hide_fields') );
 
-	$('#track-title-format').text( getText('settings_dialog_trackinfo_format') );
+    $('#track-title-format').text( getText('settings_dialog_trackinfo_format') );
 
     localizeTrackInfoDialog();
 }
