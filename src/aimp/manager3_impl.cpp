@@ -743,9 +743,6 @@ void AIMP3Manager::onAimpCoreMessage(DWORD AMessage, int AParam1, void* /*AParam
         EVENT_EFFECT_CHANGED,
     */
     switch (AMessage) {
-    case AIMP_MSG_PROPERTY_RADIOCAP: // this is sent every second in aimp 3 v961
-        notifyAllExternalListeners(EVENT_RADIO_CAPTURE);
-        break;
     case AIMP_MSG_EVENT_PLAYER_STATE:
         notifyAllExternalListeners(EVENT_PLAYER_STATE);
         break;
@@ -776,6 +773,9 @@ void AIMP3Manager::onAimpCoreMessage(DWORD AMessage, int AParam1, void* /*AParam
             break;
         case AIMP_MSG_PROPERTY_PLAYER_POSITION:
             notifyAllExternalListeners(EVENT_TRACK_POS_CHANGED);
+            break;
+        case AIMP_MSG_PROPERTY_RADIOCAP:
+            notifyAllExternalListeners(EVENT_RADIO_CAPTURE);
             break;
         default:
             notifyAllExternalListeners(EVENT_STATUS_CHANGE);
