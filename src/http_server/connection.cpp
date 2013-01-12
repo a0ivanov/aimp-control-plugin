@@ -64,10 +64,10 @@ public:
   typedef boost::shared_ptr< connection<SocketT> > pointer;
 
   static pointer create(boost::asio::io_service& io_service,
-						SocketT* socket,
+						std::unique_ptr<SocketT> socket,
                         const std::wstring& filename)
   {
-    return pointer(new connection(io_service, socket, filename));
+    return pointer(new connection(io_service, std::move(socket), filename));
   }
 
   SocketT& socket()
@@ -92,7 +92,7 @@ public:
 
 private:
   connection(boost::asio::io_service& io_service, std::unique_ptr<SocketT> socket, const std::wstring& filename)
-    : socket_(socket),
+    : socket_(std::move(socket)),
       filename_(filename),
       file_(io_service)
   {
