@@ -884,7 +884,7 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
 
     // save cover to temp directory with unique filename.
     boost::filesystem::wpath cover_uri (cover_directory_relative_ / getTempFileNameForAlbumCover(track_desc, cover_width, cover_height));
-    cover_uri.replace_extension(L".png");
+    cover_uri.replace_extension(L".jpg");
 
     const boost::filesystem::wpath temp_unique_filename (document_root_ / cover_uri);
 

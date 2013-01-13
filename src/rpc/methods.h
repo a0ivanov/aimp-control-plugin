@@ -789,7 +789,7 @@ public:
     std::string help()
     {
         return "GetCover(int track_id, int playlist_id, int cover_width, int cover_height) "
-               "returns URI of PNG cover(size is determined by width and height arguments, pass zeros to get full size cover) "
+               "returns URI of cover(size is determined by width and height arguments, pass zeros to get full size cover) "
                "of specified track in specified playlist.";
     }
 
