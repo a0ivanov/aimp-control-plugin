@@ -1366,6 +1366,28 @@ std::string AIMP3Manager::getAIMPVersion() const
     return os.str();
 }
 
+PlaylistID AIMP3Manager::getAbsolutePlaylistID(PlaylistID id) const
+{
+    if (id == -1) { // treat ID -1 as playing playlist.
+        id = getPlayingPlaylist();
+    }
+    return id;
+}
+
+PlaylistEntryID AIMP3Manager::getAbsoluteEntryID(PlaylistEntryID id) const // throws std::runtime_error
+{
+    if (id == -1) { // treat ID -1 as playing entry.
+        id = getPlayingEntry();
+    }
+
+    return id;
+}
+
+TrackDescription AIMP3Manager::getAbsoluteTrackDesc(TrackDescription track_desc) const // throws std::runtime_error
+{
+    return TrackDescription( getAbsolutePlaylistID(track_desc.playlist_id), getAbsoluteEntryID(track_desc.track_id) );
+}
+
 PlaylistID AIMP3Manager::getPlayingPlaylist() const
 {
     // return AIMP internal playlist ID here since AIMP3Manager uses the same IDs.
@@ -1544,9 +1566,7 @@ bool AIMP3Manager::isCoverImageFileExist(TrackDescription track_desc, boost::fil
 
 const Playlist& AIMP3Manager::getPlaylist(PlaylistID playlist_id) const
 {
-    if (playlist_id == -1) { // treat ID -1 as active playlist.
-        playlist_id = getPlayingPlaylist();
-    }
+    playlist_id = getAbsolutePlaylistID(playlist_id);
 
     auto playlist_iterator( playlists_.find(playlist_id) );
     if ( playlist_iterator == playlists_.end() ) {
@@ -1563,16 +1583,9 @@ Playlist& AIMP3Manager::getPlaylist(PlaylistID playlist_id)
 
 const PlaylistEntry& AIMP3Manager::getEntry(TrackDescription track_desc) const
 {
-    const Playlist& playlist = getPlaylist(track_desc.playlist_id);
+    track_desc = getAbsoluteTrackDesc(track_desc);
 
-    if (track_desc.track_id == -1) { // treat ID -1 as active track.
-        if (   track_desc.playlist_id == -1
-            || track_desc.playlist_id == getPlayingPlaylist()
-            )
-        {
-            track_desc.track_id = getPlayingEntry();
-        }
-    }
+    const Playlist& playlist = getPlaylist(track_desc.playlist_id);
     const EntriesListType& entries = playlist.entries();
     if ( track_desc.track_id < 0 || static_cast<size_t>(track_desc.track_id) >= entries.size() ) {
         throw std::runtime_error(MakeString() << "Error in "__FUNCTION__ << ". Entry " << track_desc << " does not exist");

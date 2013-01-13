@@ -167,6 +167,35 @@ public:
     //! \return descriptor of playing track.
     virtual TrackDescription getPlayingTrack() const = 0;
 
+    /*
+        \return absolute playlist id.
+                In case usual playlist id returns id itself.
+                In case special playlist ids returns it's usual ids.
+                Special IDs:
+                    - currently playing: -1
+    */
+    virtual PlaylistID getAbsolutePlaylistID(PlaylistID id) const = 0;
+
+    /*
+        \return absolute entry id.
+                In case usual entry id returns id itself.
+                In case special entry ids returns it's usual ids.
+                Special IDs:
+                    - currently playing: -1
+        \throw std::runtime_error if entry does not exist (for example, no playing entry when using ID = -1).
+    */
+    virtual PlaylistEntryID getAbsoluteEntryID(PlaylistEntryID id) const = 0; // throws std::runtime_error
+
+    /*
+        \return absolute descriptor of track.
+                In case usual playlist/playlistentry ids returns track_desc itself.
+                In case special playlist/playlistentry ids returns it's usual ids.
+                Special IDs:
+                    - currently playing: -1
+        \throw std::runtime_error if track does not exist (for example, no playing track when using ID = -1).
+    */
+    virtual TrackDescription getAbsoluteTrackDesc(TrackDescription track_desc) const = 0;  // throws std::runtime_error
+    
     //! \return ID of playback state.
     virtual PLAYBACK_STATE getPlaybackState() const = 0;
 

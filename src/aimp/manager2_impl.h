@@ -70,6 +70,12 @@ public:
 
     virtual TrackDescription getPlayingTrack() const;
 
+    virtual PlaylistID getAbsolutePlaylistID(PlaylistID id) const;
+
+    virtual PlaylistEntryID getAbsoluteEntryID(PlaylistEntryID id) const; // throws std::runtime_error
+
+    virtual TrackDescription getAbsoluteTrackDesc(TrackDescription track_desc) const;  // throws std::runtime_error
+
     virtual PLAYBACK_STATE getPlaybackState() const;
 
     virtual const PlaylistsListType& getPlayLists() const;
