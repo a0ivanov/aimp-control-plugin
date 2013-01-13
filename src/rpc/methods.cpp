@@ -849,7 +849,8 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
         throw Rpc::Exception("Wrong arguments count. Wait at least 2 int values: track_id, playlist_id.", WRONG_ARGUMENT);
     }
 
-    const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
+    const TrackDescription desc(params["playlist_id"], params["track_id"]);
+    const TrackDescription track_desc(aimp_manager_.getAbsoluteTrackDesc(desc));
 
     int cover_width;
     int cover_height;
