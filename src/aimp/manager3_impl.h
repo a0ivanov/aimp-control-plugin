@@ -80,10 +80,8 @@ public:
 
     virtual std::wstring getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const;
 
-    virtual void savePNGCoverToVector(TrackDescription track_desc, int cover_width, int cover_height, std::vector<BYTE>& image_data) const; // throw std::runtime_error
-
-    virtual void savePNGCoverToFile(TrackDescription track_desc, int cover_width, int cover_height, const std::wstring& filename) const; // throw std::runtime_error
-
+    virtual void saveCoverToFile(TrackDescription track_desc, ImageUtils::IMAGEFORMAT format, const std::wstring& filename, int cover_width = 0, int cover_height = 0) const; // throw std::runtime_error
+    
     virtual EventsListenerID registerListener(EventsListener listener);
 
     virtual void unRegisterListener(EventsListenerID listener_id);

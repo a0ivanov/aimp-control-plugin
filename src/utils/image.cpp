@@ -175,18 +175,18 @@ template<typename To, typename From> To cast(From);
     If AIMPCoverImage format is unknown returns FIF_UNKNOWN format.
 */
 template<>
-FREE_IMAGE_FORMAT cast<FREE_IMAGE_FORMAT, AIMPCoverImage::IMAGEFORMAT>(AIMPCoverImage::IMAGEFORMAT image_format)
+FREE_IMAGE_FORMAT cast<FREE_IMAGE_FORMAT, IMAGEFORMAT>(IMAGEFORMAT image_format)
 {
     FREE_IMAGE_FORMAT freeimage_format = FIF_UNKNOWN;
     switch (image_format)
     {
-    case AIMPCoverImage::PNG_IMAGE:
+    case PNG_IMAGE:
         freeimage_format = FIF_PNG;
         break;
-    case AIMPCoverImage::BMP_IMAGE:
+    case BMP_IMAGE:
         freeimage_format = FIF_BMP;
         break;
-    case AIMPCoverImage::JPEG_IMAGE:
+    case JPEG_IMAGE:
         freeimage_format = FIF_JPEG;
         break;
     }
@@ -203,7 +203,7 @@ AIMPCoverImage::AIMPCoverImage(HBITMAP cover_bitmap_handle) // throws std::runti
     }
 }
 
-void AIMPCoverImage::saveToVector(AIMPCoverImage::IMAGEFORMAT image_format, std::vector<BYTE>& image_data) const // throws std::runtime_error
+void AIMPCoverImage::saveToVector(IMAGEFORMAT image_format, std::vector<BYTE>& image_data) const // throws std::runtime_error
 {
     using namespace FreeImage;
 
@@ -220,7 +220,7 @@ void AIMPCoverImage::saveToVector(AIMPCoverImage::IMAGEFORMAT image_format, std:
     }
 }
 
-void AIMPCoverImage::saveToFile(AIMPCoverImage::IMAGEFORMAT /*image_format*/, const std::wstring& file_name) const // throws std::runtime_error
+void AIMPCoverImage::saveToFile(IMAGEFORMAT /*image_format*/, const std::wstring& file_name) const // throws std::runtime_error
 {
     //FreeImage_SetOutputMessage(FreeImage::FreeImageErrorHandler); // set handler that fill FreeImage::free_library_last_error_message string in case of error.
     BOOL result = saveU(file_name.c_str(), 0); // 0 means default saving settings.

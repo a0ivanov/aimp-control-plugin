@@ -9,6 +9,8 @@
 namespace ImageUtils
 {
 
+enum IMAGEFORMAT { PNG_IMAGE = 0, JPEG_IMAGE, BMP_IMAGE, IMAGE_FORMATS_COUNT };
+
 /*!
    \brief Image class that loaded from HBITMAP and can be saved to std::vector<BYTE> of to file.
    Delayed DLL load technique is used.
@@ -16,8 +18,7 @@ namespace ImageUtils
 class AIMPCoverImage : public fipWinImage
 {
 public:
-    enum IMAGEFORMAT { PNG_IMAGE = 0, JPEG_IMAGE, BMP_IMAGE, IMAGE_FORMATS_COUNT };
-
+    
     //! Creates image from HBITMAP. Bitmap handle will NOT be released.
     explicit AIMPCoverImage(HBITMAP cover_bitmap_handle); // throws std::runtime_error
 

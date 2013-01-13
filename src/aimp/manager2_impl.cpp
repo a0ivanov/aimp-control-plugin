@@ -967,29 +967,12 @@ const AIMP2Manager::PlaylistsListType& AIMP2Manager::getPlayLists() const
     return playlists_;
 }
 
-void AIMP2Manager::savePNGCoverToVector(TrackDescription track_desc, int cover_width, int cover_height, std::vector<BYTE>& image_data) const
-{
-    std::vector<BYTE> image_data_temp; // will be contain BMP image data.
-    try {
-        using namespace ImageUtils;
-        std::auto_ptr<AIMPCoverImage> cover( getCoverImage(track_desc, cover_width, cover_height) );
-        cover->saveToVector(AIMPCoverImage::PNG_IMAGE, image_data_temp);
-    } catch (std::exception& e) {
-        const std::string& str = MakeString() << "Error occured while cover saving to vector for " << track_desc << ". Reason: " << e.what();
-        BOOST_LOG_SEV(logger(), error) << str;
-        throw std::runtime_error(str);
-    }
-
-    // we got image, save it now.
-    image_data.swap(image_data_temp);
-}
-
-void AIMP2Manager::savePNGCoverToFile(TrackDescription track_desc, int cover_width, int cover_height, const std::wstring& filename) const
+void AIMP2Manager::saveCoverToFile(TrackDescription track_desc, ImageUtils::IMAGEFORMAT format, const std::wstring& filename, int cover_width, int cover_height) const // throw std::runtime_error
 {
     try {
         using namespace ImageUtils;
         std::auto_ptr<AIMPCoverImage> cover( getCoverImage(track_desc, cover_width, cover_height) );
-        cover->saveToFile(AIMPCoverImage::PNG_IMAGE, filename);
+        cover->saveToFile(format, filename);
     } catch (std::exception& e) {
         const std::string& str = MakeString() << "Error occured while cover saving to file for " << track_desc << ". Reason: " << e.what();
         BOOST_LOG_SEV(logger(), error) << str;
