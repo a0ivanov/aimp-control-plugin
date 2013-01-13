@@ -249,7 +249,6 @@ public:
                Size is determined by cover_width and cover_height arguments. Pass zeros to get full size cover.
         \param track_desc - track descriptor.
         \param filename - file name to store image.
-        \param format - format of the image: png, jpeg and etc.
         \param cover_width - cover width. If zero, width will be calculated from cover height(if it is non-zero), or original width will be used(if cover height is zero).
         \param cover_height - cover height. If zero, height will be calculated from cover width(if it is non-zero), or original height will be used(if cover width is zero).
         \throw std::runtime_error in case of any error.
