@@ -1492,14 +1492,8 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMP3Manager::getCoverImage(TrackDescr
     }
 
     const PlaylistEntry& entry = getEntry(track_desc);
-    //SIZE cover_size = { 0, 0 };
-    //HBITMAP cover_bitmap_handle = aimp2_cover_art_manager_->GetCoverArtForFile(const_cast<PWCHAR>( entry.filename().c_str() ), &request_full_size);
-    WCHAR coverart_filename_buffer[MAX_PATH + 1] = {0};
-    HBITMAP cover_bitmap_handle = aimp3_coverart_manager_->CoverArtGetForFile(const_cast<PWCHAR>( entry.filename().c_str() ), NULL,
-			                                                                  coverart_filename_buffer, MAX_PATH);
-    if (coverart_filename_buffer[0] != 0) {
-        coverart_filename_buffer[0] = coverart_filename_buffer[0];
-    }
+    HBITMAP cover_bitmap_handle = aimp3_coverart_manager_->CoverArtGetForFile(const_cast<PWCHAR>( entry.filename().c_str() ), nullptr,
+			                                                                  nullptr, 0);
 
     // get real bitmap size
     const SIZE cover_full_size = ImageUtils::getBitmapSize(cover_bitmap_handle);
@@ -1524,11 +1518,28 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMP3Manager::getCoverImage(TrackDescr
         }
 
         cover_bitmap_handle = aimp3_coverart_manager_->CoverArtGetForFile(const_cast<PWCHAR>( entry.filename().c_str() ), &cover_size,
-			                                                              coverart_filename_buffer, MAX_PATH);
+			                                                              nullptr, 0);
     }
 
     using namespace ImageUtils;
     return std::auto_ptr<AIMPCoverImage>( new AIMPCoverImage(cover_bitmap_handle) ); // do not close handle of AIMP bitmap.
+}
+
+bool AIMP3Manager::isCoverImageFileExist(TrackDescription track_desc, boost::filesystem::wpath* path) const // throw std::runtime_error
+{
+    const PlaylistEntry& entry = getEntry(track_desc);
+
+    WCHAR coverart_filename_buffer[MAX_PATH + 1] = {0};
+    aimp3_coverart_manager_->CoverArtGetForFile(const_cast<PWCHAR>( entry.filename().c_str() ), NULL,
+	                                            coverart_filename_buffer, MAX_PATH);
+    boost::system::error_code ignored_ec;
+    const bool exists = fs::exists(coverart_filename_buffer, ignored_ec);
+    
+    if (exists && path) {
+        *path = coverart_filename_buffer;
+    }
+    
+    return exists;
 }
 
 const Playlist& AIMP3Manager::getPlaylist(PlaylistID playlist_id) const
