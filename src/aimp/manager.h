@@ -238,6 +238,12 @@ public:
     */
     virtual std::wstring getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const = 0; // throw std::invalid_argument
 
+    /*
+        Returns true if there is album cover is located in separate file (not embedded into track metadata) and it is available.
+        argument path will be set if it is not null_ptr and album cover file is available.
+    */
+    virtual bool isCoverImageFileExist(TrackDescription track_desc, boost::filesystem::wpath* path = nullptr) const = 0; // throw std::runtime_error
+
     /*!
         \brief Saves album cover for track to file in format determined by filename extention.
                Size is determined by cover_width and cover_height arguments. Pass zeros to get full size cover.

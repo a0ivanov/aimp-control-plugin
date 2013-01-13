@@ -86,6 +86,9 @@ public:
 
     virtual std::wstring getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const; // throw std::invalid_argument
     
+    virtual bool isCoverImageFileExist(TrackDescription /*track_desc*/, boost::filesystem::wpath* path = nullptr) const
+        { (void)path; return false; } // unsupported by AIMP 2 SDK.
+
     virtual void saveCoverToFile(TrackDescription track_desc, const std::wstring& filename, int cover_width = 0, int cover_height = 0) const; // throw std::runtime_error
 
     virtual EventsListenerID registerListener(EventsListener listener);

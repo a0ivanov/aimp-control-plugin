@@ -80,6 +80,8 @@ public:
 
     virtual std::wstring getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const;
 
+    virtual bool isCoverImageFileExist(TrackDescription track_desc, boost::filesystem::wpath* path = nullptr) const;
+
     virtual void saveCoverToFile(TrackDescription track_desc, const std::wstring& filename, int cover_width = 0, int cover_height = 0) const; // throw std::runtime_error
     
     virtual EventsListenerID registerListener(EventsListener listener);
@@ -120,12 +122,6 @@ private:
         \throw std::invalid_argument - if parameters cover_width or/and cover_height are invalid.
     */
     std::auto_ptr<ImageUtils::AIMPCoverImage> getCoverImage(TrackDescription track_desc, int cover_width, int cover_height) const; // throw std::runtime_error, throw std::invalid_argument
-
-    /*
-        Returns true if there is album cover is located in separate file (not embedded into track metadata) and it is available.
-        argument path will be set if it is not null_ptr and album cover file is available.
-    */
-    bool isCoverImageFileExist(TrackDescription track_desc, boost::filesystem::wpath* path = nullptr) const; // throw std::runtime_error
 
     //! Called from setStatus() and invokes notifyAboutInternalEvent() to notify about status changes which AIMP does not notify us about.
     void notifyAboutInternalEventOnStatusChange(STATUS status);
