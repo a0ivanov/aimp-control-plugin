@@ -138,18 +138,21 @@ private:
     ImageDataType& image_data_;
 };
 
-// use for store data about error in FreeImage library.
-std::string free_library_last_error_message;
 
-/* Function used to get error description from FreeImage library, see FreeImage_SetOutputMessage description. */
-void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message) {
-    std::ostringstream msg;
-    if (fif != FIF_UNKNOWN) {
-        msg << FreeImage_GetFormatFromFIF(fif) << " format. ";
-    }
-    msg << message;
-    free_library_last_error_message = msg.str();
-}
+//// use for store data about error in FreeImage library.
+//std::string free_library_last_error_message;
+
+/* Function used to get error description from FreeImage library, see FreeImage_SetOutputMessage description.
+    Depends on FreeImage.lib and commented.
+*/
+//void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message) {
+//    std::ostringstream msg;
+//    if (fif != FIF_UNKNOWN) {
+//        msg << FreeImage_GetFormatFromFIF(fif) << " format. ";
+//    }
+//    msg << message;
+//    free_library_last_error_message = msg.str();
+//}
 
 } // namespace FreeImage
 
