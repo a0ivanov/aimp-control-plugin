@@ -1,4 +1,4 @@
-// Copyright (c) 2012, Alexey Ivanov
+// Copyright (c) 2013, Alexey Ivanov
 
 #ifndef STRING_ENCODING_UTILS_H
 #define STRING_ENCODING_UTILS_H

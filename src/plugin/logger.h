@@ -1,4 +1,4 @@
-// Copyright (c) 2012, Alexey Ivanov
+// Copyright (c) 2013, Alexey Ivanov
 
 #ifndef LOGGER_H
 #define LOGGER_H

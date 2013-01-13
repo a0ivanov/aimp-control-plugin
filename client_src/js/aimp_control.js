@@ -1,6 +1,6 @@
 /*
     Script contains functions for AIMP Control plugin frontend to communicate with AIMP RPC(Xmlrpc/Jsonrpc) server.
-    Copyright (c) 2012, Alexey Ivanov
+    Copyright (c) 2013, Alexey Ivanov
 */
 
 // Global data

@@ -3,7 +3,7 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-// Copyright (c) 2012, Alexey Ivanov
+// Copyright (c) 2013, Alexey Ivanov
 
 #include "stdafx.h"
 #include "http_server/request_handler.h"

@@ -1,4 +1,4 @@
-// Copyright (c) 2012, Alexey Ivanov
+// Copyright (c) 2013, Alexey Ivanov
 
 #include "stdafx.h"
 #include "jsonrpc/response_serializer.h"

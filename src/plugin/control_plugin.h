@@ -1,4 +1,4 @@
-// Copyright (c) 2012, Alexey Ivanov
+// Copyright (c) 2013, Alexey Ivanov
 
 #ifndef AIMP_CONTROL_PLUGIN_H
 #define AIMP_CONTROL_PLUGIN_H

@@ -1,4 +1,4 @@
-// Copyright (c) 2012, Alexey Ivanov
+// Copyright (c) 2013, Alexey Ivanov
 
 #ifndef XMLRPC_REQUEST_PARSER_H
 #define XMLRPC_REQUEST_PARSER_H

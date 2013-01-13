@@ -1,4 +1,4 @@
-// Copyright (c) 2012, Alexey Ivanov
+// Copyright (c) 2013, Alexey Ivanov
 
 #ifndef WEBCTLRPC_REQUEST_PARSER_H
 #define WEBCTLRPC_REQUEST_PARSER_H

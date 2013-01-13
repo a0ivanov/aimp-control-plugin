@@ -1,4 +1,4 @@
-// Copyright (c) 2012, Alexey Ivanov
+// Copyright (c) 2013, Alexey Ivanov
 
 #ifndef AIMP_PLAYLIST_ENTRY_H
 #define AIMP_PLAYLIST_ENTRY_H
