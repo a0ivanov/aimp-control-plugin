@@ -890,7 +890,10 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
 
     try {
         fs::wpath album_cover_filename;
-        if (aimp_manager_.isCoverImageFileExist(track_desc, &album_cover_filename)) {
+        if (   (cover_width == 0 && cover_height == 0) // use direct copy only if no scaling is requested.
+            && aimp_manager_.isCoverImageFileExist(track_desc, &album_cover_filename)
+            )
+        {
             fs::copy_file(album_cover_filename, temp_unique_filename);
         } else {
             aimp_manager_.saveCoverToFile(track_desc, temp_unique_filename.native(), cover_width, cover_height);
