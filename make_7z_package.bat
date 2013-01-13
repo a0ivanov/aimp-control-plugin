@@ -10,8 +10,7 @@ call setup_environment.bat
 :CREATE_ARCHIEVE
     echo Creating archieve...
     set /p PROJECT_VERSION= < %PROJECT_VERSION_FILE% || set PROJECT_VERSION=unknown_version
-    set PROJECT_VERSION_NODOTS=!PROJECT_VERSION:.=_!
-    set FULLPATH_ZIP=%TEMP_BUILD_DIR%\aimp_control_plugin_!PROJECT_VERSION_NODOTS!.7z
+    set FULLPATH_ZIP=%TEMP_BUILD_DIR%\aimp_control_plugin_!PROJECT_VERSION!.7z
     
     :: add htdocs
     tools\7z a -t7z !FULLPATH_ZIP! ^
