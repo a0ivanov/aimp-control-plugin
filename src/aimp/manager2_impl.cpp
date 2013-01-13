@@ -967,12 +967,12 @@ const AIMP2Manager::PlaylistsListType& AIMP2Manager::getPlayLists() const
     return playlists_;
 }
 
-void AIMP2Manager::saveCoverToFile(TrackDescription track_desc, ImageUtils::IMAGEFORMAT format, const std::wstring& filename, int cover_width, int cover_height) const // throw std::runtime_error
+void AIMP2Manager::saveCoverToFile(TrackDescription track_desc, const std::wstring& filename, int cover_width, int cover_height) const // throw std::runtime_error
 {
     try {
         using namespace ImageUtils;
         std::auto_ptr<AIMPCoverImage> cover( getCoverImage(track_desc, cover_width, cover_height) );
-        cover->saveToFile(format, filename);
+        cover->saveToFile(filename);
     } catch (std::exception& e) {
         const std::string& str = MakeString() << "Error occured while cover saving to file for " << track_desc << ". Reason: " << e.what();
         BOOST_LOG_SEV(logger(), error) << str;

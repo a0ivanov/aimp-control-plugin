@@ -8,10 +8,7 @@
 #include "track_description.h"
 #include <boost/function.hpp>
 
-namespace ImageUtils { 
-    class AIMPCoverImage; 
-    enum IMAGEFORMAT : int;
-}
+namespace ImageUtils { class AIMPCoverImage; }
 
 //! provide interface to interact with AIMP player.
 namespace AIMPPlayer
@@ -242,7 +239,7 @@ public:
     virtual std::wstring getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const = 0; // throw std::invalid_argument
 
     /*!
-        \brief Saves album cover for track to file in PNG format.
+        \brief Saves album cover for track to file in format determined by filename extention.
                Size is determined by cover_width and cover_height arguments. Pass zeros to get full size cover.
         \param track_desc - track descriptor.
         \param filename - file name to store image.
@@ -251,7 +248,7 @@ public:
         \param cover_height - cover height. If zero, height will be calculated from cover width(if it is non-zero), or original height will be used(if cover width is zero).
         \throw std::runtime_error in case of any error.
     */
-    virtual void saveCoverToFile(TrackDescription track_desc, ImageUtils::IMAGEFORMAT format, const std::wstring& filename, int cover_width = 0, int cover_height = 0) const = 0; // throw std::runtime_error
+    virtual void saveCoverToFile(TrackDescription track_desc, const std::wstring& filename, int cover_width = 0, int cover_height = 0) const = 0; // throw std::runtime_error
 
     /*!
         \brief Registers notifier which will be called when specified event will occur.

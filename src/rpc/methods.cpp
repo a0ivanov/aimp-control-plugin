@@ -888,7 +888,7 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
     const boost::filesystem::wpath temp_unique_filename (document_root_ / cover_uri);
 
     try {
-        aimp_manager_.saveCoverToFile(track_desc, ImageUtils::PNG_IMAGE, temp_unique_filename.native(), cover_width, cover_height);
+        aimp_manager_.saveCoverToFile(track_desc, temp_unique_filename.native(), cover_width, cover_height);
         const std::wstring& cover_uri_generic = cover_uri.generic_wstring();
         root_response["result"]["album_cover_uri"] = StringEncoding::utf16_to_utf8(cover_uri_generic);
         cover_filenames_[track_desc].push_back(cover_uri_generic);

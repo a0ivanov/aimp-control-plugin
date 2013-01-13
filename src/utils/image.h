@@ -31,12 +31,11 @@ public:
     void saveToVector(IMAGEFORMAT image_format, std::vector<BYTE>& image_data) const; // throws std::runtime_error
 
     /*!
-        \brief Saves image to file.
-        \param image_format ID of required image format. See IMAGEFORMAT for supported formats.
+        \brief Saves image to file. File format is determined by file name extention.
         \param file_name file name.
         \throw std::runtime_error if saving fails.
     */
-    void saveToFile(IMAGEFORMAT image_format, const std::wstring& file_name) const; // throws std::runtime_error
+    void saveToFile(const std::wstring& file_name) const; // throws std::runtime_error
 
 private:
 

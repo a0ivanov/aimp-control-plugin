@@ -220,7 +220,7 @@ void AIMPCoverImage::saveToVector(IMAGEFORMAT image_format, std::vector<BYTE>& i
     }
 }
 
-void AIMPCoverImage::saveToFile(IMAGEFORMAT /*image_format*/, const std::wstring& file_name) const // throws std::runtime_error
+void AIMPCoverImage::saveToFile(const std::wstring& file_name) const // throws std::runtime_error
 {
     //FreeImage_SetOutputMessage(FreeImage::FreeImageErrorHandler); // set handler that fill FreeImage::free_library_last_error_message string in case of error.
     BOOL result = saveU(file_name.c_str(), 0); // 0 means default saving settings.
