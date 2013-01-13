@@ -886,7 +886,7 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
     boost::filesystem::wpath cover_uri (cover_directory_relative_ / getTempFileNameForAlbumCover(track_desc, cover_width, cover_height));
     cover_uri.replace_extension(L".jpg");
 
-    const boost::filesystem::wpath temp_unique_filename (document_root_ / cover_uri);
+    boost::filesystem::wpath temp_unique_filename (document_root_ / cover_uri);
 
     try {
         fs::wpath album_cover_filename;
@@ -894,6 +894,9 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
             && aimp_manager_.isCoverImageFileExist(track_desc, &album_cover_filename)
             )
         {
+            cover_uri.replace_extension           (album_cover_filename.extension());
+            temp_unique_filename.replace_extension(album_cover_filename.extension());
+
             fs::copy_file(album_cover_filename, temp_unique_filename);
         } else {
             aimp_manager_.saveCoverToFile(track_desc, temp_unique_filename.native(), cover_width, cover_height);
