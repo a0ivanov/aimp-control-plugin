@@ -1104,7 +1104,7 @@ ResponseType GetPlayerControlPanelState::execute(const Rpc::Value& /*root_reques
     return RESPONSE_IMMEDIATE;
 }
 
-ResponseType SetTrackRating::execute(const Rpc::Value& root_request, Rpc::Value& /*root_response*/)
+ResponseType SetTrackRating::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
     const Rpc::Value& params = root_request["params"];
     if (params.type() != Rpc::Value::TYPE_OBJECT || params.size() != 3) {
@@ -1117,7 +1117,7 @@ ResponseType SetTrackRating::execute(const Rpc::Value& root_request, Rpc::Value&
     AIMP3Manager* aimp3_manager = dynamic_cast<AIMP3Manager*>(&aimp_manager_);
     if (aimp3_manager) {
         try {
-            aimp3_manager->setTrackRating(track_desc, rating);
+            aimp3_manager->trackRating(track_desc, rating);
         } catch (std::exception& e) {
             BOOST_LOG_SEV(logger(), error) << "Error saving rating in "__FUNCTION__". Reason: " << e.what();
             throw Rpc::Exception("Error saving rating.", RATING_SET_FAILED);
@@ -1139,6 +1139,8 @@ ResponseType SetTrackRating::execute(const Rpc::Value& root_request, Rpc::Value&
             throw Rpc::Exception("Error saving rating to text file.", RATING_SET_FAILED);
         }
     }
+
+    root_response["rating"] = rating; 
     return RESPONSE_IMMEDIATE;
 }
 

@@ -255,6 +255,12 @@ public:
     */
     virtual void saveCoverToFile(TrackDescription track_desc, const std::wstring& filename, int cover_width = 0, int cover_height = 0) const = 0; // throw std::runtime_error
 
+    /*
+        Returns track rating.
+        rating value is in range [0-5]. Zero value means rating is not set.
+    */
+    virtual int trackRating(TrackDescription track_desc) const = 0; // throws std::runtime_error
+
     /*!
         \brief Registers notifier which will be called when specified event will occur.
                Client must call unRegisterListener() with gained ID to unsubscribe from notifications.

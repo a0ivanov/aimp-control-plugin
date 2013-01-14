@@ -967,6 +967,12 @@ const AIMP2Manager::PlaylistsListType& AIMP2Manager::getPlayLists() const
     return playlists_;
 }
 
+int AIMP2Manager::trackRating(TrackDescription track_desc) const // throws std::runtime_error
+{
+    const PlaylistEntry& entry = getEntry(track_desc);
+    return entry.rating();
+}
+
 void AIMP2Manager::saveCoverToFile(TrackDescription track_desc, const std::wstring& filename, int cover_width, int cover_height) const // throw std::runtime_error
 {
     try {

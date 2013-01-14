@@ -90,15 +90,17 @@ public:
 
     virtual void onTick();
 
+    virtual int trackRating(TrackDescription track_desc) const; // throws std::runtime_error
+
     // AIMP3 specific functionality, not supported by AIMP2.
 
     /*!
         Sets rating of specified track.
 
         \param track_desc - track descriptor.
-        \param rating - rating value in range [0-5]. Zero value means rating is not set.
+        \param rating - rating value is in range [0-5]. Zero value means rating is not set.
     */
-    virtual void setTrackRating(TrackDescription track_desc, int rating); // throw std::runtime_error
+    virtual void trackRating(TrackDescription track_desc, int rating); // throw std::runtime_error
 
     sqlite3* playlists_db()
         { return playlists_db_; }

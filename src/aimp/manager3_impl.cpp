@@ -1662,7 +1662,7 @@ std::wstring AIMP3Manager::getFormattedEntryTitle(TrackDescription track_desc, c
     return formatted_string;
 }
 
-void AIMP3Manager::setTrackRating(TrackDescription track_desc, int rating)
+void AIMP3Manager::trackRating(TrackDescription track_desc, int rating) // throws std::runtime_error
 {
     using namespace AIMP3SDK;
     PlaylistEntry& entry = getEntry(track_desc);
@@ -1675,6 +1675,12 @@ void AIMP3Manager::setTrackRating(TrackDescription track_desc, int rating)
     }  
     // Note: at this point entry does not exist any more, since EntryPropertySetValue forces calling of onStorageChanged() so, entries are reloaded.
     // entry.rating(rating);
+}
+
+int AIMP3Manager::trackRating(TrackDescription track_desc) const // throws std::runtime_error
+{
+    const PlaylistEntry& entry = getEntry(track_desc);
+    return entry.rating();
 }
 
 void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
