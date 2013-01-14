@@ -680,9 +680,9 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
     query_with_limit << query_without_limit.str() << ' '
                      << getLimitString(params);
 
-    sqlite3_stmt* stmt = createStmt( playlists_db,
-                                     query_with_limit.str().c_str()
-                                    );
+    const std::string query = !EntryLocationDeterminationMode() ? query_with_limit.str() : query_without_limit.str();
+
+    sqlite3_stmt* stmt = createStmt( playlists_db, query.c_str() );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
     // bind all query args.
@@ -701,45 +701,52 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
     }
 #endif
 
-    Rpc::Value* rpc_result = nullptr;
-    Rpc::Value* rpcvalue_entries = nullptr;
-
     if ( !EntryLocationDeterminationMode() ) {
-        rpc_result = &root_response["result"];
-        rpcvalue_entries = &(*rpc_result)[kRSLT_KEY_ENTRIES];
-        rpcvalue_entries->setSize(0); // return zero-length array, not null if no entires found.
-    }
+        Rpc::Value& rpc_result = root_response["result"];
+        Rpc::Value& rpcvalue_entries  = rpc_result[kRSLT_KEY_ENTRIES];
+        rpcvalue_entries.setSize(0); // return zero-length array, not null if no entires found.
 
-    size_t entry_index = 0;
-    for(;;) {
-		int rc_db = sqlite3_step(stmt);
-        if (SQLITE_ROW == rc_db) {
-            if ( !EntryLocationDeterminationMode() ) {
-                rpcvalue_entries->setSize(entry_index + 1); /// TODO: if possible resize array full count of found rows before filling.
-                Rpc::Value& entry_rpcvalue = (*rpcvalue_entries)[entry_index];
+        size_t entry_index = 0;
+        for(;;) {
+		    int rc_db = sqlite3_step(stmt);
+            if (SQLITE_ROW == rc_db) {
+                rpcvalue_entries.setSize(entry_index + 1); /// TODO: if possible resize array full count of found rows before filling.
+                Rpc::Value& entry_rpcvalue = rpcvalue_entries[entry_index];
                 // fill all requested fields for entry.
                 entry_fields_filler_.fillRpcArrayOfArrays(stmt, entry_rpcvalue);
+                ++entry_index;
+            } else if (SQLITE_DONE == rc_db) {
+                break;
             } else {
+                const std::string msg = MakeString() << "sqlite3_step() error "
+                                                     << rc_db << ": " << sqlite3_errmsg(playlists_db)
+                                                     << ". Query: " << query;
+                throw std::runtime_error(msg);
+		    }
+        }
+
+        rpc_result[kRSLT_KEY_TOTAL_ENTRIES_COUNT]    = getTotalEntriesCount(playlists_db, playlist_id);
+        rpc_result[kRSLT_KEY_COUNT_OF_FOUND_ENTRIES] = getRowsCount(playlists_db, query_without_limit.str(), &query_arg_setters_);
+    } else {
+        size_t entry_index = 0;
+        for(;;) {
+		    int rc_db = sqlite3_step(stmt);
+            if (SQLITE_ROW == rc_db) {
                 const int entry_id = sqlite3_column_int(stmt, pagination_info_->id_field_index);
                 if (pagination_info_->entry_id == entry_id) {
                     pagination_info_->entry_index_in_current_representation_ = entry_index;
                     break;
-                }
-            }
-            ++entry_index;
-        } else if (SQLITE_DONE == rc_db) {
-            break;
-        } else {
-            const std::string msg = MakeString() << "sqlite3_step() error "
-                                                 << rc_db << ": " << sqlite3_errmsg(playlists_db)
-                                                 << ". Query: " << query_with_limit.str();
-            throw std::runtime_error(msg);
-		}
-    }
-
-    if ( !EntryLocationDeterminationMode() ) {
-        (*rpc_result)[kRSLT_KEY_TOTAL_ENTRIES_COUNT]    = getTotalEntriesCount(playlists_db, playlist_id);
-        (*rpc_result)[kRSLT_KEY_COUNT_OF_FOUND_ENTRIES] = getRowsCount(playlists_db, query_without_limit.str(), &query_arg_setters_);
+                }                
+                ++entry_index;
+            } else if (SQLITE_DONE == rc_db) {
+                break;
+            } else {
+                const std::string msg = MakeString() << "sqlite3_step() error "
+                                                     << rc_db << ": " << sqlite3_errmsg(playlists_db)
+                                                     << ". Query: " << query;
+                throw std::runtime_error(msg);
+		    }
+        }
     }
 
     return RESPONSE_IMMEDIATE;
