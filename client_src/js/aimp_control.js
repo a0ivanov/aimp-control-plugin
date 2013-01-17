@@ -107,6 +107,7 @@ function createEntriesControl(playlist_id)
     );
 
     $table = $table_with_playlist_id.dataTable( {
+        ///!!! bDestroy : true, 
         bStateSave : true, // save state in cookies.
         aoColumns : getDataTablesColumnsDescriptors(),
         fnDrawCallback : onPlaylistTableDraw,
