@@ -1,5 +1,5 @@
 /*
- ### jQuery Star Rating Plugin v3.13 - 2009-03-26 ###
+ ### jQuery Star Rating Plugin v3.14 - 2012-01-26 ###
  * Home: http://www.fyneworks.com/jquery/star-rating/
  * Code: http://code.google.com/p/jquery-star-rating-plugin/
  *
@@ -14,7 +14,7 @@
 /*# AVOID COLLISIONS #*/
 	
 	// IE6 Background Image Fix
-	if ($.browser.msie) try { document.execCommand("BackgroundImageCache", false, true)} catch(e) { };
+	//if ($.browser.msie) try { document.execCommand("BackgroundImageCache", false, true)} catch(e) { };
 	// Thanks to http://www.visualjquery.com/rating/rating_redux.html
 	
 	// plugin initialization
@@ -73,7 +73,7 @@
 			else{
 				// create new control if first star or control element was removed/replaced
 				
-				// Initialize options for this raters
+				// Initialize options for this rater
 				control = $.extend(
 					{}/* new object */,
 					options || {} /* current call options */,
@@ -92,7 +92,10 @@
 				rater.addClass('rating-to-be-drawn');
 				
 				// Accept readOnly setting from 'disabled' property
-				if(input.attr('disabled')) control.readOnly = true;
+				if(input.attr('disabled') || input.hasClass('disabled')) control.readOnly = true;
+				
+				// Accept required setting from class property (class='required')
+				if(input.hasClass('required')) control.required = true;
 				
 				// Create 'cancel' button
 				rater.append(
@@ -163,6 +166,12 @@
 			
 			// set current selection
 			if(this.checked)	control.current = star;
+			
+			// set current select for links
+			if(this.nodeName=="A"){
+    if($(this).hasClass('selected'))
+     control.current = star;
+   };
 			
 			// hide input element
 			input.hide();
@@ -300,22 +309,16 @@
 			var input = $( control.current ? control.current.data('rating.input') : null );
 			// click callback, as requested here: http://plugins.jquery.com/node/1655
 					
-            // **** MODIFICATION *****
-            // Thanks to faivre.thomas - http://code.google.com/p/jquery-star-rating-plugin/issues/detail?id=27
-            //
-            //old line doing the callback :
-            //if(control.callback) control.callback.apply(input[0], [input.val(), $('a', control.current)[0]]);// callback event
-            //
-            //new line doing the callback (if i want :)
-            if((wantCallBack ||wantCallBack == undefined) && control.callback) {
-                if (control.current === null) {
-                    control.callback.apply(control.cancel[0].parentNode, [control.cancelValue, $('a', control.cancel)[0]]);// callback event
-                } else {
-                    control.callback.apply(input[0], [input.val(), $('a', control.current)[0]]);// callback event
-                }
-            }
-            //to ensure retro-compatibility, wantCallBack must be considered as true by default
-            // **** /MODIFICATION *****
+					// **** MODIFICATION *****
+					// Thanks to faivre.thomas - http://code.google.com/p/jquery-star-rating-plugin/issues/detail?id=27
+					//
+					//old line doing the callback :
+					//if(control.callback) control.callback.apply(input[0], [input.val(), $('a', control.current)[0]]);// callback event
+					//
+					//new line doing the callback (if i want :)
+					if((wantCallBack ||wantCallBack == undefined) && control.callback) control.callback.apply(input[0], [input.val(), $('a', control.current)[0]]);// callback event
+					//to ensure retro-compatibility, wantCallBack must be considered as true by default
+					// **** /MODIFICATION *****
 					
   },// $.fn.rating.select
 		
