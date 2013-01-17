@@ -195,7 +195,8 @@ function createEntriesControl(playlist_id)
     
     $playlists_tables['entries_table_' + playlist_id] = $table;
     
-    need_goto_current_track_once_on_playlist_content_load = true;
+    need_goto_current_track_once_on_playlist_content_load = control_panel_state.hasOwnProperty('playlist_id') ? playlist_id == control_panel_state.playlist_id
+                                                                                                              : true;
 }
 
 function gotoCurrentTrackInPlaylist(force_page_and_playlist_switch_local)
