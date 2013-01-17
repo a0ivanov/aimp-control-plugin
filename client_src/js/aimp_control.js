@@ -646,28 +646,35 @@ function createPlaylistsControls(playlists)
             //                   it need to be set after all tabs creation and unselecting all tabs to avoid unexpected invocation.
         }); // initialization of Tabs control.
     }
+        
+    // actual addTab function: adds new tab using the input from the form above
+    function addTab(id, label, tabContentHtml) {
+        var tabTemplate = "<li><a href='#{href}'><span>#{label}</span></a></li>";
+        var li = $( tabTemplate.replace( /#\{href\}/g, '#' + id ).replace( /#\{label\}/g, label ) );
+            
+        $playlists_tabs.find('.ui-tabs-nav').append(li);
+        $playlists_tabs.append('<div id="'+ id + '">' + tabContentHtml + '</div>');
+        //$playlists_tabs.tabs('refresh');
+    } 
     
     // create tabs for each playlist.
     for(i = 0; i < playlists.length; ++i) {
-        var playlist_id_name = 'playlist_' + playlists[i].id;
-        // we need to have unique ID to attach div to tab.
-        var div_html = '<div id="' + playlist_id_name + '">' + createTemplateEntriesTable(playlists[i].id) + '</div>';
-        $(div_html).appendTo('body');
-        $playlists_tabs.tabs('add',
-                             '#' + playlist_id_name,
-                             playlists[i].title
-                             );
+        var playlist_id = 'playlist_' + playlists[i].id, // // we need to have unique ID to attach div to tab.
+            tabContentHtml = createTemplateEntriesTable(playlists[i].id);
+        addTab(playlist_id, playlists[i].title, tabContentHtml);    
     }
     
-    $playlists_tabs.bind('tabsselect',
-                         function(event, $ui) { // load content of playlist on tab activation, if content is not loaded yet.
-                            var $tab_ui = $ui.panel;
-                            loadPlaylistContentIfNotLoadedYet( getPlaylistIdFromTabId($tab_ui.id) );
-                         });
+    $playlists_tabs.tabs('refresh');
     
+    $playlists_tabs.on('tabsactivate',  function(event, $ui) { // load content of playlist on tab activation, if content is not loaded yet.
+                                            var $panel = $ui.newPanel;
+                                            loadPlaylistContentIfNotLoadedYet( getPlaylistIdFromTabId($panel.get(0).id) );
+                                        }
+                       );
+        
     // force load playlist content due to issue with tab select event.
     var playlist_id = control_panel_state.playlist_id;
-    if (playlist_id === 0) { // AIMP3 sends 0 if playlist played never.
+    if (playlist_id === 0) { // AIMP3 sends 0 if playlist is never played.
         if (playlists.length > 0) { 
             playlist_id = playlists[0].id;
         }
