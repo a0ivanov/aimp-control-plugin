@@ -242,7 +242,8 @@ function gotoCurrentPlaylist(playlist_id)
     $('div[id*=playlist]', $playlists_tabs).each(function(index, tab_ui) {
         var tab_playlist_id = getPlaylistIdFromTabId(tab_ui.id);
         if (playlist_id == tab_playlist_id) {
-            $playlists_tabs.tabs('select', index);
+            $playlists_tabs.tabs('option', 'active', index);
+            //$playlists_tabs.tabs('select', index);
             return false;
         }
         return true;
@@ -620,8 +621,10 @@ function deletePlaylistsControls()
     if ($playlists_tabs !== null) {
         $playlists_tables = {}; // clear
         $('#playlists > div').remove();
+        
         $playlists_tabs.tabs('destroy'); // if tabs control is already created - destroy all tabs.
         $playlists_tabs = null;
+        $('#playlists li').remove();
     }
 }
 
@@ -654,7 +657,6 @@ function createPlaylistsControls(playlists)
             
         $playlists_tabs.find('.ui-tabs-nav').append(li);
         $playlists_tabs.append('<div id="'+ id + '">' + tabContentHtml + '</div>');
-        //$playlists_tabs.tabs('refresh');
     } 
     
     // create tabs for each playlist.
