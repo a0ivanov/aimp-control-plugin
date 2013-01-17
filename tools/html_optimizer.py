@@ -41,7 +41,7 @@ class CssResMapper(object):
             new_css_url = match.group(1)
             print self.css_input_dir
             print 'full_res_path %s does not exists' % full_res_path
-            print 'original_res_path %s does not exists' % original_res_path
+            print 'original_res_path_relative_to_css %s does not exists' % original_res_path_relative_to_css
 
         return 'url(%s)' % new_css_url
 
