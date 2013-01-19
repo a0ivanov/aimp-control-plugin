@@ -434,7 +434,7 @@ void AIMP2Manager::checkIfPlaylistsChanged()
     }
  
     if (playlists_content_changed) {
-        notifyAboutInternalEvent(PLAYLISTS_CONTENT_CHANGED_EVENT);
+        notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     }
 }
 
@@ -787,28 +787,39 @@ const char* asString(AIMP2SDK_STATUS status)
                         );
 }
 
-void AIMP2Manager::notifyAboutInternalEventOnStatusChange(AIMP2Manager::STATUS status)
+bool AIMP2Manager::getEventRelatedTo(AIMP2Manager::STATUS status, AIMP2Manager::EVENTS* event)
 {
+    assert(event);
+
     switch (status) {
     case STATUS_SHUFFLE:
-        notifyAboutInternalEvent(SHUFFLE_EVENT);
+        *event = EVENT_SHUFFLE;
         break;
     case STATUS_REPEAT:
-        notifyAboutInternalEvent(REPEAT_EVENT);
+        *event = EVENT_REPEAT;
         break;
     case STATUS_VOLUME:
-        notifyAboutInternalEvent(VOLUME_EVENT);
+        *event = EVENT_VOLUME;
         break;
     case STATUS_MUTE:
-        notifyAboutInternalEvent(MUTE_EVENT);
+        *event = EVENT_MUTE;
         break;
     case STATUS_POS:
-        notifyAboutInternalEvent(TRACK_PROGRESS_CHANGED_DIRECTLY_EVENT);
+        *event = EVENT_TRACK_PROGRESS_CHANGED_DIRECTLY;
+        break;
+    case STATUS_RADIO_CAPTURE:
+        *event = EVENT_RADIO_CAPTURE;
         break;
     default:
-        // do nothing, about other status changes AIMP will notify us itself.
-        break;
+        if (STATUS_EQ_STS == status || (STATUS_EQ_SLDR01 <= status && status <= STATUS_EQ_SLDR18)) {
+            *event = EVENT_EQ_CHANGED;
+            break;
+        }
+
+        return false;
     }
+
+    return true;
 }
 
 void AIMP2Manager::setStatus(AIMP2Manager::STATUS status, AIMP2Manager::StatusValue value)
@@ -829,7 +840,10 @@ void AIMP2Manager::setStatus(AIMP2Manager::STATUS status, AIMP2Manager::StatusVa
         throw std::runtime_error( e.what() );
     }
 
-    notifyAboutInternalEventOnStatusChange(status);
+    EVENTS event;
+    if (getEventRelatedTo(status, &event)) { 
+        notifyAllExternalListeners(event);
+    }
 }
 
 AIMP2Manager::StatusValue AIMP2Manager::getStatus(AIMP2Manager::STATUS status) const
@@ -1048,34 +1062,6 @@ const PlaylistEntry& AIMP2Manager::getEntry(TrackDescription desc) const
     }
 
     return entries[track_desc.track_id]; // currently track ID is simple index in entries list.
-}
-
-void AIMP2Manager::notifyAboutInternalEvent(INTERNAL_EVENTS internal_event)
-{
-    switch (internal_event)
-    {
-    case VOLUME_EVENT:
-        notifyAllExternalListeners(EVENT_VOLUME);
-        break;
-    case MUTE_EVENT:
-        notifyAllExternalListeners(EVENT_MUTE);
-        break;
-    case SHUFFLE_EVENT:
-        notifyAllExternalListeners(EVENT_SHUFFLE);
-        break;
-    case REPEAT_EVENT:
-        notifyAllExternalListeners(EVENT_REPEAT);
-        break;
-    case PLAYLISTS_CONTENT_CHANGED_EVENT:
-        notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
-        break;
-    case TRACK_PROGRESS_CHANGED_DIRECTLY_EVENT:
-        notifyAllExternalListeners(EVENT_TRACK_PROGRESS_CHANGED_DIRECTLY);
-        break;
-    default:
-        assert(!"Unknown internal event in "__FUNCTION__);
-        BOOST_LOG_SEV(logger(), info) << "Unknown internal event " << internal_event << " in "__FUNCTION__;
-    }
 }
 
 void WINAPI AIMP2Manager::internalAIMPStateNotifier(DWORD User, DWORD dwCBType)

@@ -117,25 +117,6 @@ private:
     std::auto_ptr<ImageUtils::AIMPCoverImage> getCoverImage(TrackDescription track_desc, int cover_width, int cover_height) const; // throw std::runtime_error, throw std::invalid_argument
 
     /*!
-        Internal AIMPManager events that occured inside member functions call.
-        These are the events that AIMP does not notify about.
-    */
-    enum INTERNAL_EVENTS { VOLUME_EVENT,
-                           MUTE_EVENT,
-                           SHUFFLE_EVENT,
-                           REPEAT_EVENT,
-                           PLAYLISTS_CONTENT_CHANGED_EVENT,
-                           TRACK_PROGRESS_CHANGED_DIRECTLY_EVENT // This event occurs when user himself change track progress bar.
-                                                                 // Normal progress bar change(when track playing) does not generate this event.
-    };
-
-    //! Notify external subscribers about internal events.
-    void notifyAboutInternalEvent(INTERNAL_EVENTS internal_event);
-
-    //! Called from setStatus() and invokes notifyAboutInternalEvent() to notify about status changes which AIMP does not notify us about.
-    void notifyAboutInternalEventOnStatusChange(STATUS status);
-
-    /*!
         Notifies all registered listeners.
         Note: function is invoked from thread linked with strand_ member.
     */
@@ -149,6 +130,8 @@ private:
 
     //! Callback function to notify manager about AIMP player state changes. Called by AIMP from it's thread.
     static void WINAPI internalAIMPStateNotifier(DWORD User, DWORD dwCBType);
+
+    static bool getEventRelatedTo(AIMP2Manager::STATUS status, AIMP2Manager::EVENTS* event);
 
     /*!
         \brief Loads playlist entries from AIMP.
