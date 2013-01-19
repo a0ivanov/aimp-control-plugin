@@ -842,17 +842,17 @@ function updateControlPanel()
     if ( control_panel.mute_mode_on ) {
         mute_icon.removeClass('ui-icon-volume-on');
         mute_icon.addClass('ui-icon-volume-off');
-        mute_button.attr( 'title', getText('control_panel_mute_off') );
+        mute_button.prop( 'title', getText('control_panel_mute_off') );
     } else {
         mute_icon.removeClass('ui-icon-volume-off');
         mute_icon.addClass('ui-icon-volume-on');
-        mute_button.attr( 'title', getText('control_panel_mute_on') );
+        mute_button.prop( 'title', getText('control_panel_mute_on') );
     }
 
     // volume slider
     var volume_slider = $('#volume_slider');
     volume_slider.slider('value', control_panel.volume);
-    volume_slider.attr('title',
+    volume_slider.prop('title',
                getText('control_panel_volume') + ' ' + control_panel.volume + '/100'
     );
 
@@ -862,7 +862,7 @@ function updateControlPanel()
                                         label: getText(control_panel.shuffle_mode_on ? 'control_panel_shuffle_off' : 'control_panel_shuffle_on')
                                     }
     );
-    shuffle_button.attr('checked', control_panel.shuffle_mode_on);
+    shuffle_button.prop('checked', control_panel.shuffle_mode_on);
     shuffle_button.button('refresh');
 
     // repeat button
@@ -871,7 +871,7 @@ function updateControlPanel()
                                         label: getText(control_panel.repeat_mode_on ? 'control_panel_repeat_off' : 'control_panel_repeat_on')
                                     }
     );
-    repeat_button.attr('checked', control_panel.repeat_mode_on);
+    repeat_button.prop('checked', control_panel.repeat_mode_on);
     repeat_button.button('refresh');
     
     // radio capture button
@@ -880,7 +880,7 @@ function updateControlPanel()
                                               label: getText(control_panel.radio_capture_mode_on ? 'control_panel_radio_capture_off' : 'control_panel_radio_capture_on')
                                           }
     );
-    radio_capture_button.attr('checked', control_panel.radio_capture_mode_on);
+    radio_capture_button.prop('checked', control_panel.radio_capture_mode_on);
     radio_capture_button.button('refresh');
 }
 
@@ -993,14 +993,14 @@ function setTrackProgressBarState($track_progress_bar, state) {
                                                       );
         }
     } else {
-        $track_progress_bar.attr('title', '');
+        $track_progress_bar.prop('title', '');
     }
 }
 
 function updateTrackProgressBarHintText($track_progress_bar) {
     var progress_sec = $track_progress_bar.slider('option', 'value');
     var length_sec = $track_progress_bar.slider('option', 'max');
-    $track_progress_bar.attr('title',
+    $track_progress_bar.prop('title',
                              formatTime(progress_sec * 1000) // represent seconds as milliseconds.
                              + '/'
                              + formatTime(length_sec * 1000) // represent seconds as milliseconds.
@@ -1285,7 +1285,7 @@ function localizePage()
     document.title = getText('page_title');
 
     // init settings dialog
-    $('#settings-dialog-form').attr( 'title', getText('settings_dialog_title') );
+    $('#settings-dialog-form').prop( 'title', getText('settings_dialog_title') );
     $('#settings-dialog-tab-playlistview-label').text( getText('settings_dialog_playlist_view_tab_title') );
     $('#settings-dialog-tab-language-label').text( getText('settings_dialog_language_tab_title') );
     $('#settings-dialog-tab-trackinfo-label').text( getText('settings_dialog_trackinfo_tab_title') );
@@ -1302,7 +1302,7 @@ function localizePage()
 function localizeTrackInfoDialog()
 {
     // dialog caption
-    $('#track_info_dialog').attr( 'title', getText('track_info_dialog_caption') );
+    $('#track_info_dialog').prop( 'title', getText('track_info_dialog_caption') );
 
     // field labels
     function setLabelText(track_field)
