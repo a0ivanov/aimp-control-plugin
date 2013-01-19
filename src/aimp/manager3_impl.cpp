@@ -273,6 +273,7 @@ void AIMP3Manager::onStorageAdded(AIMP3SDK::HPLS id)
 {
 
     try {
+        BOOST_LOG_SEV(logger(), debug) << "onStorageAdded: id = " << cast<PlaylistID>(id);
         playlists_[cast<PlaylistID>(id)] = loadPlaylist(id);
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     } catch (std::exception& e) {
@@ -326,7 +327,8 @@ void AIMP3Manager::onStorageChanged(AIMP3SDK::HPLS id, DWORD flags)
     using namespace AIMP3SDK;
 
     try {
-        BOOST_LOG_SEV(logger(), debug) << "onStorageChanged(id = " << id << ", flags = " << flags << ": " << playlistNotifyFlagsToString(flags) << ")...";
+        BOOST_LOG_SEV(logger(), debug) << "onStorageChanged()...: id = " << cast<PlaylistID>(id) << ", flags = " << flags << ": " << playlistNotifyFlagsToString(flags);
+
         Playlist& playlist = playlists_[cast<PlaylistID>(id)];
         bool need_notify_clients = false;
         if (   (AIMP_PLAYLIST_NOTIFY_NAME & flags) != 0 
