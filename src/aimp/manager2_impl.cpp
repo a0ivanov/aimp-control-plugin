@@ -633,7 +633,7 @@ AIMP2SDK_STATUS cast(AIMPManager::STATUS status) // throws std::bad_cast
     case AIMPManager::STATUS_EQ_SLDR18: return AIMP_STS_EQ_SLDR18;
 
     case AIMPManager::STATUS_REPEAT:    return AIMP_STS_REPEAT;
-    case AIMPManager::STATUS_STAY_ON_TOP:   return AIMP_STS_ON_STOP;
+    case AIMPManager::STATUS_STAY_ON_TOP: return AIMP_STS_ON_STOP;
     case AIMPManager::STATUS_POS:       return AIMP_STS_POS;
     case AIMPManager::STATUS_LENGTH:    return AIMP_STS_LENGTH;
     case AIMPManager::STATUS_ACTION_ON_END_OF_PLAYLIST: return AIMP_STS_REPEATPLS;
@@ -641,9 +641,9 @@ AIMP2SDK_STATUS cast(AIMPManager::STATUS status) // throws std::bad_cast
     case AIMPManager::STATUS_KBPS:      return AIMP_STS_KBPS;
     case AIMPManager::STATUS_KHZ:       return AIMP_STS_KHZ;
     case AIMPManager::STATUS_MODE:      return AIMP_STS_MODE;
-    case AIMPManager::STATUS_RADIO:     return AIMP_STS_RADIO;
+    case AIMPManager::STATUS_RADIO_CAPTURE: return AIMP_STS_RADIO;
     case AIMPManager::STATUS_STREAM_TYPE: return AIMP_STS_STREAM_TYPE;
-    case AIMPManager::STATUS_REVERSETIME:     return AIMP_STS_TIMER;
+    case AIMPManager::STATUS_REVERSETIME: return AIMP_STS_TIMER;
     case AIMPManager::STATUS_SHUFFLE:   return AIMP_STS_SHUFFLE;
     case AIMPManager::STATUS_MAIN_HWND: return AIMP_STS_MAIN_HWND;
     case AIMPManager::STATUS_TC_HWND:   return AIMP_STS_TC_HWND;
@@ -705,7 +705,7 @@ AIMP2Manager::STATUS cast(AIMP2SDK_STATUS status) // throws std::bad_cast
     case AIMP_STS_KBPS:      return AIMPManager::STATUS_KBPS;
     case AIMP_STS_KHZ:       return AIMPManager::STATUS_KHZ;
     case AIMP_STS_MODE:      return AIMPManager::STATUS_MODE;
-    case AIMP_STS_RADIO:     return AIMPManager::STATUS_RADIO;
+    case AIMP_STS_RADIO:     return AIMPManager::STATUS_RADIO_CAPTURE;
     case AIMP_STS_STREAM_TYPE: return AIMPManager::STATUS_STREAM_TYPE;
     case AIMP_STS_TIMER:     return AIMPManager::STATUS_REVERSETIME;
     case AIMP_STS_SHUFFLE:   return AIMPManager::STATUS_SHUFFLE;

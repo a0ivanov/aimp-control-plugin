@@ -62,7 +62,7 @@ public:
         STATUS_KBPS, // bitrate in kilobits/seconds.
         STATUS_KHZ, // sampling in Hertz, ex.: 44100.
         STATUS_MODE,
-        STATUS_RADIO,
+        STATUS_RADIO_CAPTURE, // [0,1] off/on.
         STATUS_STREAM_TYPE,
         STATUS_REVERSETIME, // [0,1] off/on.
         STATUS_SHUFFLE, // [0,1] off/on.
@@ -72,8 +72,7 @@ public:
         STATUS_PL_HWND,
         STATUS_EQ_HWND,
         STATUS_TRAY, // [0,1] false/true.
-// supported since AIMP SDK 3
-        STATUS_RADIO_CAPTURE, // [0,1] off/on.
+
         STATUS_LAST // not a status.
     };
 

@@ -1012,15 +1012,6 @@ void AIMP3Manager::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValu
         break;
     }
     //STATUS_MODE,
-    case STATUS_RADIO: {
-        msg = AIMP_MSG_PROPERTY_RADIOCAP;
-        BOOL value = status_value;
-        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
-        if (S_OK == r) {
-            return;
-        }
-        break;
-    }
     //STATUS_STREAM_TYPE,
     case STATUS_REVERSETIME:
     case STATUS_SHUFFLE:
@@ -1271,15 +1262,6 @@ AIMP3Manager::StatusValue AIMP3Manager::getStatus(AIMP3Manager::STATUS status) c
         return status == STATUS_KBPS ? entry.bitrate() : entry.sampleRate();
         }
         break;
-    case STATUS_RADIO: {
-        msg = AIMP_MSG_PROPERTY_RADIOCAP;
-        BOOL value;
-        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
-        if (S_OK == r) {
-            return patchBool(value);
-        }
-        break;
-    }
     //STATUS_STREAM_TYPE,
     case STATUS_REVERSETIME:
     case STATUS_SHUFFLE:

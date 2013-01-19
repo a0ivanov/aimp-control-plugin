@@ -48,7 +48,7 @@ inline const char* asString(AIMPManager::STATUS status)
     case AIMPManager::STATUS_KBPS:      return "KBPS";
     case AIMPManager::STATUS_KHZ:       return "KHZ";
     case AIMPManager::STATUS_MODE:      return "MODE";
-    case AIMPManager::STATUS_RADIO:     return "RADIO";
+    case AIMPManager::STATUS_RADIO_CAPTURE: return "RADIO_CAPTURE";
     case AIMPManager::STATUS_STREAM_TYPE: return "STREAM_TYPE";
     case AIMPManager::STATUS_REVERSETIME: return "REVERSETIME";
     case AIMPManager::STATUS_SHUFFLE:   return "SHUFFLE";
@@ -58,7 +58,6 @@ inline const char* asString(AIMPManager::STATUS status)
     case AIMPManager::STATUS_PL_HWND:   return "PL_HWND";
     case AIMPManager::STATUS_EQ_HWND:   return "EQ_HWND";
     case AIMPManager::STATUS_TRAY:      return "TRAY";
-    case AIMPManager::STATUS_RADIO_CAPTURE: return "RADIO_CAPTURE";
     default:
         break;
     }

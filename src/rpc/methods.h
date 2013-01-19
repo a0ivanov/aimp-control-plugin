@@ -248,12 +248,10 @@ public:
       - KBPS        = 35,  bitrate in kilobits/seconds.
       - KHZ         = 36,  sampling in Hertz, ex.: 44100
       - MODE        = 37,  don't understand
-      - RADIO       = 38,
+      - RADIO_CAPTURE = 38, [0,1] off/on
       - STREAM_TYPE = 39,  0 mp3, 1 ?, 2 internet radio
       - TIMER       = 40,
       - SHUFFLE     = 41,   [0,1] off/on
-// following supported since AIMP SDK 3:
-      - STATUS_RADIO_CAPTURE = 48  [0,1] off/on
     \param value - int, optional: new status value. Value range depends on status ID. If value is not specified, function returns current status.
     \return object which describes current status value. Range and meaning of value depends on status. See AIMP2 SDK for details. On AIMP3 all values are mapped to AIMP2 ranges.
             Example:\code{ "value" : 0 }\endcode
