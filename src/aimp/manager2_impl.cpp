@@ -811,11 +811,6 @@ bool AIMP2Manager::getEventRelatedTo(AIMP2Manager::STATUS status, AIMP2Manager::
         *event = EVENT_RADIO_CAPTURE;
         break;
     default:
-        if (STATUS_EQ_STS == status || (STATUS_EQ_SLDR01 <= status && status <= STATUS_EQ_SLDR18)) {
-            *event = EVENT_EQ_CHANGED;
-            break;
-        }
-
         return false;
     }
 
