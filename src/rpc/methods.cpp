@@ -668,7 +668,7 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
 
     sqlite3* playlists_db = getPlaylistsDB(aimp_manager_);
 
-    const int playlist_id = params["playlist_id"];
+    const int playlist_id = aimp_manager_.getAbsolutePlaylistID(params["playlist_id"]);
 
     query_arg_setters_.clear();
 
