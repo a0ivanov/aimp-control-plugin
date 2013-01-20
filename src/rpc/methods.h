@@ -25,38 +25,33 @@ namespace MultiUserMode { class MultiUserModeManager; }
 
 namespace Rpc { class DelayedResponseSender; }
 
-// contains RPC methods definitions.
+/*! contains RPC methods definitions.
+
+    #ERROR_CODES /internal This must be mentioned to proper generation links to values of this enum /endinternal
+*/
 namespace AimpRpcMethods
 {
 
 /*!
-    \page pg_common_errors Common errors
-    
-    Rpc::Value's and request parsing errors:
-        - REQUEST_PARSING_ERROR  = 1
-        - METHOD_NOT_FOUND_ERROR = 2
-        - TYPE_ERROR             = 3
-        - INDEX_RANGE_ERROR      = 4
-        - OBJECT_ACCESS_ERROR    = 5
-        - VALUE_RANGE_ERROR      = 6
-        - INTERNAL_ERROR         = 7
-*/
-
-/*! 
-    \brief Error codes which RPC functions return.    
+    \brief Error codes which RPC functions return.
     \internal Use codes in range [11-1000] for RPC methods errors. Rpc server uses range [1-10] for its errors. \endinternal
 */
-enum ERROR_CODES { WRONG_ARGUMENT = 11, /*!< returned when arguments passed in function can't be processed. Reasons: missing required arg, wrong type. */
-                   PLAYBACK_FAILED, /*!< returned when AIMP can't start playback of requested track. */
-                   SHUFFLE_MODE_SET_FAILED, REPEAT_MODE_SET_FAILED,
-                   VOLUME_OUT_OF_RANGE, VOLUME_SET_FAILED, MUTE_SET_FAILED,
-                   ENQUEUE_TRACK_FAILED, DEQUEUE_TRACK_FAILED,
-                   PLAYLIST_NOT_FOUND,
-                   TRACK_NOT_FOUND,
-                   ALBUM_COVER_LOAD_FAILED,
-                   RATING_SET_FAILED,
-                   STATUS_SET_FAILED,
-                   RADIO_CAPTURE_MODE_SET_FAILED
+enum ERROR_CODES { 
+                   WRONG_ARGUMENT = 11, /*!< arguments passed in function can't be processed. Reasons: missing required arg, wrong type. */
+                   PLAYBACK_FAILED = 12, /*!< can't start playback of requested track. */ 
+                   SHUFFLE_MODE_SET_FAILED = 13, 
+                   REPEAT_MODE_SET_FAILED = 14,
+                   VOLUME_OUT_OF_RANGE = 15,
+                   VOLUME_SET_FAILED = 16, 
+                   MUTE_SET_FAILED = 17,
+                   ENQUEUE_TRACK_FAILED = 18,
+                   DEQUEUE_TRACK_FAILED = 19,
+                   PLAYLIST_NOT_FOUND = 20,
+                   TRACK_NOT_FOUND = 21,
+                   ALBUM_COVER_LOAD_FAILED = 22,
+                   RATING_SET_FAILED = 23,
+                   STATUS_SET_FAILED = 24,
+                   RADIO_CAPTURE_MODE_SET_FAILED = 25
 };
 
 using namespace AIMPPlayer;
@@ -94,22 +89,24 @@ private:
 
 /*! 
     \brief Starts playback.
-    \param track_id - int
-    \param playlist_id - int
+    \param track_id - int. Special ID is -1 which means currently playing track.
+    \param playlist_id - int. Special ID is -1 which means currently playing playlist.
     \remark If no params is specified, starts playback of current track in current playlist.
     \return object which describes:
                 - success: current track.
-                  Example:
-\code
-{ "track_id" : 0, "playlist_id" : 2136855104 }
-\endcode
-                - failure: object which describes error. Can return error ::PLAYBACK_FAILED in addtion to \ref pg_common_errors.
-                  Example:
-\code
-{"error":{"code":12,
-          "message":"Playback specified track failed. Track does not exist or track's source is not available."}
-}
-\endcode
+                  
+                  Example: \code
+                    { "track_id" : 0, "playlist_id" : 2136855104 }
+                    \endcode
+                - failure: object which describes error: {code, message}<BR>
+                    Error codes in addition to \link #Rpc::ERROR_CODES Common errors\endlink:
+                        - ::PLAYBACK_FAILED
+                  
+                    Example: \code
+                    {"error":{"code":12,
+                              "message":"Playback specified track failed. Track does not exist or track's source is not available."}
+                    }
+                    \endcode
 */
 class Play : public AIMPRPCMethod
 {
@@ -859,10 +856,17 @@ public:
                 - 'current_track_change' - current track change event (player switched track)
                 Response example:\code{"playlist_id":2136855104,"track_id":84}\endcode
                 - 'control_panel_state_change' - one of following aspects is changed:
-                        playback state, mute, shuffle, repeat, volume level.
-                - 'playlists_content_change' - change of: playlist's content, playlist count.
+                    - playback state
+                    - mute
+                    - shuffle
+                    - repeat
+                    - volume level
+                    - radio capture
+                - 'playlists_content_change' - change of: 
+                    - playlist's content
+                    - playlist count
                 Response will be the same as GetPlayerControlPanelState function.
-                Response example:\code{"mute_mode_on":false,"playback_state":"playing","playlist_id":2136855104,"repeat_mode_on":false,"shuffle_mode_on":true,"track_id":13,"track_length":174,"track_position":0,"volume":49}\endcode
+                Response example:\code{"current_track_source_radio":true,"mute_mode_on":false,"playback_state":"playing","playlist_id":93533808,"radio_capture_mode_on":false,"repeat_mode_on":false,"shuffle_mode_on":false,"track_id":2,"volume":30}\endcode
 */
 class SubscribeOnAIMPStateUpdateEvent : public AIMPRPCMethod
 {
@@ -959,14 +963,14 @@ private:
 /*!
     \brief Set track rating.
 
-    On AIMP3: full functional.
+    On AIMP3: fully functional.<BR>
     On AIMP2: 
         Current implementation just saves path to track and rating in text file since AIMP SDK does not support rating change now.
         No checks are performed(ex. rating already exists for file and etc.) since it is temporarily stub.
 
     \param track_id - int
     \param playlist_id - int
-    \param rating - int. Range [0-5], zero meant rating is not set.
+    \param rating - int. Range [0-5], zero means rating is not set.
 */
 class SetTrackRating : public AIMPRPCMethod
 {
