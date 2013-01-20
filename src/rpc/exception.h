@@ -6,7 +6,7 @@
 #include <string>
 
 /*! 
-    #ERROR_CODES /internal This must be mentioned to proper generation links to values of this enum /endinternal
+    #ERROR_CODES \internal This must be mentioned to proper generation links to values of this enum \endinternal
 */
 namespace Rpc
 {
