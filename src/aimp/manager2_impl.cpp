@@ -817,18 +817,27 @@ bool AIMP2Manager::getEventRelatedTo(AIMP2Manager::STATUS status, AIMP2Manager::
     return true;
 }
 
+AIMP2Manager::StatusValue convertValue(AIMP2Manager::STATUS status, const AIMP2Manager::StatusValue value)
+{
+    AIMP2Manager::StatusValue new_value = value;
+    // convert some values
+    switch (status) {
+    case AIMP2Manager::STATUS_REPEAT_SINGLE_FILE_PLAYLISTS:
+        new_value = !value;
+    default:
+        break; 
+    }
+    return new_value;
+}
+
 void AIMP2Manager::setStatus(AIMP2Manager::STATUS status, AIMP2Manager::StatusValue value)
 {
     try {
-        // convert some values
-        switch (status) {
-        case STATUS_REPEAT_SINGLE_FILE_PLAYLISTS:
-            value = !value;
-        default:
-            break;
-        }
-
-        if ( FALSE == aimp2_controller_->AIMP_Status_Set(cast<AIMP2SDK_STATUS>(status), value) ) {
+        if ( FALSE == aimp2_controller_->AIMP_Status_Set(cast<AIMP2SDK_STATUS>(status), 
+                                                         convertValue(status, value) 
+                                                         ) 
+           )
+        {
             throw std::runtime_error(MakeString() << "Error occured while setting status " << asString(status) << " to value " << value);
         }
     } catch (std::bad_cast& e) {
@@ -843,15 +852,9 @@ void AIMP2Manager::setStatus(AIMP2Manager::STATUS status, AIMP2Manager::StatusVa
 
 AIMP2Manager::StatusValue AIMP2Manager::getStatus(AIMP2Manager::STATUS status) const
 {
-    AIMP2Manager::StatusValue value = aimp2_controller_->AIMP_Status_Get(status);
-    
-    // convert some values
-    switch (status) {
-    case STATUS_REPEAT_SINGLE_FILE_PLAYLISTS:
-        value = !value;
-    default:
-        break;
-    }
+    AIMP2Manager::StatusValue value = convertValue(status, 
+                                                   aimp2_controller_->AIMP_Status_Get(status) 
+                                                   );
     return value;
 }
 
