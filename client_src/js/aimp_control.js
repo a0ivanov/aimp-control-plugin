@@ -875,13 +875,27 @@ function updateControlPanel()
     repeat_button.button('refresh');
     
     // radio capture button
-    var radio_capture_button = $('#radio_capture');
-    radio_capture_button.button('option', {
-                                              label: getText(control_panel.radio_capture_mode_on ? 'control_panel_radio_capture_off' : 'control_panel_radio_capture_on')
-                                          }
-    );
-    radio_capture_button.prop('checked', control_panel.radio_capture_mode_on);
-    radio_capture_button.button('refresh');
+    var radio_capture_button = $('#radio_capture'); 
+    var disable_radio_capture_button = !control_panel.hasOwnProperty('current_track_source_radio') || !control_panel.current_track_source_radio;
+    
+    if (disable_radio_capture_button) {
+        radio_capture_button.button('option', {
+                                                  label: getText('control_panel_radio_capture_on')
+                                              }
+        );
+        radio_capture_button.prop('checked', false);
+        radio_capture_button.button('disable');
+    } else {
+        radio_capture_button.button('enable');
+        
+        radio_capture_button.button('option', {
+                                                  label: getText(control_panel.radio_capture_mode_on ? 'control_panel_radio_capture_off' : 'control_panel_radio_capture_on')
+                                              }
+        );
+        radio_capture_button.prop('checked', control_panel.radio_capture_mode_on);
+    }
+    radio_capture_button.button('refresh');   
+
 }
 
 /*
