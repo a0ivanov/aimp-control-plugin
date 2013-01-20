@@ -39,19 +39,19 @@ namespace AimpRpcMethods
 enum ERROR_CODES { 
                    WRONG_ARGUMENT = 11, /*!< arguments passed in function can't be processed. Reasons: missing required arg, wrong type. */
                    PLAYBACK_FAILED = 12, /*!< can't start playback of requested track. */ 
-                   SHUFFLE_MODE_SET_FAILED = 13, 
-                   REPEAT_MODE_SET_FAILED = 14,
-                   VOLUME_OUT_OF_RANGE = 15,
-                   VOLUME_SET_FAILED = 16, 
-                   MUTE_SET_FAILED = 17,
-                   ENQUEUE_TRACK_FAILED = 18,
-                   DEQUEUE_TRACK_FAILED = 19,
-                   PLAYLIST_NOT_FOUND = 20,
-                   TRACK_NOT_FOUND = 21,
-                   ALBUM_COVER_LOAD_FAILED = 22,
-                   RATING_SET_FAILED = 23,
-                   STATUS_SET_FAILED = 24,
-                   RADIO_CAPTURE_MODE_SET_FAILED = 25
+                   SHUFFLE_MODE_SET_FAILED = 13, /*!< can't update shuffle mode. */
+                   REPEAT_MODE_SET_FAILED = 14, /*!< can't update repeat mode. */
+                   VOLUME_OUT_OF_RANGE = 15, /*!< volume level value is out of range [0, 100]. */
+                   VOLUME_SET_FAILED = 16, /*!< can't update volume level. */
+                   MUTE_SET_FAILED = 17, /*!< can't update mute mode. */
+                   ENQUEUE_TRACK_FAILED = 18, /*!< can't add track to queue. */
+                   DEQUEUE_TRACK_FAILED = 19, /*!< can't remove track from queue. */
+                   PLAYLIST_NOT_FOUND = 20, /*!< specified playlist does not exist. */
+                   TRACK_NOT_FOUND = 21, /*!< specified track does not exist. */
+                   ALBUM_COVER_LOAD_FAILED = 22, /*!< can't get album cover. Possible reason: FreeImage.dll or FreeImagePlus.dll is not available for load by AIMP player. */
+                   RATING_SET_FAILED = 23, /*!< can't set rating. */
+                   STATUS_SET_FAILED = 24, /*!< can't set status. */
+                   RADIO_CAPTURE_MODE_SET_FAILED = 25 /*!< can't update radio capture mode. Possible reason: currenly playing track source is not radio, but usual file. */
 };
 
 using namespace AIMPPlayer;
