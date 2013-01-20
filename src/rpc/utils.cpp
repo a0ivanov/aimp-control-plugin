@@ -99,6 +99,14 @@ void setCurrentRadioCaptureMode(bool value, Rpc::Value& result)
     result["radio_capture_mode_on"] = value;
 }
 
+void setIsCurrentTrackSourceRadioIfPossible(const AIMPManager& aimp_manager, Rpc::Value& result)
+{
+    if (aimp_manager.getPlaybackState() != AIMPManager::STOPPED) {
+        TrackDescription playing_track = aimp_manager.getPlayingTrack();
+        result["current_track_source_radio"] = aimp_manager.getTrackSourceType(playing_track) == AIMPManager::SOURCE_TYPE_RADIO;
+    }
+}
+
 void setCurrentPlayingSourceInfo(const AIMPManager& aimp_manager, Rpc::Value& result)
 {
     setCurrentPlaylist(aimp_manager.getPlayingPlaylist(), result);
@@ -115,6 +123,7 @@ void setControlPanelInfo(const AIMPManager& aimp_manager, Rpc::Value& result)
     setCurrentRepeatMode      (aimp_manager.getStatus(AIMPManager::STATUS_REPEAT) != 0,        result);
     setCurrentShuffleMode     (aimp_manager.getStatus(AIMPManager::STATUS_SHUFFLE) != 0,       result);
     setCurrentRadioCaptureMode(aimp_manager.getStatus(AIMPManager::STATUS_RADIO_CAPTURE) != 0, result);
+    setIsCurrentTrackSourceRadioIfPossible(aimp_manager, result);
 }
 
 void setPlaylistsContentChangeInfo(const AIMPPlayer::AIMPManager& /*aimp_manager*/, Rpc::Value& result)

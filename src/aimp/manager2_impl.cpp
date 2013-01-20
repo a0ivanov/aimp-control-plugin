@@ -937,7 +937,13 @@ TrackDescription AIMP2Manager::getPlayingTrack() const
     return TrackDescription( getPlayingPlaylist(), getPlayingEntry() );
 }
 
-AIMP2Manager::PLAYBACK_STATE AIMP2Manager::getPlaybackState() const
+AIMPManager::PLAYLIST_ENTRY_SOURCE_TYPE AIMP2Manager::getTrackSourceType(TrackDescription track_desc) const // throws std::runtime_error
+{
+    const PlaylistEntry& entry = getEntry(track_desc);
+    return entry.duration() == 0 ? SOURCE_TYPE_RADIO : SOURCE_TYPE_FILE; // very shallow determination. Duration can be 0 on usual track if AIMP has no loaded track info yet.
+}
+
+AIMPManager::PLAYBACK_STATE AIMP2Manager::getPlaybackState() const
 {
     PLAYBACK_STATE state = STOPPED;
     StatusValue internal_state = getStatus(STATUS_Player);

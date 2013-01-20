@@ -99,6 +99,11 @@ public:
         EVENTS_COUNT // not an event
     };
 
+    enum PLAYLIST_ENTRY_SOURCE_TYPE {
+        SOURCE_TYPE_FILE,
+        SOURCE_TYPE_RADIO
+    };
+
     typedef boost::function<void (EVENTS)> EventsListener;
     typedef std::size_t EventsListenerID;
 
@@ -195,6 +200,11 @@ public:
     */
     virtual TrackDescription getAbsoluteTrackDesc(TrackDescription track_desc) const = 0;  // throws std::runtime_error
     
+    /*
+        \return source type of the specified track.
+    */
+    virtual PLAYLIST_ENTRY_SOURCE_TYPE getTrackSourceType(TrackDescription track_desc) const = 0; // throws std::runtime_error
+
     //! \return ID of playback state.
     virtual PLAYBACK_STATE getPlaybackState() const = 0;
 

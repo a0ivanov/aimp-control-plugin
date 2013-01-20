@@ -70,6 +70,8 @@ public:
 
     virtual TrackDescription getAbsoluteTrackDesc(TrackDescription track_desc) const;  // throws std::runtime_error
 
+    virtual PLAYLIST_ENTRY_SOURCE_TYPE getTrackSourceType(TrackDescription track_desc) const; // throws std::runtime_error
+
     virtual PLAYBACK_STATE getPlaybackState() const;
 
     virtual const PlaylistsListType& getPlayLists() const;
