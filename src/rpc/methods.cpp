@@ -73,26 +73,6 @@ ResponseType Play::execute(const Rpc::Value& root_request, Rpc::Value& root_resp
     return RESPONSE_IMMEDIATE;
 }
 
-ResponseType GetFormattedEntryTitle::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
-{
-    const Rpc::Value& params = root_request["params"];
-    if (params.type() == Rpc::Value::TYPE_OBJECT && params.size() != 3) {
-        throw Rpc::Exception("Wrong arguments count. Wait 3 arguments: int track_id, int playlist_id, string format_string", WRONG_ARGUMENT);
-    }
-
-    const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
-    try {
-        using namespace StringEncoding;
-        root_response["result"]["formatted_string"] = utf16_to_utf8( aimp_manager_.getFormattedEntryTitle(track_desc, params["format_string"]) );
-    } catch(std::runtime_error&) {
-        throw Rpc::Exception("Specified track does not exist.", TRACK_NOT_FOUND);
-    } catch (std::invalid_argument&) {
-        throw Rpc::Exception("Wrong specified format string", WRONG_ARGUMENT);
-    }
-
-    return RESPONSE_IMMEDIATE;
-}
-
 ResponseType Pause::execute(const Rpc::Value& /*root_request*/, Rpc::Value& root_response)
 {
     aimp_manager_.pausePlayback();
@@ -254,6 +234,26 @@ ResponseType RadioCaptureMode::execute(const Rpc::Value& root_request, Rpc::Valu
 
     // return current mode.
     RpcResultUtils::setCurrentRadioCaptureMode(aimp_manager_.getStatus(AIMPManager::STATUS_RADIO_CAPTURE) != 0, root_response["result"]);
+    return RESPONSE_IMMEDIATE;
+}
+
+ResponseType GetFormattedEntryTitle::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+{
+    const Rpc::Value& params = root_request["params"];
+    if (params.type() == Rpc::Value::TYPE_OBJECT && params.size() != 3) {
+        throw Rpc::Exception("Wrong arguments count. Wait 3 arguments: int track_id, int playlist_id, string format_string", WRONG_ARGUMENT);
+    }
+
+    const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
+    try {
+        using namespace StringEncoding;
+        root_response["result"]["formatted_string"] = utf16_to_utf8( aimp_manager_.getFormattedEntryTitle(track_desc, params["format_string"]) );
+    } catch(std::runtime_error&) {
+        throw Rpc::Exception("Specified track does not exist.", TRACK_NOT_FOUND);
+    } catch (std::invalid_argument&) {
+        throw Rpc::Exception("Wrong specified format string", WRONG_ARGUMENT);
+    }
+
     return RESPONSE_IMMEDIATE;
 }
 
