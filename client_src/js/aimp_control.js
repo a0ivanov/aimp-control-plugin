@@ -709,6 +709,11 @@ function loadPlaylists()
     );
 }
 
+function disableRadioCaptureButton()
+{
+    return !control_panel_state.hasOwnProperty('current_track_source_radio') || !control_panel_state.current_track_source_radio;
+}
+
 /* Init control panel controls */
 function initControlPanel()
 {
@@ -776,7 +781,7 @@ function initControlPanel()
         icons: { primary: 'ui-icon-signal-diag' }
     }).click(
         function() {
-            var disable_radio_capture_button = !control_panel_state.hasOwnProperty('current_track_source_radio') || !control_panel_state.current_track_source_radio;
+            var disable_radio_capture_button = disableRadioCaptureButton();
             if (!disable_radio_capture_button) {
                 aimp_manager.radioCapture({ radio_capture_on : !control_panel_state.radio_capture_mode_on },
                                           { on_exception : on_control_panel_command }
@@ -784,7 +789,14 @@ function initControlPanel()
             }
             return !disable_radio_capture_button; // return false to prevent default reaction.
         }
-    );
+    );    
+    $('label[for="radio_capture"]').hover(
+        function() {
+            if (disableRadioCaptureButton()) {
+                $(this).removeClass('ui-state-hover'); // prevent hover effect
+            }
+        }
+    );    
     
     $('#show_settings_form').button({
         text: false,
@@ -882,7 +894,7 @@ function updateControlPanel()
     
     // radio capture button
     var radio_capture_button = $('#radio_capture'); 
-    var disable_radio_capture_button = !control_panel_state.hasOwnProperty('current_track_source_radio') || !control_panel_state.current_track_source_radio;        
+    var disable_radio_capture_button = disableRadioCaptureButton();        
     radio_capture_button.button('option', {
                                               label: getText(!disable_radio_capture_button && control_panel_state.radio_capture_mode_on 
                                                                     ? 'control_panel_radio_capture_off'
