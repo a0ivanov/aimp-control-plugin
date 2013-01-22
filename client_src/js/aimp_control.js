@@ -774,10 +774,6 @@ function initControlPanel()
     $('#radio_capture').button({
         text: false,
         icons: { primary: 'ui-icon-signal-diag' }
-    }).click(function() {
-        aimp_manager.radioCapture({ radio_capture_on : !control_panel_state.radio_capture_mode_on },
-                                  { on_exception : on_control_panel_command }
-        ); // activate/deactivate radio capture mode.
     });
     
     $('#show_settings_form').button({
@@ -877,25 +873,31 @@ function updateControlPanel()
     // radio capture button
     var radio_capture_button = $('#radio_capture'); 
     var disable_radio_capture_button = !control_panel.hasOwnProperty('current_track_source_radio') || !control_panel.current_track_source_radio;
-    
+        
     if (disable_radio_capture_button) {
+        radio_capture_button.button('widget').click(function() {
+            return false;
+        });
+
         radio_capture_button.button('option', {
                                                   label: getText('control_panel_radio_capture_on')
                                               }
         );
         radio_capture_button.prop('checked', false);
-        radio_capture_button.button('disable');
     } else {
-        radio_capture_button.button('enable');
-        
+        radio_capture_button.button('widget').click(function() {
+                                                                aimp_manager.radioCapture({ radio_capture_on : !control_panel_state.radio_capture_mode_on },
+                                                                                          { on_exception : on_control_panel_command }
+                                                                ); // activate/deactivate radio capture mode.
+        });
+
         radio_capture_button.button('option', {
                                                   label: getText(control_panel.radio_capture_mode_on ? 'control_panel_radio_capture_off' : 'control_panel_radio_capture_on')
                                               }
         );
         radio_capture_button.prop('checked', control_panel.radio_capture_mode_on);
     }
-    radio_capture_button.button('refresh');   
-
+    radio_capture_button.button('refresh');      
 }
 
 /*
