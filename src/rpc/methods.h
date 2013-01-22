@@ -37,8 +37,8 @@ namespace AimpRpcMethods
     \internal Use codes in range [11-1000] for RPC methods errors. Rpc server uses range [1-10] for its errors. \endinternal
 */
 enum ERROR_CODES { 
-                   WRONG_ARGUMENT = 11, /*!< arguments passed in function can't be processed. Reasons: missing required arg, wrong type. */
-                   PLAYBACK_FAILED = 12, /*!< can't start playback of requested track. */ 
+                   WRONG_ARGUMENT = 11, /*!< arguments passed in function can't be processed. Reasons: missing required arg, wrong type & etc. */
+                   PLAYBACK_FAILED = 12, /*!< Track does not exist or track source is not available. */ 
                    SHUFFLE_MODE_SET_FAILED = 13, /*!< can't update shuffle mode. */
                    REPEAT_MODE_SET_FAILED = 14, /*!< can't update repeat mode. */
                    VOLUME_OUT_OF_RANGE = 15, /*!< volume level value is out of range [0, 100]. */
@@ -93,20 +93,13 @@ private:
     \param playlist_id - int. Special ID is -1 which means currently playing playlist.
     \remark If no params is specified, starts playback of current track in current playlist.
     \return object which describes:
-                - success: current track.
-                  
-                  Example: \code
-                    { "track_id" : 0, "playlist_id" : 2136855104 }
-                    \endcode
-                - failure: object which describes error: {code, message}<BR>
-                    Error codes in addition to \link #Rpc::ERROR_CODES Common errors\endlink:
-                        - ::PLAYBACK_FAILED
-                  
-                    Example: \code
-                    {"error":{"code":12,
-                              "message":"Playback specified track failed. Track does not exist or track's source is not available."}
-                    }
-                    \endcode
+        - success:<BR>
+            Example: \code "result":{"playback_state":"playing","playlist_id":37036512,"track_id":0} \endcode
+        - failure: object which describes error: {code, message}<BR>
+            Error codes in addition to \link #Rpc::ERROR_CODES Common errors\endlink:
+                - ::PLAYBACK_FAILED
+
+            Example: \code {"error":{"code":12,"message":"Playback specified track failed. Track does not exist or track's source is not available."}} \endcode
 */
 class Play : public AIMPRPCMethod
 {

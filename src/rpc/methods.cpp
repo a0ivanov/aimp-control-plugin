@@ -67,7 +67,9 @@ ResponseType Play::execute(const Rpc::Value& root_request, Rpc::Value& root_resp
         }
     }
 
-    RpcResultUtils::setCurrentPlayingSourceInfo(aimp_manager_, root_response["result"]); // return current playlist and track.
+    Rpc::Value& result = root_response["result"];
+    RpcResultUtils::setCurrentPlaybackState(aimp_manager_.getPlaybackState(), result);
+    RpcResultUtils::setCurrentPlayingSourceInfo(aimp_manager_, result);
     return RESPONSE_IMMEDIATE;
 }
 
