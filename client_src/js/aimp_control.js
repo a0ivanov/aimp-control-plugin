@@ -886,9 +886,9 @@ function updateControlPanel()
     var disable_radio_capture_button = disableRadioCaptureButton();
     radio_capture_button.button(disable_radio_capture_button ? 'disable' : 'enable');
     radio_capture_button.button('option', {
-                                              label: getText(!disable_radio_capture_button && control_panel_state.radio_capture_mode_on 
-                                                                    ? 'control_panel_radio_capture_off'
-                                                                    : 'control_panel_radio_capture_on'
+                                              label: getText(disable_radio_capture_button ? 'control_panel_radio_capture_disabled' :
+                                                                                            control_panel_state.radio_capture_mode_on ? 'control_panel_radio_capture_off'
+                                                                                                                                      : 'control_panel_radio_capture_on'
                                                              )
                                           }
     );
