@@ -776,45 +776,17 @@ function initControlPanel()
         ); // activate/deactivate repeat playback mode.
     });
     
-    
-    var radio_capture = $('#radio_capture');
-    radio_capture.button({
+     $('#radio_capture').button({
         text: false,
         icons: { primary: 'ui-icon-signal-diag' }
     }).click(
         function(event) {
-            var disable_radio_capture_button = disableRadioCaptureButton();
-            if (!disable_radio_capture_button) {
-                aimp_manager.radioCapture({ radio_capture_on : !control_panel_state.radio_capture_mode_on },
-                                          { on_exception : on_control_panel_command }
-                ); // activate/deactivate radio capture mode.                
-            } else {
-                event.preventDefault();
-		event.stopImmediatePropagation();
-            }
-            return !disable_radio_capture_button; // return false to prevent default reaction.
+            aimp_manager.radioCapture({ radio_capture_on : !control_panel_state.radio_capture_mode_on },
+                                      { on_exception : on_control_panel_command }
+            ); // activate/deactivate radio capture mode.                
         }
     );
     
-    radio_capture.button('widget').on('mouseenter',
-        function( event ) {
-            if (disableRadioCaptureButton()) {
-                $( event.currentTarget ).removeClass( "ui-state-hover" );
-            } else {
-                $( event.currentTarget ).addClass( "ui-state-hover" );
-            }
-        }
-    );
-    radio_capture.on('focus',
-        function( event ) {
-            if (disableRadioCaptureButton()) {
-                $('#radio_capture').button('widget').removeClass( "ui-state-focus" );
-            } else {
-                $('#radio_capture').button('widget').addClass( "ui-state-focus" );  
-            }
-        }
-    ); // use internals of jqueryui button: prevent focus on mouseup.
-     
     $('#show_settings_form').button({
         text: false,
         icons: { primary: 'ui-icon-wrench' },
@@ -910,8 +882,9 @@ function updateControlPanel()
     repeat_button.button('refresh');
     
     // radio capture button
-    var radio_capture_button = $('#radio_capture'); 
-    var disable_radio_capture_button = disableRadioCaptureButton();        
+    var radio_capture_button = $('#radio_capture');
+    var disable_radio_capture_button = disableRadioCaptureButton();
+    radio_capture_button.button(disable_radio_capture_button ? 'disable' : 'enable');
     radio_capture_button.button('option', {
                                               label: getText(!disable_radio_capture_button && control_panel_state.radio_capture_mode_on 
                                                                     ? 'control_panel_radio_capture_off'
@@ -919,7 +892,10 @@ function updateControlPanel()
                                                              )
                                           }
     );
-    radio_capture_button.prop('checked', !disable_radio_capture_button && control_panel_state.radio_capture_mode_on);    
+    radio_capture_button.prop('checked', !disable_radio_capture_button && control_panel_state.radio_capture_mode_on);
+    if (disable_radio_capture_button) {
+        radio_capture_button.button('widget').removeClass('ui-state-disabled');
+    }
     radio_capture_button.button('refresh');
 }
 
