@@ -776,28 +776,45 @@ function initControlPanel()
         ); // activate/deactivate repeat playback mode.
     });
     
-    $('#radio_capture').button({
+    
+    var radio_capture = $('#radio_capture');
+    radio_capture.button({
         text: false,
         icons: { primary: 'ui-icon-signal-diag' }
     }).click(
-        function() {
+        function(event) {
             var disable_radio_capture_button = disableRadioCaptureButton();
             if (!disable_radio_capture_button) {
                 aimp_manager.radioCapture({ radio_capture_on : !control_panel_state.radio_capture_mode_on },
                                           { on_exception : on_control_panel_command }
                 ); // activate/deactivate radio capture mode.                
+            } else {
+                event.preventDefault();
+		event.stopImmediatePropagation();
             }
             return !disable_radio_capture_button; // return false to prevent default reaction.
         }
-    );    
-    $('label[for="radio_capture"]').hover(
-        function() {
+    );
+    
+    radio_capture.button('widget').on('mouseenter',
+        function( event ) {
             if (disableRadioCaptureButton()) {
-                $(this).removeClass('ui-state-hover'); // prevent hover effect
+                $( event.currentTarget ).removeClass( "ui-state-hover" );
+            } else {
+                $( event.currentTarget ).addClass( "ui-state-hover" );
             }
         }
-    );    
-    
+    );
+    radio_capture.on('focus',
+        function( event ) {
+            if (disableRadioCaptureButton()) {
+                $('#radio_capture').button('widget').removeClass( "ui-state-focus" );
+            } else {
+                $('#radio_capture').button('widget').addClass( "ui-state-focus" );  
+            }
+        }
+    ); // use internals of jqueryui button: prevent focus on mouseup.
+     
     $('#show_settings_form').button({
         text: false,
         icons: { primary: 'ui-icon-wrench' },
@@ -902,8 +919,8 @@ function updateControlPanel()
                                                              )
                                           }
     );
-    radio_capture_button.prop('checked', !disable_radio_capture_button && control_panel_state.radio_capture_mode_on);
-    radio_capture_button.button('refresh');      
+    radio_capture_button.prop('checked', !disable_radio_capture_button && control_panel_state.radio_capture_mode_on);    
+    radio_capture_button.button('refresh');
 }
 
 /*
