@@ -133,7 +133,7 @@ inline void AssertArraySize(T(&/*arr*/)[N])
 }
 // End of Array Size utils.
 
-std::string getExecutableProductVersion(const TCHAR* pszFilePath); // throws std::runtime_error
+std::wstring getExecutableProductVersion(const TCHAR* pszFilePath); // throws std::runtime_error
 
 std::wstring getCurrentExecutablePath(); // throws std::runtime_error
 

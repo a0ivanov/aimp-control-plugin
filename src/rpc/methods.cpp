@@ -1161,7 +1161,7 @@ ResponseType Version::execute(const Rpc::Value& /*root_request*/, Rpc::Value& ro
     std::string plugin_version;
     try {
         using namespace Utilities;
-        plugin_version = getExecutableProductVersion( getCurrentExecutablePath().c_str() );
+        plugin_version = StringEncoding::utf16_to_utf8( getExecutableProductVersion( getCurrentExecutablePath().c_str() ) );
     } catch (...) {
         plugin_version = "unknown"; 
     }

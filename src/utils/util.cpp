@@ -4,7 +4,6 @@
 #include "utils/util.h"
 #include <boost/crc.hpp>
 #include "plugin/logger.h"
-#include "utils/string_encoding.h"
 
 namespace {
 using namespace ControlPlugin::PluginLogger;
@@ -43,7 +42,7 @@ bool stringStartsWith(const std::string& string, const std::string& search_strin
     return false;
 }
 
-std::string getExecutableProductVersion(const TCHAR* pszFilePath) // throws std::runtime_error
+std::wstring getExecutableProductVersion(const TCHAR* pszFilePath) // throws std::runtime_error
 {
     using namespace Utilities;
 
@@ -79,23 +78,22 @@ std::string getExecutableProductVersion(const TCHAR* pszFilePath) // throws std:
         throw std::runtime_error( MakeString() << "Error in VerQueryValue: " << GetLastError() );
     }
 
-    std::string result;
+    std::wstring result;
     // Read the file description for each language and code page.
     for (UINT i = 0; i < (cbTranslate/sizeof(LANGANDCODEPAGE)); ++i) {
-        const std::wstring subblock = StringEncoding::system_ansi_encoding_to_utf16_safe(MakeString() << "\\StringFileInfo\\" << std::hex << std::setfill ('0') << std::setw (4) << lpTranslate[i].wLanguage 
-                                                                                                                                          << std::setfill ('0') << std::setw (4) << lpTranslate[i].wCodePage
-                                                                                                      << "\\ProductVersion");
+        WCHAR subblock[50]; 
+        wsprintf(subblock, L"\\StringFileInfo\\%04x%04x\\ProductVersion", lpTranslate[i].wLanguage, lpTranslate[i].wCodePage);
         WCHAR* product_version = NULL;
         UINT product_version_length = 0;
         if (!VerQueryValue( pbVersionInfo, 
-                            subblock.c_str(), 
+                            subblock, 
                             (LPVOID*)&product_version, 
                             &product_version_length)
             )
         {
             throw std::runtime_error( MakeString() << "Error in VerQueryValue: " << GetLastError() );
         }
-        result = StringEncoding::utf16_to_utf8(product_version);
+        result = product_version;
     }
     return result;
 }
