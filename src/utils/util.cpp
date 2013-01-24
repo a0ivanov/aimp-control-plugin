@@ -42,4 +42,56 @@ bool stringStartsWith(const std::string& string, const std::string& search_strin
     return false;
 }
 
+std::string getExecutableProductVersion(const TCHAR* pszFilePath) // throws std::runtime_error
+{
+    using namespace Utilities;
+
+    // got from http://stackoverflow.com/a/940784/1992063
+
+    // get the version info for the file requested
+    const DWORD dwSize = GetFileVersionInfoSize( pszFilePath, NULL );
+    if ( dwSize == 0 ) {
+        throw std::runtime_error( MakeString() << "Error in GetFileVersionInfoSize: " << GetLastError() );
+    }
+
+    std::string versionInfoBuf(dwSize, '\0');
+    BYTE* pbVersionInfo = reinterpret_cast<BYTE*>( const_cast<std::string::value_type*>(versionInfoBuf.c_str()) );
+
+    if ( !GetFileVersionInfo( pszFilePath, 0, dwSize, pbVersionInfo ) ) {
+        throw std::runtime_error( MakeString() << "Error in GetFileVersionInfo: " << GetLastError() );
+    }
+
+    VS_FIXEDFILEINFO* pFileInfo = NULL;
+    UINT puLenFileInfo = 0;
+    if ( !VerQueryValue( pbVersionInfo, TEXT("\\"), (LPVOID*) &pFileInfo, &puLenFileInfo ) ) {
+        throw std::runtime_error( MakeString() << "Error in VerQueryValue: " << GetLastError() );
+    }
+
+    return MakeString() << (( pFileInfo->dwProductVersionLS >> 24 ) & 0xff)
+                        << '.'
+                        << (( pFileInfo->dwProductVersionLS >> 16 ) & 0xff)
+                        << '.'
+                        << (( pFileInfo->dwProductVersionLS >>  8 ) & 0xff)
+                        << '.'
+                        << (( pFileInfo->dwProductVersionLS >>  0 ) & 0xff)
+    ;
+}
+
+std::wstring getCurrentExecutablePath() // throws std::runtime_error
+{
+    HMODULE hm = NULL;
+    if (!GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                           (LPCWSTR)&getCurrentExecutablePath, 
+                           &hm)
+       )
+    {
+        using namespace Utilities;
+        throw std::runtime_error( MakeString() << "Error in GetModuleHandleEx: " << GetLastError() );
+    }
+
+    WCHAR path[MAX_PATH + 1];
+    GetModuleFileName(hm, path, MAX_PATH);
+    return path;
+}
+
 } // namespace Utilities
