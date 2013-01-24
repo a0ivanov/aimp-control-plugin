@@ -4,6 +4,7 @@
 #include "utils/util.h"
 #include <boost/crc.hpp>
 #include "plugin/logger.h"
+#include "utils/string_encoding.h"
 
 namespace {
 using namespace ControlPlugin::PluginLogger;
@@ -61,20 +62,42 @@ std::string getExecutableProductVersion(const TCHAR* pszFilePath) // throws std:
         throw std::runtime_error( MakeString() << "Error in GetFileVersionInfo: " << GetLastError() );
     }
 
-    VS_FIXEDFILEINFO* pFileInfo = NULL;
-    UINT puLenFileInfo = 0;
-    if ( !VerQueryValue( pbVersionInfo, TEXT("\\"), (LPVOID*) &pFileInfo, &puLenFileInfo ) ) {
+    struct LANGANDCODEPAGE {
+      WORD wLanguage;
+      WORD wCodePage;
+    };
+    
+    // Read the list of languages and code pages.
+    LANGANDCODEPAGE* lpTranslate = NULL;
+    UINT cbTranslate = 0;
+    if (!VerQueryValue(pbVersionInfo, 
+                       TEXT("\\VarFileInfo\\Translation"),
+                       (LPVOID*)&lpTranslate,
+                       &cbTranslate)
+                       )
+    {
         throw std::runtime_error( MakeString() << "Error in VerQueryValue: " << GetLastError() );
     }
 
-    return MakeString() << (( pFileInfo->dwProductVersionLS >> 24 ) & 0xff)
-                        << '.'
-                        << (( pFileInfo->dwProductVersionLS >> 16 ) & 0xff)
-                        << '.'
-                        << (( pFileInfo->dwProductVersionLS >>  8 ) & 0xff)
-                        << '.'
-                        << (( pFileInfo->dwProductVersionLS >>  0 ) & 0xff)
-    ;
+    std::string result;
+    // Read the file description for each language and code page.
+    for (UINT i = 0; i < (cbTranslate/sizeof(LANGANDCODEPAGE)); ++i) {
+        const std::wstring subblock = StringEncoding::system_ansi_encoding_to_utf16_safe(MakeString() << "\\StringFileInfo\\" << std::hex << std::setfill ('0') << std::setw (4) << lpTranslate[i].wLanguage 
+                                                                                                                                          << std::setfill ('0') << std::setw (4) << lpTranslate[i].wCodePage
+                                                                                                      << "\\ProductVersion");
+        WCHAR* product_version = NULL;
+        UINT product_version_length = 0;
+        if (!VerQueryValue( pbVersionInfo, 
+                            subblock.c_str(), 
+                            (LPVOID*)&product_version, 
+                            &product_version_length)
+            )
+        {
+            throw std::runtime_error( MakeString() << "Error in VerQueryValue: " << GetLastError() );
+        }
+        result = StringEncoding::utf16_to_utf8(product_version);
+    }
+    return result;
 }
 
 std::wstring getCurrentExecutablePath() // throws std::runtime_error
