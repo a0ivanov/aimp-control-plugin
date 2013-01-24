@@ -175,6 +175,19 @@ boost::filesystem::wpath AIMPControlPlugin::getSettingsFilePath(const boost::fil
     return base_directory / kPLUGIN_SETTINGS_FILENAME;
 }
 
+void appendPathToPathEnvironmentVariable(boost::filesystem::wpath path)
+{
+    const LPCTSTR path_env = L"PATH"; 
+    const DWORD buffer_size = GetEnvironmentVariable(path_env, nullptr, 0);
+    if (buffer_size > 0) {
+        std::wstring value(buffer_size - 1, '\0');
+        GetEnvironmentVariable(path_env, const_cast<LPWSTR>(value.c_str()), buffer_size);
+        value += ';';
+        value += path.normalize().native();
+        SetEnvironmentVariable( path_env, value.c_str() );
+    }
+}
+
 // Directory will be created if it doesn't exist.
 bool isDirectoryWriteEnabled(const boost::filesystem::wpath& directory)
 {
@@ -335,6 +348,8 @@ HRESULT AIMPControlPlugin::initialize()
 
     BOOST_LOG_SEV(logger(), info) << "Plugin initialization is started";
 
+    // freeimage DLL loading
+    appendPathToPathEnvironmentVariable( getPluginDirectoryPath( getAimpPluginsPath() ) ); // make possible to load FreeImage dll from plugin directory.
     checkFreeImageDLLAvailability();
 
     // create plugin core
