@@ -20,6 +20,7 @@
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
+#include <boost/algorithm/string.hpp>
 
 namespace {
 using namespace ControlPlugin::PluginLogger;
@@ -1347,7 +1348,10 @@ std::string AIMP3Manager::getAIMPVersion() const
     if (version_info.BuildSuffix) {
         os << ' ' << StringEncoding::utf16_to_system_ansi_encoding_safe(version_info.BuildSuffix);
     }
-    return os.str();
+
+    std::string result(os.str());
+    boost::algorithm::trim(result);
+    return result;
 }
 
 PlaylistID AIMP3Manager::getAbsolutePlaylistID(PlaylistID id) const
