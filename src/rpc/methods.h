@@ -986,6 +986,26 @@ private:
     std::wstring file_to_save_ratings_;
 };
 
+/*! 
+    \brief Returns versions of plugin and AIMP player.
+    \return object with versions:
+            Example: \code  \endcode
+*/
+class Version : public AIMPRPCMethod
+{
+public:
+    Version(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request_handler)
+        : AIMPRPCMethod("Version", aimp_manager, rpc_request_handler)
+    {}
+
+    std::string help()
+    {
+        return "";
+    }
+
+    Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
+};
+
 class EmulationOfWebCtlPlugin : public AIMPRPCMethod
 {
 public:

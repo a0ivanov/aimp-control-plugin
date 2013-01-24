@@ -1153,6 +1153,22 @@ ResponseType SetTrackRating::execute(const Rpc::Value& root_request, Rpc::Value&
     return RESPONSE_IMMEDIATE;
 }
 
+ResponseType Version::execute(const Rpc::Value& /*root_request*/, Rpc::Value& root_response)
+{
+    Rpc::Value& result = root_response["result"];
+    result["aimp_version"] = aimp_manager_.getAIMPVersion();
+
+    std::string plugin_version;
+    try {
+        using namespace Utilities;
+        plugin_version = getExecutableProductVersion( getCurrentExecutablePath().c_str() );
+    } catch (...) {
+        plugin_version = "unknown"; 
+    }
+    result["plugin_version"] = plugin_version;
+    return RESPONSE_IMMEDIATE;
+}
+
 } // namespace AimpRpcMethods
 
 #include "aimp/manager2_impl.h"
