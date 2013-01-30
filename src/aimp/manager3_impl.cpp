@@ -755,6 +755,9 @@ void AIMP3Manager::onAimpCoreMessage(DWORD AMessage, int AParam1, void* /*AParam
     case AIMP_MSG_EVENT_STREAM_START:
         notifyAllExternalListeners(EVENT_TRACK_PROGRESS_CHANGED_DIRECTLY);
         break;
+    case AIMP_MSG_CMD_QUIT:
+        notifyAllExternalListeners(EVENT_AIMP_QUIT);
+        break;
     case AIMP_MSG_EVENT_PROPERTY_VALUE: {
         const int property_id = AParam1;
         switch (property_id) {

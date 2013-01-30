@@ -96,6 +96,7 @@ public:
         EVENT_SHUFFLE,
         EVENT_REPEAT,
         EVENT_RADIO_CAPTURE,
+        EVENT_AIMP_QUIT,
         EVENTS_COUNT // not an event
     };
 

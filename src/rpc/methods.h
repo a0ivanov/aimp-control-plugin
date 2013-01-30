@@ -855,17 +855,20 @@ public:
                     - repeat
                     - volume level
                     - radio capture
+                    - AIMP application exit
                 - 'playlists_content_change' - change of: 
                     - playlist's content
                     - playlist count
-                Response will be the same as GetPlayerControlPanelState function.
+                Response is the same as GetPlayerControlPanelState function.
+                On AIMP app exit response also contains boolean field "aimp_app_is_exiting".
                 Response example:\code{"current_track_source_radio":true,"mute_mode_on":false,"playback_state":"playing","playlist_id":93533808,"radio_capture_mode_on":false,"repeat_mode_on":false,"shuffle_mode_on":false,"track_id":2,"volume":30}\endcode
 */
 class SubscribeOnAIMPStateUpdateEvent : public AIMPRPCMethod
 {
 public:
     SubscribeOnAIMPStateUpdateEvent(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request_handler)
-        : AIMPRPCMethod("SubscribeOnAIMPStateUpdateEvent", aimp_manager, rpc_request_handler)
+        : AIMPRPCMethod("SubscribeOnAIMPStateUpdateEvent", aimp_manager, rpc_request_handler),
+          aimp_app_is_exiting_(false)
     {
         using namespace boost::assign;
         insert(event_types_)
@@ -900,8 +903,9 @@ public:
                            "1) 'playlist_id', int - playlist ID"
                            "2) 'track_id', int - track ID"
                    "3) 'control_panel_state_change' - one of following events:"
-                           "playback state, mute, shuffle, repeat, volume level change"
-                       "Response will be the same as get_control_panel_state() function."
+                           "playback state, mute, shuffle, repeat, volume level change, aimp app exit"
+                       "Response is the same as get_control_panel_state() function."
+                       "On aimp exit response also contains boolean field 'aimp_app_is_exiting'."
                    "4) 'playlists_content_change' - playlists content change"
         ;
     }
@@ -951,6 +955,8 @@ private:
     };
     typedef std::multimap<EVENTS, ResponseSenderDescriptor> DelayedResponseSenderDescriptors;
     DelayedResponseSenderDescriptors delayed_response_sender_descriptors_;
+
+    bool aimp_app_is_exiting_;
 };
 
 /*!

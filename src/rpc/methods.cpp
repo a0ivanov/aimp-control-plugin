@@ -1032,6 +1032,9 @@ void SubscribeOnAIMPStateUpdateEvent::prepareResponse(EVENTS event_id, Rpc::Valu
         break;
     case CONTROL_PANEL_STATE_CHANGE_EVENT:
         RpcResultUtils::setControlPanelInfo(aimp_manager_, result);
+        if (aimp_app_is_exiting_) {
+            result["aimp_app_is_exiting"] = true;
+        }
         break;
     case PLAYLISTS_CONTENT_CHANGE_EVENT:
         RpcResultUtils::setPlaylistsContentChangeInfo(aimp_manager_, result);
@@ -1070,6 +1073,9 @@ void SubscribeOnAIMPStateUpdateEvent::aimpEventHandler(AIMPManager::EVENTS event
     case AIMPManager::EVENT_TRACK_PROGRESS_CHANGED_DIRECTLY:
         sendNotifications(PLAYBACK_STATE_CHANGE_EVENT);
         break;
+    
+    case AIMPManager::EVENT_AIMP_QUIT:
+        aimp_app_is_exiting_ = true;
     case AIMPManager::EVENT_VOLUME:
     case AIMPManager::EVENT_MUTE:
     case AIMPManager::EVENT_SHUFFLE:
