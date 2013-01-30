@@ -475,7 +475,7 @@ getControlPanelState : function(params, callbacks) {
                 1) 'playlist_id', int - playlist ID
                 2) 'track_id', int - track ID
                 3) 'control_panel_state_change' - one of following events:
-                        - playback state, mute, shuffle, repeat, volume level change, aimp app exit.
+                        - playback state, mute, shuffle, repeat, volume level change, aimp app exit(supported by AIMP 3+).
                    Response is the same as get_control_panel_state() function.
                    On aimp exit response also contains boolean field 'aimp_app_is_exiting'.
             4) 'playlists_content_change' - playlists content change.

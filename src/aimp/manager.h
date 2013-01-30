@@ -96,7 +96,7 @@ public:
         EVENT_SHUFFLE,
         EVENT_REPEAT,
         EVENT_RADIO_CAPTURE,
-        EVENT_AIMP_QUIT,
+        EVENT_AIMP_QUIT, // supported by AIMP 3+.
         EVENTS_COUNT // not an event
     };
 
