@@ -864,8 +864,8 @@ public:
                 - 'playlists_content_change' - change of: 
                     - playlist's content
                     - playlist count
-                  Note: 'playlists' array contains all playlists.
                   Response example:\code{"playlists_changed":true, "playlists":[{"crc32":-1169477297,"id":38609376},{"crc32":358339139,"id":38609520},{"crc32":-1895027311,"id":38609664}]}\endcode
+                  Note: 'playlists' array contains all playlists.
 */
 class SubscribeOnAIMPStateUpdateEvent : public AIMPRPCMethod
 {
@@ -999,7 +999,7 @@ private:
 /*! 
     \brief Returns versions of plugin and AIMP player.
     \return object with versions:
-            Example: \code  \endcode
+            Example: \code {"aimp_version":"3.20.1 Build 1165","plugin_version":"1.0.8.1056"} \endcode
 */
 class Version : public AIMPRPCMethod
 {
