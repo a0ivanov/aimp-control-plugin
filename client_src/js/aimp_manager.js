@@ -151,7 +151,7 @@ callRpc : function(method, params, callbacks) {
 /*
     Returns array of playlists.
         Param params.fields - array of strings represents field IDs.
-            Available field IDs: 'id', 'title', 'duration', 'entries_count', 'size_of_entries'.
+            Available field IDs: 'id', 'title', 'duration', 'entries_count', 'size_of_entries', 'crc32'.
             If param fields is not specified, following fields will be filled: id, title.
         Param callbacks - see description in AimpManager comments.
     Result is array of objects with members specified by params.fields param.
@@ -478,7 +478,11 @@ getControlPanelState : function(params, callbacks) {
                         - playback state, mute, shuffle, repeat, volume level change, aimp app exit(supported by AIMP 3+).
                    Response is the same as get_control_panel_state() function.
                    On aimp exit response also contains boolean field 'aimp_app_is_exiting'.
-            4) 'playlists_content_change' - playlists content change.
+            4) 'playlists_content_change' - change of: 
+                    - playlist's content
+                    - playlist count
+               Response example: {"playlists_changed":true, "playlists":[{"crc32":-1169477297,"id":38609376},{"crc32":358339139,"id":38609520},{"crc32":-1895027311,"id":38609664}]}
+               Note: 'playlists' array contains all playlists.
     Result is specific for each event.
 */
 subscribe : function(params, callbacks) {

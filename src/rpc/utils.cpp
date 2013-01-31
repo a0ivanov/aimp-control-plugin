@@ -126,9 +126,21 @@ void setControlPanelInfo(const AIMPManager& aimp_manager, Rpc::Value& result)
     setIsCurrentTrackSourceRadioIfPossible(aimp_manager, result);
 }
 
-void setPlaylistsContentChangeInfo(const AIMPPlayer::AIMPManager& /*aimp_manager*/, Rpc::Value& result)
+void setPlaylistsContentChangeInfo(const AIMPPlayer::AIMPManager& aimp_manager, Rpc::Value& result)
 {
-     result["playlists_changed"] = true;
+    result["playlists_changed"] = true;
+    
+    Rpc::Value& playlists_rpc = result["playlists"];
+    const auto& playlists = aimp_manager.getPlayLists();
+    playlists_rpc.setSize( playlists.size() );
+
+    int i = 0;
+    for (const auto& id_playlist_pair : playlists) {
+        Rpc::Value& playlist_rpc = playlists_rpc[i++];
+        const auto& playlist = id_playlist_pair.second;
+        playlist_rpc["id"] = playlist.id();
+        playlist_rpc["crc32"] = static_cast<int>( playlist.crc32() );
+    }
      // ??? result["playlist_id_to_reload"];
 }
 
@@ -145,8 +157,8 @@ const std::string& getStringFieldID(PlaylistEntry::FIELD_IDs id)
 const std::string& getStringFieldID(Playlist::FIELD_IDs id)
 {
     // Notice, order and count of should be syncronized with Playlist::FIELD_IDs.
-    static std::string fields_ids[] = { "id", "title", "entries_count", "duration", "size_of_entries" };
-    //enum Playlist::FIELD_IDs        { ID,   TITLE,   ENTRIES_COUNT,   DURATION,   SIZE_OF_ALL_ENTRIES_IN_BYTES, FIELDS_COUNT };
+    static std::string fields_ids[] = { "id", "title", "entries_count", "duration", "size_of_entries", "crc32" };
+    //enum Playlist::FIELD_IDs        { ID,   TITLE,   ENTRIES_COUNT,   DURATION,   SIZE_OF_ALL_ENTRIES_IN_BYTES, CRC32, FIELDS_COUNT };
     Utilities::AssertArraySize<Playlist::FIELDS_COUNT>(fields_ids);
     assert(0 <= id && id < Playlist::FIELDS_COUNT);
     return fields_ids[id];

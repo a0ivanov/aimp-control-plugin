@@ -156,7 +156,8 @@ private:
     void shutdownPlaylistDB();
     void deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id);
     void deletePlaylistFromPlaylistDB(PlaylistID playlist_id);
-
+    void updatePlaylistCrcInDB(const Playlist& playlist);
+    
     //! initializes all requiered for work AIMP SDK interfaces.
     void initializeAIMPObjects(); // throws std::runtime_error
 

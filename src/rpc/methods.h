@@ -516,6 +516,7 @@ public:
             - duration
             - entries_count
             - size_of_entries
+            - crc32
 
            If 'fields' param is not specified the function treats it equals "id, title".
     \return object which describes playlists.
@@ -541,6 +542,7 @@ public:
             ( getStringFieldID(Playlist::DURATION),                     int64_setter )
             ( getStringFieldID(Playlist::ENTRIES_COUNT),                int_setter )
             ( getStringFieldID(Playlist::SIZE_OF_ALL_ENTRIES_IN_BYTES), int64_setter )
+            ( getStringFieldID(Playlist::CRC32),                        int64_setter )
         ;
     }
 
@@ -548,7 +550,7 @@ public:
     {
         return "GetPlaylists(string playlist_fields[]) returns array of playlists. "
                "Playlist can have following fields: "
-                   "'id', 'title', 'duration', 'entries_count', 'size_of_entries'."
+                   "'id', 'title', 'duration', 'entries_count', 'size_of_entries', 'crc32'."
                "Required fields passed in playlist_fields string array."
                "Each playlist in response is associative array with keys specified in playlist_fields[].";
     }
@@ -845,9 +847,9 @@ public:
     \param event - string. ID of event to subscribe.
             Supported events are:
                 - 'play_state_change' - playback state change event (player switched to playing/paused/stopped state)
-                Response example:\code{"playback_state":"playing","track_length":269,"track_position":0}\endcode
+                  Response example:\code{"playback_state":"playing","track_length":269,"track_position":0}\endcode
                 - 'current_track_change' - current track change event (player switched track)
-                Response example:\code{"playlist_id":2136855104,"track_id":84}\endcode
+                  Response example:\code{"playlist_id":2136855104,"track_id":84}\endcode
                 - 'control_panel_state_change' - one of following aspects is changed:
                     - playback state
                     - mute
@@ -856,12 +858,14 @@ public:
                     - volume level
                     - radio capture
                     - AIMP application exit
+                  Response is the same as GetPlayerControlPanelState function.
+                  On AIMP app exit response also contains boolean field "aimp_app_is_exiting".
+                  Response example:\code{"current_track_source_radio":true,"mute_mode_on":false,"playback_state":"playing","playlist_id":93533808,"radio_capture_mode_on":false,"repeat_mode_on":false,"shuffle_mode_on":false,"track_id":2,"volume":30}\endcode
                 - 'playlists_content_change' - change of: 
                     - playlist's content
                     - playlist count
-                Response is the same as GetPlayerControlPanelState function.
-                On AIMP app exit response also contains boolean field "aimp_app_is_exiting".
-                Response example:\code{"current_track_source_radio":true,"mute_mode_on":false,"playback_state":"playing","playlist_id":93533808,"radio_capture_mode_on":false,"repeat_mode_on":false,"shuffle_mode_on":false,"track_id":2,"volume":30}\endcode
+                  Note: 'playlists' array contains all playlists.
+                  Response example:\code{"playlists_changed":true, "playlists":[{"crc32":-1169477297,"id":38609376},{"crc32":358339139,"id":38609520},{"crc32":-1895027311,"id":38609664}]}\endcode
 */
 class SubscribeOnAIMPStateUpdateEvent : public AIMPRPCMethod
 {

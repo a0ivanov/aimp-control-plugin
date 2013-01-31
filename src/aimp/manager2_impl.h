@@ -181,6 +181,7 @@ private:
     void shutdownPlaylistDB();
     void deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id);
     void deletePlaylistFromPlaylistDB(PlaylistID playlist_id);
+    void updatePlaylistCrcInDB(const Playlist& playlist);
 
     // types for notifications of external event listeners.
     typedef std::map<EventsListenerID, EventsListener> EventListeners;

@@ -331,7 +331,7 @@ void AIMP3Manager::onStorageChanged(AIMP3SDK::HPLS id, DWORD flags)
         BOOST_LOG_SEV(logger(), debug) << "onStorageChanged()...: id = " << cast<PlaylistID>(id) << ", flags = " << flags << ": " << playlistNotifyFlagsToString(flags);
 
         Playlist& playlist = playlists_[cast<PlaylistID>(id)];
-        bool need_notify_clients = false;
+        bool is_playlist_changed = false;
         if (   (AIMP_PLAYLIST_NOTIFY_NAME & flags) != 0 
             || (AIMP_PLAYLIST_NOTIFY_ENTRYINFO & flags) != 0
             || (AIMP_PLAYLIST_NOTIFY_STATISTICS & flags) != 0 
@@ -339,7 +339,7 @@ void AIMP3Manager::onStorageChanged(AIMP3SDK::HPLS id, DWORD flags)
         {
             BOOST_LOG_SEV(logger(), debug) << "updatePlaylist";
             updatePlaylist(playlist);
-            need_notify_clients = true;
+            is_playlist_changed = true;
         }
 
         if (   (AIMP_PLAYLIST_NOTIFY_ENTRYINFO & flags) != 0  
@@ -348,19 +348,14 @@ void AIMP3Manager::onStorageChanged(AIMP3SDK::HPLS id, DWORD flags)
         {
             BOOST_LOG_SEV(logger(), debug) << "loadEntries";
             loadEntries(playlist); 
-            need_notify_clients = true;
+            is_playlist_changed = true;
         }
 
-        if (need_notify_clients) {
+        if (is_playlist_changed) {
+            updatePlaylistCrcInDB(playlist);
+
             notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
         }
-
-        //for (int i = 0, count = aimp3_playlist_manager_->StorageGetCount(); i != count; ++i) {
-        //    AIMP3SDK::HPLS handle = aimp3_playlist_manager_->StorageGet(i);
-        //    INT64 size;
-        //    aimp3_playlist_manager_->StoragePropertyGetValue( handle, AIMP_PLAYLIST_STORAGE_PROPERTY_SIZE, &size, sizeof(size) );
-
-        //}
 
         BOOST_LOG_SEV(logger(), debug) << "...onStorageChanged()";
     } catch (std::exception& e) {
@@ -430,9 +425,16 @@ Playlist AIMP3Manager::loadPlaylist(AIMP3SDK::HPLS id)
 
     const int entries_count = aimp3_playlist_manager_->StorageGetEntryCount(id);
 
+    Playlist playlist(name,
+                      entries_count,
+                      duration,
+                      size,
+                      cast<PlaylistID>(id)
+                      );
+
     { // db code
     sqlite3_stmt* stmt = createStmt(playlists_db_,
-                                    "REPLACE INTO Playlists VALUES (?,?,?,?,?)"
+                                    "REPLACE INTO Playlists VALUES (?,?,?,?,?,?)"
                                     );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
@@ -453,6 +455,7 @@ Playlist AIMP3Manager::loadPlaylist(AIMP3SDK::HPLS id)
     bind( int,  3, entries_count );
     bind(int64, 4, duration);
     bind(int64, 5, size);
+    bind(int64, 6, playlist.crc32());
 #undef bind
 #undef bindText
     rc_db = sqlite3_step(stmt);
@@ -463,12 +466,33 @@ Playlist AIMP3Manager::loadPlaylist(AIMP3SDK::HPLS id)
     }
     }
 
-    return Playlist(name,
-                    entries_count,
-                    duration,
-                    size,
-                    cast<PlaylistID>(id)
-                    );
+    return playlist;
+}
+
+void AIMP3Manager::updatePlaylistCrcInDB(const Playlist& playlist)
+{
+    sqlite3_stmt* stmt = createStmt(playlists_db_,
+                                    "UPDATE Playlists SET crc32=? WHERE id=?"
+                                    );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+#define bind(type, field_index, value)  rc_db = sqlite3_bind_##type(stmt, field_index, value); \
+                                        if (SQLITE_OK != rc_db) { \
+                                            const std::string msg = MakeString() << "Error sqlite3_bind_"#type << " " << rc_db; \
+                                            throw std::runtime_error(msg); \
+                                        }
+
+    int rc_db;
+    bind( int64, 1, playlist.crc32() );
+    bind( int,   2, playlist.id() );
+    
+#undef bind
+    rc_db = sqlite3_step(stmt);
+    if (SQLITE_DONE != rc_db) {
+        const std::string msg = MakeString() << "sqlite3_step() error "
+                                             << rc_db << ": " << sqlite3_errmsg(playlists_db_);
+        throw std::runtime_error(msg);
+    }
 }
 
 void AIMP3Manager::updatePlaylist(Playlist& playlist)
@@ -1736,6 +1760,7 @@ void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
                                                "entries_count   INTEGER,"
                                                "duration        BIGINT,"
                                                "size_of_entries BIGINT,"
+                                               "crc32           BIGINT," // use BIGINT since crc32 is uint32.
                                                "PRIMARY KEY (id)"
                                                ")",
                       nullptr, /* Callback function */

@@ -127,9 +127,15 @@ Playlist AIMP2Manager::loadPlaylist(int playlist_index)
 
     const int files_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(id);
 
+    Playlist playlist(name,
+                      files_count,
+                      duration,
+                      size,
+                      id
+                      );
     { // db code
     sqlite3_stmt* stmt = createStmt(playlists_db_,
-                                    "REPLACE INTO Playlists VALUES (?,?,?,?,?)"
+                                    "REPLACE INTO Playlists VALUES (?,?,?,?,?,?)"
                                     );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
@@ -150,6 +156,7 @@ Playlist AIMP2Manager::loadPlaylist(int playlist_index)
     bind( int,  3, files_count );
     bind(int64, 4, duration);
     bind(int64, 5, size);
+    bind(int64, 6, playlist.crc32());
 #undef bind
 #undef bindText
     rc_db = sqlite3_step(stmt);
@@ -160,12 +167,7 @@ Playlist AIMP2Manager::loadPlaylist(int playlist_index)
     }
     }
 
-    return Playlist(name,
-                    files_count,
-                    duration,
-                    size,
-                    id
-                    );
+    return playlist;
 }
 
 /*
@@ -409,6 +411,8 @@ void AIMP2Manager::checkIfPlaylistsChanged()
             assert( it != playlists_.end() );
             Playlist& playlist = it->second;
             loadEntries(playlist); // avoid using of playlists_[playlist_id], since it requires Playlist's default ctor.
+
+            updatePlaylistCrcInDB(playlist);
         } catch (std::exception& e) {
             BOOST_LOG_SEV(logger(), error) << "Error occured while playlist(id = " << playlist_id << ") entries loading. Reason: " << e.what();
         }
@@ -435,6 +439,32 @@ void AIMP2Manager::checkIfPlaylistsChanged()
  
     if (playlists_content_changed) {
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+    }
+}
+
+void AIMP2Manager::updatePlaylistCrcInDB(const Playlist& playlist)
+{
+    sqlite3_stmt* stmt = createStmt(playlists_db_,
+                                    "UPDATE Playlists SET crc32=? WHERE id=?"
+                                    );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+#define bind(type, field_index, value)  rc_db = sqlite3_bind_##type(stmt, field_index, value); \
+                                        if (SQLITE_OK != rc_db) { \
+                                            const std::string msg = MakeString() << "Error sqlite3_bind_"#type << " " << rc_db; \
+                                            throw std::runtime_error(msg); \
+                                        }
+
+    int rc_db;
+    bind( int64, 1, playlist.crc32() );
+    bind( int,   2, playlist.id() );
+    
+#undef bind
+    rc_db = sqlite3_step(stmt);
+    if (SQLITE_DONE != rc_db) {
+        const std::string msg = MakeString() << "sqlite3_step() error "
+                                             << rc_db << ": " << sqlite3_errmsg(playlists_db_);
+        throw std::runtime_error(msg);
     }
 }
 
@@ -1482,6 +1512,7 @@ void AIMP2Manager::initPlaylistDB() // throws std::runtime_error
                                                "entries_count   INTEGER,"
                                                "duration        BIGINT,"
                                                "size_of_entries BIGINT,"
+                                               "crc32           BIGINT," // use BIGINT since crc32 is uint32.
                                                "PRIMARY KEY (id)"
                                                ")",
                       nullptr, /* Callback function */
