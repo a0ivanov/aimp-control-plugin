@@ -619,6 +619,7 @@ boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistStrings> AIMP3Manager::getPlay
         throw std::runtime_error(MakeString() << "IAIMPAddonsPlaylistManager::StorageGetFiles(" << playlist_id << ") failed. Result " << r);
     }
     boost::intrusive_ptr<IAIMPAddonsPlaylistStrings> strings(strings_raw);
+    strings_raw->Release();
     return strings;
 }
 
