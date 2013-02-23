@@ -229,6 +229,7 @@ void AIMP3Manager::initializeAIMPObjects()
         throw std::runtime_error("Creation object IAIMPAddonsPlayerManager failed"); 
     }
     aimp3_player_manager_.reset(player_manager);
+    player_manager->Release();
 
     IAIMPAddonsPlaylistManager* playlist_manager;
     if (S_OK != aimp3_core_unit_->QueryInterface(IID_IAIMPAddonsPlaylistManager, 
@@ -239,6 +240,7 @@ void AIMP3Manager::initializeAIMPObjects()
         throw std::runtime_error("Creation object IAIMPAddonsPlaylistManager failed"); 
     }
     aimp3_playlist_manager_.reset(playlist_manager);
+    playlist_manager->Release();
 
     IAIMPAddonsCoverArtManager* coverart_manager;
     if (S_OK != aimp3_core_unit_->QueryInterface(IID_IAIMPAddonsCoverArtManager, 
@@ -249,6 +251,7 @@ void AIMP3Manager::initializeAIMPObjects()
         throw std::runtime_error("Creation object IAIMPAddonsCoverArtManager failed"); 
     }
     aimp3_coverart_manager_.reset(coverart_manager);
+    coverart_manager->Release();
 }
 
 void AIMP3Manager::onTick()
@@ -609,7 +612,7 @@ private:
     WCHAR title[kFIELDBUFFERSIZE + 1];
 };
 
-boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistStrings> AIMP3Manager::getPlaylistStrings(const AIMP3SDK::HPLS playlist_id)
+boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistStrings> AIMP3Manager::getPlaylistStrings(const AIMP3SDK::HPLS playlist_id) // throws std::runtime_error
 {
     using namespace AIMP3SDK;
 

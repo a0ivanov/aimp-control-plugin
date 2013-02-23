@@ -1562,6 +1562,7 @@ void EmulationOfWebCtlPlugin::addFile(int playlist_id, const std::string& filena
         const std::wstring filename = StringEncoding::utf8_to_utf16( WebCtl::urldecode(filename_url) );
         strings->AddFile(const_cast<PWCHAR>( filename.c_str() ), nullptr);
         aimp2_manager->aimp2_controller_->AIMP_PLS_AddFiles(playlist_id, strings);
+        strings->Release();
     } else if ( AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_) ) {
         using namespace AIMP3SDK;
         AIMP3SDK::HPLS playlist_handle = cast<AIMP3SDK::HPLS>(playlist_id);

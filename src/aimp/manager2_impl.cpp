@@ -558,36 +558,48 @@ void AIMP2Manager::unregisterNotifiers()
 void AIMP2Manager::initializeAIMPObjects()
 {
     // get IAIMP2Player object.
+    {
     IAIMP2Player* player = nullptr;
     boolean result = aimp2_controller_->AIMP_QueryObject(IAIMP2PlayerID, &player);
     if (!result) {
         throw std::runtime_error("Creation object IAIMP2Player failed");
     }
     aimp2_player_.reset(player);
+    player->Release();
+    }
 
     // get IAIMP2PlaylistManager2 object.
+    {
     IAIMP2PlaylistManager2* playlist_manager = nullptr;
-    result = aimp2_controller_->AIMP_QueryObject(IAIMP2PlaylistManager2ID, &playlist_manager);
+    boolean result = aimp2_controller_->AIMP_QueryObject(IAIMP2PlaylistManager2ID, &playlist_manager);
     if (!result) {
         throw std::runtime_error("Creation object IAIMP2PlaylistManager2 failed");
     }
     aimp2_playlist_manager_.reset(playlist_manager);
+    playlist_manager->Release();
+    }
 
     // get IAIMP2Extended object.
+    {
     IAIMP2Extended* extended = nullptr;
-    result = aimp2_controller_->AIMP_QueryObject(IAIMP2ExtendedID, &extended);
+    boolean result = aimp2_controller_->AIMP_QueryObject(IAIMP2ExtendedID, &extended);
     if (!result) {
         throw std::runtime_error("Creation object IAIMP2Extended failed");
     }
     aimp2_extended_.reset(extended);
+    extended->Release();
+    }
 
     // get IAIMP2CoverArtManager object.
+    {
     IAIMP2CoverArtManager* cover_art_manager = nullptr;
-    result = aimp2_controller_->AIMP_QueryObject(IAIMP2CoverArtManagerID, &cover_art_manager);
+    boolean result = aimp2_controller_->AIMP_QueryObject(IAIMP2CoverArtManagerID, &cover_art_manager);
     if (!result) {
         throw std::runtime_error("Creation object IAIMP2CoverArtManager failed");
     }
     aimp2_cover_art_manager_.reset(cover_art_manager);
+    cover_art_manager->Release();
+    }
 }
 
 void AIMP2Manager::startPlayback()
