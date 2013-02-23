@@ -70,8 +70,8 @@
       <DisableSpecificWarnings>4503;4714</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>Ws2_32.lib;FreeImagePlus.lib;DelayImp.lib;Version.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(BOOST_DIR)\stage\lib;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\dist;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Ws2_32.lib;FreeImagePlus.lib;DelayImp.lib;Version.lib;sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(BOOST_DIR)\stage\lib;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\dist;$(ProjectDir)\..\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ModuleDefinitionFile>..\src\control_plugin.def</ModuleDefinitionFile>
       <DelayLoadDLLs>FreeImagePlus.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
@@ -99,9 +99,9 @@
       <DisableSpecificWarnings>4503;4714</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>Ws2_32.lib;FreeImagePlus.lib;DelayImp.lib;Version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;FreeImagePlus.lib;DelayImp.lib;Version.lib;sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(AIMP_PLUGINS_DIR)\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>$(BOOST_DIR)\stage\lib;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\dist;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(BOOST_DIR)\stage\lib;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\dist;$(ProjectDir)\..\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>..\src\control_plugin.def</ModuleDefinitionFile>
       <DelayLoadDLLs>FreeImagePlus.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>

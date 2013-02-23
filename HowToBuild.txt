@@ -62,6 +62,10 @@ FreeImage
     If you do not want use precompiled package you can download source distribution.
     Requiired only for enabling Rpc function which extracts album cover.
 
+SQLite
+    It will be needed if AIMP will use sqlite with new interface.
+    To create *.lib file from *.def use command:
+        lib /DEF: sqlite3.def /OUT:sqlite3.lib
     
 After installing software mentioned above set actual paths in setup_environment.bat and setup_vs_project_variables.bat scripts.
 
