@@ -1,7 +1,7 @@
 /* ******************************************** */
 /*                                              */
 /*                AIMP Plugins API              */
-/*             v3.00.960 (01.12.2011)           */
+/*             v3.50.1200 (17.11.2012)          */
 /*                CoreUnit Objects              */
 /*                                              */
 /*              (c) Artem Izmaylov              */
@@ -36,14 +36,15 @@ const int AIMP_MSG_CMD_STATE_GET = AIMP_MSG_CMD_BASE + 1;
 const int AIMP_MSG_CMD_SHOW_CURRENT_QFI = AIMP_MSG_CMD_BASE + 2;
 
 // Show custom text in display of RunningString element
-// AParam1: unused
+// AParam1: 0 - Hide text automaticly after 2 seconds
+//          1 - Text will be hidden manually (put NULL to AParam2 to hide previous text)
 // AParam2: Pointer to WideChar array
 const int AIMP_MSG_CMD_RUNSTR_SHOW_TEXT = AIMP_MSG_CMD_BASE + 3;
 
 // For Backward compatibility
 // AParam1: unused
 // AParam2: Pointer to Single value, New Track Position
-const int AIMP_MSG_CMD_RUNSTR_SEEKING_HINT = AIMP_MSG_CMD_BASE + 4;
+// !!! REMOVED: const int AIMP_MSG_CMD_RUNSTR_SEEKING_HINT = AIMP_MSG_CMD_BASE + 4;
 
 const int AIMP_MSG_CMD_TOGGLE_PARTREPEAT = AIMP_MSG_CMD_BASE + 5;
 
@@ -172,7 +173,7 @@ const int AIMP_MSG_CMD_PLS_DELETE_SWITCHEDOFF = AIMP_MSG_CMD_BASE + 35;
 // AParam1, AParam2: unused
 const int AIMP_MSG_CMD_PLS_DELETE_SWITCHEDOFF_FROM_HDD = AIMP_MSG_CMD_BASE + 36;
 
-// Delete duplcates from active playlist
+// Delete duplicates from active playlist
 // AParam1, AParam2: unused
 const int AIMP_MSG_CMD_PLS_DELETE_DUPLICATES = AIMP_MSG_CMD_BASE + 37;
 
@@ -229,6 +230,14 @@ const int AIMP_MSG_CMD_QTE_NOWPLAYING_FILE = AIMP_MSG_CMD_BASE + 51;
 // Show Advanced Search Dialog
 // AParam1, AParam2: unused
 const int AIMP_MSG_CMD_SEARCH = AIMP_MSG_CMD_BASE + 52;
+
+// Show DSP Manager Dialog
+// AParam1, AParam2: unused
+const int AIMP_MSG_CMD_DSPMANAGER = AIMP_MSG_CMD_BASE + 53;
+
+// Show DSP Manager Dialog with active "Equalizer" page
+// AParam1, AParam2: unused
+const int AIMP_MSG_CMD_DSPMANAGER_EQ = AIMP_MSG_CMD_BASE + 54;
 
 //==============================================================================
 // Properties
@@ -436,7 +445,7 @@ const int AIMP_MSG_EVENT_OPTIONS_FRAME_MODIFIED = AIMP_MSG_EVENT_BASE + 9;
 const int AIMP_MSG_EVENT_MODULES = AIMP_MSG_EVENT_BASE + 10;
 
 // Called, when swithing between visual plugins
-// AParam2: reserved, internal plugin handle
+// AParam1, AParam2: unused
 const int AIMP_MSG_EVENT_VISUAL_PLUGIN = AIMP_MSG_EVENT_BASE + 11;
 
 // Called, when mark of file has been changed
@@ -445,12 +454,9 @@ const int AIMP_MSG_EVENT_VISUAL_PLUGIN = AIMP_MSG_EVENT_BASE + 11;
 // !!!WARNING: You must not fire this event manually!
 const int AIMP_MSG_EVENT_FILEMARK = AIMP_MSG_EVENT_BASE + 12;
 
-// Called, when All statistics in data base has been dropped
-// AParam1, AParam2: unused
-const int AIMP_MSG_EVENT_STATISTICS_DROPPED = AIMP_MSG_EVENT_BASE + 13;
-
 // Called, when statistics of the file changed
-// AParam2: FileName (Pointer to WideChar)
+// AParam2: FileName (Pointer to WideChar),
+// !!!Note: If filename is empty or AParam2 is null - statistics for all files has been changed
 // !!!WARNING: You must not fire this event manually!
 const int AIMP_MSG_EVENT_STATISTICS_CHANGED = AIMP_MSG_EVENT_BASE + 14;
 
@@ -469,7 +475,7 @@ const int AIMP_MSG_EVENT_LANGUAGE = AIMP_MSG_EVENT_BASE + 17;
 
 //==============================================================================
 
-DEFINE_GUID(IID_IAIMPCoreUnitMessageHook, 0xFC6FB524, 0xA959, 0x4089, 0xAA, 0x0A, 0xEA, 0x40, 0xAB, 0x73, 0x74, 0xCD);
+static const GUID IID_IAIMPCoreUnitMessageHook = {0xFC6FB524, 0xA959, 0x4089, 0xAA, 0x0A, 0xEA, 0x40, 0xAB, 0x73, 0x74, 0xCD};
 
 #pragma pack(push, 1)
 

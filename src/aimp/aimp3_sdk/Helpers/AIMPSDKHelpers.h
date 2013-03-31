@@ -1,7 +1,7 @@
 /* ******************************************** */
 /*                                              */
 /*                AIMP Plugins API              */
-/*             v3.00.960 (01.12.2011)           */
+/*             v3.50.1200 (02.11.2012)          */
 /*                Addons Plugins                */
 /*                                              */
 /*              (c) Artem Izmaylov              */
@@ -86,27 +86,27 @@ public:
         :
         info_(info)
     {
-        album_.   assign(info.Album,    info.AlbumLength);
-        artist_.  assign(info.Artist,   info.ArtistLength);
-        date_.    assign(info.Date,     info.DateLength);
-        fileName_.assign(info.FileName, info.FileNameLength);
-        genre_.   assign(info.Genre,    info.GenreLength);
-        title_.   assign(info.Title,    info.TitleLength);
+		album_.   assign(info.AlbumBuffer,    info.AlbumBufferSizeInChars);
+        artist_.  assign(info.ArtistBuffer,   info.ArtistBufferSizeInChars);
+        date_.    assign(info.DateBuffer,     info.DateBufferSizeInChars);
+        fileName_.assign(info.FileNameBuffer, info.FileNameBufferSizeInChars);
+        genre_.   assign(info.GenreBuffer,    info.GenreBufferSizeInChars);
+        title_.   assign(info.TitleBuffer,    info.TitleBufferSizeInChars);
 
-        info_.Album    = RemoveConst( album_.c_str() );
-        info_.Artist   = RemoveConst( artist_.c_str() );
-        info_.Date     = RemoveConst( date_.c_str() );
-        info_.FileName = RemoveConst( fileName_.c_str() );
-        info_.Genre    = RemoveConst( genre_.c_str() );
-        info_.Title    = RemoveConst( title_.c_str() );
+        info_.AlbumBuffer    = RemoveConst( album_.c_str() );
+        info_.ArtistBuffer   = RemoveConst( artist_.c_str() );
+        info_.DateBuffer     = RemoveConst( date_.c_str() );
+        info_.FileNameBuffer = RemoveConst( fileName_.c_str() );
+        info_.GenreBuffer    = RemoveConst( genre_.c_str() );
+        info_.TitleBuffer    = RemoveConst( title_.c_str() );
     }
 
     void fileName(const PWCHAR filename)
     {
         const size_t length = wcslen(filename);
         fileName_.assign(filename, length);
-        info_.FileName = RemoveConst( fileName_.c_str() );
-        info_.FileNameLength = length;
+        info_.FileNameBuffer = RemoveConst( fileName_.c_str() );
+        info_.FileNameBufferSizeInChars = length;
     }
 
 #undef RemoveConst
@@ -128,12 +128,12 @@ public:
             dst->SampleRate  = info_.SampleRate;
             dst->TrackNumber = info_.TrackNumber;
 
-            return SafePutStringToBuffer(album_,    dst->Album,    dst->AlbumLength)
-                && SafePutStringToBuffer(artist_,   dst->Artist,   dst->ArtistLength)
-                && SafePutStringToBuffer(date_,     dst->Date,     dst->DateLength)
-                && SafePutStringToBuffer(fileName_, dst->FileName, dst->FileNameLength)
-                && SafePutStringToBuffer(genre_,    dst->Genre,    dst->GenreLength)
-                && SafePutStringToBuffer(title_,    dst->Title,    dst->TitleLength);
+            return SafePutStringToBuffer(album_,    dst->AlbumBuffer,    dst->AlbumBufferSizeInChars)
+                && SafePutStringToBuffer(artist_,   dst->ArtistBuffer,   dst->ArtistBufferSizeInChars)
+                && SafePutStringToBuffer(date_,     dst->DateBuffer,     dst->DateBufferSizeInChars)
+                && SafePutStringToBuffer(fileName_, dst->FileNameBuffer, dst->FileNameBufferSizeInChars)
+                && SafePutStringToBuffer(genre_,    dst->GenreBuffer,    dst->GenreBufferSizeInChars)
+                && SafePutStringToBuffer(title_,    dst->TitleBuffer,    dst->TitleBufferSizeInChars);
         }
         return false;
     }

@@ -31,19 +31,19 @@ struct TAIMPFileInfo
 	DWORD SampleRate;
 	DWORD TrackNumber;
 	//
-	DWORD AlbumLength;
-	DWORD ArtistLength;
-	DWORD DateLength;
-	DWORD FileNameLength;
-	DWORD GenreLength;
-	DWORD TitleLength;
+	DWORD AlbumBufferSizeInChars;
+	DWORD ArtistBufferSizeInChars;
+	DWORD DateBufferSizeInChars;
+	DWORD FileNameBufferSizeInChars;
+	DWORD GenreBufferSizeInChars;
+	DWORD TitleBufferSizeInChars;
 	//
-	PWCHAR Album;
-	PWCHAR Artist;
-	PWCHAR Date;
-	PWCHAR FileName;
-	PWCHAR Genre;
-	PWCHAR Title;
+	PWCHAR AlbumBuffer;
+	PWCHAR ArtistBuffer;
+	PWCHAR DateBuffer;
+	PWCHAR FileNameBuffer;
+	PWCHAR GenreBuffer;
+	PWCHAR TitleBuffer;
 };
 #pragma pack(pop)
 

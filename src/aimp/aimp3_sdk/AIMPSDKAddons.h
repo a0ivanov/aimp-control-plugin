@@ -3,8 +3,8 @@
 /* ******************************************** */
 /*                                              */
 /*                AIMP Plugins API              */
-/*             v3.00.960 (01.12.2011)           */
-/*                Addons Plugins                */
+/*             v3.50.1200 (02.11.2012)          */
+/*                 Addons Plugins               */
 /*                                              */
 /*              (c) Artem Izmaylov              */
 /*                 www.aimp.ru                  */
@@ -85,6 +85,12 @@ const int AIMP_PLAYLIST_STORAGE_PROPERTY_TRACKINGINDEX            = 51; // ABuff
 const int AIMP_PLAYLIST_STORAGE_PROPERTY_DURATION                 = 52; // READONLY! ABuffer: Pointer to Int64 (64-bit Integer), ABufferSize: SizeOf(Int64)
 const int AIMP_PLAYLIST_STORAGE_PROPERTY_SIZE                     = 53; // READONLY! ABuffer: Pointer to Int64 (64-bit Integer), ABufferSize: SizeOf(Int64)
 const int AIMP_PLAYLIST_STORAGE_PROPERTY_PLAYINGINDEX			  = 54; // READONLY! ABuffer: Pointer to Integer, ABufferSize: SizeOf(Integer)
+const int AIMP_PLAYLIST_STORAGE_PROPERTY_PREIMAGE                 = 60; // [v3.10]: ABuffer: Pointer to array of WideChar, ABufferSize: size of array in Bytes
+
+// IAIMPAddonsPlaylistManager.ElementGetType
+const int AIMP_PLAYLIST_ELEMENT_TYPE_UNKNOWN = 0;
+const int AIMP_PLAYLIST_ELEMENT_TYPE_ENTRY   = 1;
+const int AIMP_PLAYLIST_ELEMENT_TYPE_GROUP   = 2;
 
 // IAIMPAddonsPlaylistManager.StorageSort
 const int AIMP_PLAYLIST_SORT_TYPE_TITLE      = 1;
@@ -104,9 +110,11 @@ const int AIMP_PLAYLIST_FORMAT_MODE_FILEINFO = 2;
 const int AIMP_PLAYLIST_FORMAT_MODE_CURRENT  = 3;
 
 // PropertyIDs for IAIMPAddonsPlaylistManager.GroupPropertyGetValue / GroupPropertySetValue
-const int AIMP_PLAYLIST_GROUP_PROPERTY_NAME                       = 0;  // READONLY! ABuffer: Pointer to array of WideChar, ABufferSize: size of array in Bytes
-const int AIMP_PLAYLIST_GROUP_PROPERTY_EXPANDED                   = 1;  // ABuffer: Pointer to LongBool (32-bit Boolean), ABufferSize: SizeOf(LongBool)
-const int AIMP_PLAYLIST_GROUP_PROPERTY_DURATION                   = 2;  // READONLY! ABuffer: Pointer to Int64 (64-bit Integer), ABufferSize: SizeOf(Int64)
+const int AIMP_PLAYLIST_GROUP_PROPERTY_NAME     = 0;  // READONLY! ABuffer: Pointer to array of WideChar, ABufferSize: size of array in Bytes
+const int AIMP_PLAYLIST_GROUP_PROPERTY_EXPANDED = 1;  // ABuffer: Pointer to LongBool (32-bit Boolean), ABufferSize: SizeOf(LongBool)
+const int AIMP_PLAYLIST_GROUP_PROPERTY_DURATION = 2;  // READONLY! ABuffer: Pointer to Int64 (64-bit Integer), ABufferSize: SizeOf(Int64)
+const int AIMP_PLAYLIST_GROUP_PROPERTY_INDEX    = 3;  // [v3.10] READONLY! ABuffer: Pointer to Integer , ABufferSize: SizeOf(Integer)
+const int AIMP_PLAYLIST_GROUP_PROPERTY_SELECTED = 4;  // [v3.10] ABuffer: Pointer to LongBool (32-bit Boolean), ABufferSize: SizeOf(LongBool)
 
 // Flags for IAIMPAddonsPlaylistManagerListener.StorageChanged
 const int AIMP_PLAYLIST_NOTIFY_NAME           = 1;
@@ -118,38 +126,45 @@ const int AIMP_PLAYLIST_NOTIFY_CONTENT        = 32;
 const int AIMP_PLAYLIST_NOTIFY_ENTRYINFO      = 64;
 const int AIMP_PLAYLIST_NOTIFY_STATISTICS     = 128;
 const int AIMP_PLAYLIST_NOTIFY_PLAYINGSWITCHS = 256;
+const int AIMP_PLAYLIST_NOTIFY_READONLY       = 512;   // [v3.10]
+const int AIMP_PLAYLIST_NOTIFY_PREIMAGE       = 1024;  // [v3.10]
 
 // AConfigPathIDs for IAIMPAddonsPlayerManager.ConfigGetPath
 const int AIMP_CFG_PATH_PROFILE  = 0;
 const int AIMP_CFG_PATH_PLS      = 1;
 const int AIMP_CFG_PATH_LNG      = 2;
 const int AIMP_CFG_PATH_SKINS    = 3;
+const int AIMP_CFG_PATH_SKINS_COMMON = 11; // [v3.10]
 const int AIMP_CFG_PATH_PLUGINS  = 4;
 const int AIMP_CFG_PATH_ICONS    = 5;
 const int AIMP_CFG_PATH_ML       = 6;
 const int AIMP_CFG_PATH_MODULES  = 8;
 const int AIMP_CFG_PATH_HELP     = 9;
-const int AIMP_CFG_PATH_ML_PLS   = 10;
+const int AIMP_CFG_PATH_ML_PLS   = 10; // not used in v3.10
 
 // AFlags for IAIMPAddonsPlayerManager.SupportsExts
 const int AIMP_SUPPORTS_EXTS_FORMAT_AUDIO    = 2;
 const int AIMP_SUPPORTS_EXTS_FORMAT_PLAYLIST = 1;
 
-DEFINE_GUID(IID_IAIMPAddonsConfigFile, 		0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10);
-DEFINE_GUID(IID_IAIMPAddonsCoverArtManager,	0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x11);
-DEFINE_GUID(IID_IAIMPAddonsLanguageFile,	0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12);
-DEFINE_GUID(IID_IAIMPAddonsMenuManager,		0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x13);
-DEFINE_GUID(IID_IAIMPAddonsOptionsDialog, 	0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14);
-DEFINE_GUID(IID_IAIMPAddonsPlayerManager, 	0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x15);
-DEFINE_GUID(IID_IAIMPAddonsPlaylistManager, 0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16);
-DEFINE_GUID(IID_IAIMPAddonsPlaylistManagerListener, 0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x17);
-DEFINE_GUID(IID_IAIMPAddonsPlaylistStrings, 0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18);
-DEFINE_GUID(IID_IAIMPAddonsSkinsManager, 	0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x19);
-DEFINE_GUID(IID_IAIMPAddonsProxySettings, 	0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20);
+static const GUID IID_IAIMPAddonsConfigFile	= {0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10};
+static const GUID IID_IAIMPAddonsCoverArtManager = {0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x11};
+static const GUID IID_IAIMPAddonsLanguageFile  = {0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12};
+static const GUID IID_IAIMPAddonsMenuManager = {0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x13};
+static const GUID IID_IAIMPAddonsOptionsDialog = {0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14};
+static const GUID IID_IAIMPAddonsPlayerManager = {0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x15};
+static const GUID IID_IAIMPAddonsPlaylistManager30 = {0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16};
+static const GUID IID_IAIMPAddonsPlaylistManagerListener = {0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x17};
+static const GUID IID_IAIMPAddonsPlaylistStrings = {0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18};
+static const GUID IID_IAIMPAddonsSkinsManager = {0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x19};
+static const GUID IID_IAIMPAddonsProxySettings = {0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20};
+static const GUID IID_IAIMPAddonsPlaylistManager = {0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x21}; // [v3.10]
+static const GUID IID_IAIMPAddonsPlaylistQueue = {0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x22}; // [v3.10]
+static const GUID IID_IAIMPAddonsMediaBase = {0x41494D50, 0x0033, 0x434F, 0x52, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x24}; // [v3.50]
 
 typedef void *HPLS;
 typedef void *HPLSENTRY;
 typedef void *HPLSGROUP;
+typedef void *HPLSELEMENT;
 typedef void *HAIMPMENU;
 
 // Universal Handle for Active Playlist
@@ -174,10 +189,11 @@ struct TAIMPMenuItemInfo
 
 struct TAIMPFileStatisticsInfo
 {
-    int Mark;
-    double AddDate;
-    int PlayCount;
-    double PlayDate;
+	double AddedDate;
+	double LastPlayDate;
+	double Mark;
+	int PlayCount;
+    double Rating; // Rating = file_play_count / max_play_count_in_db
 };
 
 struct TAIMPSkinInfo
@@ -263,7 +279,7 @@ class IAIMPAddonsConfigFile: public IUnknown
 		// functions returns S_OK, if value exists in configuration file
 		virtual HRESULT WINAPI ReadString(PWCHAR ASectionName, PWCHAR AItemName, PWCHAR AValueBuffer,
 			int ASectionNameSizeInChars, int AItemNameSizeInChars, int AValueBufferSizeInChars) = 0;
-		virtual HRESULT WINAPI ReadInteger(PWCHAR ASectionName, PWCHAR AItemName, 
+		virtual HRESULT WINAPI ReadInteger(PWCHAR ASectionName, PWCHAR AItemName,
 			int ASectionNameSizeInChars, int AItemNameSizeInChars, int *AValue) = 0;
 		virtual HRESULT WINAPI WriteString(PWCHAR ASectionName, PWCHAR AItemName, PWCHAR AValueBuffer,
 			int ASectionNameSizeInChars, int AItemNameSizeInChars, int AValueBufferSizeInChars) = 0;
@@ -272,7 +288,6 @@ class IAIMPAddonsConfigFile: public IUnknown
 		virtual HRESULT WINAPI SectionExists(PWCHAR ASectionName, int ASectionNameSizeInChars) = 0;
 		virtual HRESULT WINAPI SectionRemove(PWCHAR ASectionName, int ASectionNameSizeInChars) = 0;
 };
-
 
 /* IAIMPAddonsLanguageFile */
 class IAIMPAddonsLanguageFile: public IUnknown
@@ -334,9 +349,9 @@ class IAIMPAddonsPlaylistManagerListener: public IUnknown
 		virtual void WINAPI StorageRemoved(HPLS ID) = 0;
 };
 
-/* IAIMPAddonsPlaylistManager */
+/* IAIMPAddonsPlaylistManager30 */
 // See ActivePlaylistHandle constant
-class IAIMPAddonsPlaylistManager: public IUnknown
+class IAIMPAddonsPlaylistManager30: public IUnknown
 {
 	public:
 		// AIMP_PLAYLIST_FORMAT_MODE_PREVIEW  - template will be expand as preview
@@ -389,6 +404,37 @@ class IAIMPAddonsPlaylistManager: public IUnknown
 		// Queue
 		virtual HRESULT WINAPI QueueEntryAdd(HPLSENTRY AEntry, BOOL AInsertAtQueueBegining) = 0;
 		virtual HRESULT WINAPI QueueEntryRemove(HPLSENTRY AEntry) = 0;
+};
+
+/* IAIMPAddonsPlaylistManager */
+// [v3.10]
+class IAIMPAddonsPlaylistManager: public IAIMPAddonsPlaylistManager30
+{
+	public:
+		// Element
+		virtual int 	WINAPI ElementGetType(HPLSELEMENT AElement);
+		// Groups
+		virtual HRESULT WINAPI GroupGetEntry(HPLSGROUP AGroup, int AIndex, HPLSENTRY *AEntry);
+		virtual int		WINAPI GroupGetEntryCount(HPLSGROUP AGroup);
+		// Storage
+		virtual HRESULT WINAPI StorageFocusGet(HPLS ID, HPLSELEMENT *AElement);
+		virtual HRESULT WINAPI StorageFocusSet(HPLS ID, HPLSELEMENT  AElement);
+		virtual HRESULT WINAPI StorageReloadFromPreimage(HPLS ID);
+};
+
+/* IAIMPAddonsPlaylistQueue */
+// [v3.10]
+class IAIMPAddonsPlaylistQueue: public IUnknown
+{
+	public:
+		virtual HRESULT WINAPI QueueEntryAdd(HPLSENTRY AEntry, BOOL AInsertAtQueueBegining) = 0;
+		virtual HRESULT WINAPI QueueEntryRemove(HPLSENTRY AEntry) = 0;
+		virtual HRESULT WINAPI QueueEntryGet(int Index, HPLSENTRY *AENTRY) = 0;
+		virtual int		WINAPI QueueEntryGetCount() = 0;
+		virtual HRESULT WINAPI QueueEntryMove(HPLSENTRY AEntry, int ANewIndex) = 0;
+		virtual HRESULT WINAPI QueueEntryMove2(int AOldIndex, int ANewIndex) = 0;
+		virtual BOOL 	WINAPI QueueSuspendedGet() = 0;
+		virtual HRESULT WINAPI QueueSuspendedSet(BOOL AValue) = 0;
 };
 
 /* IAIMPAddonsCoverArtManager */
@@ -446,6 +492,22 @@ class IAIMPAddonsSkinsManager: public IUnknown
 		// Conversion between HSL and RGB color spaces
 		virtual HRESULT WINAPI HSLToRGB(BYTE H, BYTE S, BYTE L, BYTE *R, BYTE *G, BYTE *B) = 0;
 		virtual HRESULT WINAPI RGBToHSL(BYTE R, BYTE G, BYTE B, BYTE *H, BYTE *S, BYTE *L) = 0;
+};
+
+/* IAIMPAddonsMediaBase */
+class IAIMPAddonsMediaBase: public IUnknown  // [v3.50]
+{
+	public:
+		// AMark - mark for the specified file, [0.0 .. 5.0]
+		// Function returns E_NOTIMPL if Audio Library is not installed
+		virtual HRESULT WINAPI MarkGet(PWCHAR AFileNameBuffer, int AFileNameBufferSizeInChars, float *AMark) = 0;
+		virtual HRESULT WINAPI MarkSet(PWCHAR AFileNameBuffer, int AFileNameBufferSizeInChars, float AMark) = 0;
+		// Function receive information about the specified file from DataBase
+		// To get statistics information about the file, you should:
+		// + Set to ABuffer pointer to TAIMPFileStatisticsInfo struct
+		// + Set to ABufferSize value equals to SizeOf(TAIMPFileStatisticsInfo)
+		// Function returns E_NOTIMPL if Audio Library is not installed
+		virtual HRESULT WINAPI InfoGet(PWCHAR AFileNameBuffer, int AFileNameBufferSizeInChars, void *ABuffer, int ABufferSize) = 0;
 };
 
 /* IAIMPAddonPlugin */

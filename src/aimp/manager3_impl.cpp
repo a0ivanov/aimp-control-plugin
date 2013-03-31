@@ -38,7 +38,7 @@ ModuleLoggerType& logger()
 template<>
 crc32_t Utilities::crc32<AIMP3SDK::TAIMPFileInfo>(const AIMP3SDK::TAIMPFileInfo& info)
 {
-#define ENTRY_FIELD_CRC32(field) (info.field##Length == 0) ? 0 : Utilities::crc32( &info.field[0], info.field##Length * sizeof(info.field[0]) )
+#define ENTRY_FIELD_CRC32(field) (info.field##BufferSizeInChars == 0) ? 0 : Utilities::crc32( &info.field##Buffer[0], info.field##BufferSizeInChars * sizeof(info.field##Buffer[0]) )
     const crc32_t members_crc32_list [] = {
         ENTRY_FIELD_CRC32(Album),
         ENTRY_FIELD_CRC32(Artist),
@@ -526,16 +526,17 @@ public:
             memset( field_buffer, 0, kFIELDBUFFERSIZE * sizeof(field_buffer[0]) );
         }
         // set buffers length
-        info_.AlbumLength = info_.ArtistLength = info_.DateLength
-        = info_.DateLength = info_.FileNameLength = info_.GenreLength = info_.TitleLength
+        info_.AlbumBufferSizeInChars = info_.ArtistBufferSizeInChars = info_.DateBufferSizeInChars
+        = info_.DateBufferSizeInChars = info_.FileNameBufferSizeInChars = info_.GenreBufferSizeInChars = info_.TitleBufferSizeInChars
         = kFIELDBUFFERSIZE;
+
         // set buffers
-        info_.Album = album;
-        info_.Artist = artist;
-        info_.Date = date;
-        info_.FileName = filename;
-        info_.Genre = genre;
-        info_.Title = title;
+        info_.AlbumBuffer = album;
+        info_.ArtistBuffer = artist;
+        info_.DateBuffer = date;
+        info_.FileNameBuffer = filename;
+        info_.GenreBuffer = genre;
+        info_.TitleBuffer = title;
 
         return info_;
     }
@@ -547,12 +548,12 @@ public:
     {
         getFileInfoWithCorrectStringLengths();
 
-        return PlaylistEntry(   info_.Album,    info_.AlbumLength,
-                                info_.Artist,   info_.ArtistLength,
-                                info_.Date,     info_.DateLength,
-                                info_.FileName, info_.FileNameLength,
-                                info_.Genre,    info_.GenreLength,
-                                info_.Title,    info_.TitleLength,
+        return PlaylistEntry(   info_.AlbumBuffer,    info_.AlbumBufferSizeInChars,
+                                info_.ArtistBuffer,   info_.ArtistBufferSizeInChars,
+                                info_.DateBuffer,     info_.DateBufferSizeInChars,
+                                info_.FileNameBuffer, info_.FileNameBufferSizeInChars,
+                                info_.GenreBuffer,    info_.GenreBufferSizeInChars,
+                                info_.TitleBuffer,    info_.TitleBufferSizeInChars,
                                 // info_.Active - useless, not used.
                                 info_.BitRate,
                                 info_.Channels,
@@ -573,28 +574,28 @@ public:
     AIMP3SDK::TAIMPFileInfo& getFileInfoWithCorrectStringLengths()
     {
         // fill string lengths if Aimp does not do this.
-        if (info_.AlbumLength == kFIELDBUFFERSIZE) {
-            info_.AlbumLength = std::wcslen(info_.Album);
+        if (info_.AlbumBufferSizeInChars == kFIELDBUFFERSIZE) {
+            info_.AlbumBufferSizeInChars = std::wcslen(info_.AlbumBuffer);
         }
 
-        if (info_.ArtistLength == kFIELDBUFFERSIZE) {
-            info_.ArtistLength = std::wcslen(info_.Artist);
+        if (info_.ArtistBufferSizeInChars == kFIELDBUFFERSIZE) {
+            info_.ArtistBufferSizeInChars = std::wcslen(info_.ArtistBuffer);
         }
 
-        if (info_.DateLength == kFIELDBUFFERSIZE) {
-            info_.DateLength = std::wcslen(info_.Date);
+        if (info_.DateBufferSizeInChars == kFIELDBUFFERSIZE) {
+            info_.DateBufferSizeInChars = std::wcslen(info_.DateBuffer);
         }
 
-        if (info_.FileNameLength == kFIELDBUFFERSIZE) {
-            info_.FileNameLength = std::wcslen(info_.FileName);
+        if (info_.FileNameBufferSizeInChars == kFIELDBUFFERSIZE) {
+            info_.FileNameBufferSizeInChars = std::wcslen(info_.FileNameBuffer);
         }
 
-        if (info_.GenreLength == kFIELDBUFFERSIZE) {
-            info_.GenreLength = std::wcslen(info_.Genre);
+        if (info_.GenreBufferSizeInChars == kFIELDBUFFERSIZE) {
+            info_.GenreBufferSizeInChars = std::wcslen(info_.GenreBuffer);
         }
 
-        if (info_.TitleLength == kFIELDBUFFERSIZE) {
-            info_.TitleLength = std::wcslen(info_.Title);
+        if (info_.TitleBufferSizeInChars == kFIELDBUFFERSIZE) {
+            info_.TitleBufferSizeInChars = std::wcslen(info_.TitleBuffer);
         }
 
         return info_;
@@ -660,7 +661,7 @@ void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
                                             const std::string msg = MakeString() << "Error sqlite3_bind_"#type << " " << rc_db; \
                                             throw std::runtime_error(msg); \
                                         }
-#define bindText(field_index, info_field_name)  rc_db = sqlite3_bind_text16(stmt, field_index, info.##info_field_name, info.##info_field_name##Length * sizeof(WCHAR), SQLITE_STATIC); \
+#define bindText(field_index, info_field_name)  rc_db = sqlite3_bind_text16(stmt, field_index, info.##info_field_name##Buffer, info.##info_field_name##BufferSizeInChars * sizeof(WCHAR), SQLITE_STATIC); \
                                                 if (SQLITE_OK != rc_db) { \
                                                     const std::string msg = MakeString() << "sqlite3_bind_text16" << " " << rc_db; \
                                                     throw std::runtime_error(msg); \
@@ -1641,18 +1642,18 @@ void fillTAIMPFileInfoFromPlaylistEntry(const PlaylistEntry& entry, AIMP3SDK::TA
     fi.SampleRate  = entry.sampleRate();
     fi.TrackNumber = entry.trackID();
 
-    fi.AlbumLength    = entry.album().length();
-    fi.ArtistLength   = entry.artist().length();
-    fi.DateLength     = entry.date().length();
-    fi.FileNameLength = entry.filename().length();
-    fi.GenreLength    = entry.genre().length();
-    fi.TitleLength    = entry.title().length();
-    fi.Album    = const_cast<PWCHAR>( entry.album().c_str() );
-    fi.Artist   = const_cast<PWCHAR>( entry.artist().c_str() );
-    fi.Date     = const_cast<PWCHAR>( entry.date().c_str() );
-    fi.FileName = const_cast<PWCHAR>( entry.filename().c_str() );
-    fi.Genre    = const_cast<PWCHAR>( entry.genre().c_str() );
-    fi.Title    = const_cast<PWCHAR>( entry.title().c_str() );
+    fi.AlbumBufferSizeInChars    = entry.album().length();
+    fi.ArtistBufferSizeInChars   = entry.artist().length();
+    fi.DateBufferSizeInChars     = entry.date().length();
+    fi.FileNameBufferSizeInChars = entry.filename().length();
+    fi.GenreBufferSizeInChars    = entry.genre().length();
+    fi.TitleBufferSizeInChars    = entry.title().length();
+    fi.AlbumBuffer    = const_cast<PWCHAR>( entry.album().c_str() );
+    fi.ArtistBuffer   = const_cast<PWCHAR>( entry.artist().c_str() );
+    fi.DateBuffer     = const_cast<PWCHAR>( entry.date().c_str() );
+    fi.FileNameBuffer = const_cast<PWCHAR>( entry.filename().c_str() );
+    fi.GenreBuffer    = const_cast<PWCHAR>( entry.genre().c_str() );
+    fi.TitleBuffer    = const_cast<PWCHAR>( entry.title().c_str() );
 }
 
 std::wstring AIMP3Manager::getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const // throw std::invalid_argument

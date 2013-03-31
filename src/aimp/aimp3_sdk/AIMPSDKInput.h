@@ -25,11 +25,11 @@ const int AIMP_INPUT_BITDEPTH_32BIT      = 4;
 const int AIMP_INPUT_BITDEPTH_32BITFLOAT = 5;
 const int AIMP_INPUT_BITDEPTH_64BITFLOAT = 6;
 
-const int AIMP_INPUT_FLAG_FILE           = 1; // IAIMPInputHeader.CreateDecoder supports
-const int AIMP_INPUT_FLAG_ISTREAM        = 2; // IAIMPInputHeader.CreateDecoderEx supports
+const int AIMP_INPUT_FLAG_FILE           = 1; // IAIMPInputHeader.CreateDecoder is supported by plugin
+const int AIMP_INPUT_FLAG_ISTREAM        = 2; // IAIMPInputHeader.CreateDecoderEx is supported by plugin
 
-DEFINE_GUID(IID_IAIMPInputStream,		 0x41494D50, 0x0033, 0x494E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10);
-DEFINE_GUID(IID_IAIMPInputPluginDecoder, 0x41494D50, 0x0033, 0x494E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20);
+static const GUID IID_IAIMPInputStream = {0x41494D50, 0x0033, 0x494E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10};
+static const GUID IID_IAIMPInputPluginDecoder = {0x41494D50, 0x0033, 0x494E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20};
  
 /* IAIMPInputStream */
 
