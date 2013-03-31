@@ -160,6 +160,8 @@ private:
     boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistStrings> getPlaylistStrings(const AIMP3SDK::HPLS playlist_id); // throws std::runtime_error
     PlaylistEntry& getEntry(TrackDescription track_desc); // throws std::runtime_error
 
+    TrackDescription getTrackDescOfQueuedEntry(AIMP3SDK::HPLSENTRY entry_id); // throws std::runtime_error;
+
     void initPlaylistDB(); // throws std::runtime_error
     void shutdownPlaylistDB();
     void deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id);

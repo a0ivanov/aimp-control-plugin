@@ -762,13 +762,11 @@ public:
 /*! 
     \brief Returns list of queued entries.
            Params are the same as in GetPlaylistEntries except playlist id.
-\internal   ///!!!
     \param format_string - string, optional. If specified entry will be presented as string, instead set of fields. Mutual exclusive with 'fields' param.
-\internal
     \param fields - array of strings, optional. List of fields that need to be filled.
            Mutual exclusive with 'format_string' param.
            Available fields are:
-            - id. Note that this id is valid only for MoveQueuedEntry ///!!! method.
+            - id.
             - title
             - artist
             - album

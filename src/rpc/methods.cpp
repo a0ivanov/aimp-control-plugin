@@ -682,13 +682,6 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
         if (params.size() < 1) {
             throw Rpc::Exception("Wrong arguments count. Wait at least int 'playlist_id' argument.", WRONG_ARGUMENT);
         }
-    } else {
-        const auto& setters = entry_fields_filler_.setters_required_;
-        if ( !setters.empty() ) {
-            if (setters.front()->first == kRQST_KEY_FORMAT_STRING) {
-                throw Rpc::Exception("Format string does not supported for queued entries request", WRONG_ARGUMENT); // Not supported because of in current implementation of queued entries we have no information about entry's playlist.
-            }
-        }
     }
 
     const int playlist_id_not_used = 0;

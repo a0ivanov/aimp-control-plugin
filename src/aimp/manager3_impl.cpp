@@ -747,7 +747,7 @@ void AIMP3Manager::reloadQueuedEntries() // throws std::runtime_error
 
     deleteQueuedEntriesFromPlaylistDB(); // remove old entries before adding new ones.
 
-    sqlite3_stmt* stmt = createStmt(playlists_db_, "INSERT INTO QueuedEntries VALUES (?,?,?,?,"
+    sqlite3_stmt* stmt = createStmt(playlists_db_, "INSERT INTO QueuedEntries VALUES (?,?,?,?,?,"
                                                                                      "?,?,?,?,?,"
                                                                                      "?,?,?,?)"
                                     );
@@ -796,22 +796,23 @@ void AIMP3Manager::reloadQueuedEntries() // throws std::runtime_error
                                                     throw std::runtime_error(msg); \
                                                 }
                 int rc_db;
-
+                TrackDescription track_desc = getTrackDescOfQueuedEntry(entry_id);
+                bind(int,    1, track_desc.playlist_id);
                 // bind all values
                 const AIMP3SDK::TAIMPFileInfo& info = file_info_helper.getFileInfoWithCorrectStringLengths();
-                bind(int,    1, entry_index);
-                bindText(    2, Album);
-                bindText(    3, Artist);
-                bindText(    4, Date);
-                bindText(    5, FileName);
-                bindText(    6, Genre);
-                bindText(    7, Title);
-                bind(int,    8, info.BitRate);
-                bind(int,    9, info.Channels);
-                bind(int,   10, info.Duration);
-                bind(int64, 11, info.FileSize);
-                bind(int,   12, rating);
-                bind(int,   13, info.SampleRate);
+                bind(int,    2, track_desc.track_id);
+                bindText(    3, Album);
+                bindText(    4, Artist);
+                bindText(    5, Date);
+                bindText(    6, FileName);
+                bindText(    7, Genre);
+                bindText(    8, Title);
+                bind(int,    9, info.BitRate);
+                bind(int,   10, info.Channels);
+                bind(int,   11, info.Duration);
+                bind(int64, 12, info.FileSize);
+                bind(int,   13, rating);
+                bind(int,   14, info.SampleRate);
 
                 rc_db = sqlite3_step(stmt);
                 if (SQLITE_DONE != rc_db) {
@@ -825,6 +826,47 @@ void AIMP3Manager::reloadQueuedEntries() // throws std::runtime_error
             }
         }
     }
+}
+
+TrackDescription AIMP3Manager::getTrackDescOfQueuedEntry(AIMP3SDK::HPLSENTRY entry_id) // throws std::runtime_error
+{
+    // We rely on fact that AIMP always have queued entry in one of playlists.
+    int entry_index;
+    { // find entry index (which is currently used as id).
+    HRESULT r = aimp3_playlist_manager_->EntryPropertyGetValue(entry_id, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_INDEX, &entry_index, sizeof(entry_index));
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << __FUNCTION__" error: EntryPropertyGetValue(AIMP_PLAYLIST_ENTRY_PROPERTY_INDEX) returned " << r);
+    }
+    }
+
+    // find playlist id.
+    const std::string& query = MakeString() << "SELECT playlist_id, title FROM PlaylistsEntries "
+                                            << "WHERE entry_id = " << entry_index;
+
+    sqlite3* playlists_db = playlists_db_;
+    sqlite3_stmt* stmt = createStmt( playlists_db, query.c_str() );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    for(;;) {
+		int rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+            int playlist_id = sqlite3_column_int(stmt, 0);
+            const PlaylistEntry& entry = getEntry(TrackDescription(playlist_id, entry_index));
+            const wchar_t* title = reinterpret_cast<const wchar_t*>(sqlite3_column_text16(stmt, 1));
+            if (entry.title() == title) { // hope it's small probability to have the same titles at the same indexes in loaded playlists.
+                return TrackDescription(playlist_id, entry_index);        
+            }
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                 << rc_db << ": " << sqlite3_errmsg(playlists_db)
+                                                 << ". Query: " << query;
+            throw std::runtime_error(msg);
+		}
+    }
+
+    throw std::runtime_error(MakeString() << "Queued entry is not found at existing playlists unexpectedly. Entry AIMP id: " << entry_id << ", index in playlist: " << entry_index);
 }
 
 void AIMP3Manager::startPlayback()
@@ -1893,11 +1935,12 @@ void AIMP3Manager::initPlaylistDB() // throws std::runtime_error
                                                << rc << ": " << errmsg );
     }
 
-    { // create table for content of all playlists.
+    { // create table for content of entries queue.
     char* errmsg = nullptr;
     ON_BLOCK_EXIT(&sqlite3_free, errmsg);
     rc = sqlite3_exec(playlists_db_,
-                      "CREATE TABLE QueuedEntries (  entry_id       INTEGER,"
+                      "CREATE TABLE QueuedEntries (  playlist_id    INTEGER,"
+                                                    "entry_id       INTEGER,"
                                                     "album          VARCHAR(128),"
                                                     "artist         VARCHAR(128),"
                                                     "date           VARCHAR(16),"
