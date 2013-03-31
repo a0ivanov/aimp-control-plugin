@@ -252,6 +252,17 @@ void AIMP3Manager::initializeAIMPObjects()
     }
     aimp3_coverart_manager_.reset(coverart_manager);
     coverart_manager->Release();
+    
+    IAIMPAddonsPlaylistQueue* playlist_queue;
+    if (S_OK != aimp3_core_unit_->QueryInterface(IID_IAIMPAddonsPlaylistQueue,
+                                                 reinterpret_cast<void**>(&playlist_queue)
+                                                 ) 
+        )
+    {
+        throw std::runtime_error("Creation object IAIMPAddonsPlaylistQueue failed"); 
+    }
+    aimp3_playlist_queue_.reset(playlist_queue);
+    playlist_queue->Release();
 }
 
 void AIMP3Manager::onTick()
@@ -1482,7 +1493,14 @@ void AIMP3Manager::enqueueEntryForPlay(TrackDescription track_desc, bool insert_
 {
     using namespace AIMP3SDK;
     AIMP3SDK::HPLSENTRY entry_handle = getEntryHandle(track_desc, aimp3_playlist_manager_);
-    HRESULT r = aimp3_playlist_manager_->QueueEntryAdd(entry_handle, insert_at_queue_beginning);
+
+    HRESULT r;
+    if (aimp3_playlist_queue_) {
+        r = aimp3_playlist_queue_->QueueEntryAdd(entry_handle, insert_at_queue_beginning);
+    } else {
+        r = aimp3_playlist_manager_->QueueEntryAdd(entry_handle, insert_at_queue_beginning);
+    }
+
     if (S_OK != r) {
         throw std::runtime_error(MakeString() << "Error " << r << " in "__FUNCTION__" with " << track_desc);
     }
@@ -1492,7 +1510,14 @@ void AIMP3Manager::removeEntryFromPlayQueue(TrackDescription track_desc) // thro
 {
     using namespace AIMP3SDK;
     AIMP3SDK::HPLSENTRY entry_handle = getEntryHandle(track_desc, aimp3_playlist_manager_);
-    HRESULT r = aimp3_playlist_manager_->QueueEntryRemove(entry_handle);
+
+    HRESULT r;
+    if (aimp3_playlist_queue_) {
+        r = aimp3_playlist_queue_->QueueEntryRemove(entry_handle);
+    } else {
+        r = aimp3_playlist_manager_->QueueEntryRemove(entry_handle);
+    }
+
     if (S_OK != r) {
         throw std::runtime_error(MakeString() << "Error " << r << " in "__FUNCTION__" with " << track_desc);
     }

@@ -166,6 +166,7 @@ private:
     boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlayerManager>   aimp3_player_manager_;
     boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistManager> aimp3_playlist_manager_;
     boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsCoverArtManager> aimp3_coverart_manager_;
+    boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistQueue>   aimp3_playlist_queue_;
 
     class AIMPCoreUnitMessageHook;
     boost::intrusive_ptr<AIMPCoreUnitMessageHook> aimp3_core_message_hook_;
