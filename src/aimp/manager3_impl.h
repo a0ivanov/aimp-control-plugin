@@ -143,6 +143,8 @@ private:
     */
     void loadEntries(Playlist& playlist); // throws std::runtime_error
 
+    void reloadQueuedEntries(); // throws std::runtime_error
+
     //! Loads playlist by AIMP internal index.
     Playlist loadPlaylist(int playlist_index); // throws std::runtime_error
     Playlist loadPlaylist(AIMP3SDK::HPLS id); // throws std::runtime_error
@@ -157,6 +159,7 @@ private:
     void deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id);
     void deletePlaylistFromPlaylistDB(PlaylistID playlist_id);
     void updatePlaylistCrcInDB(const Playlist& playlist);
+    void deleteQueuedEntriesFromPlaylistDB();
     
     //! initializes all requiered for work AIMP SDK interfaces.
     void initializeAIMPObjects(); // throws std::runtime_error
