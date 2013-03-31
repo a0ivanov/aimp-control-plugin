@@ -107,6 +107,14 @@ public:
     sqlite3* playlists_db()
         { return playlists_db_; }
 
+    bool isPlaylistQueueSupported() const
+        { return aimp3_playlist_queue_ != nullptr; }
+
+    /*!
+        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
+    */
+    void reloadQueuedEntries(); // throws std::runtime_error
+
 private:
 
     void onAimpCoreMessage(DWORD AMessage, int AParam1, void *AParam2, HRESULT *AResult);
@@ -142,8 +150,6 @@ private:
         \throw std::runtime_error if error occured while loading entries data.
     */
     void loadEntries(Playlist& playlist); // throws std::runtime_error
-
-    void reloadQueuedEntries(); // throws std::runtime_error
 
     //! Loads playlist by AIMP internal index.
     Playlist loadPlaylist(int playlist_index); // throws std::runtime_error

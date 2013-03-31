@@ -740,17 +740,21 @@ void AIMP3Manager::reloadQueuedEntries() // throws std::runtime_error
     using namespace AIMP3SDK;
     // PROFILE_EXECUTION_TIME(__FUNCTION__);
 
+    assert(aimp3_playlist_queue_);
+    if (!aimp3_playlist_queue_) {
+        return;
+    }
+
     deleteQueuedEntriesFromPlaylistDB(); // remove old entries before adding new ones.
 
-    sqlite3_stmt* stmt = createStmt(playlists_db_, "INSERT INTO PlaylistsEntries VALUES (?,?,?,?,"
-                                                                                        "?,?,?,?,?,"
-                                                                                        "?,?,?,?)"
+    sqlite3_stmt* stmt = createStmt(playlists_db_, "INSERT INTO QueuedEntries VALUES (?,?,?,?,"
+                                                                                     "?,?,?,?,?,"
+                                                                                     "?,?,?,?)"
                                     );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
     AIMP3FileInfoHelper file_info_helper; // used for get entries from AIMP conveniently.
 
-    assert(aimp3_playlist_queue_);
     const int entries_count = aimp3_playlist_queue_->QueueEntryGetCount();
     for (int entry_index = 0; entry_index < entries_count; ++entry_index) {
         HPLSENTRY entry_id;

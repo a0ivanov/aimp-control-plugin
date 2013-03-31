@@ -492,22 +492,28 @@ void AIMPControlPlugin::createRpcMethods()
     // tracks
     REGISTER_AIMP_RPC_METHOD(EnqueueTrack);
     REGISTER_AIMP_RPC_METHOD(RemoveTrackFromPlayQueue);
-    { // register this way since GetEntryPositionInDataTable depends from GetPlaylistEntries 
+    { // register this way since GetEntryPositionInDataTable and GetQueuedEntries depend on GetPlaylistEntries.
     std::auto_ptr<GetPlaylistEntries> method_getplaylistentries(new GetPlaylistEntries(*aimp_manager_,
                                                                                        *rpc_request_handler_
                                                                                        )
                                                                 );
 
-    std::auto_ptr<Rpc::Method> method_GetEntryPositionInDataTable(new GetEntryPositionInDataTable(*aimp_manager_,
+    std::auto_ptr<Rpc::Method> method_getentrypositionindatatable(new GetEntryPositionInDataTable(*aimp_manager_,
                                                                                                   *rpc_request_handler_,
                                                                                                   *method_getplaylistentries
                                                                                                   )
                                                                   );
+    std::auto_ptr<Rpc::Method> method_getqueuedentries(new GetQueuedEntries(*aimp_manager_,
+                                                                            *rpc_request_handler_,
+                                                                            *method_getplaylistentries
+                                                                            )
+                                                        );
     { // auto_ptr can not be implicitly casted to ptr to object of base class.
     std::auto_ptr<Rpc::Method> method( method_getplaylistentries.release() );
     rpc_request_handler_->addMethod(method);
     }
-    rpc_request_handler_->addMethod(method_GetEntryPositionInDataTable);
+    rpc_request_handler_->addMethod(method_getentrypositionindatatable);
+    rpc_request_handler_->addMethod(method_getqueuedentries);
     }
 
     REGISTER_AIMP_RPC_METHOD(GetPlaylistEntriesCount);

@@ -541,7 +541,7 @@ std::string GetPlaylistEntries::getLimitString(const Rpc::Value& params) const
 	        os << "LIMIT " << start_entry_index << ',' << entries_count;
         }
 
-        if ( EntryLocationDeterminationMode() ) {
+        if ( entryLocationDeterminationMode() ) {
             pagination_info_->entries_on_page_ = entries_count;
         }
     }
@@ -571,14 +571,21 @@ std::string GetPlaylistEntries::getWhereString(const Rpc::Value& params, const i
 
     std::ostringstream os;
     
-    os << "WHERE playlist_id=" << playlist_id;
+    if (!queuedEntriesMode()) {
+        os << "WHERE playlist_id=" << playlist_id;
+    }
+
 	if ( params.isMember(kRQST_KEY_SEARCH_STRING) ) {
         const std::string& search_string = params[kRQST_KEY_SEARCH_STRING];
         if ( !search_string.empty() && !fields_to_filter_.empty() ) { ///??? search in all fields or only in requested ones.
             const std::string like_arg = '%' + search_string + '%';
             const QueryArgSetter& setter = boost::bind<void>(LikeArgSetter(like_arg), _1, _2);
             
-            os << " AND(";
+            if (!queuedEntriesMode()) {
+                os << " AND (";
+            } else {
+                os << " WHERE (";
+            }
             FieldNames::const_iterator begin = fields_to_filter_.begin(),
                                        end   = fields_to_filter_.end();
             for (FieldNames::const_iterator fieldname_it = begin;
@@ -628,8 +635,13 @@ size_t GetPlaylistEntries::getTotalEntriesCount(sqlite3* playlists_db, const int
     using namespace Utilities;
 
     std::ostringstream query;
-    query << "SELECT COUNT(*) FROM PlaylistsEntries WHERE playlist_id=" << playlist_id;
-    
+    query << "SELECT COUNT(*) FROM ";
+    if (!queuedEntriesMode()) {
+        query << "PlaylistsEntries WHERE playlist_id=" << playlist_id;
+    } else {
+        query << "QueuedEntries";
+    }
+
     sqlite3_stmt* stmt = createStmt( playlists_db,
                                      query.str()
                                     );
@@ -657,33 +669,46 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
 
     PROFILE_EXECUTION_TIME(__FUNCTION__);
  
-    ON_BLOCK_EXIT_OBJ(*this, &GetPlaylistEntries::DeactivateEntryLocationDeterminationMode);
+    ON_BLOCK_EXIT_OBJ(*this, &GetPlaylistEntries::deactivateEntryLocationDeterminationMode);
+    ON_BLOCK_EXIT_OBJ(*this, &GetPlaylistEntries::deactivateQueuedEntriesMode);
 
     const Rpc::Value& params = root_request["params"];
 
-    // ensure we got obligatory argument: playlist id.
-    if (params.size() < 1) {
-        throw Rpc::Exception("Wrong arguments count. Wait at least int 'playlist_id' argument.", WRONG_ARGUMENT);
+    initEntriesFiller(params);
+    
+    if (!queuedEntriesMode()) {
+        // ensure we got obligatory argument: playlist id.
+        if (params.size() < 1) {
+            throw Rpc::Exception("Wrong arguments count. Wait at least int 'playlist_id' argument.", WRONG_ARGUMENT);
+        }
+    } else {
+        const auto& setters = entry_fields_filler_.setters_required_;
+        if ( !setters.empty() ) {
+            if (setters.front()->first == kRQST_KEY_FORMAT_STRING) {
+                throw Rpc::Exception("Format string does not supported for queued entries request", WRONG_ARGUMENT); // Not supported because of in current implementation of queued entries we have no information about entry's playlist.
+            }
+        }
     }
 
-    initEntriesFiller(params);
-
-    sqlite3* playlists_db = getPlaylistsDB(aimp_manager_);
-
-    const int playlist_id = aimp_manager_.getAbsolutePlaylistID(params["playlist_id"]);
+    const int playlist_id_not_used = 0;
+    const int playlist_id = !queuedEntriesMode() ? aimp_manager_.getAbsolutePlaylistID(params["playlist_id"])
+                                                 : playlist_id_not_used;
 
     query_arg_setters_.clear();
 
-    std::ostringstream query_without_limit;
-    query_without_limit << "SELECT " << getColumnsString() << " FROM PlaylistsEntries "
+    std::ostringstream query_without_limit,
+                       query_with_limit;
+    query_without_limit << "SELECT " << getColumnsString() << " FROM "
+                        << (!queuedEntriesMode() ? "PlaylistsEntries" : "QueuedEntries")
+                        << ' '   
                         << getWhereString(params, playlist_id) << ' ' 
                         << getOrderString(params);
-    std::ostringstream query_with_limit;
     query_with_limit << query_without_limit.str() << ' '
                      << getLimitString(params);
 
-    const std::string query = !EntryLocationDeterminationMode() ? query_with_limit.str() : query_without_limit.str();
+    const std::string query = !entryLocationDeterminationMode() ? query_with_limit.str() : query_without_limit.str();
 
+    sqlite3* playlists_db = getPlaylistsDB(aimp_manager_);
     sqlite3_stmt* stmt = createStmt( playlists_db, query.c_str() );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
@@ -696,14 +721,15 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
 #ifdef _DEBUG
     const auto& setters = entry_fields_filler_.setters_required_;
     if ( !(    !setters.empty()
-            && setters.front()->first == kRQST_KEY_FORMAT_STRING) 
+            && setters.front()->first == kRQST_KEY_FORMAT_STRING
+           ) 
         )
     {
         assert( static_cast<size_t>( sqlite3_column_count(stmt) ) == setters.size() );
     }
 #endif
 
-    if ( !EntryLocationDeterminationMode() ) {
+    if ( !entryLocationDeterminationMode() ) {
         Rpc::Value& rpc_result = root_response["result"];
         Rpc::Value& rpcvalue_entries  = rpc_result[kRSLT_KEY_ENTRIES];
         rpcvalue_entries.setSize(0); // return zero-length array, not null if no entires found.
@@ -788,7 +814,7 @@ Rpc::ResponseType GetEntryPositionInDataTable::execute(const Rpc::Value& root_re
     }
 
     PaginationInfo pagination_info(track_id, id_field_index);
-    getplaylistentries_method_.ActivateEntryLocationDeterminationMode(&pagination_info);
+    getplaylistentries_method_.activateEntryLocationDeterminationMode(&pagination_info);
     getplaylistentries_method_.execute(root_request_copy, root_response);
 
     const size_t entries_on_page = pagination_info.entries_on_page_;
@@ -804,6 +830,29 @@ Rpc::ResponseType GetEntryPositionInDataTable::execute(const Rpc::Value& root_re
         rpc_result["track_index_on_page"] = -1;
     }
     return RESPONSE_IMMEDIATE;
+}
+
+GetQueuedEntries::GetQueuedEntries(AIMPManager& aimp_manager,
+                                   Rpc::RequestHandler& rpc_request_handler,
+                                   GetPlaylistEntries& getplaylistentries_method
+                                   )
+    :
+    AIMPRPCMethod("GetQueuedEntries", aimp_manager, rpc_request_handler),
+    getplaylistentries_method_(getplaylistentries_method)
+{
+}
+
+Rpc::ResponseType GetQueuedEntries::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+{
+    if ( AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_) ) {
+        using namespace AIMP3SDK;
+        if (aimp3_manager->isPlaylistQueueSupported()) {
+            aimp3_manager->reloadQueuedEntries();
+            getplaylistentries_method_.activateQueuedEntriesMode();
+            return getplaylistentries_method_.execute(root_request, root_response);
+        }
+    }
+    throw Rpc::Exception("Not supported by this version of AIMP", METHOD_NOT_FOUND_ERROR);
 }
 
 ResponseType GetPlaylistEntriesCount::execute(const Rpc::Value& root_request, Rpc::Value& root_response)

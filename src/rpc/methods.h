@@ -616,7 +616,7 @@ struct PaginationInfo : boost::noncopyable {
                                                 - data
                                                 - genre
 
-    \return object which describes playlist entry.
+    \return object which describes playlist entries.
             Example:\code{"count_of_found_entries":1,"entries":[[1,"Looks Like Chaplin"]],"total_entries_count":3}}\endcode
             If params were \code{"playlist_id": 2136855360, "search_string":"Like"}}\endcode
 */
@@ -639,15 +639,22 @@ public:
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 
-    void ActivateEntryLocationDeterminationMode(PaginationInfo* pagination_info)
+    void activateEntryLocationDeterminationMode(PaginationInfo* pagination_info)
         { pagination_info_ = pagination_info; }
+    void activateQueuedEntriesMode()
+        { queued_entries_mode_ = true; }
 
 private:
 
-    void DeactivateEntryLocationDeterminationMode()
+    void deactivateEntryLocationDeterminationMode()
         { pagination_info_ = nullptr; }
-    bool EntryLocationDeterminationMode() const
+    bool entryLocationDeterminationMode() const
         { return pagination_info_ != nullptr; }
+
+    bool queuedEntriesMode() const
+        { return queued_entries_mode_; }
+    void deactivateQueuedEntriesMode()
+        { queued_entries_mode_ = false; }
 
     // See HelperFillRpcFields class commentaries.
     RpcValueSetHelpers::HelperFillRpcFields<PlaylistEntry> entry_fields_filler_;
@@ -688,6 +695,7 @@ private:
                       kRSLT_KEY_COUNT_OF_FOUND_ENTRIES;
 
     PaginationInfo* pagination_info_;
+    bool queued_entries_mode_;
 };
 
 /*! 
@@ -707,7 +715,7 @@ class GetEntryPositionInDataTable : public AIMPRPCMethod
 {
 public:
 
-    // Note: we pass GetPlaylistEntries object by reference here, so we need to guaranty that it's lifetime is longer than lifetime of this object.
+    // Note: we pass GetPlaylistEntries object by reference here, so we need to guarantee that it's lifetime is longer than lifetime of this object.
     GetEntryPositionInDataTable(AIMPManager& aimp_manager,
                                 Rpc::RequestHandler& rpc_request_handler,
                                 GetPlaylistEntries& getplaylistentries_method
@@ -749,6 +757,67 @@ public:
     }
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
+};
+
+/*! 
+    \brief Returns list of queued entries.
+           Params are the same as in GetPlaylistEntries except playlist id.
+\internal   ///!!!
+    \param format_string - string, optional. If specified entry will be presented as string, instead set of fields. Mutual exclusive with 'fields' param.
+\internal
+    \param fields - array of strings, optional. List of fields that need to be filled.
+           Mutual exclusive with 'format_string' param.
+           Available fields are:
+            - id. Note that this id is valid only for MoveQueuedEntry ///!!! method.
+            - title
+            - artist
+            - album
+            - date
+            - genre
+            - bitrate
+            - duration
+            - filesize
+            - rating
+           If 'fields' param is not specified the function treats it equals "id, title".
+    \param start_index - int, optional(Default is 0). Beginnig of required entries range.
+    \param entries_count - int, optional(Default is counnt of available entries). Required count of entries.
+    \param order_fields - array of field descriptions, optional. It is used to order entries by multiple fields.
+           Each descriptor is object with members:
+                - 'field' - field to order. Available fields are: 'id', 'title', 'artist', 'album', 'date', 'genre', 'bitrate', 'duration', 'filesize', 'rating'.
+                - 'dir' - order('asc' - ascending, 'desc' - descending)
+    \param search_string - string, optional. Only those entries will be returned which have at least
+                                             one occurence of 'search_string' value in one of entry string fields:
+                                                - title
+                                                - artist
+                                                - album
+                                                - data
+                                                - genre
+
+    \return object which describes queued entries.
+            Example:\code{"count_of_found_entries":1,"entries":[[1,"Looks Like Chaplin"]],"total_entries_count":3}}\endcode
+            If params were \code{"playlist_id": 2136855360, "search_string":"Like"}}\endcode
+*/
+class GetQueuedEntries : public AIMPRPCMethod
+{
+public:
+
+    // Note: we pass GetPlaylistEntries object by reference here, so we need to guarantee that it's lifetime is longer than lifetime of this object.
+    GetQueuedEntries(AIMPManager& aimp_manager,
+                     Rpc::RequestHandler& rpc_request_handler,
+                     GetPlaylistEntries& getplaylistentries_method
+                     );
+
+    std::string help()
+    {
+        return ""
+        ;
+    }
+
+    Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
+
+private:
+
+    GetPlaylistEntries& getplaylistentries_method_;
 };
 
 /*! 
