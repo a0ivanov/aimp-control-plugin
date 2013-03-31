@@ -241,7 +241,7 @@ inline bool SafePutStringToBuffer(const std::wstring& src, PWCHAR dst, int dstLe
         //src.copy(dst, dstLength); // The function does not append a null character after the content copied.
 
         const size_t dstLength_ = dstLength,
-                     copyLength = std::min(src.length(), dstLength_);
+                     copyLength = (std::min)(src.length(), dstLength_);
         //static_assert( sizeof(std::wstring::value_type) == sizeof(WCHAR) );
         memset( dst, 0, dstLength_ * sizeof(WCHAR) );
         memcpy( dst, src.c_str(), copyLength * sizeof(WCHAR) );
