@@ -420,7 +420,8 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager,
     kRSLT_KEY_TOTAL_ENTRIES_COUNT("total_entries_count"),
     kRSLT_KEY_ENTRIES("entries"),
     kRSLT_KEY_COUNT_OF_FOUND_ENTRIES("count_of_found_entries"),
-    pagination_info_(nullptr)
+    pagination_info_(nullptr),
+    queued_entries_mode_(false)
 {
     using namespace RpcValueSetHelpers;
     using namespace RpcResultUtils;
