@@ -23,7 +23,7 @@ setlocal ENABLEDELAYEDEXPANSION
     echo Minimizing of browser scripts...
     set CLOSURE_COMPILER=tools\compiler.jar
     set YUICOMPRESSOR=tools\yuicompressor-2.4.2.jar
-    tools\html_optimizer.py -google_closure_compiler !CLOSURE_COMPILER! ^
+    python tools\html_optimizer.py -google_closure_compiler !CLOSURE_COMPILER! ^
                             -yuicompressor !YUICOMPRESSOR! ^
                             -output %CLIENT_SRC_RELEASE_DIR% client_src\index.htm || goto ERROR_HANDLER
 
