@@ -492,6 +492,7 @@ void AIMPControlPlugin::createRpcMethods()
     // tracks
     REGISTER_AIMP_RPC_METHOD(EnqueueTrack);
     REGISTER_AIMP_RPC_METHOD(RemoveTrackFromPlayQueue);
+    REGISTER_AIMP_RPC_METHOD(QueueTrackMove);
     { // register this way since GetEntryPositionInDataTable and GetQueuedEntries depend on GetPlaylistEntries.
     std::auto_ptr<GetPlaylistEntries> method_getplaylistentries(new GetPlaylistEntries(*aimp_manager_,
                                                                                        *rpc_request_handler_

@@ -103,6 +103,17 @@ AIMP3SDK::HPLSENTRY castToHPLSENTRY(PlaylistEntryID id)
 //    return reinterpret_cast<AIMP3SDK::HPLSENTRY>(id);
 //}
 
+AIMP3SDK::HPLSENTRY getEntryHandle(TrackDescription track_desc,
+                                   boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistManager> aimp3_playlist_manager)
+{
+    // Note: TrackDescription's track_id is really entry index, not HPLSENTRY value.
+    AIMP3SDK::HPLSENTRY handle = aimp3_playlist_manager->StorageGetEntry(cast<AIMP3SDK::HPLS>(track_desc.playlist_id), track_desc.track_id);    
+    if (handle == nullptr) {
+        throw std::runtime_error(MakeString() << "StorageGetEntry returns null for track " << track_desc);
+    }
+    return handle;
+}
+
 class AIMP3Manager::AIMPCoreUnitMessageHook : public IUnknownInterfaceImpl<AIMP3SDK::IAIMPCoreUnitMessageHook>
 {
 public:
@@ -735,15 +746,20 @@ void AIMP3Manager::loadEntries(Playlist& playlist) // throws std::runtime_error
     playlist.entries().swap(entries);
 }
 
+void AIMP3Manager::checkPlaylistQueueAvailability(const char* error_tag) const // throws std::runtime_error
+{
+    if (!isPlaylistQueueSupported()) {
+        assert(!"Operations with entry queue are not supported by current AIMP version.");
+        throw std::runtime_error(MakeString() << error_tag << " is not supported by current AIMP version.");
+    }
+}
+
 void AIMP3Manager::reloadQueuedEntries() // throws std::runtime_error
 {
     using namespace AIMP3SDK;
     // PROFILE_EXECUTION_TIME(__FUNCTION__);
 
-    assert(aimp3_playlist_queue_);
-    if (!aimp3_playlist_queue_) {
-        return;
-    }
+    checkPlaylistQueueAvailability(__FUNCTION__);
 
     deleteQueuedEntriesFromPlaylistDB(); // remove old entries before adding new ones.
 
@@ -869,6 +885,29 @@ TrackDescription AIMP3Manager::getTrackDescOfQueuedEntry(AIMP3SDK::HPLSENTRY ent
     }
 
     throw std::runtime_error(MakeString() << "Queued entry is not found at existing playlists unexpectedly. Entry AIMP id: " << entry_id << ", index in playlist: " << entry_index);
+}
+
+void AIMP3Manager::moveQueueEntry(TrackDescription track_desc, int new_queue_index) // throws std::runtime_error
+{
+    checkPlaylistQueueAvailability(__FUNCTION__);
+
+    AIMP3SDK::HPLSENTRY entry_handle = getEntryHandle(track_desc, aimp3_playlist_manager_);
+    HRESULT r = aimp3_playlist_queue_->QueueEntryMove(entry_handle, new_queue_index);
+    if (S_OK != r) {
+        const std::string msg = MakeString() << "IAIMPAddonsPlaylistQueue::QueueEntryMove() error " << r;
+        throw std::runtime_error(msg);
+    }
+}
+
+void AIMP3Manager::moveQueueEntry(int old_queue_index, int new_queue_index) // throws std::runtime_error
+{
+    checkPlaylistQueueAvailability(__FUNCTION__);
+
+    HRESULT r = aimp3_playlist_queue_->QueueEntryMove2(old_queue_index, new_queue_index);
+    if (S_OK != r) {
+        const std::string msg = MakeString() << "IAIMPAddonsPlaylistQueue::QueueEntryMove2() error " << r;
+        throw std::runtime_error(msg);
+    }
 }
 
 void AIMP3Manager::startPlayback()
@@ -1618,20 +1657,13 @@ AIMP3Manager::PLAYBACK_STATE AIMP3Manager::getPlaybackState() const
     return state;
 }
 
-AIMP3SDK::HPLSENTRY getEntryHandle(TrackDescription track_desc,
-                                   boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistManager> aimp3_playlist_manager)
-{
-    // Note: TrackDescription's track_id is really entry index, not HPLSENTRY value.
-    return aimp3_playlist_manager->StorageGetEntry(cast<AIMP3SDK::HPLS>(track_desc.playlist_id), track_desc.track_id);    
-}
-
 void AIMP3Manager::enqueueEntryForPlay(TrackDescription track_desc, bool insert_at_queue_beginning) // throws std::runtime_error
 {
     using namespace AIMP3SDK;
     AIMP3SDK::HPLSENTRY entry_handle = getEntryHandle(track_desc, aimp3_playlist_manager_);
 
     HRESULT r;
-    if (aimp3_playlist_queue_) {
+    if (isPlaylistQueueSupported()) {
         r = aimp3_playlist_queue_->QueueEntryAdd(entry_handle, insert_at_queue_beginning);
     } else {
         r = aimp3_playlist_manager_->QueueEntryAdd(entry_handle, insert_at_queue_beginning);
@@ -1648,7 +1680,7 @@ void AIMP3Manager::removeEntryFromPlayQueue(TrackDescription track_desc) // thro
     AIMP3SDK::HPLSENTRY entry_handle = getEntryHandle(track_desc, aimp3_playlist_manager_);
 
     HRESULT r;
-    if (aimp3_playlist_queue_) {
+    if (isPlaylistQueueSupported()) {
         r = aimp3_playlist_queue_->QueueEntryRemove(entry_handle);
     } else {
         r = aimp3_playlist_manager_->QueueEntryRemove(entry_handle);

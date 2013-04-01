@@ -26,5 +26,6 @@ error_track_not_found : 'Трек не найден',
 error_album_cover_load_failed : 'Ошибка при загрузке обложки альбома',
 error_rating_set_failed : 'Ошибка при сохранении рейтинга',
 error_status_set_failed : 'Ошибка при сохранении статуса',
-error_radio_capture_set_failed : 'Ошибка при установке режима "Захват радио"'
+error_radio_capture_set_failed : 'Ошибка при установке режима "Захват радио"',
+error_move_track_in_queue_failed: 'Ошибка перемещения трека в очереди'
 }

@@ -51,7 +51,8 @@ enum ERROR_CODES {
                    ALBUM_COVER_LOAD_FAILED = 22, /*!< can't get album cover. Possible reason: FreeImage.dll or FreeImagePlus.dll is not available for load by AIMP player. */
                    RATING_SET_FAILED = 23, /*!< can't set rating. */
                    STATUS_SET_FAILED = 24, /*!< can't set status. */
-                   RADIO_CAPTURE_MODE_SET_FAILED = 25 /*!< can't update radio capture mode. Possible reason: currenly playing track source is not radio, but usual file. */
+                   RADIO_CAPTURE_MODE_SET_FAILED = 25, /*!< can't update radio capture mode. Possible reason: currenly playing track source is not radio, but usual file. */
+                   MOVE_TRACK_IN_QUEUE_FAILED = 26 /*!< can't update position of track in queue. Possible reason: position index is out of range. */
 };
 
 using namespace AIMPPlayer;
@@ -502,6 +503,28 @@ public:
     {
         return "RemoveTrackFromPlayQueue(int track_id, int playlist_id) "
                "removes from AIMP play queue specified track in specified playlist.";
+    }
+
+    Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
+};
+
+/*! 
+    \brief Moves track to specified position in queue.
+    \param track_id - int, optional. If specified param playlist_id is obligatory. Note: track should be already queued. 
+    \param playlist_id - int, optional. If specified param track_id is obligatory. Note: track should be already queued.
+    \param old_queue_index - int, optional. If specified params track_id and track_id are not needed.
+    \param new_queue_index - int.
+*/
+class QueueTrackMove : public AIMPRPCMethod
+{
+public:
+    QueueTrackMove(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request_handler)
+        : AIMPRPCMethod("QueueTrackMove", aimp_manager, rpc_request_handler)
+    {}
+
+    std::string help()
+    {
+        return "";
     }
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);

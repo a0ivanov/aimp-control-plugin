@@ -63,7 +63,8 @@ function AimpManager() {
                            ALBUM_COVER_LOAD_FAILED,
                            RATING_SET_FAILED,
                            STATUS_SET_FAILED,
-                           RADIO_CAPTURE_SET_FAILED
+                           RADIO_CAPTURE_SET_FAILED,
+                           MOVE_TRACK_IN_QUEUE_FAILED
         };
         */
 
@@ -89,7 +90,8 @@ function AimpManager() {
             22 : 'error_album_cover_load_failed',
             23 : 'error_rating_set_failed',
             24 : 'error_status_set_failed',
-            25 : 'error_radio_capture_set_failed'
+            25 : 'error_radio_capture_set_failed',
+            26 : 'error_move_track_in_queue_failed'
         };
     }
     initLocalizedErrorMessages();

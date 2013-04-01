@@ -58,6 +58,25 @@ public:
 
     virtual void removeEntryFromPlayQueue(TrackDescription track_desc); // throws std::runtime_error
 
+    bool isPlaylistQueueSupported() const
+        { return aimp3_playlist_queue_ != nullptr; }
+
+    /*!
+        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
+    */
+    void reloadQueuedEntries(); // throws std::runtime_error
+
+    /*!
+        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
+        Track should be already queued.
+    */
+    void moveQueueEntry(TrackDescription track_desc, int new_queue_index); // throws std::runtime_error
+
+    /*!
+        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
+    */
+    void moveQueueEntry(int old_queue_index, int new_queue_index); // throws std::runtime_error
+
     virtual PlaylistID getPlayingPlaylist() const;
 
     virtual PlaylistEntryID getPlayingEntry() const;
@@ -106,14 +125,6 @@ public:
 
     sqlite3* playlists_db()
         { return playlists_db_; }
-
-    bool isPlaylistQueueSupported() const
-        { return aimp3_playlist_queue_ != nullptr; }
-
-    /*!
-        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
-    */
-    void reloadQueuedEntries(); // throws std::runtime_error
 
 private:
 
@@ -169,6 +180,8 @@ private:
     void updatePlaylistCrcInDB(const Playlist& playlist);
     void deleteQueuedEntriesFromPlaylistDB();
     
+    void checkPlaylistQueueAvailability(const char* error_tag) const; // throws std::runtime_error;
+
     //! initializes all requiered for work AIMP SDK interfaces.
     void initializeAIMPObjects(); // throws std::runtime_error
 
