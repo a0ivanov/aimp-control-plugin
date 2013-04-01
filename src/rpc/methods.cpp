@@ -420,6 +420,8 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager,
     kRSLT_KEY_TOTAL_ENTRIES_COUNT("total_entries_count"),
     kRSLT_KEY_ENTRIES("entries"),
     kRSLT_KEY_COUNT_OF_FOUND_ENTRIES("count_of_found_entries"),
+    kRQST_KEY_FIELD_PLAYLIST_ID("playlist_id"),
+    kRSLT_KEY_FIELD_QUEUE_INDEX("queue_index"),
     pagination_info_(nullptr),
     queued_entries_mode_(false)
 {
@@ -474,6 +476,28 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager,
     ;
 }
 
+void GetPlaylistEntries::addSpecialFieldsSupport()
+{
+    using namespace RpcValueSetHelpers;
+    auto int_setter   = boost::bind( createSetter(&sqlite3_column_int),   _1, _2, _3 );
+    // playlist_id field
+    entry_fields_filler_.setters_[kRQST_KEY_FIELD_PLAYLIST_ID] = int_setter;
+    fieldnames_rpc_to_db_        [kRQST_KEY_FIELD_PLAYLIST_ID] = kRQST_KEY_FIELD_PLAYLIST_ID;
+    // queue_index field
+    entry_fields_filler_.setters_[kRSLT_KEY_FIELD_QUEUE_INDEX] = int_setter;
+    fieldnames_rpc_to_db_        [kRSLT_KEY_FIELD_QUEUE_INDEX] = kRSLT_KEY_FIELD_QUEUE_INDEX;
+}
+
+void GetPlaylistEntries::removeSpecialFieldsSupport()
+{
+    // playlist_id field
+    entry_fields_filler_.setters_.erase(kRQST_KEY_FIELD_PLAYLIST_ID);
+    fieldnames_rpc_to_db_.        erase(kRQST_KEY_FIELD_PLAYLIST_ID);
+    // queue_index field
+    entry_fields_filler_.setters_.erase(kRSLT_KEY_FIELD_QUEUE_INDEX);
+    fieldnames_rpc_to_db_.        erase(kRSLT_KEY_FIELD_QUEUE_INDEX);
+}
+
 void GetPlaylistEntries::initEntriesFiller(const Rpc::Value& params)
 {
     if ( params.isMember(kRQST_KEY_FORMAT_STRING) ) { // 'format_string' param has priority over 'fields' param.
@@ -508,26 +532,30 @@ void GetPlaylistEntries::initEntriesFiller(const Rpc::Value& params)
 std::string GetPlaylistEntries::getOrderString(const Rpc::Value& params) const
 {
     std::string result;
-	if ( params.isMember(kRQST_KEY_ORDER_FIELDS) ) {        
-        const Rpc::Value& entry_fields_to_order = params[kRQST_KEY_ORDER_FIELDS];
-        const size_t fields_count = entry_fields_to_order.size();
-        for (size_t field_index = 0; field_index < fields_count; ++field_index) {
-            const Rpc::Value& field_desc = entry_fields_to_order[field_index];
-            const std::string& field_to_order = field_desc[kRQST_KEY_FIELD];
-            const auto supported_field_it = std::find(fields_to_order_.begin(), fields_to_order_.end(), field_to_order);
-            if ( supported_field_it != fields_to_order_.end() ) {
-                if ( result.empty() ) {
-                    result = "ORDER BY ";
+    if (!queuedEntriesMode()) {
+	    if ( params.isMember(kRQST_KEY_ORDER_FIELDS) ) {        
+            const Rpc::Value& entry_fields_to_order = params[kRQST_KEY_ORDER_FIELDS];
+            const size_t fields_count = entry_fields_to_order.size();
+            for (size_t field_index = 0; field_index < fields_count; ++field_index) {
+                const Rpc::Value& field_desc = entry_fields_to_order[field_index];
+                const std::string& field_to_order = field_desc[kRQST_KEY_FIELD];
+                const auto supported_field_it = std::find(fields_to_order_.begin(), fields_to_order_.end(), field_to_order);
+                if ( supported_field_it != fields_to_order_.end() ) {
+                    if ( result.empty() ) {
+                        result = "ORDER BY ";
+                    }
+                    result += field_to_order;
+                    result += (field_desc[kRQST_KEY_ORDER_DIRECTION] == kDESCENDING_ORDER_STRING) ? " DESC," 
+                                                                                                  : " ASC,";
                 }
-                result += field_to_order;
-                result += (field_desc[kRQST_KEY_ORDER_DIRECTION] == kDESCENDING_ORDER_STRING) ? " DESC," 
-                                                                                              : " ASC,";
+            }
+
+            if (!result.empty() && result.back() == ',') {
+                result.pop_back();
             }
         }
-
-        if (!result.empty() && result.back() == ',') {
-            result.pop_back();
-        }
+    } else {
+        result = "ORDER BY queue_index ASC";
     }
     return result;
 }
@@ -672,11 +700,16 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
  
     ON_BLOCK_EXIT_OBJ(*this, &GetPlaylistEntries::deactivateEntryLocationDeterminationMode);
     ON_BLOCK_EXIT_OBJ(*this, &GetPlaylistEntries::deactivateQueuedEntriesMode);
+    ON_BLOCK_EXIT_OBJ(*this, &GetPlaylistEntries::removeSpecialFieldsSupport);
 
     const Rpc::Value& params = root_request["params"];
 
+    if (queuedEntriesMode()) {
+        addSpecialFieldsSupport();
+    }
+
     initEntriesFiller(params);
-    
+
     if (!queuedEntriesMode()) {
         // ensure we got obligatory argument: playlist id.
         if (params.size() < 1) {

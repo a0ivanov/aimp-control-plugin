@@ -656,6 +656,9 @@ private:
     void deactivateQueuedEntriesMode()
         { queued_entries_mode_ = false; }
 
+    void addSpecialFieldsSupport();
+    void removeSpecialFieldsSupport();
+
     // See HelperFillRpcFields class commentaries.
     RpcValueSetHelpers::HelperFillRpcFields<PlaylistEntry> entry_fields_filler_;
     void initEntriesFiller(const Rpc::Value& params);
@@ -693,6 +696,9 @@ private:
     const std::string kRSLT_KEY_ENTRIES,
                       kRSLT_KEY_TOTAL_ENTRIES_COUNT,
                       kRSLT_KEY_COUNT_OF_FOUND_ENTRIES;
+
+    const std::string kRQST_KEY_FIELD_PLAYLIST_ID,
+                      kRSLT_KEY_FIELD_QUEUE_INDEX;
 
     PaginationInfo* pagination_info_;
     bool queued_entries_mode_;
@@ -760,13 +766,15 @@ public:
 };
 
 /*! 
-    \brief Returns list of queued entries.
-           Params are the same as in GetPlaylistEntries except playlist id.
+    \brief Returns ordered list of queued entries.
+           Params are the same as in GetPlaylistEntries except playlist_id and order_fields.
     \param format_string - string, optional. If specified entry will be presented as string, instead set of fields. Mutual exclusive with 'fields' param.
     \param fields - array of strings, optional. List of fields that need to be filled.
            Mutual exclusive with 'format_string' param.
            Available fields are:
-            - id.
+            - playlist_id
+            - id
+            - queue_index
             - title
             - artist
             - album
@@ -779,10 +787,6 @@ public:
            If 'fields' param is not specified the function treats it equals "id, title".
     \param start_index - int, optional(Default is 0). Beginnig of required entries range.
     \param entries_count - int, optional(Default is counnt of available entries). Required count of entries.
-    \param order_fields - array of field descriptions, optional. It is used to order entries by multiple fields.
-           Each descriptor is object with members:
-                - 'field' - field to order. Available fields are: 'id', 'title', 'artist', 'album', 'date', 'genre', 'bitrate', 'duration', 'filesize', 'rating'.
-                - 'dir' - order('asc' - ascending, 'desc' - descending)
     \param search_string - string, optional. Only those entries will be returned which have at least
                                              one occurence of 'search_string' value in one of entry string fields:
                                                 - title
