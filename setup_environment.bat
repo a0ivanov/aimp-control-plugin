@@ -4,6 +4,10 @@
 set VisualStudioVersion=11.0
 call "%ProgramFiles(x86)%\Microsoft Visual Studio %VisualStudioVersion%\VC\bin\vcvars32.bat"
 
+:: pythonis used in MINIMIZE_CLIENT_SRC task.
+set PYTHON_DIR=c:\Python27
+set PATH=%PATH%;%PYTHON_DIR%
+
 :: java runtime is used by yui_compressor and google closure compiler in MINIMIZE_CLIENT_SRC task.
 rem set JAVA_HOME=%JAVA_HOME%
 set PATH=%PATH%;%JAVA_HOME%\bin
