@@ -640,7 +640,7 @@ struct PaginationInfo : boost::noncopyable {
                                                 - genre
 
     \return object which describes playlist entries.
-            Example:\code{"count_of_found_entries":1,"entries":[[1,"Looks Like Chaplin"]],"total_entries_count":3}}\endcode
+            Example:\code{"count_of_found_entries":1,"entries":[[1,"Looks Like Chaplin"]],"total_entries_count":3}\endcode
             If params were \code{"playlist_id": 2136855360, "search_string":"Like"}}\endcode
 */
 class GetPlaylistEntries : public AIMPRPCMethod
@@ -819,8 +819,8 @@ public:
                                                 - genre
 
     \return object which describes queued entries.
-            Example:\code{"count_of_found_entries":1,"entries":[[1,"Looks Like Chaplin"]],"total_entries_count":3}}\endcode
-            If params were \code{"playlist_id": 2136855360, "search_string":"Like"}}\endcode
+            Example:\code{"count_of_found_entries":1,"entries":[[45246368,0,0,"Main Theme","Andrew Hale","2011",184842]],"total_entries_count":1}\endcode
+            If params were \code{"fields":["playlist_id","id","queue_index","title","artist","date","duration"]}\endcode
 */
 class GetQueuedEntries : public AIMPRPCMethod
 {
