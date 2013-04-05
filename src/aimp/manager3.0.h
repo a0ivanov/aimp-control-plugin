@@ -1,21 +1,17 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef AIMP_MANAGER2_IMPL_H
-#define AIMP_MANAGER2_IMPL_H
+#pragma once
 
 #include "manager.h"
-
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/asio.hpp>
+#include "aimp3_sdk/aimp3_sdk.h"
 
 struct sqlite3;
 
-namespace AIMP2SDK {
-    class IAIMP2Controller;
-    class IAIMP2Player;
-    class IAIMP2PlaylistManager2;
-    class IAIMP2Extended;
-    class IAIMP2CoverArtManager;
+namespace AIMP3SDK {
+    class IAIMPCoreUnit;
+    class IAIMPAddonsPlayerManager;
+    class IAIMPAddonsPlaylistManager;
+    class IAIMPAddonsCoverArtManager;
 }
 
 namespace AimpRpcMethods {
@@ -26,21 +22,18 @@ namespace AIMPPlayer
 {
 
 /*!
-    \brief Provides interaction with AIMP2 player.
+    \brief Provides interaction with AIMP3 player.
 */
-class AIMP2Manager : public AIMPManager
+class AIMP3Manager : public AIMPManager
 {
 public:
 
     /*!
-        \param aimp_controller - pointer to IAIMP2Controller object.
-        \param io_service_ - boost::asio::io_service, used to access to timer.
+        \param aimp3_core_unit - pointer to IAIMPCoreUnit object.
     */
-    AIMP2Manager(boost::intrusive_ptr<AIMP2SDK::IAIMP2Controller> aimp_controller,
-                 boost::asio::io_service& io_service_
-                 ); // throws std::runtime_error
+    AIMP3Manager(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_core_unit); // throws std::runtime_error
 
-    virtual ~AIMP2Manager();
+    virtual ~AIMP3Manager();
 
     virtual void startPlayback();
 
@@ -64,6 +57,25 @@ public:
 
     virtual void removeEntryFromPlayQueue(TrackDescription track_desc); // throws std::runtime_error
 
+    bool isPlaylistQueueSupported() const
+        { return aimp3_playlist_queue_ != nullptr; }
+
+    /*!
+        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
+    */
+    void reloadQueuedEntries(); // throws std::runtime_error
+
+    /*!
+        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
+        Track should be already queued.
+    */
+    void moveQueueEntry(TrackDescription track_desc, int new_queue_index); // throws std::runtime_error
+
+    /*!
+        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
+    */
+    void moveQueueEntry(int old_queue_index, int new_queue_index); // throws std::runtime_error
+
     virtual PlaylistID getPlayingPlaylist() const;
 
     virtual PlaylistEntryID getPlayingEntry() const;
@@ -86,25 +98,40 @@ public:
 
     virtual const PlaylistEntry& getEntry(TrackDescription track_desc) const; // throw std::runtime_error
 
-    virtual std::wstring getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const; // throw std::invalid_argument
-    
-    virtual bool isCoverImageFileExist(TrackDescription /*track_desc*/, boost::filesystem::wpath* path = nullptr) const
-        { (void)path; return false; } // unsupported by AIMP 2 SDK.
+    virtual std::wstring getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const;
 
-    virtual int trackRating(TrackDescription track_desc) const; // throws std::runtime_error
+    virtual bool isCoverImageFileExist(TrackDescription track_desc, boost::filesystem::wpath* path = nullptr) const;
 
     virtual void saveCoverToFile(TrackDescription track_desc, const std::wstring& filename, int cover_width = 0, int cover_height = 0) const; // throw std::runtime_error
-
+    
     virtual EventsListenerID registerListener(EventsListener listener);
 
     virtual void unRegisterListener(EventsListenerID listener_id);
 
     virtual void onTick();
 
+    virtual int trackRating(TrackDescription track_desc) const; // throws std::runtime_error
+
+    // AIMP3 specific functionality, not supported by AIMP2.
+
+    /*!
+        Sets rating of specified track.
+
+        \param track_desc - track descriptor.
+        \param rating - rating value is in range [0-5]. Zero value means rating is not set.
+    */
+    virtual void trackRating(TrackDescription track_desc, int rating); // throw std::runtime_error
+
     sqlite3* playlists_db()
         { return playlists_db_; }
 
 private:
+
+    void onAimpCoreMessage(DWORD AMessage, int AParam1, void *AParam2, HRESULT *AResult);
+    void onStorageActivated(AIMP3SDK::HPLS id);
+    void onStorageAdded(AIMP3SDK::HPLS id);
+    void onStorageChanged(AIMP3SDK::HPLS id, DWORD flags);
+    void onStorageRemoved(AIMP3SDK::HPLS id);
 
     /*!
         \brief Return album cover for track_id in playlist_id.
@@ -118,22 +145,14 @@ private:
     */
     std::auto_ptr<ImageUtils::AIMPCoverImage> getCoverImage(TrackDescription track_desc, int cover_width, int cover_height) const; // throw std::runtime_error, throw std::invalid_argument
 
+    //! Called from setStatus() and invokes notifyAboutInternalEvent() to notify about status changes which AIMP does not notify us about.
+    void notifyAboutInternalEventOnStatusChange(STATUS status);
+
     /*!
         Notifies all registered listeners.
         Note: function is invoked from thread linked with strand_ member.
     */
     void notifyAllExternalListeners(EVENTS event) const;
-
-    //! Subscribes for all available AIMP callbacks.
-    void registerNotifiers();
-
-    //! Unsubscribes from all available AIMP callbacks.
-    void unregisterNotifiers();
-
-    //! Callback function to notify manager about AIMP player state changes. Called by AIMP from it's thread.
-    static void WINAPI internalAIMPStateNotifier(DWORD User, DWORD dwCBType);
-
-    static bool getEventRelatedTo(AIMP2Manager::STATUS status, AIMP2Manager::EVENTS* event);
 
     /*!
         \brief Loads playlist entries from AIMP.
@@ -144,44 +163,40 @@ private:
 
     //! Loads playlist by AIMP internal index.
     Playlist loadPlaylist(int playlist_index); // throws std::runtime_error
+    Playlist loadPlaylist(AIMP3SDK::HPLS id); // throws std::runtime_error
+    void updatePlaylist(Playlist& playlist); // throws std::runtime_error
 
-    //! initializes all requiered for work AIMP SDK interfaces.
-    void initializeAIMPObjects(); // throws std::runtime_error
+    Playlist& getPlaylist(PlaylistID playlist_id); // throws std::runtime_error
+    boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistStrings> getPlaylistStrings(const AIMP3SDK::HPLS playlist_id); // throws std::runtime_error
+    PlaylistEntry& getEntry(TrackDescription track_desc); // throws std::runtime_error
 
-    // pointers to internal AIMP2 objects.
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2Controller>       aimp2_controller_;        //!< to work with AIMP application.
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2Player>           aimp2_player_;            //!< to work with AIMP control panel.
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp2_playlist_manager_;  //!< to work with playlists and tracks.
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2Extended>         aimp2_extended_;          //!< to work aimp miscellaneous aspects.
-    boost::intrusive_ptr<AIMP2SDK::IAIMP2CoverArtManager>  aimp2_cover_art_manager_; //!< to work with track's album covers.
-
-    PlaylistsListType playlists_; //!< playlists list. Currently it is map of playlist ID to Playlist object.
-
-    //! type for internal AIMP events notifiers. Maps internal AIMP event ID to string description of this ID.
-    typedef std::map<int, std::string> CallbackIdNameMap;
-
-    CallbackIdNameMap aimp_callback_names_; //! Map of internal AIMP event ID to string description of this ID.
-
-    boost::asio::io_service::strand strand_; // allows handle events of internalAIMPStateNotifier() function, which called from Aimp thread, in thread of using AIMPManager(those thread where boost::asio::io_service object passed AIMPManager's ctor is executed).
-
-#ifdef MANUAL_PLAYLISTS_CONTENT_CHANGES_DETERMINATION // code responsible for determination of playlists content changes.
-    void onTimerPlaylistsChangeCheck(const boost::system::error_code& error);
-
-    void checkIfPlaylistsChanged();
-
-    //! Returns true if loaded playlist and playlist in AIMP are equal.
-    bool isLoadedPlaylistEqualsAimpPlaylist(PlaylistID playlist_id) const;
-
-    static const int kPLAYLISTS_CHECK_PERIOD_SEC = 5; // we check playlist changes each 5 seconds.
-    boost::asio::deadline_timer playlists_check_timer_;
-
-#endif // #ifdef MANUAL_PLAYLISTS_CONTENT_CHANGES_DETERMINATION
+    TrackDescription getTrackDescOfQueuedEntry(AIMP3SDK::HPLSENTRY entry_id); // throws std::runtime_error;
 
     void initPlaylistDB(); // throws std::runtime_error
     void shutdownPlaylistDB();
     void deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id);
     void deletePlaylistFromPlaylistDB(PlaylistID playlist_id);
     void updatePlaylistCrcInDB(const Playlist& playlist);
+    void deleteQueuedEntriesFromPlaylistDB();
+    
+    void checkPlaylistQueueAvailability(const char* error_tag) const; // throws std::runtime_error;
+
+    //! initializes all requiered for work AIMP SDK interfaces.
+    void initializeAIMPObjects(); // throws std::runtime_error
+
+    // pointers to internal AIMP3 objects.
+    boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit>              aimp3_core_unit_;
+    boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlayerManager>   aimp3_player_manager_;
+    boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistManager> aimp3_playlist_manager_;
+    boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsCoverArtManager> aimp3_coverart_manager_;
+    boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistQueue>   aimp3_playlist_queue_;
+
+    class AIMPCoreUnitMessageHook;
+    boost::intrusive_ptr<AIMPCoreUnitMessageHook> aimp3_core_message_hook_;
+    class AIMPAddonsPlaylistManagerListener;
+    boost::intrusive_ptr<AIMPAddonsPlaylistManagerListener> aimp3_playlist_manager_listener_;
+
+    PlaylistsListType playlists_; //!< playlists list. Currently it is map of playlist ID to Playlist object.
 
     // types for notifications of external event listeners.
     typedef std::map<EventsListenerID, EventsListener> EventListeners;
@@ -197,14 +212,11 @@ private:
 
 //! general tempate for convinient casting. Provide specialization for your own types.
 template<typename To, typename From> To cast(From);
-typedef int AIMP2SDK_STATUS;
 
 template<>
-AIMP2SDK_STATUS cast(AIMPManager::STATUS status); // throws std::bad_cast
+PlaylistID cast(AIMP3SDK::HPLS handle);
 
 template<>
-AIMP2Manager::STATUS cast(AIMP2SDK_STATUS status); // throws std::bad_cast
+AIMP3SDK::HPLS cast(PlaylistID id);
 
 } // namespace AIMPPlayer
-
-#endif // #ifndef AIMP_MANAGER2_IMPL_H

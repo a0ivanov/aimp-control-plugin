@@ -1,7 +1,7 @@
 // Copyright (c) 2013, Alexey Ivanov
 
 #include "stdafx.h"
-#include "manager3_impl.h"
+#include "manager3.0.h"
 #include "manager_impl_common.h"
 #include "playlist_entry.h"
 #include "utils/iunknown_impl.h"

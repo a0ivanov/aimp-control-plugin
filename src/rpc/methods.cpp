@@ -3,8 +3,8 @@
 #include "stdafx.h"
 #include "methods.h"
 #include "aimp/manager.h"
-#include "aimp/manager3_impl.h"
-#include "aimp/manager2_impl.h"
+#include "aimp/manager3.0.h"
+#include "aimp/manager2.6.h"
 #include "plugin/logger.h"
 #include "rpc/exception.h"
 #include "rpc/value.h"
@@ -1276,7 +1276,7 @@ ResponseType Version::execute(const Rpc::Value& /*root_request*/, Rpc::Value& ro
 
 } // namespace AimpRpcMethods
 
-#include "aimp/manager2_impl.h"
+#include "aimp/manager2.6.h"
 
 namespace AimpRpcMethods
 {

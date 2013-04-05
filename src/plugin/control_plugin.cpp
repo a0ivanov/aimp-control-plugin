@@ -2,8 +2,8 @@
 
 #include "stdafx.h"
 #include "control_plugin.h"
-#include "aimp/manager2_impl.h"
-#include "aimp/manager3_impl.h"
+#include "aimp/manager2.6.h"
+#include "aimp/manager3.0.h"
 #include "logger.h"
 #include "settings.h"
 #include "rpc/methods.h"

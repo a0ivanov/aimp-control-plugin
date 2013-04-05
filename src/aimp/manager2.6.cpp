@@ -1,7 +1,7 @@
 // Copyright (c) 2013, Alexey Ivanov
 
 #include "stdafx.h"
-#include "manager2_impl.h"
+#include "manager2.6.h"
 #include "manager_impl_common.h"
 #include "playlist_entry.h"
 #include "aimp2_sdk.h"

@@ -151,13 +151,7 @@
     <ClCompile Include="..\src\aimp\playlist_entry.cpp">
       <Filter>src\aimp_manager</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\aimp\manager2_impl.cpp">
-      <Filter>src\aimp_manager</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\aimp\track_description.cpp">
-      <Filter>src\aimp_manager</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\aimp\manager3_impl.cpp">
       <Filter>src\aimp_manager</Filter>
     </ClCompile>
     <ClCompile Include="..\src\download_track\download_track_request_handler.cpp">
@@ -168,6 +162,12 @@
     </ClCompile>
     <ClCompile Include="..\src\sqlite\sqlite_unicode.c">
       <Filter>src\sqlite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\aimp\manager2.6.cpp">
+      <Filter>src\aimp_manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\aimp\manager3.0.cpp">
+      <Filter>src\aimp_manager</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -327,13 +327,7 @@
     <ClInclude Include="..\src\aimp\aimp2_sdk.h">
       <Filter>src\aimp_manager\aimp_sdk\2</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\aimp\manager2_impl.h">
-      <Filter>src\aimp_manager</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\aimp\track_description.h">
-      <Filter>src\aimp_manager</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\aimp\manager3_impl.h">
       <Filter>src\aimp_manager</Filter>
     </ClInclude>
     <ClInclude Include="..\src\aimp\manager_impl_common.h">
@@ -359,6 +353,12 @@
     </ClInclude>
     <ClInclude Include="..\src\sqlite\sqlite_unicode.h">
       <Filter>src\sqlite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\manager2.6.h">
+      <Filter>src\aimp_manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\manager3.0.h">
+      <Filter>src\aimp_manager</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
