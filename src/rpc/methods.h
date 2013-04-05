@@ -384,7 +384,7 @@ public:
 /*!
     \brief Returns formatted string for specified track.
 
-           Acts like printf() analog, see detailes below.
+           Acts like printf() analog, see details below.
     \param track_id - int.
     \param playlist_id - int.
     \param format_string - string, can contain following format arguments:
@@ -604,7 +604,7 @@ struct PaginationInfo : boost::noncopyable {
     const int entry_id;
     const size_t id_field_index;
     size_t entries_on_page_;
-    int entry_index_in_current_representation_; // index of entry in reperesentation(concrete filtering and sorting) of playlist entries.
+    int entry_index_in_current_representation_; // index of entry in representation(concrete filtering and sorting) of playlist entries.
 };
 
 /*! 

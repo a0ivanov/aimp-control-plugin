@@ -117,7 +117,7 @@ public:
 
     /*!
         \brief Starts playback of specified track.
-        \param track_desc track descriptor, see TrackDescription struct declaration for detailes.
+        \param track_desc track descriptor, see TrackDescription struct declaration for details.
         \throw std::runtime_error if track does not exist.
     */
     virtual void startPlayback(TrackDescription track_desc) = 0; // throws std::runtime_error
@@ -223,7 +223,7 @@ public:
     virtual const PlaylistEntry& getEntry(TrackDescription track_desc) const = 0; // throw std::runtime_error
 
     /*!
-        \brief Returns formatted entry descrition string. Acts like printf() analog, see detailes below.
+        \brief Returns formatted entry descrition string. Acts like printf() analog, see details below.
         \param entry - reference to entry.
         \param format_string - utf8 encoded string.
                                There are following format arguments:<BR>
