@@ -169,6 +169,9 @@
     <ClCompile Include="..\src\aimp\manager3.0.cpp">
       <Filter>src\aimp_manager</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\aimp\manager3.1.cpp">
+      <Filter>src\aimp_manager</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\stdafx.h">
@@ -358,6 +361,12 @@
       <Filter>src\aimp_manager</Filter>
     </ClInclude>
     <ClInclude Include="..\src\aimp\manager3.0.h">
+      <Filter>src\aimp_manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\manager3.1.h">
+      <Filter>src\aimp_manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3_util.h">
       <Filter>src\aimp_manager</Filter>
     </ClInclude>
   </ItemGroup>

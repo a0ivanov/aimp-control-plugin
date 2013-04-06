@@ -24,16 +24,16 @@ namespace AIMPPlayer
 /*!
     \brief Provides interaction with AIMP3 player.
 */
-class AIMP3Manager : public AIMPManager
+class AIMPManager30 : public AIMPManager
 {
 public:
 
     /*!
         \param aimp3_core_unit - pointer to IAIMPCoreUnit object.
     */
-    AIMP3Manager(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_core_unit); // throws std::runtime_error
+    AIMPManager30(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_core_unit); // throws std::runtime_error
 
-    virtual ~AIMP3Manager();
+    virtual ~AIMPManager30();
 
     virtual void startPlayback();
 
@@ -56,25 +56,6 @@ public:
     virtual void enqueueEntryForPlay(TrackDescription track_desc, bool insert_at_queue_beginning); // throws std::runtime_error
 
     virtual void removeEntryFromPlayQueue(TrackDescription track_desc); // throws std::runtime_error
-
-    bool isPlaylistQueueSupported() const
-        { return aimp3_playlist_queue_ != nullptr; }
-
-    /*!
-        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
-    */
-    void reloadQueuedEntries(); // throws std::runtime_error
-
-    /*!
-        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
-        Track should be already queued.
-    */
-    void moveQueueEntry(TrackDescription track_desc, int new_queue_index); // throws std::runtime_error
-
-    /*!
-        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
-    */
-    void moveQueueEntry(int old_queue_index, int new_queue_index); // throws std::runtime_error
 
     virtual PlaylistID getPlayingPlaylist() const;
 
@@ -160,7 +141,9 @@ private:
         \throw std::runtime_error if error occured while loading entries data.
     */
     void loadEntries(Playlist& playlist); // throws std::runtime_error
-
+protected:
+    AIMP3SDK::HPLSENTRY getEntryHandle(TrackDescription track_desc); // throws std::runtime_error
+private:
     //! Loads playlist by AIMP internal index.
     Playlist loadPlaylist(int playlist_index); // throws std::runtime_error
     Playlist loadPlaylist(AIMP3SDK::HPLS id); // throws std::runtime_error
@@ -169,7 +152,6 @@ private:
     Playlist& getPlaylist(PlaylistID playlist_id); // throws std::runtime_error
     boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistStrings> getPlaylistStrings(const AIMP3SDK::HPLS playlist_id); // throws std::runtime_error
     PlaylistEntry& getEntry(TrackDescription track_desc); // throws std::runtime_error
-
     TrackDescription getTrackDescOfQueuedEntry(AIMP3SDK::HPLSENTRY entry_id); // throws std::runtime_error;
 
     void initPlaylistDB(); // throws std::runtime_error
@@ -177,19 +159,18 @@ private:
     void deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id);
     void deletePlaylistFromPlaylistDB(PlaylistID playlist_id);
     void updatePlaylistCrcInDB(const Playlist& playlist);
-    void deleteQueuedEntriesFromPlaylistDB();
     
-    void checkPlaylistQueueAvailability(const char* error_tag) const; // throws std::runtime_error;
-
     //! initializes all requiered for work AIMP SDK interfaces.
     void initializeAIMPObjects(); // throws std::runtime_error
 
     // pointers to internal AIMP3 objects.
+
+protected:
     boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit>              aimp3_core_unit_;
     boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlayerManager>   aimp3_player_manager_;
     boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistManager> aimp3_playlist_manager_;
+private:
     boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsCoverArtManager> aimp3_coverart_manager_;
-    boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistQueue>   aimp3_playlist_queue_;
 
     class AIMPCoreUnitMessageHook;
     boost::intrusive_ptr<AIMPCoreUnitMessageHook> aimp3_core_message_hook_;
@@ -204,8 +185,10 @@ private:
     EventListeners external_listeners_; //!< map of all subscribed listeners.
     EventsListenerID next_listener_id_; //!< unique ID describes external listener.
 
+protected:
     sqlite3* playlists_db_;
 
+private:
     // These class were made friend only for easy emulate web ctl plugin behavior. Remove when possible.
     friend class AimpRpcMethods::EmulationOfWebCtlPlugin;
 };

@@ -114,6 +114,7 @@
   <ItemGroup>
     <ClCompile Include="..\src\aimp\manager2.6.cpp" />
     <ClCompile Include="..\src\aimp\manager3.0.cpp" />
+    <ClCompile Include="..\src\aimp\manager3.1.cpp" />
     <ClCompile Include="..\src\aimp\playlist.cpp" />
     <ClCompile Include="..\src\aimp\playlist_entry.cpp" />
     <ClCompile Include="..\src\aimp\track_description.cpp" />
@@ -181,10 +182,12 @@
     <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKRemote.h" />
     <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKVisual.h" />
     <ClInclude Include="..\src\aimp\aimp3_sdk\Helpers\AIMPSDKHelpers.h" />
+    <ClInclude Include="..\src\aimp\aimp3_util.h" />
     <ClInclude Include="..\src\aimp\common_types.h" />
     <ClInclude Include="..\src\aimp\manager.h" />
     <ClInclude Include="..\src\aimp\manager2.6.h" />
     <ClInclude Include="..\src\aimp\manager3.0.h" />
+    <ClInclude Include="..\src\aimp\manager3.1.h" />
     <ClInclude Include="..\src\aimp\manager_impl_common.h" />
     <ClInclude Include="..\src\aimp\playlist.h" />
     <ClInclude Include="..\src\aimp\playlist_entry.h" />

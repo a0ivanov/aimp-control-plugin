@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include "methods.h"
 #include "aimp/manager.h"
+#include "aimp/manager3.1.h"
 #include "aimp/manager3.0.h"
 #include "aimp/manager2.6.h"
 #include "plugin/logger.h"
@@ -279,7 +280,7 @@ ResponseType EnqueueTrack::execute(const Rpc::Value& root_request, Rpc::Value& r
 
 ResponseType QueueTrackMove::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
-    if ( AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_) ) {
+    if ( AIMPPlayer::AIMPManager31* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager31*>(&aimp_manager_) ) {
         const Rpc::Value& params = root_request["params"];
 
         try {
@@ -333,13 +334,13 @@ std::string GetPlaylists::getColumnsString() const
 }
 
 sqlite3* getPlaylistsDB(AIMPPlayer::AIMPManager& aimp_manager) {
-    if (       AIMPPlayer::AIMP3Manager* mgr3 = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager) ) {
+    if (       AIMPPlayer::AIMPManager30* mgr3 = dynamic_cast<AIMPPlayer::AIMPManager30*>(&aimp_manager) ) {
         return mgr3->playlists_db();
-    } else if (AIMPPlayer::AIMP2Manager* mgr2 = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager) ) {
+    } else if (AIMPPlayer::AIMPManager26* mgr2 = dynamic_cast<AIMPPlayer::AIMPManager26*>(&aimp_manager) ) {
         return mgr2->playlists_db();
     } else {
         using namespace Utilities;
-        const std::string msg = MakeString() << __FUNCTION__ ": invalid AIMPManager object. AIMP3Manager and AIMP2Manager are only supported.";
+        const std::string msg = MakeString() << __FUNCTION__ ": invalid AIMPManager object. AIMPManager30 and AIMPManager26 are only supported.";
         throw std::runtime_error(msg);
     }
 }
@@ -894,13 +895,11 @@ GetQueuedEntries::GetQueuedEntries(AIMPManager& aimp_manager,
 
 Rpc::ResponseType GetQueuedEntries::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
-    if ( AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_) ) {
+    if ( AIMPPlayer::AIMPManager31* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager31*>(&aimp_manager_) ) {
         using namespace AIMP3SDK;
-        if (aimp3_manager->isPlaylistQueueSupported()) {
-            aimp3_manager->reloadQueuedEntries();
-            getplaylistentries_method_.activateQueuedEntriesMode();
-            return getplaylistentries_method_.execute(root_request, root_response);
-        }
+        aimp3_manager->reloadQueuedEntries();
+        getplaylistentries_method_.activateQueuedEntriesMode();
+        return getplaylistentries_method_.execute(root_request, root_response);
     }
     throw Rpc::Exception("Not supported by this version of AIMP", METHOD_NOT_FOUND_ERROR);
 }
@@ -1228,7 +1227,7 @@ ResponseType SetTrackRating::execute(const Rpc::Value& root_request, Rpc::Value&
     const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
     const int rating( Utilities::limit_value<int>(params["rating"], 0, 5) ); // set rating range [0, 5]
 
-    AIMP3Manager* aimp3_manager = dynamic_cast<AIMP3Manager*>(&aimp_manager_);
+    AIMPManager30* aimp3_manager = dynamic_cast<AIMPManager30*>(&aimp_manager_);
     if (aimp3_manager) {
         try {
             aimp3_manager->trackRating(track_desc, rating);
@@ -1355,7 +1354,7 @@ std::string urldecode(const std::string& url_src)
 
 void EmulationOfWebCtlPlugin::getPlaylistList(std::ostringstream& out)
 {
-    if ( AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_) ) {
+    if ( AIMPPlayer::AIMPManager26* aimp2_manager = dynamic_cast<AIMPPlayer::AIMPManager26*>(&aimp_manager_) ) {
         out << "[";
 
         boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp2_manager->aimp2_playlist_manager_);
@@ -1380,7 +1379,7 @@ void EmulationOfWebCtlPlugin::getPlaylistList(std::ostringstream& out)
             out << "{\"id\":" << playlist_id << ",\"duration\":" << duration << ",\"size\":" << size << ",\"name\":\"" << StringEncoding::utf16_to_utf8(playlist_name) << "\"}";
         }
         out << "]";
-    } else if ( AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_) ) {
+    } else if ( AIMPPlayer::AIMPManager30* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager30*>(&aimp_manager_) ) {
         using namespace AIMP3SDK;
         out << "[";
 
@@ -1453,8 +1452,8 @@ void EmulationOfWebCtlPlugin::getPlaylistSongs(int playlist_id, bool ignore_cach
 
     // not used, we have one thread. concurencyInstance.EnterWriter();
 
-    AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_);
-    AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_);
+    AIMPPlayer::AIMPManager26* aimp2_manager = dynamic_cast<AIMPPlayer::AIMPManager26*>(&aimp_manager_);
+    AIMPPlayer::AIMPManager30* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager30*>(&aimp_manager_);
 
     int fileCount = 0;
     if (aimp2_manager) {
@@ -1564,11 +1563,11 @@ void EmulationOfWebCtlPlugin::getCurrentSong(std::ostringstream& out)
 {
     const TrackDescription track( aimp_manager_.getPlayingTrack() );
     std::wstring entry_title(256, 0);
-    if ( AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_) ) {
+    if ( AIMPPlayer::AIMPManager26* aimp2_manager = dynamic_cast<AIMPPlayer::AIMPManager26*>(&aimp_manager_) ) {
         aimp2_manager->aimp2_playlist_manager_->AIMP_PLS_Entry_GetTitle( track.playlist_id, track.track_id, 
                                                                          &entry_title[0], entry_title.length()
                                                                         );
-    } else if ( AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_) ) {
+    } else if ( AIMPPlayer::AIMPManager30* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager30*>(&aimp_manager_) ) {
         using namespace AIMP3SDK;
         HPLSENTRY entry_id = aimp3_manager->aimp3_playlist_manager_->StorageGetEntry(cast<AIMP3SDK::HPLS>(track.playlist_id), track.track_id);
         //TAIMPFileInfo info = {0};
@@ -1617,7 +1616,7 @@ void EmulationOfWebCtlPlugin::setPlayerStatus(const std::string& statusType, int
 
 void EmulationOfWebCtlPlugin::sortPlaylist(int playlist_id, const std::string& sortType)
 {
-    if ( AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_) ) {
+    if ( AIMPPlayer::AIMPManager26* aimp2_manager = dynamic_cast<AIMPPlayer::AIMPManager26*>(&aimp_manager_) ) {
         using namespace AIMP2SDK;
         boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp2_manager->aimp2_playlist_manager_);
         if (sortType.compare("title") == 0) {
@@ -1633,7 +1632,7 @@ void EmulationOfWebCtlPlugin::sortPlaylist(int playlist_id, const std::string& s
         } else if (sortType.compare("randomize") == 0) {
             aimp_playlist_manager->AIMP_PLS_Sort(playlist_id, AIMP_PLS_SORT_TYPE_RANDOMIZE);
         }
-    } else if ( AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_) ) {
+    } else if ( AIMPPlayer::AIMPManager30* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager30*>(&aimp_manager_) ) {
         using namespace AIMP3SDK;
         boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistManager> aimp_playlist_manager(aimp3_manager->aimp3_playlist_manager_);
         const AIMP3SDK::HPLS playlist_handle = cast<AIMP3SDK::HPLS>(playlist_id);
@@ -1655,14 +1654,14 @@ void EmulationOfWebCtlPlugin::sortPlaylist(int playlist_id, const std::string& s
 
 void EmulationOfWebCtlPlugin::addFile(int playlist_id, const std::string& filename_url)
 {
-    if ( AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_) ) {
+    if ( AIMPPlayer::AIMPManager26* aimp2_manager = dynamic_cast<AIMPPlayer::AIMPManager26*>(&aimp_manager_) ) {
         AIMP2SDK::IPLSStrings* strings;
         aimp2_manager->aimp2_controller_->AIMP_NewStrings(&strings);
         const std::wstring filename = StringEncoding::utf8_to_utf16( WebCtl::urldecode(filename_url) );
         strings->AddFile(const_cast<PWCHAR>( filename.c_str() ), nullptr);
         aimp2_manager->aimp2_controller_->AIMP_PLS_AddFiles(playlist_id, strings);
         strings->Release();
-    } else if ( AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_) ) {
+    } else if ( AIMPPlayer::AIMPManager30* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager30*>(&aimp_manager_) ) {
         using namespace AIMP3SDK;
         AIMP3SDK::HPLS playlist_handle = cast<AIMP3SDK::HPLS>(playlist_id);
 
@@ -1689,8 +1688,8 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
 
         std::ostringstream out(std::ios::in | std::ios::out | std::ios::binary);
 
-        AIMPPlayer::AIMP2Manager* aimp2_manager = dynamic_cast<AIMPPlayer::AIMP2Manager*>(&aimp_manager_);
-        AIMPPlayer::AIMP3Manager* aimp3_manager = dynamic_cast<AIMPPlayer::AIMP3Manager*>(&aimp_manager_);
+        AIMPPlayer::AIMPManager26* aimp2_manager = dynamic_cast<AIMPPlayer::AIMPManager26*>(&aimp_manager_);
+        AIMPPlayer::AIMPManager30* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager30*>(&aimp_manager_);
 
         switch (*method_id) {
         case get_playlist_list:

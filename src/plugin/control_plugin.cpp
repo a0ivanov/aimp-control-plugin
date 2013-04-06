@@ -4,6 +4,7 @@
 #include "control_plugin.h"
 #include "aimp/manager2.6.h"
 #include "aimp/manager3.0.h"
+#include "aimp/manager3.1.h"
 #include "logger.h"
 #include "settings.h"
 #include "rpc/methods.h"
@@ -326,13 +327,32 @@ HRESULT AIMPControlPlugin::Initialize(AIMP3SDK::IAIMPCoreUnit* ACoreUnit)
     return initialize();
 }
 
+int getAIMPVersion(AIMP3SDK::IAIMPCoreUnit* aimp3_core_unit)
+{
+    using namespace AIMP3SDK;
+    TAIMPVersionInfo version_info = {0};
+    HRESULT r = aimp3_core_unit->GetVersion(&version_info);
+
+    if (S_OK != r) {
+        BOOST_LOG_SEV(logger(), error) << "IAIMPCoreUnit::GetVersion returned " << r;
+        throw std::runtime_error("Unable to extract AIMP version. "__FUNCTION__);
+    }
+    
+    return version_info.ID;
+}
+
 boost::shared_ptr<AIMPPlayer::AIMPManager> AIMPControlPlugin::CreateAIMPManager()
 {
     boost::shared_ptr<AIMPPlayer::AIMPManager> result;
     if (aimp2_controller_) {
-        result.reset( new AIMPPlayer::AIMP2Manager(aimp2_controller_, *server_io_service_) );
+        result.reset( new AIMPPlayer::AIMPManager26(aimp2_controller_, *server_io_service_) );
     } else if (aimp3_core_unit_) {
-        result.reset( new AIMPPlayer::AIMP3Manager(aimp3_core_unit_) );
+        const int version = getAIMPVersion(aimp3_core_unit_.get());
+        if (version >= 3100) {
+            result.reset( new AIMPPlayer::AIMPManager31(aimp3_core_unit_) );
+        } else {
+            result.reset( new AIMPPlayer::AIMPManager30(aimp3_core_unit_) );
+        }
     } else {
         assert(!"both AIMP2 and AIMP3 plugin addon objects do not exist.");
         throw std::runtime_error("both AIMP2 and AIMP3 plugin addon objects do not exist. "__FUNCTION__);

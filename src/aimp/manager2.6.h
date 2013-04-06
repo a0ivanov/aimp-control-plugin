@@ -27,7 +27,7 @@ namespace AIMPPlayer
 /*!
     \brief Provides interaction with AIMP2 player.
 */
-class AIMP2Manager : public AIMPManager
+class AIMPManager26 : public AIMPManager
 {
 public:
 
@@ -35,11 +35,11 @@ public:
         \param aimp_controller - pointer to IAIMP2Controller object.
         \param io_service_ - boost::asio::io_service, used to access to timer.
     */
-    AIMP2Manager(boost::intrusive_ptr<AIMP2SDK::IAIMP2Controller> aimp_controller,
-                 boost::asio::io_service& io_service_
-                 ); // throws std::runtime_error
+    AIMPManager26(boost::intrusive_ptr<AIMP2SDK::IAIMP2Controller> aimp_controller,
+                  boost::asio::io_service& io_service_
+                  ); // throws std::runtime_error
 
-    virtual ~AIMP2Manager();
+    virtual ~AIMPManager26();
 
     virtual void startPlayback();
 
@@ -132,7 +132,7 @@ private:
     //! Callback function to notify manager about AIMP player state changes. Called by AIMP from it's thread.
     static void WINAPI internalAIMPStateNotifier(DWORD User, DWORD dwCBType);
 
-    static bool getEventRelatedTo(AIMP2Manager::STATUS status, AIMP2Manager::EVENTS* event);
+    static bool getEventRelatedTo(AIMPManager26::STATUS status, AIMPManager26::EVENTS* event);
 
     /*!
         \brief Loads playlist entries from AIMP.
@@ -202,6 +202,6 @@ template<>
 AIMP2SDK_STATUS cast(AIMPManager::STATUS status); // throws std::bad_cast
 
 template<>
-AIMP2Manager::STATUS cast(AIMP2SDK_STATUS status); // throws std::bad_cast
+AIMPManager26::STATUS cast(AIMP2SDK_STATUS status); // throws std::bad_cast
 
 } // namespace AIMPPlayer
