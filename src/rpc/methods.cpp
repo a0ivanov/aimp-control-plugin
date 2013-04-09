@@ -1388,12 +1388,12 @@ void EmulationOfWebCtlPlugin::getPlaylistList(std::ostringstream& out)
         std::wstring playlist_name;
         const int playlists_count = aimp_playlist_manager->StorageGetCount();
         for (short i = 0; i < playlists_count; ++i) {
-            const AIMP3SDK::HPLS playlist_id =  aimp_playlist_manager->StorageGet(i);
+            const AIMP3SDK::HPLS playlist_handle = aimp_playlist_manager->StorageGet(i);
             INT64 duration, size;
-            aimp_playlist_manager->StoragePropertyGetValue( playlist_id, AIMP_PLAYLIST_STORAGE_PROPERTY_DURATION, &duration, sizeof(duration) );
-            aimp_playlist_manager->StoragePropertyGetValue( playlist_id, AIMP_PLAYLIST_STORAGE_PROPERTY_SIZE,     &size,     sizeof(size) );
+            aimp_playlist_manager->StoragePropertyGetValue( playlist_handle, AIMP_PLAYLIST_STORAGE_PROPERTY_DURATION, &duration, sizeof(duration) );
+            aimp_playlist_manager->StoragePropertyGetValue( playlist_handle, AIMP_PLAYLIST_STORAGE_PROPERTY_SIZE,     &size,     sizeof(size) );
             playlist_name.resize(playlist_name_length, 0);
-            aimp_playlist_manager->StoragePropertyGetValue( playlist_id, AIMP_PLAYLIST_STORAGE_PROPERTY_NAME, &playlist_name[0], playlist_name.length() );
+            aimp_playlist_manager->StoragePropertyGetValue( playlist_handle, AIMP_PLAYLIST_STORAGE_PROPERTY_NAME, &playlist_name[0], playlist_name.length() );
             playlist_name.resize( wcslen( playlist_name.c_str() ) );
             using namespace Utilities;
             replaceAll(L"\"", 1,
@@ -1402,7 +1402,7 @@ void EmulationOfWebCtlPlugin::getPlaylistList(std::ostringstream& out)
             if (i != 0) {
                 out << ',';
             }
-            out << "{\"id\":" << cast<PlaylistID>(playlist_id) << ",\"duration\":" << duration << ",\"size\":" << size << ",\"name\":\"" << StringEncoding::utf16_to_utf8(playlist_name) << "\"}";
+            out << "{\"id\":" << cast<PlaylistID>(playlist_handle) << ",\"duration\":" << duration << ",\"size\":" << size << ",\"name\":\"" << StringEncoding::utf16_to_utf8(playlist_name) << "\"}";
         }
         out << "]";
     }
@@ -1455,11 +1455,13 @@ void EmulationOfWebCtlPlugin::getPlaylistSongs(int playlist_id, bool ignore_cach
     AIMPPlayer::AIMPManager26* aimp2_manager = dynamic_cast<AIMPPlayer::AIMPManager26*>(&aimp_manager_);
     AIMPPlayer::AIMPManager30* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager30*>(&aimp_manager_);
 
+    const AIMP3SDK::HPLS playlist_handle = reinterpret_cast<AIMP3SDK::HPLS>(playlist_id);
+
     int fileCount = 0;
     if (aimp2_manager) {
         fileCount = aimp2_manager->aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
     } else if (aimp3_manager) {
-        fileCount = aimp3_manager->aimp3_playlist_manager_->StorageGetEntryCount( cast<AIMP3SDK::HPLS>(playlist_id) );
+        fileCount = aimp3_manager->aimp3_playlist_manager_->StorageGetEntryCount(playlist_handle);
     }
 
     if (size == 0) {
@@ -1499,16 +1501,16 @@ void EmulationOfWebCtlPlugin::getPlaylistSongs(int playlist_id, bool ignore_cach
         } else if (aimp3_manager) {
             using namespace AIMP3SDK;
             for (int i = offset; (i < fileCount) && (i < offset + size); ++i) {
-                HPLSENTRY entry_id = aimp3_manager->aimp3_playlist_manager_->StorageGetEntry(cast<AIMP3SDK::HPLS>(playlist_id), i);
+                HPLSENTRY entry_handle = aimp3_manager->aimp3_playlist_manager_->StorageGetEntry(playlist_handle, i);
                 entry_title.resize(entry_title_length, 0);
-                aimp3_manager->aimp3_playlist_manager_->EntryPropertyGetValue( entry_id, AIMP_PLAYLIST_ENTRY_PROPERTY_DISPLAYTEXT,
+                aimp3_manager->aimp3_playlist_manager_->EntryPropertyGetValue( entry_handle, AIMP_PLAYLIST_ENTRY_PROPERTY_DISPLAYTEXT,
                                                                                &entry_title[0], entry_title.length()
                                                                               );
                 TAIMPFileInfo info = {0};
                 info.StructSize = sizeof(info);
                 //info.Title = &entry_title[0]; // use EntryPropertyGetValue(...DISPLAYTEXT) since it returns string displayed in AIMP playlist.
                 //info.TitleLength = entry_title.length();
-                aimp3_manager->aimp3_playlist_manager_->EntryPropertyGetValue( entry_id, AIMP_PLAYLIST_ENTRY_PROPERTY_INFO,
+                aimp3_manager->aimp3_playlist_manager_->EntryPropertyGetValue( entry_handle, AIMP_PLAYLIST_ENTRY_PROPERTY_INFO,
                                                                                &info, sizeof(info)
                                                                               );
                 entry_title.resize( wcslen( entry_title.c_str() ) );
@@ -1569,7 +1571,7 @@ void EmulationOfWebCtlPlugin::getCurrentSong(std::ostringstream& out)
                                                                         );
     } else if ( AIMPPlayer::AIMPManager30* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager30*>(&aimp_manager_) ) {
         using namespace AIMP3SDK;
-        HPLSENTRY entry_id = aimp3_manager->aimp3_playlist_manager_->StorageGetEntry(cast<AIMP3SDK::HPLS>(track.playlist_id), track.track_id);
+        HPLSENTRY entry_handle = aimp3_manager->aimp3_playlist_manager_->StorageGetEntry(cast<AIMP3SDK::HPLS>(track.playlist_id), track.track_id);
         //TAIMPFileInfo info = {0};
         //info.StructSize = sizeof(info);
         //info.Title = &entry_title[0];
@@ -1578,7 +1580,7 @@ void EmulationOfWebCtlPlugin::getCurrentSong(std::ostringstream& out)
         //                                                               &info, sizeof(info)
         //                                                              );
         // use EntryPropertyGetValue(...DISPLAYTEXT) since it returns string displayed in AIMP playlist.
-        aimp3_manager->aimp3_playlist_manager_->EntryPropertyGetValue( entry_id, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_DISPLAYTEXT,
+        aimp3_manager->aimp3_playlist_manager_->EntryPropertyGetValue( entry_handle, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_DISPLAYTEXT,
                                                                        &entry_title[0], entry_title.length()
                                                                       );
     }
@@ -1635,7 +1637,7 @@ void EmulationOfWebCtlPlugin::sortPlaylist(int playlist_id, const std::string& s
     } else if ( AIMPPlayer::AIMPManager30* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager30*>(&aimp_manager_) ) {
         using namespace AIMP3SDK;
         boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistManager> aimp_playlist_manager(aimp3_manager->aimp3_playlist_manager_);
-        const AIMP3SDK::HPLS playlist_handle = cast<AIMP3SDK::HPLS>(playlist_id);
+        const AIMP3SDK::HPLS playlist_handle = reinterpret_cast<AIMP3SDK::HPLS>(playlist_id);
         if (sortType.compare("title") == 0) {
             aimp_playlist_manager->StorageSort(playlist_handle, AIMP_PLAYLIST_SORT_TYPE_TITLE);
         } else if (sortType.compare("filename") == 0) {
@@ -1663,7 +1665,7 @@ void EmulationOfWebCtlPlugin::addFile(int playlist_id, const std::string& filena
         strings->Release();
     } else if ( AIMPPlayer::AIMPManager30* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager30*>(&aimp_manager_) ) {
         using namespace AIMP3SDK;
-        AIMP3SDK::HPLS playlist_handle = cast<AIMP3SDK::HPLS>(playlist_id);
+        AIMP3SDK::HPLS playlist_handle = reinterpret_cast<AIMP3SDK::HPLS>(playlist_id);
 
         boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistStrings> strings( new TAIMPAddonsPlaylistStrings() );
         const std::wstring filename = StringEncoding::utf8_to_utf16( WebCtl::urldecode(filename_url) );
@@ -1764,10 +1766,10 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
                 aimp2_manager->aimp2_playlist_manager_->AIMP_PLS_Entry_SetPosition(playlist_id, track_index, position);
             } else if (aimp3_manager) {
                 using namespace AIMP3SDK;
-                HPLSENTRY entry_id = aimp3_manager->aimp3_playlist_manager_->StorageGetEntry(cast<AIMP3SDK::HPLS>(playlist_id),
-                                                                                             track_index
-                                                                                             );
-                aimp3_manager->aimp3_playlist_manager_->EntryPropertySetValue( entry_id, AIMP_PLAYLIST_ENTRY_PROPERTY_INDEX, &position, sizeof(position) );
+                HPLSENTRY entry_handle = aimp3_manager->aimp3_playlist_manager_->StorageGetEntry(reinterpret_cast<AIMP3SDK::HPLS>(playlist_id),
+                                                                                                 track_index
+                                                                                                 );
+                aimp3_manager->aimp3_playlist_manager_->EntryPropertySetValue( entry_handle, AIMP_PLAYLIST_ENTRY_PROPERTY_INDEX, &position, sizeof(position) );
             }
             calcPlaylistCRC(playlist_id);
             }
@@ -1812,10 +1814,10 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
                 aimp2_manager->aimp2_playlist_manager_->AIMP_PLS_Entry_Delete(playlist_id, track_index);
             } else if (aimp3_manager) {
                 using namespace AIMP3SDK;
-                HPLSENTRY entry_id = aimp3_manager->aimp3_playlist_manager_->StorageGetEntry(cast<AIMP3SDK::HPLS>(playlist_id),
-                                                                                             track_index
-                                                                                             );
-                aimp3_manager->aimp3_playlist_manager_->EntryDelete(entry_id);
+                HPLSENTRY entry_handle = aimp3_manager->aimp3_playlist_manager_->StorageGetEntry(reinterpret_cast<AIMP3SDK::HPLS>(playlist_id),
+                                                                                                 track_index
+                                                                                                 );
+                aimp3_manager->aimp3_playlist_manager_->EntryDelete(entry_handle);
             }
             calcPlaylistCRC(playlist_id);
             }

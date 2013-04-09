@@ -65,7 +65,7 @@ namespace AIMPPlayer
 
 using namespace Utilities;
 
-const AIMP3SDK::HPLS kInvalidPlaylistId = nullptr;
+const AIMP3SDK::HPLS kInvalidPlaylistHandle = nullptr;
 const int kNoParam1 = 0;
 void * const kNoParam2 = nullptr;
 
@@ -91,18 +91,6 @@ AIMP3SDK::HPLSENTRY castToHPLSENTRY(PlaylistEntryID id)
 {
     return reinterpret_cast<AIMP3SDK::HPLSENTRY>(id);
 }
-
-//template<>
-//PlaylistEntryID cast(AIMP3SDK::HPLSENTRY handle)
-//{
-//    return reinterpret_cast<PlaylistEntryID>(handle);
-//}
-//
-//template<>
-//AIMP3SDK::HPLSENTRY cast(PlaylistEntryID id)
-//{
-//    return reinterpret_cast<AIMP3SDK::HPLSENTRY>(id);
-//}
 
 class AIMPManager30::AIMPCoreUnitMessageHook : public IUnknownInterfaceImpl<AIMP3SDK::IAIMPCoreUnitMessageHook>
 {
@@ -130,40 +118,40 @@ public:
         playlist_add_in_progress_(nullptr)
     {}
 
-    virtual void WINAPI StorageActivated(AIMP3SDK::HPLS ID) {
-        aimp3_manager_->onStorageActivated(ID);
+    virtual void WINAPI StorageActivated(AIMP3SDK::HPLS handle) {
+        aimp3_manager_->onStorageActivated(handle);
     }
-    virtual void WINAPI StorageAdded(AIMP3SDK::HPLS ID) {
-        playlist_add_in_progress_ = ID;
-        aimp3_manager_->onStorageAdded(ID);
-        added_playlists_.insert(ID);
+    virtual void WINAPI StorageAdded(AIMP3SDK::HPLS handle) {
+        playlist_add_in_progress_ = handle;
+        aimp3_manager_->onStorageAdded(handle);
+        added_playlists_.insert(handle);
         if (store_change_args_) {
-            aimp3_manager_->onStorageChanged(store_change_args_->id, store_change_args_->flags);
+            aimp3_manager_->onStorageChanged(store_change_args_->handle, store_change_args_->flags);
             store_change_args_.reset();
         }
         playlist_add_in_progress_ = nullptr;
     }
-    virtual void WINAPI StorageChanged(AIMP3SDK::HPLS ID, DWORD AFlags) {
-        if ( playlistAdded(ID) ) {
-            aimp3_manager_->onStorageChanged(ID, AFlags);
+    virtual void WINAPI StorageChanged(AIMP3SDK::HPLS handle, DWORD AFlags) {
+        if ( playlistAdded(handle) ) {
+            aimp3_manager_->onStorageChanged(handle, AFlags);
         } else {
-            if (playlist_add_in_progress_ == ID) {
+            if (playlist_add_in_progress_ == handle) {
                 if (!store_change_args_) {
-                    store_change_args_ = boost::make_shared<StorageChangeArgs>(ID, AFlags);
+                    store_change_args_ = boost::make_shared<StorageChangeArgs>(handle, AFlags);
                 }
                 store_change_args_->flags |= AFlags;
             }
         }
     }
-    virtual void WINAPI StorageRemoved(AIMP3SDK::HPLS ID) {
-        added_playlists_.erase(ID);
-        aimp3_manager_->onStorageRemoved(ID);
+    virtual void WINAPI StorageRemoved(AIMP3SDK::HPLS handle) {
+        added_playlists_.erase(handle);
+        aimp3_manager_->onStorageRemoved(handle);
     }
 
 private:
 
-    bool playlistAdded(AIMP3SDK::HPLS id) const
-        { return added_playlists_.find(id) != added_playlists_.end(); }
+    bool playlistAdded(AIMP3SDK::HPLS handle) const
+        { return added_playlists_.find(handle) != added_playlists_.end(); }
 
     AIMPManager30* aimp3_manager_;
     typedef std::set<AIMP3SDK::HPLS> PlayListHandles;
@@ -174,9 +162,9 @@ private:
     AIMP3SDK::HPLS playlist_add_in_progress_;
 
     struct StorageChangeArgs {
-        AIMP3SDK::HPLS id;
+        AIMP3SDK::HPLS handle;
         DWORD flags;
-        StorageChangeArgs(AIMP3SDK::HPLS id, DWORD flags) : id(id), flags(flags) {}
+        StorageChangeArgs(AIMP3SDK::HPLS handle, DWORD flags) : handle(handle), flags(flags) {}
     };
     boost::shared_ptr<StorageChangeArgs> store_change_args_;
 
@@ -257,35 +245,24 @@ void AIMPManager30::initializeAIMPObjects()
 
 void AIMPManager30::onTick()
 {
-    //using namespace AIMP3SDK;
-    //for (int i = 0, count = aimp3_playlist_manager_->StorageGetCount(); i != count; ++i) {
-    //    AIMP3SDK::HPLS id = aimp3_playlist_manager_->StorageGet(i);
-    //    //INT64 size;
-    //    //HRESULT r;
-    //    // does not work r = aimp3_playlist_manager_->StoragePropertyGetValue( handle, AIMP_PLAYLIST_STORAGE_PROPERTY_SIZE, &size, sizeof(size) );
-    //    int track_count = aimp3_playlist_manager_->StorageGetEntryCount(id);
-    //    track_count = track_count;
-    //    //r = r;
-    //}
 }
 
-void AIMPManager30::onStorageActivated(AIMP3SDK::HPLS /*id*/)
+void AIMPManager30::onStorageActivated(AIMP3SDK::HPLS /*handle*/)
 {
     // do nothing, but if code will be added, it must not throw any exceptions, since this method called by AIMP.
 }
 
-void AIMPManager30::onStorageAdded(AIMP3SDK::HPLS id)
+void AIMPManager30::onStorageAdded(AIMP3SDK::HPLS handle)
 {
-
     try {
-        BOOST_LOG_SEV(logger(), debug) << "onStorageAdded: id = " << cast<PlaylistID>(id);
-        playlists_[cast<PlaylistID>(id)] = loadPlaylist(id);
+        BOOST_LOG_SEV(logger(), debug) << "onStorageAdded: id = " << cast<PlaylistID>(handle);
+        playlists_[cast<PlaylistID>(handle)] = loadPlaylist(handle);
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     } catch (std::exception& e) {
-        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << id << ". Reason: " << e.what();
+        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << handle << ". Reason: " << e.what();
     } catch (...) {
         // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
-        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with handle " << id;
+        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with handle " << handle;
     }
 }
 
@@ -300,14 +277,12 @@ std::string playlistNotifyFlagsToString(DWORD flags)
     assert(flags <= all_flags);
 #endif
 
-    const size_t flag_count = 9;
+    const DWORD flag_count = 9;
     static const char * const strings[flag_count] = { "NAME", "SELECTION", "TRACKINGINDEX", "PLAYINDEX", "FOCUSINDEX", 
                                                       "CONTENT", "ENTRYINFO", "STATISTICS", "PLAYINGSWITCHS" };
     std::ostringstream os;
     if (flags) {
-        DWORD f = flags;
-        size_t index = 0;
-        while (f != 0) {
+        for (DWORD f = flags, index = 0; f != 0; ++index, f >>= 1) {
             if ( (f & 0x1) == 0x1 ) {
                 if ( os.tellp() != std::streampos(0) ) {
                     os << '|';
@@ -318,8 +293,6 @@ std::string playlistNotifyFlagsToString(DWORD flags)
                     os << "out of range value";
                 }
             }
-            ++index;
-            f >>= 1;
         }
     } else {
         os << "NONE";
@@ -327,17 +300,17 @@ std::string playlistNotifyFlagsToString(DWORD flags)
     return os.str();
 }
 
-void AIMPManager30::onStorageChanged(AIMP3SDK::HPLS id, DWORD flags)
+void AIMPManager30::onStorageChanged(AIMP3SDK::HPLS handle, DWORD flags)
 {
     using namespace AIMP3SDK;
 
     try {
-        BOOST_LOG_SEV(logger(), debug) << "onStorageChanged()...: id = " << cast<PlaylistID>(id) << ", flags = " << flags << ": " << playlistNotifyFlagsToString(flags);
+        BOOST_LOG_SEV(logger(), debug) << "onStorageChanged()...: id = " << cast<PlaylistID>(handle) << ", flags = " << flags << ": " << playlistNotifyFlagsToString(flags);
 
-        Playlist& playlist = playlists_[cast<PlaylistID>(id)];
+        Playlist& playlist = playlists_[cast<PlaylistID>(handle)];
         bool is_playlist_changed = false;
-        if (   (AIMP_PLAYLIST_NOTIFY_NAME & flags) != 0 
-            || (AIMP_PLAYLIST_NOTIFY_ENTRYINFO & flags) != 0
+        if (   (AIMP_PLAYLIST_NOTIFY_NAME       & flags) != 0 
+            || (AIMP_PLAYLIST_NOTIFY_ENTRYINFO  & flags) != 0
             || (AIMP_PLAYLIST_NOTIFY_STATISTICS & flags) != 0 
             )
         {
@@ -347,7 +320,7 @@ void AIMPManager30::onStorageChanged(AIMP3SDK::HPLS id, DWORD flags)
         }
 
         if (   (AIMP_PLAYLIST_NOTIFY_ENTRYINFO & flags) != 0  
-            || (AIMP_PLAYLIST_NOTIFY_CONTENT & flags) != 0 
+            || (AIMP_PLAYLIST_NOTIFY_CONTENT   & flags) != 0 
             )
         {
             BOOST_LOG_SEV(logger(), debug) << "loadEntries";
@@ -363,17 +336,17 @@ void AIMPManager30::onStorageChanged(AIMP3SDK::HPLS id, DWORD flags)
 
         BOOST_LOG_SEV(logger(), debug) << "...onStorageChanged()";
     } catch (std::exception& e) {
-        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << id << ". Reason: " << e.what();
+        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << handle << ". Reason: " << e.what();
     } catch (...) {
         // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
-        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with handle " << id;
+        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with handle " << handle;
     }
 }
 
-void AIMPManager30::onStorageRemoved(AIMP3SDK::HPLS id)
+void AIMPManager30::onStorageRemoved(AIMP3SDK::HPLS handle)
 {
     try {
-        const int playlist_id = cast<PlaylistID>(id);
+        const int playlist_id = cast<PlaylistID>(handle);
         { // db code
             deletePlaylistFromPlaylistDB(playlist_id);
         }
@@ -381,10 +354,10 @@ void AIMPManager30::onStorageRemoved(AIMP3SDK::HPLS id)
         playlists_.erase(playlist_id);
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     } catch (std::exception& e) {
-        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << id << ". Reason: " << e.what();
+        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << handle << ". Reason: " << e.what();
     } catch (...) {
         // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
-        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with handle " << id;
+        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with handle " << handle;
     }
 
 }
@@ -393,15 +366,15 @@ Playlist AIMPManager30::loadPlaylist(int playlist_index)
 {
     const char * const error_prefix = "Error occured while extracting playlist data: ";
     
-    AIMP3SDK::HPLS id = aimp3_playlist_manager_->StorageGet(playlist_index);
-    if (id == kInvalidPlaylistId) {
+    AIMP3SDK::HPLS handle = aimp3_playlist_manager_->StorageGet(playlist_index);
+    if (handle == kInvalidPlaylistHandle) {
         throw std::runtime_error(MakeString() << error_prefix << "IAIMPAddonsPlaylistManager::StorageGet failed");
     }
 
-    return loadPlaylist(id);
+    return loadPlaylist(handle);
 }
 
-Playlist AIMPManager30::loadPlaylist(AIMP3SDK::HPLS id)
+Playlist AIMPManager30::loadPlaylist(AIMP3SDK::HPLS handle)
 {
     const char * const error_prefix = "Error occured while extracting playlist data: ";
     
@@ -409,31 +382,31 @@ Playlist AIMPManager30::loadPlaylist(AIMP3SDK::HPLS id)
     
     HRESULT r;
     INT64 duration;
-    r = aimp3_playlist_manager_->StoragePropertyGetValue( id, AIMP_PLAYLIST_STORAGE_PROPERTY_DURATION, &duration, sizeof(duration) );
+    r = aimp3_playlist_manager_->StoragePropertyGetValue( handle, AIMP_PLAYLIST_STORAGE_PROPERTY_DURATION, &duration, sizeof(duration) );
     if (S_OK != r) {
         throw std::runtime_error(MakeString() << error_prefix << "IAIMPAddonsPlaylistManager::StoragePropertyGetValue(AIMP_PLAYLIST_STORAGE_PROPERTY_DURATION) failed. Result " << r);
     }
 
     INT64 size;
-    r = aimp3_playlist_manager_->StoragePropertyGetValue( id, AIMP_PLAYLIST_STORAGE_PROPERTY_SIZE, &size, sizeof(size) );
+    r = aimp3_playlist_manager_->StoragePropertyGetValue( handle, AIMP_PLAYLIST_STORAGE_PROPERTY_SIZE, &size, sizeof(size) );
     if (S_OK != r) {
         throw std::runtime_error(MakeString() << error_prefix << "IAIMPAddonsPlaylistManager::StoragePropertyGetValue(AIMP_PLAYLIST_STORAGE_PROPERTY_SIZE) failed. Result " << r);
     }
 
     const size_t name_length = 256;
     WCHAR name[name_length + 1] = {0};
-    r = aimp3_playlist_manager_->StoragePropertyGetValue(id, AIMP_PLAYLIST_STORAGE_PROPERTY_NAME, name, name_length);
+    r = aimp3_playlist_manager_->StoragePropertyGetValue(handle, AIMP_PLAYLIST_STORAGE_PROPERTY_NAME, name, name_length);
     if (S_OK != r) {
         throw std::runtime_error(MakeString() << error_prefix << "IAIMPAddonsPlaylistManager::StoragePropertyGetValue(AIMP_PLAYLIST_STORAGE_PROPERTY_NAME) failed. Result " << r);
     }
 
-    const int entries_count = aimp3_playlist_manager_->StorageGetEntryCount(id);
+    const int entries_count = aimp3_playlist_manager_->StorageGetEntryCount(handle);
 
     Playlist playlist(name,
                       entries_count,
                       duration,
                       size,
-                      cast<PlaylistID>(id)
+                      cast<PlaylistID>(handle)
                       );
 
     { // db code
@@ -454,7 +427,7 @@ Playlist AIMPManager30::loadPlaylist(AIMP3SDK::HPLS id)
                                                 }
 
     int rc_db;
-    bind( int,  1, cast<PlaylistID>(id) );
+    bind( int,  1, cast<PlaylistID>(handle) );
     bindText(   2, name, wcslen(name) );
     bind( int,  3, entries_count );
     bind(int64, 4, duration);
@@ -508,32 +481,15 @@ void AIMPManager30::updatePlaylist(Playlist& playlist)
     playlist.sizeOfAllEntriesInBytes( updated.sizeOfAllEntriesInBytes() );
 }
 
-boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistStrings> AIMPManager30::getPlaylistStrings(const AIMP3SDK::HPLS playlist_id) // throws std::runtime_error
-{
-    using namespace AIMP3SDK;
-
-    IAIMPAddonsPlaylistStrings* strings_raw = nullptr;
-    HRESULT r = aimp3_playlist_manager_->StorageGetFiles(playlist_id, 0, &strings_raw);
-    if (S_OK != r) {
-        throw std::runtime_error(MakeString() << "IAIMPAddonsPlaylistManager::StorageGetFiles(" << playlist_id << ") failed. Result " << r);
-    }
-    boost::intrusive_ptr<IAIMPAddonsPlaylistStrings> strings(strings_raw);
-    strings_raw->Release();
-    return strings;
-}
-
 void AIMPManager30::loadEntries(Playlist& playlist) // throws std::runtime_error
 {
     using namespace AIMP3SDK;
     // PROFILE_EXECUTION_TIME(__FUNCTION__);
 
-    const AIMP3SDK::HPLS playlist_id = cast<AIMP3SDK::HPLS>( playlist.id() );    
-
-    boost::intrusive_ptr<IAIMPAddonsPlaylistStrings> strings( getPlaylistStrings(playlist_id) );
-
-    const int entries_count = strings->ItemGetCount();
-
     AIMP3Util::FileInfoHelper file_info_helper; // used for get entries from AIMP conveniently.
+
+    const AIMP3SDK::HPLS playlist_handle = cast<AIMP3SDK::HPLS>( playlist.id() );
+    const int entries_count = aimp3_playlist_manager_->StorageGetEntryCount(playlist_handle);
 
     // temp objects to prevent partial change state of passed objects when error occurs.
     EntriesListType entries;
@@ -561,55 +517,59 @@ void AIMPManager30::loadEntries(Playlist& playlist) // throws std::runtime_error
                                                     const std::string msg = MakeString() << "sqlite3_bind_text16" << " " << rc_db; \
                                                     throw std::runtime_error(msg); \
                                                 }
+
     int rc_db;
     bind( int, 1, playlist.id() );
-
+    
     for (int entry_index = 0; entry_index < entries_count; ++entry_index) {
-        HRESULT r = strings->ItemGetInfo( entry_index, &file_info_helper.getEmptyFileInfo() );
+        const HPLSENTRY entry_handle = aimp3_playlist_manager_->StorageGetEntry(playlist_handle, entry_index);
+
+        HRESULT r = aimp3_playlist_manager_->EntryPropertyGetValue( entry_handle, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_INFO,
+                                                                    &file_info_helper.getEmptyFileInfo(), sizeof(file_info_helper.getEmptyFileInfo()) );
         if (S_OK != r) {
-            const std::string msg = MakeString() << "IAIMPAddonsPlaylistStrings::ItemGetInfo() error " 
+            const std::string msg = MakeString() << "IAIMPAddonsPlaylistManager::EntryPropertyGetValue(AIMP_PLAYLIST_ENTRY_PROPERTY_INFO) error " 
                                                  << r << " occured while getting entry info ¹" << entry_index
-                                                 << " from playlist with ID = " << playlist_id;
+                                                 << " from playlist with ID = " << playlist.id();
             throw std::runtime_error(msg);
         }
 
-        entries.push_back( file_info_helper.getPlaylistEntry(entry_index) ); ///!!! Maybe we need to use this instead index: HPLSENTRY entry_id = aimp3_playlist_manager_->StorageGetEntry(playlist_id, entry_index);
-
+        const int entry_id = castToPlaylistEntryID(entry_handle);
+        entries.push_back( file_info_helper.getPlaylistEntry(entry_id) );
+        
+        int rating = 0;
         { // get rating manually, since AIMP3 does not fill TAIMPFileInfo::Rating value.
             int rating = 0;
-            HPLSENTRY entry_id = aimp3_playlist_manager_->StorageGetEntry(playlist_id, entry_index);
-            r = aimp3_playlist_manager_->EntryPropertyGetValue( entry_id, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_MARK, &rating, sizeof(rating) );    
+            r = aimp3_playlist_manager_->EntryPropertyGetValue( entry_handle, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_MARK, &rating, sizeof(rating) );    
             if (S_OK == r) {
                 entries.back().rating(rating);
             }
+        }
 
-            // special db code
-            {
-                // bind all values
-                const AIMP3SDK::TAIMPFileInfo& info = file_info_helper.getFileInfoWithCorrectStringLengths();
-                bind(int,    2, entry_index);
-                bindText(    3, Album);
-                bindText(    4, Artist);
-                bindText(    5, Date);
-                bindText(    6, FileName);
-                bindText(    7, Genre);
-                bindText(    8, Title);
-                bind(int,    9, info.BitRate);
-                bind(int,   10, info.Channels);
-                bind(int,   11, info.Duration);
-                bind(int64, 12, info.FileSize);
-                bind(int,   13, rating);
-                bind(int,   14, info.SampleRate);
-                bind(int64, 15, crc32(info));
+        { // special db code
+            // bind all values
+            const AIMP3SDK::TAIMPFileInfo& info = file_info_helper.getFileInfoWithCorrectStringLengths();
+            bind(int,    2, entry_id);
+            bindText(    3, Album);
+            bindText(    4, Artist);
+            bindText(    5, Date);
+            bindText(    6, FileName);
+            bindText(    7, Genre);
+            bindText(    8, Title);
+            bind(int,    9, info.BitRate);
+            bind(int,   10, info.Channels);
+            bind(int,   11, info.Duration);
+            bind(int64, 12, info.FileSize);
+            bind(int,   13, rating);
+            bind(int,   14, info.SampleRate);
+            bind(int64, 15, crc32(info));
 
-                rc_db = sqlite3_step(stmt);
-                if (SQLITE_DONE != rc_db) {
-                    const std::string msg = MakeString() << "sqlite3_step() error "
-                                                         << rc_db << ": " << sqlite3_errmsg(playlists_db_);
-                    throw std::runtime_error(msg);
-                }
-                sqlite3_reset(stmt);
+            rc_db = sqlite3_step(stmt);
+            if (SQLITE_DONE != rc_db) {
+                const std::string msg = MakeString() << "sqlite3_step() error "
+                                                        << rc_db << ": " << sqlite3_errmsg(playlists_db_);
+                throw std::runtime_error(msg);
             }
+            sqlite3_reset(stmt);
         }
     }
 #undef bind
@@ -617,16 +577,6 @@ void AIMPManager30::loadEntries(Playlist& playlist) // throws std::runtime_error
 
     // we got list, save result
     playlist.entries().swap(entries);
-}
-
-AIMP3SDK::HPLSENTRY AIMPManager30::getEntryHandle(TrackDescription track_desc) // throws std::runtime_error
-{
-    // Note: TrackDescription's track_id is really entry index, not HPLSENTRY value.
-    AIMP3SDK::HPLSENTRY handle = aimp3_playlist_manager_->StorageGetEntry(cast<AIMP3SDK::HPLS>(track_desc.playlist_id), track_desc.track_id);    
-    if (handle == nullptr) {
-        throw std::runtime_error(MakeString() << "StorageGetEntry returns null for track " << track_desc);
-    }
-    return handle;
 }
 
 void AIMPManager30::startPlayback()
@@ -639,7 +589,7 @@ void AIMPManager30::startPlayback()
 
 void AIMPManager30::startPlayback(TrackDescription track_desc) // throws std::runtime_error
 {
-    HRESULT r = aimp3_player_manager_->PlayStorage(cast<AIMP3SDK::HPLS>(track_desc.playlist_id), track_desc.track_id);
+    HRESULT r = aimp3_player_manager_->PlayEntry( castToHPLSENTRY( getAbsoluteEntryID(track_desc.track_id) ) );
     if (S_OK != r) {
         throw std::runtime_error( MakeString() << "Error " << r << " in "__FUNCTION__" with " << track_desc );
     }
@@ -729,30 +679,6 @@ void AIMPManager30::onAimpCoreMessage(DWORD AMessage, int AParam1, void* /*APara
     }
     *AResult = E_NOTIMPL;
 }
-
-//void AIMPManager30::notifyAboutInternalEventOnStatusChange(AIMPManager30::STATUS status)
-//{
-//    switch (status) {
-//    case STATUS_SHUFFLE:
-//        notifyAboutInternalEvent(SHUFFLE_EVENT);
-//        break;
-//    case STATUS_REPEAT:
-//        notifyAboutInternalEvent(REPEAT_EVENT);
-//        break;
-//    case STATUS_VOLUME:
-//        notifyAboutInternalEvent(VOLUME_EVENT);
-//        break;
-//    case STATUS_MUTE:
-//        notifyAboutInternalEvent(MUTE_EVENT);
-//        break;
-//    case STATUS_POS:
-//        notifyAboutInternalEvent(TRACK_PROGRESS_CHANGED_DIRECTLY_EVENT);
-//        break;
-//    default:
-//        // do nothing, about other status changes AIMP will notify us itself.
-//        break;
-//    }
-//}
 
 void AIMPManager30::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValue status_value)
 {
@@ -1000,7 +926,7 @@ void AIMPManager30::setStatus(AIMPManager::STATUS status, AIMPManager::StatusVal
     throw std::runtime_error( os.str() );
 }
 
-// For some reason if IAIMPCoreUnit::MessageSend() returns -1 instead 1 for BOOL.
+// For some reason IAIMPCoreUnit::MessageSend() returns -1 instead 1 for BOOL.
 AIMPManager30::StatusValue patchBool(BOOL value)
 {
     return value ? 1 : 0;
@@ -1315,7 +1241,6 @@ TrackDescription AIMPManager30::getAbsoluteTrackDesc(TrackDescription track_desc
 
 PlaylistID AIMPManager30::getPlayingPlaylist() const
 {
-    // return AIMP internal playlist ID here since AIMPManager30 uses the same IDs.
     return cast<PlaylistID>( aimp3_playlist_manager_->StoragePlayingGet() );
 }
 
@@ -1329,17 +1254,22 @@ PlaylistEntryID AIMPManager30::getPlayingEntry() const
         return 0;
     }
 
+    const AIMP3SDK::HPLS playlist_handle = cast<AIMP3SDK::HPLS>(playing_playlist);
+
     int internal_playing_entry_index;
-    HRESULT r = aimp3_playlist_manager_->StoragePropertyGetValue( cast<AIMP3SDK::HPLS>(playing_playlist), AIMP_PLAYLIST_STORAGE_PROPERTY_PLAYINGINDEX,
+    HRESULT r = aimp3_playlist_manager_->StoragePropertyGetValue( playlist_handle, AIMP_PLAYLIST_STORAGE_PROPERTY_PLAYINGINDEX,
                                                                   &internal_playing_entry_index, sizeof(internal_playing_entry_index) 
                                                                  );
     if (S_OK != r) {
-        throw std::runtime_error(MakeString() << "Error " << r << " in "__FUNCTION__);
+        throw std::runtime_error(MakeString() << "Error " << r << " in StoragePropertyGetValue(AIMP_PLAYLIST_STORAGE_PROPERTY_PLAYINGINDEX) in "__FUNCTION__);
     }
 
-    // internal index equals AIMPManager30's entry ID. In other case map index<->ID(use Playlist::entries_id_list_) here in all places where TrackDescription is used.
-    const PlaylistEntryID entry_id = internal_playing_entry_index;
-    return entry_id;
+    const HPLSENTRY entry_handle = aimp3_playlist_manager_->StorageGetEntry(playlist_handle, internal_playing_entry_index);
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << "Error " << r << " in StorageGetEntry in "__FUNCTION__);
+    }
+
+    return castToPlaylistEntryID(entry_handle);
 }
 
 TrackDescription AIMPManager30::getPlayingTrack() const
@@ -1379,7 +1309,7 @@ AIMPManager30::PLAYBACK_STATE AIMPManager30::getPlaybackState() const
 void AIMPManager30::enqueueEntryForPlay(TrackDescription track_desc, bool insert_at_queue_beginning) // throws std::runtime_error
 {
     using namespace AIMP3SDK;
-    AIMP3SDK::HPLSENTRY entry_handle = getEntryHandle(track_desc);
+    AIMP3SDK::HPLSENTRY entry_handle = castToHPLSENTRY(getAbsoluteEntryID(track_desc.track_id));
 
     HRESULT r = aimp3_playlist_manager_->QueueEntryAdd(entry_handle, insert_at_queue_beginning);
     if (S_OK != r) {
@@ -1390,7 +1320,7 @@ void AIMPManager30::enqueueEntryForPlay(TrackDescription track_desc, bool insert
 void AIMPManager30::removeEntryFromPlayQueue(TrackDescription track_desc) // throws std::runtime_error
 {
     using namespace AIMP3SDK;
-    AIMP3SDK::HPLSENTRY entry_handle = getEntryHandle(track_desc);
+    AIMP3SDK::HPLSENTRY entry_handle = castToHPLSENTRY(getAbsoluteEntryID(track_desc.track_id));
 
     HRESULT r = aimp3_playlist_manager_->QueueEntryRemove(entry_handle);
     if (S_OK != r) {
@@ -1591,11 +1521,8 @@ std::wstring AIMPManager30::getFormattedEntryTitle(TrackDescription track_desc, 
 void AIMPManager30::trackRating(TrackDescription track_desc, int rating) // throws std::runtime_error
 {
     using namespace AIMP3SDK;
-    PlaylistEntry& entry = getEntry(track_desc);
-    HPLSENTRY entry_id = aimp3_playlist_manager_->StorageGetEntry(cast<AIMP3SDK::HPLS>(track_desc.playlist_id),
-                                                                  entry.id()
-                                                                  );
-    HRESULT r = aimp3_playlist_manager_->EntryPropertySetValue( entry_id, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_MARK, &rating, sizeof(rating) );    
+    HPLSENTRY entry_handle = castToHPLSENTRY(getAbsoluteEntryID(track_desc.track_id));
+    HRESULT r = aimp3_playlist_manager_->EntryPropertySetValue( entry_handle, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_MARK, &rating, sizeof(rating) );    
     if (S_OK != r) {
         throw std::runtime_error(MakeString() << "Error " << r << " in "__FUNCTION__", track " << track_desc);
     }  
@@ -1646,7 +1573,7 @@ void AIMPManager30::initPlaylistDB() // throws std::runtime_error
                                                       "rating         TINYINT,"
                                                       "samplerate     INTEGER,"
                                                       "crc32          BIGINT," // use BIGINT since crc32 is uint32.
-                                                      "PRIMARY KEY (playlist_id, entry_id)"
+                                                      "PRIMARY KEY (entry_id)"
                                                       ")",
                       nullptr, /* Callback function */
                       nullptr, /* 1st argument to callback */

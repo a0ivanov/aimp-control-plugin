@@ -109,10 +109,10 @@ public:
 private:
 
     void onAimpCoreMessage(DWORD AMessage, int AParam1, void *AParam2, HRESULT *AResult);
-    void onStorageActivated(AIMP3SDK::HPLS id);
-    void onStorageAdded(AIMP3SDK::HPLS id);
-    void onStorageChanged(AIMP3SDK::HPLS id, DWORD flags);
-    void onStorageRemoved(AIMP3SDK::HPLS id);
+    void onStorageActivated(AIMP3SDK::HPLS handle);
+    void onStorageAdded(AIMP3SDK::HPLS handle);
+    void onStorageChanged(AIMP3SDK::HPLS handle, DWORD flags);
+    void onStorageRemoved(AIMP3SDK::HPLS handle);
 
     /*!
         \brief Return album cover for track_id in playlist_id.
@@ -141,18 +141,15 @@ private:
         \throw std::runtime_error if error occured while loading entries data.
     */
     void loadEntries(Playlist& playlist); // throws std::runtime_error
-protected:
-    AIMP3SDK::HPLSENTRY getEntryHandle(TrackDescription track_desc); // throws std::runtime_error
-private:
+
     //! Loads playlist by AIMP internal index.
     Playlist loadPlaylist(int playlist_index); // throws std::runtime_error
-    Playlist loadPlaylist(AIMP3SDK::HPLS id); // throws std::runtime_error
+    Playlist loadPlaylist(AIMP3SDK::HPLS handle); // throws std::runtime_error
     void updatePlaylist(Playlist& playlist); // throws std::runtime_error
 
     Playlist& getPlaylist(PlaylistID playlist_id); // throws std::runtime_error
-    boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistStrings> getPlaylistStrings(const AIMP3SDK::HPLS playlist_id); // throws std::runtime_error
     PlaylistEntry& getEntry(TrackDescription track_desc); // throws std::runtime_error
-    TrackDescription getTrackDescOfQueuedEntry(AIMP3SDK::HPLSENTRY entry_id); // throws std::runtime_error;
+    TrackDescription getTrackDescOfQueuedEntry(AIMP3SDK::HPLSENTRY entry_handle); // throws std::runtime_error;
 
     void initPlaylistDB(); // throws std::runtime_error
     void shutdownPlaylistDB();
@@ -201,5 +198,10 @@ PlaylistID cast(AIMP3SDK::HPLS handle);
 
 template<>
 AIMP3SDK::HPLS cast(PlaylistID id);
+
+// use usual functions instead template specialization since in fact PlaylistEntryID == PlaylistID == int.
+PlaylistEntryID castToPlaylistEntryID (AIMP3SDK::HPLSENTRY handle);
+
+AIMP3SDK::HPLSENTRY castToHPLSENTRY(PlaylistEntryID id);
 
 } // namespace AIMPPlayer
