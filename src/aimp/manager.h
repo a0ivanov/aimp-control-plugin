@@ -108,8 +108,6 @@ public:
     typedef boost::function<void (EVENTS)> EventsListener;
     typedef std::size_t EventsListenerID;
 
-    typedef std::map<PlaylistID, Playlist> PlaylistsListType;
-
     virtual ~AIMPManager() {}
 
     //! Starts playback.
@@ -209,18 +207,12 @@ public:
     //! \return ID of playback state.
     virtual PLAYBACK_STATE getPlaybackState() const = 0;
 
-    //! \return list of all playlists.
-    virtual const PlaylistsListType& getPlayLists() const = 0;
-
-    /*! \return reference to playlist with playlist_id ID. */
-    virtual const Playlist& getPlaylist(PlaylistID playlist_id) const = 0; // throw std::runtime_error
-
     /*!
         \param track_desc - track descriptor.
         \return reference to entry.
         \throw std::runtime_error if track does not exist.
     */
-    virtual const PlaylistEntry& getEntry(TrackDescription track_desc) const = 0; // throw std::runtime_error
+    ///!!!virtual PlaylistEntry getEntry(TrackDescription track_desc) const = 0; // throw std::runtime_error
 
     /*!
         \brief Returns formatted entry descrition string. Acts like printf() analog, see details below.

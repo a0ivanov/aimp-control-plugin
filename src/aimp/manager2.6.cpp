@@ -282,10 +282,6 @@ void AIMPManager26::loadEntries(Playlist& playlist) // throws std::runtime_error
     const int entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
 
     AIMP2FileInfoHelper file_info_helper; // used for get entries from AIMP conveniently.
-
-    // temp objects to prevent partial change state of passed objects when error occurs.
-    EntriesListType entries;
-    entries.reserve(entries_count);
     
     deletePlaylistEntriesFromPlaylistDB( playlist.id() ); // remove old entries before adding new ones.
 
@@ -320,8 +316,6 @@ void AIMPManager26::loadEntries(Playlist& playlist) // throws std::runtime_error
                                                              )
             )
         {
-            entries.push_back( file_info_helper.getPlaylistEntry(entry_index) );
-
             // special db code
             {
                 // bind all values
@@ -356,9 +350,6 @@ void AIMPManager26::loadEntries(Playlist& playlist) // throws std::runtime_error
     }
 #undef bind
 #undef bindText
-
-    // we got list, save result
-    playlist.entries().swap(entries);
 }
 
 #ifdef MANUAL_PLAYLISTS_CONTENT_CHANGES_DETERMINATION
@@ -379,67 +370,70 @@ bool playlist_exist(PlaylistID playlist_id, boost::intrusive_ptr<AIMP2SDK::IAIMP
 
 void AIMPManager26::checkIfPlaylistsChanged()
 {
-    std::vector<PlaylistID> playlists_to_reload;
-    const size_t playlists_count = aimp2_playlist_manager_->AIMP_PLS_Count();
-    for (size_t playlist_index = 0; playlist_index < playlists_count; ++playlist_index) {
-        int current_playlist_id;
-        if ( S_OK != aimp2_playlist_manager_->AIMP_PLS_ID_By_Index(playlist_index, &current_playlist_id) ) {
-            throw std::runtime_error(MakeString() << "checkIfPlaylistsChanged() failed. Reason: AIMP_PLS_ID_By_Index failed");
-        }
+    ///!!! implement in DB terms
 
-        const int entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(current_playlist_id);
 
-        const auto loaded_playlist_iter = playlists_.find(current_playlist_id);
-        if (playlists_.end() == loaded_playlist_iter) {
-            // current playlist was not loaded yet, load it now without entries.
-            playlists_.insert( std::make_pair(current_playlist_id, loadPlaylist(playlist_index) ) );
-            playlists_to_reload.push_back(current_playlist_id);
-        } else if ( loaded_playlist_iter->second.entriesCount() != static_cast<size_t>(entries_count) ) {
-            // list loaded, but entries count is changed: load new playlist to update all internal fields.
-            playlists_[current_playlist_id] = loadPlaylist(playlist_index); // we must use map's operator[] instead insert() method, since insert is no-op for existing key.
-            playlists_to_reload.push_back(current_playlist_id);
-        } else if ( !isLoadedPlaylistEqualsAimpPlaylist(current_playlist_id) ) {
-            // contents of loaded playlist and current playlist are different.
-            playlists_to_reload.push_back(current_playlist_id);
-        }
-    }
+    //std::vector<PlaylistID> playlists_to_reload;
+    //const size_t playlists_count = aimp2_playlist_manager_->AIMP_PLS_Count();
+    //for (size_t playlist_index = 0; playlist_index < playlists_count; ++playlist_index) {
+    //    int current_playlist_id;
+    //    if ( S_OK != aimp2_playlist_manager_->AIMP_PLS_ID_By_Index(playlist_index, &current_playlist_id) ) {
+    //        throw std::runtime_error(MakeString() << "checkIfPlaylistsChanged() failed. Reason: AIMP_PLS_ID_By_Index failed");
+    //    }
 
-    // reload entries of playlists from list.
-    BOOST_FOREACH(PlaylistID playlist_id, playlists_to_reload) {
-        try {
-            auto it = playlists_.find(playlist_id);
-            assert( it != playlists_.end() );
-            Playlist& playlist = it->second;
-            loadEntries(playlist); // avoid using of playlists_[playlist_id], since it requires Playlist's default ctor.
+    //    const int entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(current_playlist_id);
 
-            updatePlaylistCrcInDB(playlist);
-        } catch (std::exception& e) {
-            BOOST_LOG_SEV(logger(), error) << "Error occured while playlist(id = " << playlist_id << ") entries loading. Reason: " << e.what();
-        }
-    }
+    //    const auto loaded_playlist_iter = playlists_.find(current_playlist_id);
+    //    if (playlists_.end() == loaded_playlist_iter) {
+    //        // current playlist was not loaded yet, load it now without entries.
+    //        playlists_.insert( std::make_pair(current_playlist_id, loadPlaylist(playlist_index) ) );
+    //        playlists_to_reload.push_back(current_playlist_id);
+    //    } else if ( loaded_playlist_iter->second.entriesCount() != static_cast<size_t>(entries_count) ) {
+    //        // list loaded, but entries count is changed: load new playlist to update all internal fields.
+    //        playlists_[current_playlist_id] = loadPlaylist(playlist_index); // we must use map's operator[] instead insert() method, since insert is no-op for existing key.
+    //        playlists_to_reload.push_back(current_playlist_id);
+    //    } else if ( !isLoadedPlaylistEqualsAimpPlaylist(current_playlist_id) ) {
+    //        // contents of loaded playlist and current playlist are different.
+    //        playlists_to_reload.push_back(current_playlist_id);
+    //    }
+    //}
 
-    bool playlists_content_changed = !playlists_to_reload.empty();
+    //// reload entries of playlists from list.
+    //for (PlaylistID playlist_id : playlists_to_reload) {
+    //    try {
+    //        auto it = playlists_.find(playlist_id);
+    //        assert( it != playlists_.end() );
+    //        Playlist& playlist = it->second;
+    //        loadEntries(playlist); // avoid using of playlists_[playlist_id], since it requires Playlist's default ctor.
 
-    // handle closed playlists.
-    if (playlists_count < playlists_.size()) { 
-        playlists_content_changed = true;
-        PlaylistsListType::iterator it = playlists_.begin();
-        while (it != playlists_.end()) {
-            // try to find id of current playlist in existing playlists.
-            if (!playlist_exist(it->first, aimp2_playlist_manager_) ) {
-                { // db code
-                    deletePlaylistFromPlaylistDB(it->second.id());
-                }
-                it = playlists_.erase(it);
-            } else {
-                ++it;            
-            }
-        }
-    }
+    //        updatePlaylistCrcInDB(playlist);
+    //    } catch (std::exception& e) {
+    //        BOOST_LOG_SEV(logger(), error) << "Error occured while playlist(id = " << playlist_id << ") entries loading. Reason: " << e.what();
+    //    }
+    //}
+
+    //bool playlists_content_changed = !playlists_to_reload.empty();
+
+    //// handle closed playlists.
+    //if (playlists_count < playlists_.size()) { 
+    //    playlists_content_changed = true;
+    //    PlaylistsListType::iterator it = playlists_.begin();
+    //    while (it != playlists_.end()) {
+    //        // try to find id of current playlist in existing playlists.
+    //        if (!playlist_exist(it->first, aimp2_playlist_manager_) ) {
+    //            { // db code
+    //                deletePlaylistFromPlaylistDB(it->second.id());
+    //            }
+    //            it = playlists_.erase(it);
+    //        } else {
+    //            ++it;            
+    //        }
+    //    }
+    //}
  
-    if (playlists_content_changed) {
-        notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
-    }
+    //if (playlists_content_changed) {
+    //    notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+    //}
 }
 
 void AIMPManager26::updatePlaylistCrcInDB(const Playlist& playlist)
@@ -468,35 +462,36 @@ void AIMPManager26::updatePlaylistCrcInDB(const Playlist& playlist)
     }
 }
 
-bool AIMPManager26::isLoadedPlaylistEqualsAimpPlaylist(PlaylistID playlist_id) const
+bool AIMPManager26::isLoadedPlaylistEqualsAimpPlaylist(PlaylistID /*playlist_id*/) const
 {
     // PROFILE_EXECUTION_TIME(__FUNCTION__);
 
-    const Playlist& playlist = getPlaylist(playlist_id);
-    const EntriesListType& loaded_entries = playlist.entries();
+    ///!!! implement in DB terms.
 
-    const int entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
-    assert( entries_count >= 0 && static_cast<size_t>(entries_count) == loaded_entries.size() ); // function returns correct result only if entries count in loaded and actual playlists are equal.
+    //const Playlist& playlist = getPlaylist(playlist_id);
+    //const size_t loaded_entries_count = getEntriesCountDB(playlist_id, playlists_db_);
+    //const int entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
+    //assert(entries_count >= 0 && static_cast<size_t>(entries_count) == loaded_entries_count); // function returns correct result only if entries count in loaded and actual playlists are equal.
 
-    AIMP2FileInfoHelper file_info_helper; // used for get entries from AIMP conveniently.
+    //AIMP2FileInfoHelper file_info_helper; // used for get entries from AIMP conveniently.
 
-    for (int entry_index = 0; entry_index < entries_count; ++entry_index) {
-        if ( aimp2_playlist_manager_->AIMP_PLS_Entry_InfoGet( playlist_id,
-                                                              entry_index,
-                                                              &file_info_helper.getEmptyFileInfo()
-                                                             )
-            )
-        {
-            // need to compare loaded_entry with file_info_helper.info_;
-            const AIMP2SDK::AIMP2FileInfo& aimp_entry = file_info_helper.getFileInfoWithCorrectStringLengths();
-            if ( loaded_entries[entry_index].crc32() != Utilities::crc32(aimp_entry) ) {
-                return false;
-            }
-        } else {
-            // in case of Aimp error just say that playlists are not equal.
-            return false;
-        }
-    }
+    //for (int entry_index = 0; entry_index < entries_count; ++entry_index) {
+    //    if ( aimp2_playlist_manager_->AIMP_PLS_Entry_InfoGet( playlist_id,
+    //                                                          entry_index,
+    //                                                          &file_info_helper.getEmptyFileInfo()
+    //                                                         )
+    //        )
+    //    {
+    //        // need to compare loaded_entry with file_info_helper.info_;
+    //        const AIMP2SDK::AIMP2FileInfo& aimp_entry = file_info_helper.getFileInfoWithCorrectStringLengths();
+    //        if ( getEntryDB(playlist, entry_index).crc32() != Utilities::crc32(aimp_entry) ) {
+    //            return false;
+    //        }
+    //    } else {
+    //        // in case of Aimp error just say that playlists are not equal.
+    //        return false;
+    //    }
+    //}
 
     return true;
 }
@@ -981,8 +976,8 @@ TrackDescription AIMPManager26::getPlayingTrack() const
 
 AIMPManager::PLAYLIST_ENTRY_SOURCE_TYPE AIMPManager26::getTrackSourceType(TrackDescription track_desc) const // throws std::runtime_error
 {
-    const PlaylistEntry& entry = getEntry(track_desc);
-    return entry.duration() == 0 ? SOURCE_TYPE_RADIO : SOURCE_TYPE_FILE; // very shallow determination. Duration can be 0 on usual track if AIMP has no loaded track info yet.
+    const DWORD duration = getEntryField<DWORD>(playlists_db_, "duration", getAbsoluteTrackDesc(track_desc));
+    return duration == 0 ? SOURCE_TYPE_RADIO : SOURCE_TYPE_FILE; // very shallow determination. Duration can be 0 on usual track if AIMP has no loaded track info yet.
 }
 
 AIMPManager::PLAYBACK_STATE AIMPManager26::getPlaybackState() const
@@ -1022,15 +1017,9 @@ void AIMPManager26::removeEntryFromPlayQueue(TrackDescription track_desc) // thr
     }
 }
 
-const AIMPManager26::PlaylistsListType& AIMPManager26::getPlayLists() const
-{
-    return playlists_;
-}
-
 int AIMPManager26::trackRating(TrackDescription track_desc) const // throws std::runtime_error
 {
-    const PlaylistEntry& entry = getEntry(track_desc);
-    return entry.rating();
+    return getEntryField<DWORD>(playlists_db_, "rating", getAbsoluteTrackDesc(track_desc));
 }
 
 void AIMPManager26::saveCoverToFile(TrackDescription track_desc, const std::wstring& filename, int cover_width, int cover_height) const // throw std::runtime_error
@@ -1052,9 +1041,9 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMPManager26::getCoverImage(TrackDesc
         throw std::invalid_argument(MakeString() << "Error in "__FUNCTION__ << ". Negative cover size.");
     }
 
-    const PlaylistEntry& entry = getEntry(track_desc);
+    const std::wstring& entry_filename = getEntryField<std::wstring>(playlists_db_, "filename", getAbsoluteTrackDesc(track_desc));
     const SIZE request_full_size = { 0, 0 };
-    HBITMAP cover_bitmap_handle = aimp2_cover_art_manager_->GetCoverArtForFile(const_cast<PWCHAR>( entry.filename().c_str() ), &request_full_size);
+    HBITMAP cover_bitmap_handle = aimp2_cover_art_manager_->GetCoverArtForFile(const_cast<PWCHAR>( entry_filename.c_str() ), &request_full_size);
 
     // get real bitmap size
     const SIZE cover_full_size = ImageUtils::getBitmapSize(cover_bitmap_handle);
@@ -1078,36 +1067,85 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMPManager26::getCoverImage(TrackDesc
             cover_size.cy = cover_height;
         }
 
-        cover_bitmap_handle = aimp2_cover_art_manager_->GetCoverArtForFile(const_cast<PWCHAR>( entry.filename().c_str() ), &cover_size);
+        cover_bitmap_handle = aimp2_cover_art_manager_->GetCoverArtForFile(const_cast<PWCHAR>( entry_filename.c_str() ), &cover_size);
     }
 
     using namespace ImageUtils;
     return std::auto_ptr<AIMPCoverImage>( new AIMPCoverImage(cover_bitmap_handle) ); // do not close handle of AIMP bitmap.
 }
 
-const Playlist& AIMPManager26::getPlaylist(PlaylistID id) const
+void getEntryField_(sqlite3* db, const char* field, TrackDescription track_desc, std::function<void(sqlite3_stmt*)> row_callback)
 {
-    const PlaylistID playlist_id = getAbsolutePlaylistID(id);
+    using namespace Utilities;
 
-    auto playlist_iterator( playlists_.find(playlist_id) );
-    if ( playlist_iterator == playlists_.end() ) {
-        throw std::runtime_error(MakeString() << "Error in "__FUNCTION__ << ": playlist with ID = " << playlist_id << " does not exist");
+    std::ostringstream query;
+
+    query << "SELECT " << field
+          << " FROM PlaylistsEntries WHERE playlist_id=" << track_desc.playlist_id << " AND entry_id=" << track_desc.track_id;
+
+    sqlite3_stmt* stmt = createStmt( db, query.str() );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+    for(;;) {
+		int rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+            assert(sqlite3_column_count(stmt) == 1);
+            row_callback(stmt);
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                 << rc_db << ": " << sqlite3_errmsg(db)
+                                                 << ". Query: " << query;
+            throw std::runtime_error(msg);
+		}
     }
 
-    return playlist_iterator->second;
+    throw std::runtime_error(MakeString() << "Error in "__FUNCTION__ << ". Track " << track_desc << " does not exist");
 }
 
-const PlaylistEntry& AIMPManager26::getEntry(TrackDescription desc) const
+template<>
+std::wstring getEntryField(sqlite3* db, const char* field, TrackDescription track_desc)
 {
-    const TrackDescription track_desc = getAbsoluteTrackDesc(desc);
+    std::wstring r;
+    auto handler = [&](sqlite3_stmt* stmt) {
+        assert(sqlite3_column_type(stmt, 0) == SQLITE_TEXT);
+        if (sqlite3_column_type(stmt, 0) != SQLITE_TEXT) {
+            throw std::runtime_error(MakeString() << "Unexpected column type at "__FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Track " << track_desc);
+        }
+        r = static_cast<const std::wstring::value_type*>(sqlite3_column_text16(stmt, 0));
+    };
+    getEntryField_(db, field, track_desc, handler);
+    return r;
+}
 
-    const Playlist& playlist = getPlaylist(track_desc.playlist_id);
-    const EntriesListType& entries = playlist.entries();
-    if ( track_desc.track_id < 0 || static_cast<size_t>(track_desc.track_id) >= entries.size() ) {
-        throw std::runtime_error(MakeString() << "Error in "__FUNCTION__ << ". Entry " << track_desc << " does not exist");
-    }
+template<>
+DWORD getEntryField(sqlite3* db, const char* field, TrackDescription track_desc)
+{
+    DWORD r;
+    auto handler = [&](sqlite3_stmt* stmt) {
+        assert(sqlite3_column_type(stmt, 0) == SQLITE_INTEGER);
+        if (sqlite3_column_type(stmt, 0) != SQLITE_INTEGER) {
+            throw std::runtime_error(MakeString() << "Unexpected column type at "__FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Track " << track_desc);
+        }
+        r = static_cast<DWORD>(sqlite3_column_int(stmt, 0));
+    };
+    getEntryField_(db, field, track_desc, handler);
+    return r;
+}
 
-    return entries[track_desc.track_id]; // currently track ID is simple index in entries list.
+template<>
+INT64 getEntryField(sqlite3* db, const char* field, TrackDescription track_desc)
+{
+    INT64 r;
+    auto handler = [&](sqlite3_stmt* stmt) {
+        assert(sqlite3_column_type(stmt, 0) == SQLITE_INTEGER);
+        if (sqlite3_column_type(stmt, 0) != SQLITE_INTEGER) {
+            throw std::runtime_error(MakeString() << "Unexpected column type at "__FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Track " << track_desc);
+        }
+        r = sqlite3_column_int64(stmt, 0);
+    };
+    getEntryField_(db, field, track_desc, handler);
+    return r;
 }
 
 void WINAPI AIMPManager26::internalAIMPStateNotifier(DWORD User, DWORD dwCBType)
@@ -1459,12 +1497,13 @@ private:
 
 } // namespace anonymous
 
-std::wstring AIMPManager26::getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const // throw std::invalid_argument
+std::wstring AIMPManager26::getFormattedEntryTitle(TrackDescription /*track_desc*/, const std::string& /*format_string_utf8*/) const // throw std::invalid_argument
 {
-
-    return playlistentry_title_formatter.format(getEntry(track_desc),
-                                                StringEncoding::utf8_to_utf16(format_string_utf8)
-                                                );
+    ///!!! implement in DB terms.
+    //return playlistentry_title_formatter.format(getEntry(track_desc),
+    //                                            StringEncoding::utf8_to_utf16(format_string_utf8)
+    //                                            );
+    return L"implement me";
 }
 
 

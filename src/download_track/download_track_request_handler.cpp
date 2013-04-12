@@ -3,13 +3,19 @@
 #include "stdafx.h"
 #include "request_handler.h"
 #include "../aimp/manager.h"
-
+#include "../aimp/manager2.6.h" ///!!! remove me
 #include "../http_server/reply.h"
 #include "../http_server/request.h"
 #include "../http_server/mime_types.h"
 
 #include "utils/string_encoding.h"
 #include "utils/util.h"
+
+struct sqlite3;
+
+namespace AimpRpcMethods {
+    sqlite3* getPlaylistsDB(AIMPPlayer::AIMPManager& aimp_manager); ///!!! remove me
+}
 
 namespace DownloadTrack
 {
@@ -62,14 +68,14 @@ bool fileExists(const std::wstring& filepath)
 std::wstring RequestHandler::getTrackSourcePath(const std::string& request_uri)
 {
     const TrackDescription track_desc(getPlaylistID(request_uri), getTrackID(request_uri));
-    const PlaylistEntry& entry = aimp_manager_.getEntry(track_desc);
-    if (   entry.filename().empty() 
-        || !fileExists( entry.filename() ) 
+    const std::wstring& entry_filename = getEntryField<std::wstring>(AimpRpcMethods::getPlaylistsDB(aimp_manager_), "filename", aimp_manager_.getAbsoluteTrackDesc(track_desc)); ///!!! avoid using AimpRpcMethods method.
+    if (   entry_filename.empty() 
+        || !fileExists(entry_filename) 
         )
     {
         throw std::runtime_error("Track source does not exist.");
     }
-    return entry.filename();
+    return entry_filename;
 }
 
 bool RequestHandler::handle_request(const Http::Request& req, Http::Reply& rep)

@@ -170,7 +170,7 @@ TrackDescription AIMPManager31::getTrackDescOfQueuedEntry(AIMP3SDK::HPLSENTRY en
 		}
     }
 
-    throw std::runtime_error(MakeString() << "Queued entry is not found at existing playlists unexpectedly. Entry AIMP id: " << entry_id);
+    throw std::runtime_error(MakeString() << "Queued entry is not found at existing playlists unexpectedly. Entry id: " << entry_id);
 }
 
 void AIMPManager31::moveQueueEntry(TrackDescription track_desc, int new_queue_index) // throws std::runtime_error

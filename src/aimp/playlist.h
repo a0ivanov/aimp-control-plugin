@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef AIMP_PLAYLIST_H
-#define AIMP_PLAYLIST_H
+#pragma once
 
 #include "aimp/common_types.h"
 #include "aimp/playlist_entry.h"
@@ -10,8 +9,6 @@ namespace AIMPPlayer
 {
 
 const PlaylistID kCURRENT_PLAYLIST_ID = -1; //!< ID of current active playlist for internal AIMP functions.
-
-typedef boost::shared_ptr<EntriesListType> EntriesList_ptr;
 
 //! Represents AIMP playlist.
 class Playlist
@@ -32,10 +29,6 @@ public:
     Playlist(Playlist&& rhs);
 
     Playlist& operator=(Playlist&& rhs);
-
-    //! Returns entries in default order: id ascendence.
-    const EntriesListType& entries() const;
-    EntriesListType& entries();
 
     //! Returns indentificator.
     PlaylistID id() const { return id_; }
@@ -76,9 +69,7 @@ private:
     INT64 duration_; //!< summary duration of all entries.
     INT64 size_of_all_entries_in_bytes_; //!< summary size of all entries in bytes.
     PlaylistID id_; //!< playlist indentificator.
-    EntriesList_ptr entries_; //!< list of tracks in playlist. This must be shared_ptr: entries sorter caches address of entry list.
-                              //                                                        But move semantic implies creating of new object.
-                              //                                                        So we use separate list object in heap to avoid dangling reference in entries sorter.
+
     mutable crc32_t crc32_total_, //! crc32 can be lazy calculated in const crc32() function, so make it mutable.
                     crc32_properties_,
                     crc32_entries_;
@@ -89,4 +80,3 @@ private:
 
 } // namespace AIMPPlayer
 
-#endif // #ifndef AIMP_PLAYLIST_H

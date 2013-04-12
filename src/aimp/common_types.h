@@ -14,14 +14,6 @@ typedef int PlaylistEntryID; //! playlist entry handle.
 typedef int HPLS; //! playlist handle
 typedef HPLS PlaylistID; //! playlist handle
 
-class PlaylistEntry;
-
-//! list of entries. Entry ID is index of PlaylistEntry oblect in vector.
-typedef std::vector<PlaylistEntry> EntriesListType;
-
-//! list of entry IDs.
-typedef std::vector<PlaylistEntryID> PlaylistEntryIDList;
-
 //! direction of sorting.
 enum ORDER_DIRECTION { ASCENDING = 0, DESCENDING };
 

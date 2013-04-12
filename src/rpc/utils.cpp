@@ -126,22 +126,23 @@ void setControlPanelInfo(const AIMPManager& aimp_manager, Rpc::Value& result)
     setIsCurrentTrackSourceRadioIfPossible(aimp_manager, result);
 }
 
-void setPlaylistsContentChangeInfo(const AIMPPlayer::AIMPManager& aimp_manager, Rpc::Value& result)
+void setPlaylistsContentChangeInfo(const AIMPPlayer::AIMPManager& /*aimp_manager*/, Rpc::Value& result)
 {
     result["playlists_changed"] = true;
-    
-    Rpc::Value& playlists_rpc = result["playlists"];
-    const auto& playlists = aimp_manager.getPlayLists();
-    playlists_rpc.setSize( playlists.size() );
 
-    int i = 0;
-    for (const auto& id_playlist_pair : playlists) {
-        Rpc::Value& playlist_rpc = playlists_rpc[i++];
-        const auto& playlist = id_playlist_pair.second;
-        playlist_rpc["id"] = playlist.id();
-        playlist_rpc["crc32"] = static_cast<int>( playlist.crc32() );
-    }
-     // ??? result["playlist_id_to_reload"];
+    ///!!! implement in DB terms.
+
+    //Rpc::Value& playlists_rpc = result["playlists"];
+    //const auto& playlists = aimp_manager.getPlayLists();
+    //playlists_rpc.setSize( playlists.size() );
+
+    //int i = 0;
+    //for (const auto& id_playlist_pair : playlists) {
+    //    Rpc::Value& playlist_rpc = playlists_rpc[i++];
+    //    const auto& playlist = id_playlist_pair.second;
+    //    playlist_rpc["id"] = playlist.id();
+    //    playlist_rpc["crc32"] = static_cast<int>( playlist.crc32() );
+    //}
 }
 
 const std::string& getStringFieldID(PlaylistEntry::FIELD_IDs id)

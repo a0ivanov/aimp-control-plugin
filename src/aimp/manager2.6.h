@@ -79,11 +79,7 @@ public:
 
     virtual PLAYBACK_STATE getPlaybackState() const;
 
-    virtual const PlaylistsListType& getPlayLists() const;
-
-    virtual const Playlist& getPlaylist(PlaylistID playlist_id) const; // throw std::runtime_error
-
-    virtual const PlaylistEntry& getEntry(TrackDescription track_desc) const; // throw std::runtime_error
+    //virtual PlaylistEntry getEntry(TrackDescription track_desc) const; // throw std::runtime_error
 
     virtual std::wstring getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const; // throw std::invalid_argument
     
@@ -154,8 +150,6 @@ private:
     boost::intrusive_ptr<AIMP2SDK::IAIMP2Extended>         aimp2_extended_;          //!< to work aimp miscellaneous aspects.
     boost::intrusive_ptr<AIMP2SDK::IAIMP2CoverArtManager>  aimp2_cover_art_manager_; //!< to work with track's album covers.
 
-    PlaylistsListType playlists_; //!< playlists list. Currently it is map of playlist ID to Playlist object.
-
     //! type for internal AIMP events notifiers. Maps internal AIMP event ID to string description of this ID.
     typedef std::map<int, std::string> CallbackIdNameMap;
 
@@ -203,5 +197,17 @@ AIMP2SDK_STATUS cast(AIMPManager::STATUS status); // throws std::bad_cast
 
 template<>
 AIMPManager26::STATUS cast(AIMP2SDK_STATUS status); // throws std::bad_cast
+
+template<typename T>
+T getEntryField(sqlite3* db, const char* field, TrackDescription track_desc);
+
+template<>
+std::wstring getEntryField(sqlite3* db, const char* field, TrackDescription track_desc);
+
+template<>
+DWORD getEntryField(sqlite3* db, const char* field, TrackDescription track_desc);
+
+template<>
+INT64 getEntryField(sqlite3* db, const char* field, TrackDescription track_desc);
 
 } // namespace AIMPPlayer

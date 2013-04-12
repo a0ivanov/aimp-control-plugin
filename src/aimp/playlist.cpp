@@ -18,8 +18,7 @@ namespace AIMPPlayer
 {
 
 Playlist::Playlist()
-    : 
-    entries_( boost::make_shared<EntriesListType>() ),
+    :
     crc32_total_(0),
     crc32_properties_(0),
     crc32_entries_(0)
@@ -37,7 +36,6 @@ Playlist::Playlist( const WCHAR* title,
     duration_(duration),
     size_of_all_entries_in_bytes_(size_of_all_entries_in_bytes),
     id_(id),
-    entries_( boost::make_shared<EntriesListType>() ),
     crc32_total_(0),
     crc32_properties_(0),
     crc32_entries_(0)
@@ -51,7 +49,6 @@ Playlist::Playlist(Playlist&& rhs)
     duration_(rhs.duration_),
     size_of_all_entries_in_bytes_(rhs.size_of_all_entries_in_bytes_),
     id_(rhs.id_),
-    entries_( std::move(rhs.entries_) ),
     crc32_total_(rhs.crc32_total_),
     crc32_properties_(rhs.crc32_properties_),
     crc32_entries_(rhs.crc32_entries_)
@@ -72,23 +69,9 @@ void Playlist::swap(Playlist& rhs)
     swap(duration_, rhs.duration_);
     swap(size_of_all_entries_in_bytes_, rhs.size_of_all_entries_in_bytes_);
     swap(id_, rhs.id_);
-    swap(entries_, rhs.entries_);
     swap(crc32_total_, rhs.crc32_total_);
     swap(crc32_properties_, rhs.crc32_properties_);
     swap(crc32_entries_, rhs.crc32_entries_);
-}
-
-const EntriesListType& Playlist::entries() const
-{
-    assert(entries_);
-    return *entries_;
-}
-
-EntriesListType& Playlist::entries()
-{
-    assert(entries_);
-    crc32_entries_ = crc32_total_ = 0;
-    return *entries_;
 }
 
 crc32_t Playlist::calc_crc32_properties() const
@@ -106,10 +89,12 @@ crc32_t Playlist::calc_crc32_properties() const
 crc32_t Playlist::calc_crc32_entries() const
 {
     boost::crc_32_type crc32_calculator;
-    for(const AIMPPlayer::PlaylistEntry& entry : entries()) {
-        const crc32_t crc = entry.crc32();
-        crc32_calculator.process_bytes( &crc, sizeof(crc) );
-    }
+
+    ///!!! TODO: implement DB crc32 calc
+    //for(const AIMPPlayer::PlaylistEntry& entry : entries()) {
+    //    const crc32_t crc = entry.crc32();
+    //    crc32_calculator.process_bytes( &crc, sizeof(crc) );
+    //}
     return crc32_calculator.checksum();
 }
 

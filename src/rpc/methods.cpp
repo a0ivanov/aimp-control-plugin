@@ -6,6 +6,7 @@
 #include "aimp/manager3.1.h"
 #include "aimp/manager3.0.h"
 #include "aimp/manager2.6.h"
+#include "aimp/manager_impl_common.h"
 #include "plugin/logger.h"
 #include "rpc/exception.h"
 #include "rpc/value.h"
@@ -32,23 +33,6 @@ namespace AimpRpcMethods
 {
 
 using namespace Rpc;
-
-typedef AIMPManager::PlaylistsListType PlaylistsListType;
-
-/*!
-    \brief Returns reference to Playlist object by playlist ID.
-    Helper function.
-*/
-const Playlist& getPlayListFromRpcParam(const AIMPManager& aimp_manager, int playlist_id) // throws Rpc::Exception
-{
-    try {
-        return aimp_manager.getPlaylist(playlist_id);
-    } catch (std::runtime_error&) {
-        std::ostringstream msg;
-        msg << "Playlist with ID = " << playlist_id << " does not exist.";
-        throw Rpc::Exception(msg.str(), PLAYLIST_NOT_FOUND);
-    }
-}
 
 ResponseType Play::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
@@ -911,13 +895,12 @@ ResponseType GetPlaylistEntriesCount::execute(const Rpc::Value& root_request, Rp
         throw Rpc::Exception("Wrong arguments count. Wait one integer value: playlist_id.", WRONG_ARGUMENT);
     }
 
-    const Playlist& playlist = getPlayListFromRpcParam(aimp_manager_, params["playlist_id"]);
-
-    root_response["result"] = playlist.entries().size(); // max int value overflow is possible, but I doubt that we will work with such huge playlists.
+    const size_t entries_count = AIMPPlayer::getEntriesCountDB(params["playlist_id"], getPlaylistsDB(aimp_manager_));
+    root_response["result"] = static_cast<int>(entries_count); // max int value overflow is possible, but I doubt that we will work with such huge playlists.
     return RESPONSE_IMMEDIATE;
 }
 
-ResponseType GetPlaylistEntryInfo::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+ResponseType GetPlaylistEntryInfo::execute(const Rpc::Value& root_request, Rpc::Value& /*root_response*/)
 {
     const Rpc::Value& params = root_request["params"];
     if (params.type() != Rpc::Value::TYPE_OBJECT || params.size() != 2) {
@@ -927,24 +910,25 @@ ResponseType GetPlaylistEntryInfo::execute(const Rpc::Value& root_request, Rpc::
     const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
 
     try {
-        const PlaylistEntry& entry = aimp_manager_.getEntry(track_desc);
+        ///!!! implement in DB terms.
+        //const PlaylistEntry& entry = aimp_manager_.getEntry(track_desc);
 
-        using namespace RpcResultUtils;
-        using namespace StringEncoding;
-        Value& result = root_response["result"];
-        result[getStringFieldID(PlaylistEntry::ID)      ] = entry.id();
-        result[getStringFieldID(PlaylistEntry::TITLE)   ] = utf16_to_utf8( entry.title() );
-        result[getStringFieldID(PlaylistEntry::ARTIST)  ] = utf16_to_utf8( entry.artist() );
-        result[getStringFieldID(PlaylistEntry::ALBUM)   ] = utf16_to_utf8( entry.album() );
-        result[getStringFieldID(PlaylistEntry::DATE)    ] = utf16_to_utf8( entry.date() );
-        result[getStringFieldID(PlaylistEntry::GENRE)   ] = utf16_to_utf8( entry.genre() );
-        result[getStringFieldID(PlaylistEntry::BITRATE) ] = static_cast<unsigned int>( entry.bitrate() );
-        result[getStringFieldID(PlaylistEntry::DURATION)] = static_cast<unsigned int>( entry.duration() );
-        result[getStringFieldID(PlaylistEntry::FILESIZE)] = static_cast<unsigned int>( entry.fileSize() );
-        result[getStringFieldID(PlaylistEntry::RATING)  ] = static_cast<unsigned int>( entry.rating() );
+        //using namespace RpcResultUtils;
+        //using namespace StringEncoding;
+        //Value& result = root_response["result"];
+        //result[getStringFieldID(PlaylistEntry::ID)      ] = entry.id();
+        //result[getStringFieldID(PlaylistEntry::TITLE)   ] = utf16_to_utf8( entry.title() );
+        //result[getStringFieldID(PlaylistEntry::ARTIST)  ] = utf16_to_utf8( entry.artist() );
+        //result[getStringFieldID(PlaylistEntry::ALBUM)   ] = utf16_to_utf8( entry.album() );
+        //result[getStringFieldID(PlaylistEntry::DATE)    ] = utf16_to_utf8( entry.date() );
+        //result[getStringFieldID(PlaylistEntry::GENRE)   ] = utf16_to_utf8( entry.genre() );
+        //result[getStringFieldID(PlaylistEntry::BITRATE) ] = static_cast<unsigned int>( entry.bitrate() );
+        //result[getStringFieldID(PlaylistEntry::DURATION)] = static_cast<unsigned int>( entry.duration() );
+        //result[getStringFieldID(PlaylistEntry::FILESIZE)] = static_cast<unsigned int>( entry.fileSize() );
+        //result[getStringFieldID(PlaylistEntry::RATING)  ] = static_cast<unsigned int>( entry.rating() );
 
     } catch (std::runtime_error&) {
-        throw Rpc::Exception("Getting info about track failed. Reason: track not found.", TRACK_NOT_FOUND);
+        //throw Rpc::Exception("Getting info about track failed. Reason: track not found.", TRACK_NOT_FOUND);
     }
     return RESPONSE_IMMEDIATE;
 }
@@ -1238,11 +1222,11 @@ ResponseType SetTrackRating::execute(const Rpc::Value& root_request, Rpc::Value&
     } else {
         // AIMP2 does not support rating set. Save rating in simple text file.
         try {
-            const PlaylistEntry& entry = aimp_manager_.getEntry(track_desc);
             std::wofstream file(file_to_save_ratings_, std::ios_base::out | std::ios_base::app);
             file.imbue( std::locale("") ); // set system locale.
             if ( file.good() ) {
-                file << entry.filename() << L"; rating:" << rating << L"\n";
+                const std::wstring& entry_filename = getEntryField<std::wstring>(getPlaylistsDB(aimp_manager_), "filename", track_desc);
+                file << entry_filename << L"; rating:" << rating << L"\n";
                 file.close();
             } else {
                 throw std::exception("Ratings file can not be opened.");

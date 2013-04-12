@@ -62,8 +62,7 @@ PlaylistEntry::PlaylistEntry(PlaylistEntry&& rhs)
 
 PlaylistEntry& PlaylistEntry::operator=(PlaylistEntry&& rhs)
 {
-    PlaylistEntry tmp( std::move(rhs) );
-    swap(tmp);
+    swap(rhs);
     return *this;
 }
 
