@@ -1405,6 +1405,7 @@ void getEntryField_(sqlite3* db, const char* field, PlaylistEntryID entry_id, st
         if (SQLITE_ROW == rc_db) {
             assert(sqlite3_column_count(stmt) == 1);
             row_callback(stmt);
+            return;
         } else if (SQLITE_DONE == rc_db) {
             break;
         } else {
