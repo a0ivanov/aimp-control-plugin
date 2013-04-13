@@ -2,80 +2,47 @@
 
 #pragma once
 
-#include "aimp/common_types.h"
-#include "aimp/playlist_entry.h"
+#include "../utils/sqlite_util.h"
+#include "common_types.h"
 
 namespace AIMPPlayer
 {
-
-const PlaylistID kCURRENT_PLAYLIST_ID = -1; //!< ID of current active playlist for internal AIMP functions.
 
 //! Represents AIMP playlist.
 class Playlist
 {
 public:
-    //! Identificators of playlist fields. FIELDS_COUNT is special value(not field ID), used to determine fields count.
-    enum FIELD_IDs { ID = 0, TITLE, ENTRIES_COUNT, DURATION, SIZE_OF_ALL_ENTRIES_IN_BYTES, CRC32, FIELDS_COUNT };
+    //! Identificators of playlist fields. 
+    enum FIELD_IDs { ID = 0, TITLE, ENTRIES_COUNT, DURATION, SIZE_OF_ALL_ENTRIES_IN_BYTES, CRC32,
+                     FIELDS_COUNT // FIELDS_COUNT is special value(not field ID), used to determine fields count.
+    };
+};
 
-    Playlist();
+class PlaylistCRC32 {
 
-    Playlist( const WCHAR* title,
-              DWORD file_count,
-              INT64 duration,
-              INT64 size_of_all_entries_in_bytes,
-              PlaylistID id
-            );
+public:
+    PlaylistCRC32(PlaylistID playlist_id, sqlite3* playlist_db);
 
-    Playlist(Playlist&& rhs);
+    crc32_t crc32();
 
-    Playlist& operator=(Playlist&& rhs);
+    void reset()
+        { crc32_total_ = crc32_properties_ = crc32_entries_ = kCRC32_UNINITIALIZED; }
 
-    //! Returns indentificator.
-    PlaylistID id() const { return id_; }
+    void reset_entries()
+        { crc32_total_ = crc32_entries_ = kCRC32_UNINITIALIZED; }
 
-    //! Returns title.
-    const std::wstring& title() const { return title_; }
-
-    //! Returns entries count.
-    DWORD entriesCount() const { return file_count_; }
-
-    //! Returns summary duration of all entries.
-    INT64 duration() const { return duration_; }
-
-    //! Returns summary size of all entries in bytes.
-    INT64 sizeOfAllEntriesInBytes() const { return size_of_all_entries_in_bytes_; }
-
-    void swap(Playlist& rhs);
-
-    void title(const std::wstring& title) { title_ = title; reset_crc32_properties(); }
-
-    void entriesCount(DWORD count) { file_count_ = count; reset_crc32_properties(); }
-
-    void duration(INT64 duration) { duration_ = duration; reset_crc32_properties(); }
-
-    void sizeOfAllEntriesInBytes(INT64 size) { size_of_all_entries_in_bytes_ = size; reset_crc32_properties(); }
-
-    //! Returns crc32 of playlist(including entries content). Calculate only if value was not calculated earlier.
-    crc32_t crc32() const;
+    void reset_properties()
+        { crc32_total_ = crc32_properties_ = kCRC32_UNINITIALIZED; }
 
 private:
+    crc32_t calc_crc32_properties();
+    crc32_t calc_crc32_entries();
 
-    crc32_t calc_crc32_properties() const;
-    crc32_t calc_crc32_entries() const;
-    void reset_crc32_properties() { crc32_properties_ = crc32_total_ = 0; }
-
-    std::wstring title_; //!< title.
-    DWORD file_count_; //!< entries count.
-    INT64 duration_; //!< summary duration of all entries.
-    INT64 size_of_all_entries_in_bytes_; //!< summary size of all entries in bytes.
-    PlaylistID id_; //!< playlist indentificator.
-
-    mutable crc32_t crc32_total_, //! crc32 can be lazy calculated in const crc32() function, so make it mutable.
-                    crc32_properties_,
-                    crc32_entries_;
-
-    Playlist(const Playlist&);
-    Playlist& operator=(const Playlist&);
+    PlaylistID playlist_id_;
+    sqlite3* playlist_db_;
+    crc32_t crc32_total_,
+            crc32_properties_,
+            crc32_entries_;
 };
 
 } // namespace AIMPPlayer

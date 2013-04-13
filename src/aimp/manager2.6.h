@@ -6,6 +6,7 @@
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/asio.hpp>
+#include "utils/util.h"
 
 struct sqlite3;
 
@@ -75,6 +76,8 @@ public:
 
     virtual TrackDescription getAbsoluteTrackDesc(TrackDescription track_desc) const;  // throws std::runtime_error
 
+    virtual crc32_t getPlaylistCRC32(PlaylistID playlist_id) const; // throws std::runtime_error
+
     virtual PLAYLIST_ENTRY_SOURCE_TYPE getTrackSourceType(TrackDescription track_desc) const; // throws std::runtime_error
 
     virtual PLAYBACK_STATE getPlaybackState() const;
@@ -97,6 +100,9 @@ public:
     virtual void onTick();
 
     sqlite3* playlists_db()
+        { return playlists_db_; }
+
+    sqlite3* playlists_db() const
         { return playlists_db_; }
 
 private:
@@ -135,10 +141,10 @@ private:
         \throw std::invalid_argument if playlist with specified ID does not exist.
         \throw std::runtime_error if error occured while loading entries data.
     */
-    void loadEntries(Playlist& playlist); // throws std::runtime_error
+    void loadEntries(PlaylistID playlist_id); // throws std::runtime_error
 
     //! Loads playlist by AIMP internal index.
-    Playlist loadPlaylist(int playlist_index); // throws std::runtime_error
+    void loadPlaylist(int playlist_index); // throws std::runtime_error
 
     //! initializes all requiered for work AIMP SDK interfaces.
     void initializeAIMPObjects(); // throws std::runtime_error
@@ -174,7 +180,7 @@ private:
     void shutdownPlaylistDB();
     void deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id);
     void deletePlaylistFromPlaylistDB(PlaylistID playlist_id);
-    void updatePlaylistCrcInDB(const Playlist& playlist);
+    void updatePlaylistCrcInDB(PlaylistID playlist_id, crc32_t crc32); // throws std::runtime_error
 
     // types for notifications of external event listeners.
     typedef std::map<EventsListenerID, EventsListener> EventListeners;
@@ -183,6 +189,9 @@ private:
     EventsListenerID next_listener_id_; //!< unique ID describes external listener.
 
     sqlite3* playlists_db_;
+
+    typedef std::map<PlaylistID, PlaylistCRC32> PlaylistCRC32List;
+    mutable PlaylistCRC32List playlist_crc32_list_;
 
     // These class were made friend only for easy emulate web ctl plugin behavior. Remove when possible.
     friend class AimpRpcMethods::EmulationOfWebCtlPlugin;

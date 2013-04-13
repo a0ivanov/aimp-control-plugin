@@ -446,7 +446,9 @@ typedef GetFormattedEntryTitle get_formatted_entry_title;
     \param track_id - int
     \param playlist_id - int.
     \return object which describes specified track.
-            Example:\code{"album":"Word Gets Around","artist":"Stereophonics","bitrate":320,"date":"1997","duration":182961,"filesize":7318732,"genre":"","id":0,"rating":5,"title":"A Thousand Trees"}}\endcode
+            Example:\code{"album":"L.A. Noire Official Soundtrack","artist":"Andrew Hale and Simon Hale","bitrate":320,"channels_count":2,"date":"2011",
+                          "duration":198557,"filesize":7944619,"genre":"Soundtrack","id":52841544,"playlist_id":40396992,
+                          "rating":0,"samplerate":44100,"title":"New Beginning (Part 3)"}\endcode
 */
 class GetPlaylistEntryInfo : public AIMPRPCMethod
 {

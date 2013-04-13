@@ -45,33 +45,6 @@ public:
     AIMP3SDK::TAIMPFileInfo& getFileInfo()
         { return info_; }
 
-    PlaylistEntry getPlaylistEntry(DWORD entry_id, crc32_t crc32 = 0)
-    {
-        getFileInfoWithCorrectStringLengths();
-
-        return PlaylistEntry(   info_.AlbumBuffer,    info_.AlbumBufferSizeInChars,
-                                info_.ArtistBuffer,   info_.ArtistBufferSizeInChars,
-                                info_.DateBuffer,     info_.DateBufferSizeInChars,
-                                info_.FileNameBuffer, info_.FileNameBufferSizeInChars,
-                                info_.GenreBuffer,    info_.GenreBufferSizeInChars,
-                                info_.TitleBuffer,    info_.TitleBufferSizeInChars,
-                                // info_.Active - useless, not used.
-                                info_.BitRate,
-                                info_.Channels,
-                                info_.Duration,
-                                info_.FileSize,
-                                info_.Rating,
-                                info_.SampleRate,
-                                info_.TrackNumber,
-                                entry_id,
-                                crc32
-                            );
-    }
-
-    /* \return track ID. */
-    DWORD getTrackNumber() const
-        { return info_.TrackNumber; }
-
     AIMP3SDK::TAIMPFileInfo& getFileInfoWithCorrectStringLengths()
     {
         // fill string lengths if Aimp does not do this.

@@ -4,6 +4,8 @@
 
 #include "../utils/scope_guard.h"
 #include "../utils/sqlite_util.h"
+#include "manager2.6.h"
+#include "manager3.0.h"
 
 namespace AIMPPlayer
 {
@@ -96,6 +98,18 @@ inline size_t getEntriesCountDB(PlaylistID playlist_id, sqlite3* playlists_db)
     }
 
     return total_entries_count;
+}
+
+inline sqlite3* getPlaylistsDB(const AIMPPlayer::AIMPManager& aimp_manager) {
+    if (       const AIMPPlayer::AIMPManager30* mgr3 = dynamic_cast<const AIMPPlayer::AIMPManager30*>(&aimp_manager) ) {
+        return mgr3->playlists_db();
+    } else if (const AIMPPlayer::AIMPManager26* mgr2 = dynamic_cast<const AIMPPlayer::AIMPManager26*>(&aimp_manager) ) {
+        return mgr2->playlists_db();
+    } else {
+        using namespace Utilities;
+        const std::string msg = MakeString() << __FUNCTION__ ": invalid AIMPManager object. AIMPManager30 and AIMPManager26 are only supported.";
+        throw std::runtime_error(msg);
+    }
 }
 
 } // namespace AIMPPlayer

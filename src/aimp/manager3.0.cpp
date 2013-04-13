@@ -32,9 +32,7 @@ ModuleLoggerType& logger()
 
 /* Specialization of Utilities::crc32(T) for AIMP3SDK::TAIMPFileInfo struct.
      Be sure that following assertion is ok:
-        TAIMPFileInfo info;
-        PlaylistEntry entry(info);
-        assert( crc32(entry) == crc32(info) )
+        PlaylistCRC32::crc32_entry() == crc32<AIMP3SDK::TAIMPFileInfo>()
 */
 template<>
 crc32_t Utilities::crc32<AIMP3SDK::TAIMPFileInfo>(const AIMP3SDK::TAIMPFileInfo& info)
@@ -181,7 +179,8 @@ AIMPManager30::AIMPManager30(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3
 
         initPlaylistDB();
 
-        ///!!!register listeners here
+        // register listeners here
+
         aimp3_core_message_hook_.reset( new AIMPCoreUnitMessageHook(this) );
         // do not addref our pointer since AIMP do this itself. aimp3_core_message_hook_->AddRef();
         aimp3_core_unit_->MessageHook( aimp3_core_message_hook_.get() );
@@ -196,7 +195,7 @@ AIMPManager30::AIMPManager30(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3
 
 AIMPManager30::~AIMPManager30()
 {
-    ///!!!unregister listeners here
+    // unregister listeners here
     aimp3_playlist_manager_->ListenerRemove( aimp3_playlist_manager_listener_.get() );
     aimp3_playlist_manager_listener_.reset();
 
@@ -332,8 +331,7 @@ void AIMPManager30::onStorageChanged(AIMP3SDK::HPLS handle, DWORD flags)
         }
 
         if (is_playlist_changed) {
-            updatePlaylistCrcInDB(playlist_id);
-
+            updatePlaylistCrcInDB(playlist_id, getPlaylistCRC32(playlist_id));
             notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
         }
 
@@ -350,6 +348,7 @@ void AIMPManager30::onStorageRemoved(AIMP3SDK::HPLS handle)
 {
     try {
         const int playlist_id = cast<PlaylistID>(handle);
+        playlist_crc32_list_.erase(playlist_id);
         deletePlaylistFromPlaylistDB(playlist_id);
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     } catch (std::exception& e) {
@@ -361,7 +360,7 @@ void AIMPManager30::onStorageRemoved(AIMP3SDK::HPLS handle)
 
 }
 
-Playlist AIMPManager30::loadPlaylist(int playlist_index)
+void AIMPManager30::loadPlaylist(int playlist_index)
 {
     const char * const error_prefix = "Error occured while extracting playlist data: ";
     
@@ -373,12 +372,25 @@ Playlist AIMPManager30::loadPlaylist(int playlist_index)
     return loadPlaylist(handle);
 }
 
-Playlist AIMPManager30::loadPlaylist(AIMP3SDK::HPLS handle)
+void AIMPManager30::loadPlaylist(AIMP3SDK::HPLS handle)
 {
+    const PlaylistID playlist_id = cast<PlaylistID>(handle);
+
+    { // handle crc32.
+    auto it = playlist_crc32_list_.find(playlist_id);
+    if (it == playlist_crc32_list_.end()) {
+        it = playlist_crc32_list_.insert(std::make_pair(playlist_id,
+                                                        PlaylistCRC32(playlist_id, playlists_db_)
+                                                        )
+                                         ).first;
+    }
+    it->second.reset_properties();
+    }
+
     const char * const error_prefix = "Error occured while extracting playlist data: ";
     
     using namespace AIMP3SDK;
-    
+  
     HRESULT r;
     INT64 duration;
     r = aimp3_playlist_manager_->StoragePropertyGetValue( handle, AIMP_PLAYLIST_STORAGE_PROPERTY_DURATION, &duration, sizeof(duration) );
@@ -401,13 +413,6 @@ Playlist AIMPManager30::loadPlaylist(AIMP3SDK::HPLS handle)
 
     const int entries_count = aimp3_playlist_manager_->StorageGetEntryCount(handle);
 
-    Playlist playlist(name,
-                      entries_count,
-                      duration,
-                      size,
-                      cast<PlaylistID>(handle)
-                      );
-
     { // db code
     sqlite3_stmt* stmt = createStmt(playlists_db_,
                                     "REPLACE INTO Playlists VALUES (?,?,?,?,?,?)"
@@ -426,12 +431,12 @@ Playlist AIMPManager30::loadPlaylist(AIMP3SDK::HPLS handle)
                                                 }
 
     int rc_db;
-    bind( int,  1, cast<PlaylistID>(handle) );
+    bind(int,   1, playlist_id);
     bindText(   2, name, wcslen(name) );
-    bind( int,  3, entries_count );
+    bind(int,   3, entries_count);
     bind(int64, 4, duration);
     bind(int64, 5, size);
-    bind(int64, 6, playlist.crc32());
+    bind(int64, 6, kCRC32_UNINITIALIZED);
 #undef bind
 #undef bindText
     rc_db = sqlite3_step(stmt);
@@ -441,11 +446,23 @@ Playlist AIMPManager30::loadPlaylist(AIMP3SDK::HPLS handle)
         throw std::runtime_error(msg);
     }
     }
-
-    return playlist;
 }
 
-void AIMPManager30::updatePlaylistCrcInDB(PlaylistID playlist_id) // throws std::runtime_error
+PlaylistCRC32& AIMPManager30::getPlaylistCRC32Object(PlaylistID playlist_id) const // throws std::runtime_error
+{
+    auto it = playlist_crc32_list_.find(playlist_id);
+    if (it != playlist_crc32_list_.end()) {
+        return it->second;
+    }
+    throw std::runtime_error(MakeString() << "Playlist " << playlist_id << " was not found in "__FUNCTION__);
+}
+
+crc32_t AIMPManager30::getPlaylistCRC32(PlaylistID playlist_id) const // throws std::runtime_error
+{
+    return getPlaylistCRC32Object(playlist_id).crc32();
+}
+
+void AIMPManager30::updatePlaylistCrcInDB(PlaylistID playlist_id, crc32_t crc32) // throws std::runtime_error
 {
     sqlite3_stmt* stmt = createStmt(playlists_db_,
                                     "UPDATE Playlists SET crc32=? WHERE id=?"
@@ -459,8 +476,7 @@ void AIMPManager30::updatePlaylistCrcInDB(PlaylistID playlist_id) // throws std:
                                         }
 
     int rc_db;
-    ///!!! implement in DB terms. Or remove it.
-    //bind( int64, 1, playlist.crc32() );
+    bind(int64, 1, crc32);
     bind(int,   2, playlist_id);
     
 #undef bind
@@ -472,17 +488,16 @@ void AIMPManager30::updatePlaylistCrcInDB(PlaylistID playlist_id) // throws std:
     }
 }
 
-void AIMPManager30::updatePlaylist(Playlist& playlist)
-{
-    Playlist updated( loadPlaylist( cast<AIMP3SDK::HPLS>( playlist.id() ) ) );
-    playlist.title( updated.title() );
-    playlist.entriesCount( updated.entriesCount() );
-    playlist.duration( updated.duration() );
-    playlist.sizeOfAllEntriesInBytes( updated.sizeOfAllEntriesInBytes() );
-}
-
 void AIMPManager30::loadEntries(PlaylistID playlist_id) // throws std::runtime_error
 {
+    { // handle crc32.
+        try {
+            getPlaylistCRC32Object(playlist_id).reset_entries();
+        } catch (std::exception& e) {
+            throw std::runtime_error(MakeString() << "expected crc32 struct for playlist " << playlist_id << " not found in "__FUNCTION__". Reason: " << e.what());
+        }
+    }
+
     using namespace AIMP3SDK;
     // PROFILE_EXECUTION_TIME(__FUNCTION__);
 

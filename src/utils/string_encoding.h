@@ -56,6 +56,15 @@ std::string utf16_to_system_ansi_encoding(const WCHAR* begin, const WCHAR* end);
 std::string utf16_to_utf8(const std::wstring& utf16_string); // throws EncodingError
 
 /*!
+    \brief Converts string in UTF-16 encoding to UTF-8 encoding.
+    \param begin - pointer to string begin in UTF-16.
+    \param end - pointer to string end.
+    \throw EncodingError if convertion fails.
+    \return string in UTF-8.
+*/
+std::string utf16_to_utf8(const WCHAR* begin, const WCHAR* end); // throws EncodingError
+
+/*!
     \brief Converts string in UTF-8 encoding to UTF-16 encoding.
     \param string in UTF-8.
     \throw EncodingError if convertion fails.

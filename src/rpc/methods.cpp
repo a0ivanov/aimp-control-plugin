@@ -317,18 +317,6 @@ std::string GetPlaylists::getColumnsString() const
     return result;
 }
 
-sqlite3* getPlaylistsDB(AIMPPlayer::AIMPManager& aimp_manager) {
-    if (       AIMPPlayer::AIMPManager30* mgr3 = dynamic_cast<AIMPPlayer::AIMPManager30*>(&aimp_manager) ) {
-        return mgr3->playlists_db();
-    } else if (AIMPPlayer::AIMPManager26* mgr2 = dynamic_cast<AIMPPlayer::AIMPManager26*>(&aimp_manager) ) {
-        return mgr2->playlists_db();
-    } else {
-        using namespace Utilities;
-        const std::string msg = MakeString() << __FUNCTION__ ": invalid AIMPManager object. AIMPManager30 and AIMPManager26 are only supported.";
-        throw std::runtime_error(msg);
-    }
-}
-
 ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
     using namespace Utilities;
@@ -350,7 +338,7 @@ ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& r
     std::ostringstream query;
     query << "SELECT " << getColumnsString() << " FROM Playlists";
 
-    sqlite3* playlists_db = getPlaylistsDB(aimp_manager_);
+    sqlite3* playlists_db = AIMPPlayer::getPlaylistsDB(aimp_manager_);
     sqlite3_stmt* stmt = createStmt( playlists_db,
                                      query.str().c_str()
                                     );
@@ -743,7 +731,7 @@ Rpc::ResponseType GetPlaylistEntries::execute(const Rpc::Value& root_request, Rp
 
     const std::string query = !entryLocationDeterminationMode() ? query_with_limit.str() : query_without_limit.str();
 
-    sqlite3* playlists_db = getPlaylistsDB(aimp_manager_);
+    sqlite3* playlists_db = AIMPPlayer::getPlaylistsDB(aimp_manager_);
     sqlite3_stmt* stmt = createStmt( playlists_db, query.c_str() );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
@@ -895,42 +883,72 @@ ResponseType GetPlaylistEntriesCount::execute(const Rpc::Value& root_request, Rp
         throw Rpc::Exception("Wrong arguments count. Wait one integer value: playlist_id.", WRONG_ARGUMENT);
     }
 
-    const size_t entries_count = AIMPPlayer::getEntriesCountDB(params["playlist_id"], getPlaylistsDB(aimp_manager_));
+    const size_t entries_count = AIMPPlayer::getEntriesCountDB(params["playlist_id"], AIMPPlayer::getPlaylistsDB(aimp_manager_));
     root_response["result"] = static_cast<int>(entries_count); // max int value overflow is possible, but I doubt that we will work with such huge playlists.
     return RESPONSE_IMMEDIATE;
 }
 
-ResponseType GetPlaylistEntryInfo::execute(const Rpc::Value& root_request, Rpc::Value& /*root_response*/)
+std::string text16_to_utf8(const void* text16) 
+{
+    const WCHAR* text = static_cast<const WCHAR*>(text16);
+    return StringEncoding::utf16_to_utf8( text, text + wcslen(text) );
+}
+
+ResponseType GetPlaylistEntryInfo::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
     const Rpc::Value& params = root_request["params"];
-    if (params.type() != Rpc::Value::TYPE_OBJECT || params.size() != 2) {
-        throw Rpc::Exception("Wrong arguments count. Wait 2 int values: track_id, playlist_id.", WRONG_ARGUMENT);
+
+    const PlaylistID kPlaylistIdNotUsed = 0;
+    const TrackDescription track_desc(aimp_manager_.getAbsolutePlaylistID(params.isMember("playlist_id") ? params["playlist_id"] : kPlaylistIdNotUsed),
+                                      aimp_manager_.getAbsoluteEntryID( params["track_id"])
+                                      );
+
+    using namespace Utilities;
+
+    std::ostringstream query;
+    query << "SELECT "
+          << "playlist_id, entry_id, album, artist, date, genre, title, bitrate, channels_count, duration, filesize, rating, samplerate"
+          << " FROM PlaylistsEntries WHERE entry_id=" << track_desc.track_id;
+    if (track_desc.playlist_id != kPlaylistIdNotUsed) {
+        query << " AND playlist_id=" << track_desc.playlist_id;
     }
 
-    const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
+    sqlite3* db = getPlaylistsDB(aimp_manager_);
+    sqlite3_stmt* stmt = createStmt( db, query.str() );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
-    try {
-        ///!!! implement in DB terms.
-        //const PlaylistEntry& entry = aimp_manager_.getEntry(track_desc);
+    for(;;) {
+		int rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+            assert(sqlite3_column_count(stmt) == 13);
 
-        //using namespace RpcResultUtils;
-        //using namespace StringEncoding;
-        //Value& result = root_response["result"];
-        //result[getStringFieldID(PlaylistEntry::ID)      ] = entry.id();
-        //result[getStringFieldID(PlaylistEntry::TITLE)   ] = utf16_to_utf8( entry.title() );
-        //result[getStringFieldID(PlaylistEntry::ARTIST)  ] = utf16_to_utf8( entry.artist() );
-        //result[getStringFieldID(PlaylistEntry::ALBUM)   ] = utf16_to_utf8( entry.album() );
-        //result[getStringFieldID(PlaylistEntry::DATE)    ] = utf16_to_utf8( entry.date() );
-        //result[getStringFieldID(PlaylistEntry::GENRE)   ] = utf16_to_utf8( entry.genre() );
-        //result[getStringFieldID(PlaylistEntry::BITRATE) ] = static_cast<unsigned int>( entry.bitrate() );
-        //result[getStringFieldID(PlaylistEntry::DURATION)] = static_cast<unsigned int>( entry.duration() );
-        //result[getStringFieldID(PlaylistEntry::FILESIZE)] = static_cast<unsigned int>( entry.fileSize() );
-        //result[getStringFieldID(PlaylistEntry::RATING)  ] = static_cast<unsigned int>( entry.rating() );
-
-    } catch (std::runtime_error&) {
-        //throw Rpc::Exception("Getting info about track failed. Reason: track not found.", TRACK_NOT_FOUND);
+            using namespace RpcResultUtils;
+            Value& result = root_response["result"];
+            result["playlist_id"                            ] =                             sqlite3_column_int   (stmt, 0);
+            result[getStringFieldID(PlaylistEntry::ID)      ] =                             sqlite3_column_int   (stmt, 1);
+            result[getStringFieldID(PlaylistEntry::ALBUM)   ] =             text16_to_utf8( sqlite3_column_text16(stmt, 2) );
+            result[getStringFieldID(PlaylistEntry::ARTIST)  ] =             text16_to_utf8( sqlite3_column_text16(stmt, 3) );
+            result[getStringFieldID(PlaylistEntry::DATE)    ] =             text16_to_utf8( sqlite3_column_text16(stmt, 4) );
+            result[getStringFieldID(PlaylistEntry::GENRE)   ] =             text16_to_utf8( sqlite3_column_text16(stmt, 5) );
+            result[getStringFieldID(PlaylistEntry::TITLE)   ] =             text16_to_utf8( sqlite3_column_text16(stmt, 6) );
+            result[getStringFieldID(PlaylistEntry::BITRATE) ] =                             sqlite3_column_int   (stmt, 7);
+            result[getStringFieldID(PlaylistEntry::CHANNELS_COUNT)] =                       sqlite3_column_int   (stmt, 8);
+            result[getStringFieldID(PlaylistEntry::DURATION)] =                             sqlite3_column_int   (stmt, 9);
+            result[getStringFieldID(PlaylistEntry::FILESIZE)] = static_cast<unsigned int>(  sqlite3_column_int64 (stmt,10) );
+            result[getStringFieldID(PlaylistEntry::RATING)  ] =                             sqlite3_column_int   (stmt,11);
+            result[getStringFieldID(PlaylistEntry::SAMPLE_RATE)] =                          sqlite3_column_int   (stmt,12);
+            return RESPONSE_IMMEDIATE;
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                 << rc_db << ": " << sqlite3_errmsg(db)
+                                                 << ". Query: " << query;
+            throw std::runtime_error(msg);
+		}
     }
-    return RESPONSE_IMMEDIATE;
+
+    throw Rpc::Exception("Getting info about track failed. Reason: track not found.", TRACK_NOT_FOUND);
 }
 
 ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
@@ -1225,7 +1243,7 @@ ResponseType SetTrackRating::execute(const Rpc::Value& root_request, Rpc::Value&
             std::wofstream file(file_to_save_ratings_, std::ios_base::out | std::ios_base::app);
             file.imbue( std::locale("") ); // set system locale.
             if ( file.good() ) {
-                const std::wstring& entry_filename = getEntryField<std::wstring>(getPlaylistsDB(aimp_manager_), "filename", track_desc);
+                const std::wstring& entry_filename = getEntryField<std::wstring>(AIMPPlayer::getPlaylistsDB(aimp_manager_), "filename", track_desc);
                 file << entry_filename << L"; rating:" << rating << L"\n";
                 file.close();
             } else {

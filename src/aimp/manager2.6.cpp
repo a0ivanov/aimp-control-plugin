@@ -105,7 +105,7 @@ AIMPManager26::~AIMPManager26()
     shutdownPlaylistDB();
 }
 
-Playlist AIMPManager26::loadPlaylist(int playlist_index)
+void AIMPManager26::loadPlaylist(int playlist_index)
 {
     const char * const error_prefix = "Error occured while extracting playlist data: ";
     
@@ -127,12 +127,6 @@ Playlist AIMPManager26::loadPlaylist(int playlist_index)
 
     const int files_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(id);
 
-    Playlist playlist(name,
-                      files_count,
-                      duration,
-                      size,
-                      id
-                      );
     { // db code
     sqlite3_stmt* stmt = createStmt(playlists_db_,
                                     "REPLACE INTO Playlists VALUES (?,?,?,?,?,?)"
@@ -156,7 +150,7 @@ Playlist AIMPManager26::loadPlaylist(int playlist_index)
     bind( int,  3, files_count );
     bind(int64, 4, duration);
     bind(int64, 5, size);
-    bind(int64, 6, playlist.crc32());
+    bind(int64, 6, kCRC32_UNINITIALIZED);
 #undef bind
 #undef bindText
     rc_db = sqlite3_step(stmt);
@@ -166,8 +160,15 @@ Playlist AIMPManager26::loadPlaylist(int playlist_index)
         throw std::runtime_error(msg);
     }
     }
+}
 
-    return playlist;
+crc32_t AIMPManager26::getPlaylistCRC32(PlaylistID playlist_id) const // throws std::runtime_error
+{
+    auto it = playlist_crc32_list_.find(playlist_id);
+    if (it != playlist_crc32_list_.end()) {
+        return it->second.crc32();
+    }
+    throw std::runtime_error(MakeString() << "Playlist " << playlist_id << " was not found in "__FUNCTION__);
 }
 
 /*
@@ -206,28 +207,6 @@ public:
     AIMP2SDK::AIMP2FileInfo& getFileInfo()
         { return info_; }
 
-    PlaylistEntry getPlaylistEntry(DWORD entry_id, crc32_t crc32 = 0)
-    {
-        getFileInfoWithCorrectStringLengths();
-
-        return PlaylistEntry(   info_.sAlbum,    info_.nAlbumLen,
-                                info_.sArtist,   info_.nArtistLen,
-                                info_.sDate,     info_.nDateLen,
-                                info_.sFileName, info_.nFileNameLen,
-                                info_.sGenre,    info_.nGenreLen,
-                                info_.sTitle,    info_.nTitleLen,
-                                // info_.nActive - useless, not used.
-                                info_.nBitRate,
-                                info_.nChannels,
-                                info_.nDuration,
-                                info_.nFileSize,
-                                info_.nRating,
-                                info_.nSampleRate,
-                                info_.nTrackID,
-                                entry_id,
-                                crc32
-                            );
-    }
 
     /* \return track ID. */
     DWORD trackID() const
@@ -275,15 +254,14 @@ private:
     WCHAR title[kFIELDBUFFERSIZE];
 };
 
-void AIMPManager26::loadEntries(Playlist& playlist) // throws std::runtime_error
+void AIMPManager26::loadEntries(PlaylistID playlist_id) // throws std::runtime_error
 {
     // PROFILE_EXECUTION_TIME(__FUNCTION__);
-    const PlaylistID playlist_id = playlist.id();
     const int entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
 
     AIMP2FileInfoHelper file_info_helper; // used for get entries from AIMP conveniently.
     
-    deletePlaylistEntriesFromPlaylistDB( playlist.id() ); // remove old entries before adding new ones.
+    deletePlaylistEntriesFromPlaylistDB(playlist_id); // remove old entries before adding new ones.
 
     sqlite3_stmt* stmt = createStmt(playlists_db_, "INSERT INTO PlaylistsEntries VALUES (?,?,?,?,?,"
                                                                                         "?,?,?,?,?,"
@@ -306,7 +284,7 @@ void AIMPManager26::loadEntries(Playlist& playlist) // throws std::runtime_error
                                                     throw std::runtime_error(msg); \
                                                 }
     int rc_db;
-    bind( int, 1, playlist.id() );
+    bind(int, 1, playlist_id);
 
     for (int entry_index = 0; entry_index < entries_count; ++entry_index) {
         // aimp2_playlist_manager_->AIMP_PLS_Entry_ReloadInfo(id_, entry_index); // try to make AIMP update track info: this takes significant time and some tracks are not updated anyway.
@@ -401,12 +379,7 @@ void AIMPManager26::checkIfPlaylistsChanged()
     //// reload entries of playlists from list.
     //for (PlaylistID playlist_id : playlists_to_reload) {
     //    try {
-    //        auto it = playlists_.find(playlist_id);
-    //        assert( it != playlists_.end() );
-    //        Playlist& playlist = it->second;
-    //        loadEntries(playlist); // avoid using of playlists_[playlist_id], since it requires Playlist's default ctor.
-
-    //        updatePlaylistCrcInDB(playlist);
+    //        loadEntries(playlist_id); // avoid using of playlists_[playlist_id], since it requires Playlist's default ctor.
     //    } catch (std::exception& e) {
     //        BOOST_LOG_SEV(logger(), error) << "Error occured while playlist(id = " << playlist_id << ") entries loading. Reason: " << e.what();
     //    }
@@ -436,7 +409,7 @@ void AIMPManager26::checkIfPlaylistsChanged()
     //}
 }
 
-void AIMPManager26::updatePlaylistCrcInDB(const Playlist& playlist)
+void AIMPManager26::updatePlaylistCrcInDB(PlaylistID playlist_id, crc32_t crc32)
 {
     sqlite3_stmt* stmt = createStmt(playlists_db_,
                                     "UPDATE Playlists SET crc32=? WHERE id=?"
@@ -450,8 +423,8 @@ void AIMPManager26::updatePlaylistCrcInDB(const Playlist& playlist)
                                         }
 
     int rc_db;
-    bind( int64, 1, playlist.crc32() );
-    bind( int,   2, playlist.id() );
+    bind(int64, 1, crc32);
+    bind(int,   2, playlist_id );
     
 #undef bind
     rc_db = sqlite3_step(stmt);
@@ -1218,7 +1191,7 @@ void AIMPManager26::unRegisterListener(AIMPManager26::EventsListenerID listener_
     external_listeners_.erase(listener_id);
 }
 
-
+#if 0 ///!!! implement in DB terms.
 namespace
 {
 
@@ -1497,7 +1470,7 @@ private:
 } playlistentry_title_formatter;
 
 } // namespace anonymous
-
+#endif
 std::wstring AIMPManager26::getFormattedEntryTitle(TrackDescription /*track_desc*/, const std::string& /*format_string_utf8*/) const // throw std::invalid_argument
 {
     ///!!! implement in DB terms.

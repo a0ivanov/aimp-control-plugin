@@ -9,6 +9,8 @@
 
 typedef unsigned long crc32_t;
 
+const crc32_t kCRC32_UNINITIALIZED = 0;
+
 //! miscellaneous utils that used by several modules and can not be linked to concrete module.
 namespace Utilities
 {

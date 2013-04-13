@@ -168,6 +168,12 @@ std::string utf16_to_utf8(const std::wstring& utf16_string) // throws EncodingEr
     return from_utf16_to( kCodePage, string_data, string_data + utf16_string.length() );
 }
 
+std::string utf16_to_utf8(const WCHAR* begin, const WCHAR* end) // throws EncodingError
+{
+    const int kCodePage = CP_UTF8;
+    return from_utf16_to(kCodePage, begin, end);
+}
+
 std::wstring utf8_to_utf16(const std::string& utf8_string) // throws EncodingError
 {
     const int kCodePage = CP_UTF8;

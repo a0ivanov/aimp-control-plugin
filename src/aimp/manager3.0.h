@@ -4,6 +4,7 @@
 
 #include "manager.h"
 #include "aimp3_sdk/aimp3_sdk.h"
+#include "utils/util.h"
 
 struct sqlite3;
 
@@ -67,13 +68,13 @@ public:
 
     virtual PlaylistEntryID getAbsoluteEntryID(PlaylistEntryID id) const; // throws std::runtime_error
 
-    virtual TrackDescription getAbsoluteTrackDesc(TrackDescription track_desc) const;  // throws std::runtime_error
+    virtual TrackDescription getAbsoluteTrackDesc(TrackDescription track_desc) const; // throws std::runtime_error
+
+    virtual crc32_t getPlaylistCRC32(PlaylistID playlist_id) const; // throws std::runtime_error
 
     virtual PLAYLIST_ENTRY_SOURCE_TYPE getTrackSourceType(TrackDescription track_desc) const; // throws std::runtime_error
 
     virtual PLAYBACK_STATE getPlaybackState() const;
-
-    //virtual PlaylistEntry getEntry(TrackDescription track_desc) const; // throw std::runtime_error
 
     virtual std::wstring getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const;
 
@@ -100,6 +101,8 @@ public:
     virtual void trackRating(TrackDescription track_desc, int rating); // throw std::runtime_error
 
     sqlite3* playlists_db()
+        { return playlists_db_; }
+    sqlite3* playlists_db() const
         { return playlists_db_; }
 
 private:
@@ -139,17 +142,16 @@ private:
     void loadEntries(PlaylistID playlist_id); // throws std::runtime_error
 
     //! Loads playlist by AIMP internal index.
-    Playlist loadPlaylist(int playlist_index); // throws std::runtime_error
-    Playlist loadPlaylist(AIMP3SDK::HPLS handle); // throws std::runtime_error
-    void updatePlaylist(Playlist& playlist); // throws std::runtime_error
-        
+    void loadPlaylist(int playlist_index); // throws std::runtime_error
+    void loadPlaylist(AIMP3SDK::HPLS handle); // throws std::runtime_error
+
     TrackDescription getTrackDescOfQueuedEntry(AIMP3SDK::HPLSENTRY entry_handle); // throws std::runtime_error
 
     void initPlaylistDB(); // throws std::runtime_error
     void shutdownPlaylistDB();
     void deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id);
     void deletePlaylistFromPlaylistDB(PlaylistID playlist_id);
-    void updatePlaylistCrcInDB(PlaylistID playlist_id); // throws std::runtime_error
+    void updatePlaylistCrcInDB(PlaylistID playlist_id, crc32_t crc32); // throws std::runtime_error
     
     //! initializes all requiered for work AIMP SDK interfaces.
     void initializeAIMPObjects(); // throws std::runtime_error
@@ -178,6 +180,12 @@ protected:
     sqlite3* playlists_db_;
 
 private:
+    
+    PlaylistCRC32& getPlaylistCRC32Object(PlaylistID playlist_id) const; // throws std::runtime_error
+    typedef std::map<PlaylistID, PlaylistCRC32> PlaylistCRC32List;
+    mutable PlaylistCRC32List playlist_crc32_list_;
+
+
     // These class were made friend only for easy emulate web ctl plugin behavior. Remove when possible.
     friend class AimpRpcMethods::EmulationOfWebCtlPlugin;
 };
