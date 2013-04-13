@@ -145,8 +145,6 @@ private:
     void loadPlaylist(int playlist_index); // throws std::runtime_error
     void loadPlaylist(AIMP3SDK::HPLS handle); // throws std::runtime_error
 
-    TrackDescription getTrackDescOfQueuedEntry(AIMP3SDK::HPLSENTRY entry_handle); // throws std::runtime_error
-
     void initPlaylistDB(); // throws std::runtime_error
     void shutdownPlaylistDB();
     void deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id);
