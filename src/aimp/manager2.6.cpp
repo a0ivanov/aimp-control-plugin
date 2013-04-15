@@ -1348,7 +1348,6 @@ void AIMPManager26::unRegisterListener(AIMPManager26::EventsListenerID listener_
     external_listeners_.erase(listener_id);
 }
 
-#if 0 ///!!! implement in DB terms.
 namespace
 {
 
@@ -1358,31 +1357,43 @@ void clear(std::wostringstream& os)
     os.str( std::wstring() );    
 }
 
-struct BitrateFormatter {
+struct Formatter
+{
+    int column_index;
+    Formatter(int column_index) : column_index(column_index) {}
+    Formatter(const Formatter& rhs) : column_index(rhs.column_index) {}
+};
+
+struct BitrateFormatter : public Formatter
+{
     mutable std::wostringstream os;
 
-    // need to define ctors since wostringstream has no copy ctor.
-    BitrateFormatter() {}
-    BitrateFormatter(const BitrateFormatter&) : os() {}
+    BitrateFormatter(int column_index) : Formatter(column_index) {}
 
-    std::wstring operator()(const PlaylistEntry& entry) const { 
+    // need to define copy ctor since wostringstream has no copy ctor.
+    BitrateFormatter(const BitrateFormatter& rhs) : Formatter(rhs), os() {}
+
+    std::wstring operator()(sqlite3_stmt* stmt) const { 
         clear(os);
-        os << entry.bitrate() << L" kbps";
+        os << sqlite3_column_int(stmt, column_index) << L" kbps";
         return os.str();
     }
 };
 
-struct ChannelsCountFormatter {
+struct ChannelsCountFormatter : public Formatter
+{
     mutable std::wostringstream os;
 
-    // need to define ctors since wostringstream has no copy ctor.
-    ChannelsCountFormatter() {}
-    ChannelsCountFormatter(const ChannelsCountFormatter&) : os() {}
+    ChannelsCountFormatter(int column_index) : Formatter(column_index) {}
 
-    std::wstring operator()(const PlaylistEntry& entry) const { 
+    // need to define copy ctor since wostringstream has no copy ctor.
+    ChannelsCountFormatter(const ChannelsCountFormatter& rhs) : Formatter(rhs), os() {}
+
+    std::wstring operator()(sqlite3_stmt* stmt) const { 
         clear(os);
 
-        switch ( entry.channelsCount() ) {
+        const int channels_count = sqlite3_column_int(stmt, column_index);
+        switch (channels_count) {
         case 0:
             break;
         case 1:
@@ -1392,24 +1403,25 @@ struct ChannelsCountFormatter {
             os << L"Stereo";
             break;
         default:
-            os << entry.channelsCount() << L" channels";
+            os << channels_count << L" channels";
             break;
         }
         return os.str();
     }
 };
 
-struct DurationFormatter
+struct DurationFormatter : public Formatter
 {
     mutable std::wostringstream os;
 
-    // need to define ctors since wostringstream has no copy ctor.
-    DurationFormatter() {}
-    DurationFormatter(const DurationFormatter&) : os() {}
+    DurationFormatter(int column_index) : Formatter(column_index) {}
 
-    std::wstring operator()(const PlaylistEntry& entry) const {
+    // need to define copy ctor since wostringstream has no copy ctor.
+    DurationFormatter(const DurationFormatter& rhs) : Formatter(rhs), os() {}
+
+    std::wstring operator()(sqlite3_stmt* stmt) const {
         clear(os);
-        formatTime( os, entry.duration() );
+        formatTime( os, sqlite3_column_int(stmt, column_index) );
         return os.str();
     }
 
@@ -1434,9 +1446,13 @@ struct DurationFormatter
     }
 };
 
-struct FileNameExtentionFormatter {
-    std::wstring operator()(const PlaylistEntry& entry) const { 
-        std::wstring ext = boost::filesystem::path( entry.filename() ).extension().native();
+struct FileNameExtentionFormatter : public Formatter
+{
+    FileNameExtentionFormatter(int column_index) : Formatter(column_index) {}
+
+    std::wstring operator()(sqlite3_stmt* stmt) const {
+        const auto filename = static_cast<const std::wstring::value_type*>( sqlite3_column_text16(stmt, column_index) );
+        std::wstring ext = boost::filesystem::path(filename).extension().native();
         if ( !ext.empty() ) {
             if (ext[0] == L'.') {
                 ext.erase( ext.begin() );
@@ -1447,33 +1463,37 @@ struct FileNameExtentionFormatter {
     }
 };
 
-struct SampleRateFormatter {
+struct SampleRateFormatter : public Formatter 
+{
     mutable std::wostringstream os;
 
-    // need to define ctors since wostringstream has no copy ctor.
-    SampleRateFormatter() {}
-    SampleRateFormatter(const SampleRateFormatter&) : os() {}
+    SampleRateFormatter(int column_index) : Formatter(column_index) {}
 
-    std::wstring operator()(const PlaylistEntry& entry) const { 
+    // need to define copy ctor since wostringstream has no copy ctor.
+    SampleRateFormatter(const SampleRateFormatter& rhs) : Formatter(rhs), os() {}
+
+    std::wstring operator()(sqlite3_stmt* stmt) const { 
         clear(os);
 
-        const DWORD rate_in_hertz = entry.sampleRate();
+        const int rate_in_hertz = sqlite3_column_int(stmt, column_index);
         os << (rate_in_hertz / 1000)
            << L" kHz";
         return os.str();
     }
 };
 
-struct FileSizeFormatter
+struct FileSizeFormatter : public Formatter
 {
     mutable std::wostringstream os;
-    // need to define ctors since wostringstream has no copy ctor.
-    FileSizeFormatter() {}
-    FileSizeFormatter(const FileSizeFormatter&) : os() {}
 
-    std::wstring operator()(const PlaylistEntry& entry) const {
+    FileSizeFormatter(int column_index) : Formatter(column_index) {}
+
+    // need to define copy ctor since wostringstream has no copy ctor.
+    FileSizeFormatter(const FileSizeFormatter& rhs) : Formatter(rhs), os() {}
+
+    std::wstring operator()(sqlite3_stmt* stmt) const {
         clear(os);
-        formatSize( os, entry.fileSize() );
+        formatSize( os, sqlite3_column_int64(stmt, column_index) );
         return os.str();
     }
 
@@ -1488,6 +1508,22 @@ struct FileSizeFormatter
     }
 };
 
+struct RawStringFormatter : public Formatter
+{
+    RawStringFormatter(int column_index) : Formatter(column_index) {}
+    std::wstring operator()(sqlite3_stmt* stmt) const {
+        return static_cast<const std::wstring::value_type*>( sqlite3_column_text16(stmt, column_index) );
+    }
+};
+
+struct RawIntFormatter : public Formatter
+{
+    RawIntFormatter(int column_index) : Formatter(column_index) {}
+    std::wstring operator()(sqlite3_stmt* stmt) const {
+        return boost::lexical_cast<std::wstring>( sqlite3_column_int(stmt, column_index) );
+    }
+};
+
 /*!
     \brief Helper class for AIMPManager26::getFormattedEntryTitle() function.
            Implementation of AIMP title format analog.
@@ -1499,32 +1535,25 @@ public:
 
     PlaylistEntryTitleFormatter()
     {
-#define _MAKE_FUNC_(function) boost::bind( createStringMakerFunctor(&function), boost::bind(&function,    _1) )
-        auto artist_maker = _MAKE_FUNC_(PlaylistEntry::artist);
+        auto artist_formatter = boost::bind<std::wstring>(RawStringFormatter(ARTIST), _1);
         using namespace boost::assign;
         insert(formatters_)
-            ( L'A', _MAKE_FUNC_(PlaylistEntry::album) )
-            ( L'a', artist_maker )
-            //( L'B', _MAKE_FUNC_(PlaylistEntry::bitrate) ) // use BitrateFormatter which adds units(ex.: kbps)
-            ( L'B', boost::bind<std::wstring>(BitrateFormatter(), _1) )
-            //( L'C', _MAKE_FUNC_(PlaylistEntry::channelsCount) ) // use ChannelsCountFormatter which uses string representation (ex.: Mono/Stereo)
-            ( L'C', boost::bind<std::wstring>(ChannelsCountFormatter(), _1) )
-            ( L'E', boost::bind<std::wstring>(FileNameExtentionFormatter(), _1) )
-            //( L'F', _MAKE_FUNC_(PlaylistEntry::filename) ) getting filename is disabled.
-            ( L'G', _MAKE_FUNC_(PlaylistEntry::genre) )
-            //( L'H', _MAKE_FUNC_(PlaylistEntry::sampleRate) ) // this returns rate in Hertz, so use adequate SampleRateFormatter.
-            ( L'H', boost::bind<std::wstring>(SampleRateFormatter(), _1) )
-            //( L'L', _MAKE_FUNC_(PlaylistEntry::duration) ) // this returns milliseconds, so use adequate DurationFormatter.
-            ( L'L', boost::bind<std::wstring>(DurationFormatter(), _1) )
-            ( L'M', _MAKE_FUNC_(PlaylistEntry::rating) )
-            ( L'R', artist_maker ) // format R = a in AIMP3.
-            //( L'S', _MAKE_FUNC_(PlaylistEntry::fileSize) ) // this returns size in bytes, so use adequate FileSizeFormatter.
-            ( L'S', boost::bind<std::wstring>(FileSizeFormatter(), _1) )
-            ( L'T', _MAKE_FUNC_(PlaylistEntry::title) )
-            ( L'Y', _MAKE_FUNC_(PlaylistEntry::date) )
+            ( L'A', boost::bind<std::wstring>(RawStringFormatter(ALBUM), _1) )
+            ( L'a', artist_formatter )
+            ( L'B', boost::bind<std::wstring>(BitrateFormatter(BITRATE), _1) )
+            ( L'C', boost::bind<std::wstring>(ChannelsCountFormatter(CHANNELS_COUNT), _1) )
+            ( L'E', boost::bind<std::wstring>(FileNameExtentionFormatter(FILENAME), _1) )
+            //( L'F', boost::bind<std::wstring>(RawStringFormatter(FILENAME), _1) ) getting filename is disabled.
+            ( L'G', boost::bind<std::wstring>(RawStringFormatter(GENRE), _1) )
+            ( L'H', boost::bind<std::wstring>(SampleRateFormatter(SAMPLERATE), _1) )
+            ( L'L', boost::bind<std::wstring>(DurationFormatter(DURATION), _1) )
+            ( L'M', boost::bind<std::wstring>(RawIntFormatter(RATING), _1) )
+            ( L'R', artist_formatter ) // format R = a in AIMP3.
+            ( L'S', boost::bind<std::wstring>(FileSizeFormatter(FILESIZE), _1) )
+            ( L'T', boost::bind<std::wstring>(RawStringFormatter(TITLE), _1) )
+            ( L'Y', boost::bind<std::wstring>(RawStringFormatter(DATE), _1) )
         ;
         formatters_end_ = formatters_.end();
-#undef _MAKE_FUNC_
     }
 
     static bool endOfFormatString(std::wstring::const_iterator curr_char,
@@ -1536,7 +1565,7 @@ public:
     }
 
     // returns count of characters read.
-    size_t format(const PlaylistEntry& entry,
+    size_t format(sqlite3_stmt* stmt,
                   std::wstring::const_iterator begin,
                   std::wstring::const_iterator end,
                   char_t end_of_string,
@@ -1549,7 +1578,7 @@ public:
                     ++curr_char;
                     const auto formatter_it = formatters_.find(*curr_char);
                     if (formatter_it != formatters_end_) {
-                        formatted_string += formatter_it->second(entry);
+                        formatted_string += formatter_it->second(stmt);
                         curr_char += 1; // go to char next to format argument.
                     } else {
                         switch(*curr_char) {
@@ -1566,15 +1595,15 @@ public:
                                         // %IF(a, b, c): means a.empty() ? c : b;
                                         ++curr_char;
                                         std::wstring a;
-                                        std::advance( curr_char, format(entry, curr_char, end, L',', a) ); // read a.
+                                        std::advance( curr_char, format(stmt, curr_char, end, L',', a) ); // read a.
                                         ++curr_char;
 
                                         std::wstring b;
-                                        std::advance( curr_char, format(entry, curr_char, end, L',', b) ); // read b.
+                                        std::advance( curr_char, format(stmt, curr_char, end, L',', b) ); // read b.
                                         ++curr_char;
 
                                         std::wstring c;
-                                        std::advance( curr_char, format(entry, curr_char, end, L')', c) ); // read c.
+                                        std::advance( curr_char, format(stmt, curr_char, end, L')', c) ); // read c.
                                         ++curr_char;
 
                                         formatted_string.append(a.empty() ? c : b);
@@ -1596,28 +1625,51 @@ public:
         return static_cast<size_t>( std::distance(begin, curr_char) );
     }
 
-    std::wstring format(const PlaylistEntry& entry, const std::wstring& format_string) const // throw std::invalid_argument
+    std::wstring format(TrackDescription track_desc, const std::wstring& format_string, sqlite3* playlists_db) const // throw std::invalid_argument
     {
-        const auto begin = format_string.begin(),
-                   end   = format_string.end();
-        std::wstring formatted_string;
-        format(entry, begin, end, L'\0', formatted_string);
-        return formatted_string;
+        std::ostringstream query;
+        auto f = [](ENTRY_FIELD_ID id) { return getField(id); };
+        query << "SELECT "
+              << f(ALBUM) << ',' << f(ARTIST) << ',' << f(DATE) << ',' << f(FILENAME) << ',' << f(GENRE) << ',' << f(TITLE) << ','
+              << f(BITRATE) << ',' << f(CHANNELS_COUNT) << ',' << f(DURATION) << ',' << f(FILESIZE) << ',' << f(RATING) << ',' << f(SAMPLERATE)
+              << " FROM PlaylistsEntries WHERE playlist_id=" << track_desc.playlist_id << " AND entry_id=" << track_desc.track_id;
+
+        sqlite3_stmt* stmt = createStmt( playlists_db, query.str() );
+        ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+        for(;;) {
+		    int rc_db = sqlite3_step(stmt);
+            if (SQLITE_ROW == rc_db) {
+                const auto begin = format_string.begin(),
+                           end   = format_string.end();
+                std::wstring formatted_string;
+                format(stmt, begin, end, L'\0', formatted_string);
+                return formatted_string;
+            } else if (SQLITE_DONE == rc_db) {
+                break;
+            } else {
+                const std::string msg = MakeString() << "sqlite3_step() error "
+                                                     << rc_db << ": " << sqlite3_errmsg(playlists_db)
+                                                     << ". Query: " << query.str();
+                throw std::runtime_error(msg);
+		    }
+        }
+        throw std::runtime_error(MakeString() << "Track " << track_desc << " not found at "__FUNCTION__);
     }
 
 private:
 
-    template<class T>
-    struct WStringMaker : std::unary_function<const T&, std::wstring> {
-        std::wstring operator()(const T& arg) const
-            { return boost::lexical_cast<std::wstring>(arg); }
+    enum ENTRY_FIELD_ID {
+        ALBUM = 0, ARTIST, DATE, FILENAME, GENRE, TITLE, BITRATE, CHANNELS_COUNT, DURATION, FILESIZE, RATING, SAMPLERATE, FIELDS_COUNT
     };
+    static const char* getField(ENTRY_FIELD_ID field_index) {
+        const char* fields[] = {"album", "artist", "date", "filename", "genre", "title", "bitrate", "channels_count", "duration", "filesize", "rating", "samplerate"};
+        Utilities::AssertArraySize<ENTRY_FIELD_ID::FIELDS_COUNT>(fields);
+        assert(field_index < FIELDS_COUNT);
+        return fields[field_index];
+    }
 
-    template<class T, class R>
-    WStringMaker<R> createStringMakerFunctor( R (T::*)() const )
-        { return WStringMaker<R>(); }
-
-    typedef boost::function<std::wstring(const PlaylistEntry&)> EntryFieldStringGetter;
+    typedef boost::function<std::wstring(sqlite3_stmt*)> EntryFieldStringGetter;
     typedef std::map<char_t, EntryFieldStringGetter> Formatters;
     Formatters formatters_;
     Formatters::const_iterator formatters_end_;
@@ -1627,14 +1679,13 @@ private:
 } playlistentry_title_formatter;
 
 } // namespace anonymous
-#endif
-std::wstring AIMPManager26::getFormattedEntryTitle(TrackDescription /*track_desc*/, const std::string& /*format_string_utf8*/) const // throw std::invalid_argument
+
+std::wstring AIMPManager26::getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const // throw std::invalid_argument
 {
-    ///!!! implement in DB terms.
-    //return playlistentry_title_formatter.format(getEntry(track_desc),
-    //                                            StringEncoding::utf8_to_utf16(format_string_utf8)
-    //                                            );
-    return L"implement me";
+    return playlistentry_title_formatter.format(getAbsoluteTrackDesc(track_desc),
+                                                StringEncoding::utf8_to_utf16(format_string_utf8),
+                                                playlists_db_
+                                                );
 }
 
 
