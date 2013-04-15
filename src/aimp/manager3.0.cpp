@@ -357,7 +357,6 @@ void AIMPManager30::onStorageRemoved(AIMP3SDK::HPLS handle)
         // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
         BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with handle " << handle;
     }
-
 }
 
 void AIMPManager30::loadPlaylist(int playlist_index)
@@ -490,6 +489,8 @@ void AIMPManager30::updatePlaylistCrcInDB(PlaylistID playlist_id, crc32_t crc32)
 
 void AIMPManager30::loadEntries(PlaylistID playlist_id) // throws std::runtime_error
 {
+    PROFILE_EXECUTION_TIME(__FUNCTION__);
+
     { // handle crc32.
         try {
             getPlaylistCRC32Object(playlist_id).reset_entries();
@@ -1426,7 +1427,7 @@ void getEntryField_(sqlite3* db, const char* field, PlaylistEntryID entry_id, st
         } else {
             const std::string msg = MakeString() << "sqlite3_step() error "
                                                  << rc_db << ": " << sqlite3_errmsg(db)
-                                                 << ". Query: " << query;
+                                                 << ". Query: " << query.str();
             throw std::runtime_error(msg);
 		}
     }

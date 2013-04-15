@@ -155,7 +155,7 @@ void setPlaylistsContentChangeInfo(const AIMPPlayer::AIMPManager& aimp_manager, 
         } else {
             const std::string msg = MakeString() << "sqlite3_step() error "
                                                  << rc_db << ": " << sqlite3_errmsg(db)
-                                                 << ". Query: " << query;
+                                                 << ". Query: " << query.str();
             throw std::runtime_error(msg);
 		}
     }    

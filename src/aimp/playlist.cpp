@@ -73,7 +73,7 @@ crc32_t PlaylistCRC32::calc_crc32_properties()
         } else {
             const std::string msg = MakeString() << "sqlite3_step() error "
                                                  << rc_db << ": " << sqlite3_errmsg(db)
-                                                 << ". Query: " << query;
+                                                 << ". Query: " << query.str();
             throw std::runtime_error(msg);
 		}
     }
@@ -106,7 +106,7 @@ crc32_t PlaylistCRC32::calc_crc32_entries()
         } else {
             const std::string msg = MakeString() << "sqlite3_step() error "
                                                  << rc_db << ": " << sqlite3_errmsg(db)
-                                                 << ". Query: " << query;
+                                                 << ". Query: " << query.str();
             throw std::runtime_error(msg);
 		}
     }
