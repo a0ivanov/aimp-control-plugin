@@ -41,7 +41,8 @@ crc32_t PlaylistCRC32::crc32()
 
 crc32_t crc32_text16(const void* text16) 
 {
-    return Utilities::crc32( text16, wcslen(static_cast<const wchar_t*>(text16)) );
+    const wchar_t* text = static_cast<const wchar_t*>(text16);
+    return Utilities::crc32( text, wcslen(text) * sizeof(text[0]) );
 }
 
 crc32_t PlaylistCRC32::calc_crc32_properties()
