@@ -114,6 +114,17 @@ void AIMPManager26::loadPlaylist(int playlist_index)
         throw std::runtime_error(MakeString() << error_prefix << "AIMP_PLS_ID_By_Index failed");
     }
 
+    { // handle crc32.
+    auto it = playlist_crc32_list_.find(id);
+    if (it == playlist_crc32_list_.end()) {
+        it = playlist_crc32_list_.insert(std::make_pair(id,
+                                                        PlaylistCRC32(id, playlists_db_)
+                                                        )
+                                         ).first;
+    }
+    it->second.reset_properties();
+    }
+
     INT64 duration, size;
     if ( S_OK != aimp2_playlist_manager_->AIMP_PLS_GetInfo(id, &duration, &size) ) {
         throw std::runtime_error(MakeString() << error_prefix << "AIMP_PLS_GetInfo failed");
@@ -162,13 +173,19 @@ void AIMPManager26::loadPlaylist(int playlist_index)
     }
 }
 
-crc32_t AIMPManager26::getPlaylistCRC32(PlaylistID playlist_id) const // throws std::runtime_error
+PlaylistCRC32& AIMPManager26::getPlaylistCRC32Object(PlaylistID playlist_id) const // throws std::runtime_error
 {
     auto it = playlist_crc32_list_.find(playlist_id);
     if (it != playlist_crc32_list_.end()) {
-        return it->second.crc32();
+        return it->second;
     }
     throw std::runtime_error(MakeString() << "Playlist " << playlist_id << " was not found in "__FUNCTION__);
+}
+
+
+crc32_t AIMPManager26::getPlaylistCRC32(PlaylistID playlist_id) const // throws std::runtime_error
+{
+    return getPlaylistCRC32Object(playlist_id).crc32();
 }
 
 /*
@@ -256,6 +273,14 @@ private:
 
 void AIMPManager26::loadEntries(PlaylistID playlist_id) // throws std::runtime_error
 {
+    { // handle crc32.
+        try {
+            getPlaylistCRC32Object(playlist_id).reset_entries();
+        } catch (std::exception& e) {
+            throw std::runtime_error(MakeString() << "expected crc32 struct for playlist " << playlist_id << " not found in "__FUNCTION__". Reason: " << e.what());
+        }
+    }
+
     // PROFILE_EXECUTION_TIME(__FUNCTION__);
     const int entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
 
@@ -332,10 +357,10 @@ void AIMPManager26::loadEntries(PlaylistID playlist_id) // throws std::runtime_e
 
 #ifdef MANUAL_PLAYLISTS_CONTENT_CHANGES_DETERMINATION
 
-bool playlist_exist(PlaylistID playlist_id, boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp2_playlist_manager) 
+bool playlistExists(PlaylistID playlist_id, boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp2_playlist_manager) 
 {
-    const size_t playlists_count = aimp2_playlist_manager->AIMP_PLS_Count();
-    for (size_t playlist_index = 0; playlist_index < playlists_count; ++playlist_index) {
+    const size_t playlistsCount = aimp2_playlist_manager->AIMP_PLS_Count();
+    for (size_t playlist_index = 0; playlist_index < playlistsCount; ++playlist_index) {
         int id;
         int result = aimp2_playlist_manager->AIMP_PLS_ID_By_Index(playlist_index, &id);
         assert(S_OK == result); (void)result;
@@ -346,67 +371,149 @@ bool playlist_exist(PlaylistID playlist_id, boost::intrusive_ptr<AIMP2SDK::IAIMP
     return false;
 }
 
+bool playlistExists(PlaylistID playlist_id, sqlite3* db, int* entries_count)
+{
+    using namespace Utilities;
+
+    std::ostringstream query;
+    query << "SELECT entries_count FROM Playlists WHERE id=" << playlist_id;
+
+    sqlite3_stmt* stmt = createStmt( db, query.str() );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    for(;;) {
+		int rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+            if (entries_count) {
+                *entries_count = sqlite3_column_int(stmt, 0);
+            }
+            return true;
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                 << rc_db << ": " << sqlite3_errmsg(db)
+                                                 << ". Query: " << query.str();
+            throw std::runtime_error(msg);
+		}
+    }
+    return false;
+}
+
+int playlistsCount(sqlite3* db)
+{
+    using namespace Utilities;
+
+    std::ostringstream query;
+    
+    query << "SELECT COUNT(*) FROM Playlists";
+
+    sqlite3_stmt* stmt = createStmt( db, query.str() );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    for(;;) {
+		int rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+            return sqlite3_column_int(stmt, 0);
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                 << rc_db << ": " << sqlite3_errmsg(db)
+                                                 << ". Query: " << query.str();
+            throw std::runtime_error(msg);
+		}
+    }
+    assert(!"Unexpected query result in "__FUNCTION__);
+    return 0;
+}
+
+void foreach_row(const std::string& query, sqlite3* db, std::function<void(sqlite3_stmt*)> row_callback)
+{
+    using namespace Utilities;
+
+    sqlite3_stmt* stmt = createStmt(db, query);
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    for(;;) {
+		int rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+            row_callback(stmt);
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                 << rc_db << ": " << sqlite3_errmsg(db)
+                                                 << ". Query: " << query;
+            throw std::runtime_error(msg);
+		}
+    }
+}
+
 void AIMPManager26::checkIfPlaylistsChanged()
 {
-    ///!!! implement in DB terms
+    const int playlist_count = playlistsCount(playlists_db_);
 
+    std::vector<PlaylistID> playlists_to_reload;
+    const size_t current_playlists_count = aimp2_playlist_manager_->AIMP_PLS_Count();
+    for (size_t playlist_index = 0; playlist_index < current_playlists_count; ++playlist_index) {
+        int current_playlist_id;
+        if ( S_OK != aimp2_playlist_manager_->AIMP_PLS_ID_By_Index(playlist_index, &current_playlist_id) ) {
+            throw std::runtime_error(MakeString() << "checkIfPlaylistsChanged() failed. Reason: AIMP_PLS_ID_By_Index failed");
+        }
 
-    //std::vector<PlaylistID> playlists_to_reload;
-    //const size_t playlists_count = aimp2_playlist_manager_->AIMP_PLS_Count();
-    //for (size_t playlist_index = 0; playlist_index < playlists_count; ++playlist_index) {
-    //    int current_playlist_id;
-    //    if ( S_OK != aimp2_playlist_manager_->AIMP_PLS_ID_By_Index(playlist_index, &current_playlist_id) ) {
-    //        throw std::runtime_error(MakeString() << "checkIfPlaylistsChanged() failed. Reason: AIMP_PLS_ID_By_Index failed");
-    //    }
+        const int current_entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(current_playlist_id);
 
-    //    const int entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(current_playlist_id);
+        int entries_count = 0;
+        if (!playlistExists(current_playlist_id, playlists_db_, &entries_count)) {
+            // current playlist was not loaded yet, load it now without entries.
+            loadPlaylist(playlist_index);
+            playlists_to_reload.push_back(current_playlist_id);
+        } else if (entries_count != current_entries_count) {
+            // list loaded, but entries count is changed: load new playlist to update all internal fields.
+            loadPlaylist(playlist_index);
+            playlists_to_reload.push_back(current_playlist_id);
+        } else if ( !isLoadedPlaylistEqualsAimpPlaylist(current_playlist_id) ) {
+            // contents of loaded playlist and current playlist are different.
+            playlists_to_reload.push_back(current_playlist_id);
+        }
+    }
 
-    //    const auto loaded_playlist_iter = playlists_.find(current_playlist_id);
-    //    if (playlists_.end() == loaded_playlist_iter) {
-    //        // current playlist was not loaded yet, load it now without entries.
-    //        playlists_.insert( std::make_pair(current_playlist_id, loadPlaylist(playlist_index) ) );
-    //        playlists_to_reload.push_back(current_playlist_id);
-    //    } else if ( loaded_playlist_iter->second.entriesCount() != static_cast<size_t>(entries_count) ) {
-    //        // list loaded, but entries count is changed: load new playlist to update all internal fields.
-    //        playlists_[current_playlist_id] = loadPlaylist(playlist_index); // we must use map's operator[] instead insert() method, since insert is no-op for existing key.
-    //        playlists_to_reload.push_back(current_playlist_id);
-    //    } else if ( !isLoadedPlaylistEqualsAimpPlaylist(current_playlist_id) ) {
-    //        // contents of loaded playlist and current playlist are different.
-    //        playlists_to_reload.push_back(current_playlist_id);
-    //    }
-    //}
+    // reload entries of playlists from list.
+    for (PlaylistID playlist_id : playlists_to_reload) {
+        try {
+            loadEntries(playlist_id); // avoid using of playlists_[playlist_id], since it requires Playlist's default ctor.
+            updatePlaylistCrcInDB( playlist_id, getPlaylistCRC32(playlist_id) );
+        } catch (std::exception& e) {
+            BOOST_LOG_SEV(logger(), error) << "Error occured while playlist(id = " << playlist_id << ") entries loading. Reason: " << e.what();
+        }
+    }
 
-    //// reload entries of playlists from list.
-    //for (PlaylistID playlist_id : playlists_to_reload) {
-    //    try {
-    //        loadEntries(playlist_id); // avoid using of playlists_[playlist_id], since it requires Playlist's default ctor.
-    //    } catch (std::exception& e) {
-    //        BOOST_LOG_SEV(logger(), error) << "Error occured while playlist(id = " << playlist_id << ") entries loading. Reason: " << e.what();
-    //    }
-    //}
+    bool playlists_content_changed = !playlists_to_reload.empty();
 
-    //bool playlists_content_changed = !playlists_to_reload.empty();
+    // handle closed playlists.
+    if (current_playlists_count < static_cast<size_t>(playlist_count)) { 
+        playlists_content_changed = true;
 
-    //// handle closed playlists.
-    //if (playlists_count < playlists_.size()) { 
-    //    playlists_content_changed = true;
-    //    PlaylistsListType::iterator it = playlists_.begin();
-    //    while (it != playlists_.end()) {
-    //        // try to find id of current playlist in existing playlists.
-    //        if (!playlist_exist(it->first, aimp2_playlist_manager_) ) {
-    //            { // db code
-    //                deletePlaylistFromPlaylistDB(it->second.id());
-    //            }
-    //            it = playlists_.erase(it);
-    //        } else {
-    //            ++it;            
-    //        }
-    //    }
-    //}
+        std::vector<PlaylistID> playlists_to_delete;
+
+        auto handler = [&playlists_to_delete, this](sqlite3_stmt* stmt) {
+            const PlaylistID id = sqlite3_column_int(stmt, 0);
+            if (!playlistExists(id, aimp2_playlist_manager_) ) {
+                playlists_to_delete.push_back(id);
+            }
+        };
+        foreach_row("SELECT playlist_id FROM Playlists", playlists_db_, handler);
+
+        for (PlaylistID playlist_id : playlists_to_delete) {
+            playlist_crc32_list_.erase(playlist_id);
+            deletePlaylistFromPlaylistDB(playlist_id);
+        }
+    }
  
-    //if (playlists_content_changed) {
-    //    notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
-    //}
+    if (playlists_content_changed) {
+        notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+    }
 }
 
 void AIMPManager26::updatePlaylistCrcInDB(PlaylistID playlist_id, crc32_t crc32)
@@ -435,36 +542,86 @@ void AIMPManager26::updatePlaylistCrcInDB(PlaylistID playlist_id, crc32_t crc32)
     }
 }
 
-bool AIMPManager26::isLoadedPlaylistEqualsAimpPlaylist(PlaylistID /*playlist_id*/) const
+namespace {
+
+crc32_t crc32_text16(const void* text16) 
+{
+    const wchar_t* text = static_cast<const wchar_t*>(text16);
+    return Utilities::crc32( text, wcslen(text) * sizeof(text[0]) );
+}
+
+crc32_t crc32_entry(sqlite3_stmt* stmt)
+{
+    assert(sqlite3_column_count(stmt) == 12);
+
+    using namespace Utilities;
+    const crc32_t members_crc32_list [] = {
+            crc32_text16( sqlite3_column_text16(stmt, 0) ),
+            crc32_text16( sqlite3_column_text16(stmt, 1) ),
+            crc32_text16( sqlite3_column_text16(stmt, 2) ),
+            crc32_text16( sqlite3_column_text16(stmt, 3) ),
+            crc32_text16( sqlite3_column_text16(stmt, 4) ),
+            crc32_text16( sqlite3_column_text16(stmt, 5) ),
+                          sqlite3_column_int   (stmt, 6),
+                          sqlite3_column_int   (stmt, 7),
+                          sqlite3_column_int   (stmt, 8),
+        Utilities::crc32( sqlite3_column_int64 (stmt, 9) ),
+                          sqlite3_column_int   (stmt,10),
+                          sqlite3_column_int   (stmt,11),
+    };
+
+    return Utilities::crc32( &members_crc32_list[0], sizeof(members_crc32_list) );
+}
+
+} //namespace
+
+bool AIMPManager26::isLoadedPlaylistEqualsAimpPlaylist(PlaylistID playlist_id) const
 {
     // PROFILE_EXECUTION_TIME(__FUNCTION__);
 
-    ///!!! implement in DB terms.
+    const size_t loaded_entries_count = getEntriesCountDB(playlist_id, playlists_db_);
+    const int entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
+    assert(entries_count >= 0 && static_cast<size_t>(entries_count) == loaded_entries_count); // function returns correct result only if entries count in loaded and actual playlists are equal.
 
-    //const Playlist& playlist = getPlaylist(playlist_id);
-    //const size_t loaded_entries_count = getEntriesCountDB(playlist_id, playlists_db_);
-    //const int entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
-    //assert(entries_count >= 0 && static_cast<size_t>(entries_count) == loaded_entries_count); // function returns correct result only if entries count in loaded and actual playlists are equal.
+    using namespace Utilities;
 
-    //AIMP2FileInfoHelper file_info_helper; // used for get entries from AIMP conveniently.
+    std::ostringstream query;
+    query << "SELECT "
+          << "album, artist, date, filename, genre, title, bitrate, channels_count, duration, filesize, rating, samplerate"
+          << " FROM PlaylistsEntries WHERE playlist_id=" << playlist_id << " ORDER BY entry_id";
 
-    //for (int entry_index = 0; entry_index < entries_count; ++entry_index) {
-    //    if ( aimp2_playlist_manager_->AIMP_PLS_Entry_InfoGet( playlist_id,
-    //                                                          entry_index,
-    //                                                          &file_info_helper.getEmptyFileInfo()
-    //                                                         )
-    //        )
-    //    {
-    //        // need to compare loaded_entry with file_info_helper.info_;
-    //        const AIMP2SDK::AIMP2FileInfo& aimp_entry = file_info_helper.getFileInfoWithCorrectStringLengths();
-    //        if ( getEntryDB(playlist, entry_index).crc32() != Utilities::crc32(aimp_entry) ) {
-    //            return false;
-    //        }
-    //    } else {
-    //        // in case of Aimp error just say that playlists are not equal.
-    //        return false;
-    //    }
-    //}
+    sqlite3* db = playlists_db_;
+    sqlite3_stmt* stmt = createStmt( db, query.str() );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    AIMP2FileInfoHelper file_info_helper; // used for get entries from AIMP conveniently.
+    for (int entry_index = 0; entry_index < entries_count; ++entry_index) {
+        if ( !aimp2_playlist_manager_->AIMP_PLS_Entry_InfoGet( playlist_id,
+                                                               entry_index,
+                                                               &file_info_helper.getEmptyFileInfo()
+                                                               )
+            )
+        {
+            // in case of Aimp error just say that playlists are not equal.
+            return false;
+        }
+
+		int rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+            // need to compare loaded_entry with file_info_helper.info_;
+            const AIMP2SDK::AIMP2FileInfo& aimp_entry = file_info_helper.getFileInfoWithCorrectStringLengths();
+            if ( crc32_entry(stmt) != Utilities::crc32(aimp_entry) ) {
+                return false;
+            }
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                    << rc_db << ": " << sqlite3_errmsg(db)
+                                                    << ". Query: " << query.str();
+            throw std::runtime_error(msg);
+		}
+    }
 
     return true;
 }
@@ -1069,7 +1226,7 @@ void getEntryField_(sqlite3* db, const char* field, TrackDescription track_desc,
         } else {
             const std::string msg = MakeString() << "sqlite3_step() error "
                                                  << rc_db << ": " << sqlite3_errmsg(db)
-                                                 << ". Query: " << query;
+                                                 << ". Query: " << query.str();
             throw std::runtime_error(msg);
 		}
     }

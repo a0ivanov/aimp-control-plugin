@@ -190,6 +190,7 @@ private:
 
     sqlite3* playlists_db_;
 
+    PlaylistCRC32& getPlaylistCRC32Object(PlaylistID playlist_id) const; // throws std::runtime_error
     typedef std::map<PlaylistID, PlaylistCRC32> PlaylistCRC32List;
     mutable PlaylistCRC32List playlist_crc32_list_;
 
