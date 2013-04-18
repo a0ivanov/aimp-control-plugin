@@ -1,7 +1,11 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef AIMP_MANAGER_IMPL_COMMON_H
-#define AIMP_MANAGER_IMPL_COMMON_H
+#pragma once
+
+#include "../utils/scope_guard.h"
+#include "../utils/sqlite_util.h"
+#include "manager2.6.h"
+#include "manager3.0.h"
 
 namespace AIMPPlayer
 {
@@ -70,6 +74,42 @@ inline const char* asString(AIMPManager::STATUS status)
     return status_string.c_str();
 }
 
-} // namespace AIMPPlayer
+inline size_t getEntriesCountDB(PlaylistID playlist_id, sqlite3* playlists_db)
+{
+    using namespace Utilities;
 
-#endif // #ifndef AIMP_MANAGER_IMPL_COMMON_H
+    std::ostringstream query;
+    query << "SELECT COUNT(*) FROM PlaylistsEntries WHERE playlist_id=" << playlist_id;
+
+    sqlite3_stmt* stmt = createStmt( playlists_db, query.str() );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    size_t total_entries_count = 0;
+
+	const int rc_db = sqlite3_step(stmt);
+    if (SQLITE_ROW == rc_db) {
+        assert(sqlite3_column_count(stmt) > 0);
+        total_entries_count = sqlite3_column_int(stmt, 0);
+    } else {
+        const std::string msg = MakeString() << "sqlite3_step() error "
+                                             << rc_db << ": " << sqlite3_errmsg(playlists_db)
+                                             << ". Query: " << query.str();
+        throw std::runtime_error(msg);
+    }
+
+    return total_entries_count;
+}
+
+inline sqlite3* getPlaylistsDB(const AIMPPlayer::AIMPManager& aimp_manager) {
+    if (       const AIMPPlayer::AIMPManager30* mgr3 = dynamic_cast<const AIMPPlayer::AIMPManager30*>(&aimp_manager) ) {
+        return mgr3->playlists_db();
+    } else if (const AIMPPlayer::AIMPManager26* mgr2 = dynamic_cast<const AIMPPlayer::AIMPManager26*>(&aimp_manager) ) {
+        return mgr2->playlists_db();
+    } else {
+        using namespace Utilities;
+        const std::string msg = MakeString() << __FUNCTION__ ": invalid AIMPManager object. AIMPManager30 and AIMPManager26 are only supported.";
+        throw std::runtime_error(msg);
+    }
+}
+
+} // namespace AIMPPlayer

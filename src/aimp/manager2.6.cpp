@@ -105,13 +105,24 @@ AIMPManager26::~AIMPManager26()
     shutdownPlaylistDB();
 }
 
-Playlist AIMPManager26::loadPlaylist(int playlist_index)
+void AIMPManager26::loadPlaylist(int playlist_index)
 {
     const char * const error_prefix = "Error occured while extracting playlist data: ";
     
     int id;
     if ( S_OK != aimp2_playlist_manager_->AIMP_PLS_ID_By_Index(playlist_index, &id) ) {
         throw std::runtime_error(MakeString() << error_prefix << "AIMP_PLS_ID_By_Index failed");
+    }
+
+    { // handle crc32.
+    auto it = playlist_crc32_list_.find(id);
+    if (it == playlist_crc32_list_.end()) {
+        it = playlist_crc32_list_.insert(std::make_pair(id,
+                                                        PlaylistCRC32(id, playlists_db_)
+                                                        )
+                                         ).first;
+    }
+    it->second.reset_properties();
     }
 
     INT64 duration, size;
@@ -127,12 +138,6 @@ Playlist AIMPManager26::loadPlaylist(int playlist_index)
 
     const int files_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(id);
 
-    Playlist playlist(name,
-                      files_count,
-                      duration,
-                      size,
-                      id
-                      );
     { // db code
     sqlite3_stmt* stmt = createStmt(playlists_db_,
                                     "REPLACE INTO Playlists VALUES (?,?,?,?,?,?)"
@@ -156,7 +161,7 @@ Playlist AIMPManager26::loadPlaylist(int playlist_index)
     bind( int,  3, files_count );
     bind(int64, 4, duration);
     bind(int64, 5, size);
-    bind(int64, 6, playlist.crc32());
+    bind(int64, 6, kCRC32_UNINITIALIZED);
 #undef bind
 #undef bindText
     rc_db = sqlite3_step(stmt);
@@ -166,8 +171,21 @@ Playlist AIMPManager26::loadPlaylist(int playlist_index)
         throw std::runtime_error(msg);
     }
     }
+}
 
-    return playlist;
+PlaylistCRC32& AIMPManager26::getPlaylistCRC32Object(PlaylistID playlist_id) const // throws std::runtime_error
+{
+    auto it = playlist_crc32_list_.find(playlist_id);
+    if (it != playlist_crc32_list_.end()) {
+        return it->second;
+    }
+    throw std::runtime_error(MakeString() << "Playlist " << playlist_id << " was not found in "__FUNCTION__);
+}
+
+
+crc32_t AIMPManager26::getPlaylistCRC32(PlaylistID playlist_id) const // throws std::runtime_error
+{
+    return getPlaylistCRC32Object(playlist_id).crc32();
 }
 
 /*
@@ -206,28 +224,6 @@ public:
     AIMP2SDK::AIMP2FileInfo& getFileInfo()
         { return info_; }
 
-    PlaylistEntry getPlaylistEntry(DWORD entry_id, crc32_t crc32 = 0)
-    {
-        getFileInfoWithCorrectStringLengths();
-
-        return PlaylistEntry(   info_.sAlbum,    info_.nAlbumLen,
-                                info_.sArtist,   info_.nArtistLen,
-                                info_.sDate,     info_.nDateLen,
-                                info_.sFileName, info_.nFileNameLen,
-                                info_.sGenre,    info_.nGenreLen,
-                                info_.sTitle,    info_.nTitleLen,
-                                // info_.nActive - useless, not used.
-                                info_.nBitRate,
-                                info_.nChannels,
-                                info_.nDuration,
-                                info_.nFileSize,
-                                info_.nRating,
-                                info_.nSampleRate,
-                                info_.nTrackID,
-                                entry_id,
-                                crc32
-                            );
-    }
 
     /* \return track ID. */
     DWORD trackID() const
@@ -275,19 +271,22 @@ private:
     WCHAR title[kFIELDBUFFERSIZE];
 };
 
-void AIMPManager26::loadEntries(Playlist& playlist) // throws std::runtime_error
+void AIMPManager26::loadEntries(PlaylistID playlist_id) // throws std::runtime_error
 {
+    { // handle crc32.
+        try {
+            getPlaylistCRC32Object(playlist_id).reset_entries();
+        } catch (std::exception& e) {
+            throw std::runtime_error(MakeString() << "expected crc32 struct for playlist " << playlist_id << " not found in "__FUNCTION__". Reason: " << e.what());
+        }
+    }
+
     // PROFILE_EXECUTION_TIME(__FUNCTION__);
-    const PlaylistID playlist_id = playlist.id();
     const int entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
 
     AIMP2FileInfoHelper file_info_helper; // used for get entries from AIMP conveniently.
-
-    // temp objects to prevent partial change state of passed objects when error occurs.
-    EntriesListType entries;
-    entries.reserve(entries_count);
     
-    deletePlaylistEntriesFromPlaylistDB( playlist.id() ); // remove old entries before adding new ones.
+    deletePlaylistEntriesFromPlaylistDB(playlist_id); // remove old entries before adding new ones.
 
     sqlite3_stmt* stmt = createStmt(playlists_db_, "INSERT INTO PlaylistsEntries VALUES (?,?,?,?,?,"
                                                                                         "?,?,?,?,?,"
@@ -310,7 +309,7 @@ void AIMPManager26::loadEntries(Playlist& playlist) // throws std::runtime_error
                                                     throw std::runtime_error(msg); \
                                                 }
     int rc_db;
-    bind( int, 1, playlist.id() );
+    bind(int, 1, playlist_id);
 
     for (int entry_index = 0; entry_index < entries_count; ++entry_index) {
         // aimp2_playlist_manager_->AIMP_PLS_Entry_ReloadInfo(id_, entry_index); // try to make AIMP update track info: this takes significant time and some tracks are not updated anyway.
@@ -320,8 +319,6 @@ void AIMPManager26::loadEntries(Playlist& playlist) // throws std::runtime_error
                                                              )
             )
         {
-            entries.push_back( file_info_helper.getPlaylistEntry(entry_index) );
-
             // special db code
             {
                 // bind all values
@@ -356,17 +353,14 @@ void AIMPManager26::loadEntries(Playlist& playlist) // throws std::runtime_error
     }
 #undef bind
 #undef bindText
-
-    // we got list, save result
-    playlist.entries().swap(entries);
 }
 
 #ifdef MANUAL_PLAYLISTS_CONTENT_CHANGES_DETERMINATION
 
-bool playlist_exist(PlaylistID playlist_id, boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp2_playlist_manager) 
+bool playlistExists(PlaylistID playlist_id, boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp2_playlist_manager) 
 {
-    const size_t playlists_count = aimp2_playlist_manager->AIMP_PLS_Count();
-    for (size_t playlist_index = 0; playlist_index < playlists_count; ++playlist_index) {
+    const size_t playlistsCount = aimp2_playlist_manager->AIMP_PLS_Count();
+    for (size_t playlist_index = 0; playlist_index < playlistsCount; ++playlist_index) {
         int id;
         int result = aimp2_playlist_manager->AIMP_PLS_ID_By_Index(playlist_index, &id);
         assert(S_OK == result); (void)result;
@@ -377,26 +371,107 @@ bool playlist_exist(PlaylistID playlist_id, boost::intrusive_ptr<AIMP2SDK::IAIMP
     return false;
 }
 
+bool playlistExists(PlaylistID playlist_id, sqlite3* db, int* entries_count)
+{
+    using namespace Utilities;
+
+    std::ostringstream query;
+    query << "SELECT entries_count FROM Playlists WHERE id=" << playlist_id;
+
+    sqlite3_stmt* stmt = createStmt( db, query.str() );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    for(;;) {
+		int rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+            if (entries_count) {
+                *entries_count = sqlite3_column_int(stmt, 0);
+            }
+            return true;
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                 << rc_db << ": " << sqlite3_errmsg(db)
+                                                 << ". Query: " << query.str();
+            throw std::runtime_error(msg);
+		}
+    }
+    return false;
+}
+
+int playlistsCount(sqlite3* db)
+{
+    using namespace Utilities;
+
+    std::ostringstream query;
+    
+    query << "SELECT COUNT(*) FROM Playlists";
+
+    sqlite3_stmt* stmt = createStmt( db, query.str() );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    for(;;) {
+		int rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+            return sqlite3_column_int(stmt, 0);
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                 << rc_db << ": " << sqlite3_errmsg(db)
+                                                 << ". Query: " << query.str();
+            throw std::runtime_error(msg);
+		}
+    }
+    assert(!"Unexpected query result in "__FUNCTION__);
+    return 0;
+}
+
+void foreach_row(const std::string& query, sqlite3* db, std::function<void(sqlite3_stmt*)> row_callback)
+{
+    using namespace Utilities;
+
+    sqlite3_stmt* stmt = createStmt(db, query);
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    for(;;) {
+		int rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+            row_callback(stmt);
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                 << rc_db << ": " << sqlite3_errmsg(db)
+                                                 << ". Query: " << query;
+            throw std::runtime_error(msg);
+		}
+    }
+}
+
 void AIMPManager26::checkIfPlaylistsChanged()
 {
+    const int playlist_count = playlistsCount(playlists_db_);
+
     std::vector<PlaylistID> playlists_to_reload;
-    const size_t playlists_count = aimp2_playlist_manager_->AIMP_PLS_Count();
-    for (size_t playlist_index = 0; playlist_index < playlists_count; ++playlist_index) {
+    const size_t current_playlists_count = aimp2_playlist_manager_->AIMP_PLS_Count();
+    for (size_t playlist_index = 0; playlist_index < current_playlists_count; ++playlist_index) {
         int current_playlist_id;
         if ( S_OK != aimp2_playlist_manager_->AIMP_PLS_ID_By_Index(playlist_index, &current_playlist_id) ) {
             throw std::runtime_error(MakeString() << "checkIfPlaylistsChanged() failed. Reason: AIMP_PLS_ID_By_Index failed");
         }
 
-        const int entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(current_playlist_id);
+        const int current_entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(current_playlist_id);
 
-        const auto loaded_playlist_iter = playlists_.find(current_playlist_id);
-        if (playlists_.end() == loaded_playlist_iter) {
+        int entries_count = 0;
+        if (!playlistExists(current_playlist_id, playlists_db_, &entries_count)) {
             // current playlist was not loaded yet, load it now without entries.
-            playlists_.insert( std::make_pair(current_playlist_id, loadPlaylist(playlist_index) ) );
+            loadPlaylist(playlist_index);
             playlists_to_reload.push_back(current_playlist_id);
-        } else if ( loaded_playlist_iter->second.entriesCount() != static_cast<size_t>(entries_count) ) {
+        } else if (entries_count != current_entries_count) {
             // list loaded, but entries count is changed: load new playlist to update all internal fields.
-            playlists_[current_playlist_id] = loadPlaylist(playlist_index); // we must use map's operator[] instead insert() method, since insert is no-op for existing key.
+            loadPlaylist(playlist_index);
             playlists_to_reload.push_back(current_playlist_id);
         } else if ( !isLoadedPlaylistEqualsAimpPlaylist(current_playlist_id) ) {
             // contents of loaded playlist and current playlist are different.
@@ -405,14 +480,10 @@ void AIMPManager26::checkIfPlaylistsChanged()
     }
 
     // reload entries of playlists from list.
-    BOOST_FOREACH(PlaylistID playlist_id, playlists_to_reload) {
+    for (PlaylistID playlist_id : playlists_to_reload) {
         try {
-            auto it = playlists_.find(playlist_id);
-            assert( it != playlists_.end() );
-            Playlist& playlist = it->second;
-            loadEntries(playlist); // avoid using of playlists_[playlist_id], since it requires Playlist's default ctor.
-
-            updatePlaylistCrcInDB(playlist);
+            loadEntries(playlist_id); // avoid using of playlists_[playlist_id], since it requires Playlist's default ctor.
+            updatePlaylistCrcInDB( playlist_id, getPlaylistCRC32(playlist_id) );
         } catch (std::exception& e) {
             BOOST_LOG_SEV(logger(), error) << "Error occured while playlist(id = " << playlist_id << ") entries loading. Reason: " << e.what();
         }
@@ -421,19 +492,22 @@ void AIMPManager26::checkIfPlaylistsChanged()
     bool playlists_content_changed = !playlists_to_reload.empty();
 
     // handle closed playlists.
-    if (playlists_count < playlists_.size()) { 
+    if (current_playlists_count < static_cast<size_t>(playlist_count)) { 
         playlists_content_changed = true;
-        PlaylistsListType::iterator it = playlists_.begin();
-        while (it != playlists_.end()) {
-            // try to find id of current playlist in existing playlists.
-            if (!playlist_exist(it->first, aimp2_playlist_manager_) ) {
-                { // db code
-                    deletePlaylistFromPlaylistDB(it->second.id());
-                }
-                it = playlists_.erase(it);
-            } else {
-                ++it;            
+
+        std::vector<PlaylistID> playlists_to_delete;
+
+        auto handler = [&playlists_to_delete, this](sqlite3_stmt* stmt) {
+            const PlaylistID id = sqlite3_column_int(stmt, 0);
+            if (!playlistExists(id, aimp2_playlist_manager_) ) {
+                playlists_to_delete.push_back(id);
             }
+        };
+        foreach_row("SELECT playlist_id FROM Playlists", playlists_db_, handler);
+
+        for (PlaylistID playlist_id : playlists_to_delete) {
+            playlist_crc32_list_.erase(playlist_id);
+            deletePlaylistFromPlaylistDB(playlist_id);
         }
     }
  
@@ -442,7 +516,7 @@ void AIMPManager26::checkIfPlaylistsChanged()
     }
 }
 
-void AIMPManager26::updatePlaylistCrcInDB(const Playlist& playlist)
+void AIMPManager26::updatePlaylistCrcInDB(PlaylistID playlist_id, crc32_t crc32)
 {
     sqlite3_stmt* stmt = createStmt(playlists_db_,
                                     "UPDATE Playlists SET crc32=? WHERE id=?"
@@ -456,8 +530,8 @@ void AIMPManager26::updatePlaylistCrcInDB(const Playlist& playlist)
                                         }
 
     int rc_db;
-    bind( int64, 1, playlist.crc32() );
-    bind( int,   2, playlist.id() );
+    bind(int64, 1, crc32);
+    bind(int,   2, playlist_id );
     
 #undef bind
     rc_db = sqlite3_step(stmt);
@@ -468,34 +542,85 @@ void AIMPManager26::updatePlaylistCrcInDB(const Playlist& playlist)
     }
 }
 
+namespace {
+
+crc32_t crc32_text16(const void* text16) 
+{
+    const wchar_t* text = static_cast<const wchar_t*>(text16);
+    return Utilities::crc32( text, wcslen(text) * sizeof(text[0]) );
+}
+
+crc32_t crc32_entry(sqlite3_stmt* stmt)
+{
+    assert(sqlite3_column_count(stmt) == 12);
+
+    using namespace Utilities;
+    const crc32_t members_crc32_list [] = {
+            crc32_text16( sqlite3_column_text16(stmt, 0) ),
+            crc32_text16( sqlite3_column_text16(stmt, 1) ),
+            crc32_text16( sqlite3_column_text16(stmt, 2) ),
+            crc32_text16( sqlite3_column_text16(stmt, 3) ),
+            crc32_text16( sqlite3_column_text16(stmt, 4) ),
+            crc32_text16( sqlite3_column_text16(stmt, 5) ),
+                          sqlite3_column_int   (stmt, 6),
+                          sqlite3_column_int   (stmt, 7),
+                          sqlite3_column_int   (stmt, 8),
+        Utilities::crc32( sqlite3_column_int64 (stmt, 9) ),
+                          sqlite3_column_int   (stmt,10),
+                          sqlite3_column_int   (stmt,11),
+    };
+
+    return Utilities::crc32( &members_crc32_list[0], sizeof(members_crc32_list) );
+}
+
+} //namespace
+
 bool AIMPManager26::isLoadedPlaylistEqualsAimpPlaylist(PlaylistID playlist_id) const
 {
     // PROFILE_EXECUTION_TIME(__FUNCTION__);
 
-    const Playlist& playlist = getPlaylist(playlist_id);
-    const EntriesListType& loaded_entries = playlist.entries();
-
+    const size_t loaded_entries_count = getEntriesCountDB(playlist_id, playlists_db_);
     const int entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
-    assert( entries_count >= 0 && static_cast<size_t>(entries_count) == loaded_entries.size() ); // function returns correct result only if entries count in loaded and actual playlists are equal.
+    assert(entries_count >= 0 && static_cast<size_t>(entries_count) == loaded_entries_count); // function returns correct result only if entries count in loaded and actual playlists are equal.
+
+    using namespace Utilities;
+
+    std::ostringstream query;
+    query << "SELECT "
+          << "album, artist, date, filename, genre, title, bitrate, channels_count, duration, filesize, rating, samplerate"
+          << " FROM PlaylistsEntries WHERE playlist_id=" << playlist_id << " ORDER BY entry_id";
+
+    sqlite3* db = playlists_db_;
+    sqlite3_stmt* stmt = createStmt( db, query.str() );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
     AIMP2FileInfoHelper file_info_helper; // used for get entries from AIMP conveniently.
-
     for (int entry_index = 0; entry_index < entries_count; ++entry_index) {
-        if ( aimp2_playlist_manager_->AIMP_PLS_Entry_InfoGet( playlist_id,
-                                                              entry_index,
-                                                              &file_info_helper.getEmptyFileInfo()
-                                                             )
+        if ( !aimp2_playlist_manager_->AIMP_PLS_Entry_InfoGet( playlist_id,
+                                                               entry_index,
+                                                               &file_info_helper.getEmptyFileInfo()
+                                                               )
             )
         {
-            // need to compare loaded_entry with file_info_helper.info_;
-            const AIMP2SDK::AIMP2FileInfo& aimp_entry = file_info_helper.getFileInfoWithCorrectStringLengths();
-            if ( loaded_entries[entry_index].crc32() != Utilities::crc32(aimp_entry) ) {
-                return false;
-            }
-        } else {
             // in case of Aimp error just say that playlists are not equal.
             return false;
         }
+
+		int rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+            // need to compare loaded_entry with file_info_helper.info_;
+            const AIMP2SDK::AIMP2FileInfo& aimp_entry = file_info_helper.getFileInfoWithCorrectStringLengths();
+            if ( crc32_entry(stmt) != Utilities::crc32(aimp_entry) ) {
+                return false;
+            }
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                    << rc_db << ": " << sqlite3_errmsg(db)
+                                                    << ". Query: " << query.str();
+            throw std::runtime_error(msg);
+		}
     }
 
     return true;
@@ -981,8 +1106,8 @@ TrackDescription AIMPManager26::getPlayingTrack() const
 
 AIMPManager::PLAYLIST_ENTRY_SOURCE_TYPE AIMPManager26::getTrackSourceType(TrackDescription track_desc) const // throws std::runtime_error
 {
-    const PlaylistEntry& entry = getEntry(track_desc);
-    return entry.duration() == 0 ? SOURCE_TYPE_RADIO : SOURCE_TYPE_FILE; // very shallow determination. Duration can be 0 on usual track if AIMP has no loaded track info yet.
+    const DWORD duration = getEntryField<DWORD>(playlists_db_, "duration", getAbsoluteTrackDesc(track_desc));
+    return duration == 0 ? SOURCE_TYPE_RADIO : SOURCE_TYPE_FILE; // very shallow determination. Duration can be 0 on usual track if AIMP has no loaded track info yet.
 }
 
 AIMPManager::PLAYBACK_STATE AIMPManager26::getPlaybackState() const
@@ -1022,15 +1147,9 @@ void AIMPManager26::removeEntryFromPlayQueue(TrackDescription track_desc) // thr
     }
 }
 
-const AIMPManager26::PlaylistsListType& AIMPManager26::getPlayLists() const
-{
-    return playlists_;
-}
-
 int AIMPManager26::trackRating(TrackDescription track_desc) const // throws std::runtime_error
 {
-    const PlaylistEntry& entry = getEntry(track_desc);
-    return entry.rating();
+    return getEntryField<DWORD>(playlists_db_, "rating", getAbsoluteTrackDesc(track_desc));
 }
 
 void AIMPManager26::saveCoverToFile(TrackDescription track_desc, const std::wstring& filename, int cover_width, int cover_height) const // throw std::runtime_error
@@ -1052,9 +1171,9 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMPManager26::getCoverImage(TrackDesc
         throw std::invalid_argument(MakeString() << "Error in "__FUNCTION__ << ". Negative cover size.");
     }
 
-    const PlaylistEntry& entry = getEntry(track_desc);
+    const std::wstring& entry_filename = getEntryField<std::wstring>(playlists_db_, "filename", getAbsoluteTrackDesc(track_desc));
     const SIZE request_full_size = { 0, 0 };
-    HBITMAP cover_bitmap_handle = aimp2_cover_art_manager_->GetCoverArtForFile(const_cast<PWCHAR>( entry.filename().c_str() ), &request_full_size);
+    HBITMAP cover_bitmap_handle = aimp2_cover_art_manager_->GetCoverArtForFile(const_cast<PWCHAR>( entry_filename.c_str() ), &request_full_size);
 
     // get real bitmap size
     const SIZE cover_full_size = ImageUtils::getBitmapSize(cover_bitmap_handle);
@@ -1078,36 +1197,86 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMPManager26::getCoverImage(TrackDesc
             cover_size.cy = cover_height;
         }
 
-        cover_bitmap_handle = aimp2_cover_art_manager_->GetCoverArtForFile(const_cast<PWCHAR>( entry.filename().c_str() ), &cover_size);
+        cover_bitmap_handle = aimp2_cover_art_manager_->GetCoverArtForFile(const_cast<PWCHAR>( entry_filename.c_str() ), &cover_size);
     }
 
     using namespace ImageUtils;
     return std::auto_ptr<AIMPCoverImage>( new AIMPCoverImage(cover_bitmap_handle) ); // do not close handle of AIMP bitmap.
 }
 
-const Playlist& AIMPManager26::getPlaylist(PlaylistID id) const
+void getEntryField_(sqlite3* db, const char* field, TrackDescription track_desc, std::function<void(sqlite3_stmt*)> row_callback)
 {
-    const PlaylistID playlist_id = getAbsolutePlaylistID(id);
+    using namespace Utilities;
 
-    auto playlist_iterator( playlists_.find(playlist_id) );
-    if ( playlist_iterator == playlists_.end() ) {
-        throw std::runtime_error(MakeString() << "Error in "__FUNCTION__ << ": playlist with ID = " << playlist_id << " does not exist");
+    std::ostringstream query;
+
+    query << "SELECT " << field
+          << " FROM PlaylistsEntries WHERE playlist_id=" << track_desc.playlist_id << " AND entry_id=" << track_desc.track_id;
+
+    sqlite3_stmt* stmt = createStmt( db, query.str() );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+    for(;;) {
+		int rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+            assert(sqlite3_column_count(stmt) == 1);
+            row_callback(stmt);
+            return;
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                 << rc_db << ": " << sqlite3_errmsg(db)
+                                                 << ". Query: " << query.str();
+            throw std::runtime_error(msg);
+		}
     }
 
-    return playlist_iterator->second;
+    throw std::runtime_error(MakeString() << "Error in "__FUNCTION__ << ". Track " << track_desc << " does not exist");
 }
 
-const PlaylistEntry& AIMPManager26::getEntry(TrackDescription desc) const
+template<>
+std::wstring getEntryField(sqlite3* db, const char* field, TrackDescription track_desc)
 {
-    const TrackDescription track_desc = getAbsoluteTrackDesc(desc);
+    std::wstring r;
+    auto handler = [&](sqlite3_stmt* stmt) {
+        assert(sqlite3_column_type(stmt, 0) == SQLITE_TEXT);
+        if (sqlite3_column_type(stmt, 0) != SQLITE_TEXT) {
+            throw std::runtime_error(MakeString() << "Unexpected column type at "__FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Track " << track_desc);
+        }
+        r = static_cast<const std::wstring::value_type*>(sqlite3_column_text16(stmt, 0));
+    };
+    getEntryField_(db, field, track_desc, handler);
+    return r;
+}
 
-    const Playlist& playlist = getPlaylist(track_desc.playlist_id);
-    const EntriesListType& entries = playlist.entries();
-    if ( track_desc.track_id < 0 || static_cast<size_t>(track_desc.track_id) >= entries.size() ) {
-        throw std::runtime_error(MakeString() << "Error in "__FUNCTION__ << ". Entry " << track_desc << " does not exist");
-    }
+template<>
+DWORD getEntryField(sqlite3* db, const char* field, TrackDescription track_desc)
+{
+    DWORD r;
+    auto handler = [&](sqlite3_stmt* stmt) {
+        assert(sqlite3_column_type(stmt, 0) == SQLITE_INTEGER);
+        if (sqlite3_column_type(stmt, 0) != SQLITE_INTEGER) {
+            throw std::runtime_error(MakeString() << "Unexpected column type at "__FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Track " << track_desc);
+        }
+        r = static_cast<DWORD>(sqlite3_column_int(stmt, 0));
+    };
+    getEntryField_(db, field, track_desc, handler);
+    return r;
+}
 
-    return entries[track_desc.track_id]; // currently track ID is simple index in entries list.
+template<>
+INT64 getEntryField(sqlite3* db, const char* field, TrackDescription track_desc)
+{
+    INT64 r;
+    auto handler = [&](sqlite3_stmt* stmt) {
+        assert(sqlite3_column_type(stmt, 0) == SQLITE_INTEGER);
+        if (sqlite3_column_type(stmt, 0) != SQLITE_INTEGER) {
+            throw std::runtime_error(MakeString() << "Unexpected column type at "__FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Track " << track_desc);
+        }
+        r = sqlite3_column_int64(stmt, 0);
+    };
+    getEntryField_(db, field, track_desc, handler);
+    return r;
 }
 
 void WINAPI AIMPManager26::internalAIMPStateNotifier(DWORD User, DWORD dwCBType)
@@ -1179,7 +1348,6 @@ void AIMPManager26::unRegisterListener(AIMPManager26::EventsListenerID listener_
     external_listeners_.erase(listener_id);
 }
 
-
 namespace
 {
 
@@ -1189,31 +1357,43 @@ void clear(std::wostringstream& os)
     os.str( std::wstring() );    
 }
 
-struct BitrateFormatter {
+struct Formatter
+{
+    int column_index;
+    Formatter(int column_index) : column_index(column_index) {}
+    Formatter(const Formatter& rhs) : column_index(rhs.column_index) {}
+};
+
+struct BitrateFormatter : public Formatter
+{
     mutable std::wostringstream os;
 
-    // need to define ctors since wostringstream has no copy ctor.
-    BitrateFormatter() {}
-    BitrateFormatter(const BitrateFormatter&) : os() {}
+    BitrateFormatter(int column_index) : Formatter(column_index) {}
 
-    std::wstring operator()(const PlaylistEntry& entry) const { 
+    // need to define copy ctor since wostringstream has no copy ctor.
+    BitrateFormatter(const BitrateFormatter& rhs) : Formatter(rhs), os() {}
+
+    std::wstring operator()(sqlite3_stmt* stmt) const { 
         clear(os);
-        os << entry.bitrate() << L" kbps";
+        os << sqlite3_column_int(stmt, column_index) << L" kbps";
         return os.str();
     }
 };
 
-struct ChannelsCountFormatter {
+struct ChannelsCountFormatter : public Formatter
+{
     mutable std::wostringstream os;
 
-    // need to define ctors since wostringstream has no copy ctor.
-    ChannelsCountFormatter() {}
-    ChannelsCountFormatter(const ChannelsCountFormatter&) : os() {}
+    ChannelsCountFormatter(int column_index) : Formatter(column_index) {}
 
-    std::wstring operator()(const PlaylistEntry& entry) const { 
+    // need to define copy ctor since wostringstream has no copy ctor.
+    ChannelsCountFormatter(const ChannelsCountFormatter& rhs) : Formatter(rhs), os() {}
+
+    std::wstring operator()(sqlite3_stmt* stmt) const { 
         clear(os);
 
-        switch ( entry.channelsCount() ) {
+        const int channels_count = sqlite3_column_int(stmt, column_index);
+        switch (channels_count) {
         case 0:
             break;
         case 1:
@@ -1223,24 +1403,25 @@ struct ChannelsCountFormatter {
             os << L"Stereo";
             break;
         default:
-            os << entry.channelsCount() << L" channels";
+            os << channels_count << L" channels";
             break;
         }
         return os.str();
     }
 };
 
-struct DurationFormatter
+struct DurationFormatter : public Formatter
 {
     mutable std::wostringstream os;
 
-    // need to define ctors since wostringstream has no copy ctor.
-    DurationFormatter() {}
-    DurationFormatter(const DurationFormatter&) : os() {}
+    DurationFormatter(int column_index) : Formatter(column_index) {}
 
-    std::wstring operator()(const PlaylistEntry& entry) const {
+    // need to define copy ctor since wostringstream has no copy ctor.
+    DurationFormatter(const DurationFormatter& rhs) : Formatter(rhs), os() {}
+
+    std::wstring operator()(sqlite3_stmt* stmt) const {
         clear(os);
-        formatTime( os, entry.duration() );
+        formatTime( os, sqlite3_column_int(stmt, column_index) );
         return os.str();
     }
 
@@ -1265,9 +1446,13 @@ struct DurationFormatter
     }
 };
 
-struct FileNameExtentionFormatter {
-    std::wstring operator()(const PlaylistEntry& entry) const { 
-        std::wstring ext = boost::filesystem::path( entry.filename() ).extension().native();
+struct FileNameExtentionFormatter : public Formatter
+{
+    FileNameExtentionFormatter(int column_index) : Formatter(column_index) {}
+
+    std::wstring operator()(sqlite3_stmt* stmt) const {
+        const auto filename = static_cast<const std::wstring::value_type*>( sqlite3_column_text16(stmt, column_index) );
+        std::wstring ext = boost::filesystem::path(filename).extension().native();
         if ( !ext.empty() ) {
             if (ext[0] == L'.') {
                 ext.erase( ext.begin() );
@@ -1278,33 +1463,37 @@ struct FileNameExtentionFormatter {
     }
 };
 
-struct SampleRateFormatter {
+struct SampleRateFormatter : public Formatter 
+{
     mutable std::wostringstream os;
 
-    // need to define ctors since wostringstream has no copy ctor.
-    SampleRateFormatter() {}
-    SampleRateFormatter(const SampleRateFormatter&) : os() {}
+    SampleRateFormatter(int column_index) : Formatter(column_index) {}
 
-    std::wstring operator()(const PlaylistEntry& entry) const { 
+    // need to define copy ctor since wostringstream has no copy ctor.
+    SampleRateFormatter(const SampleRateFormatter& rhs) : Formatter(rhs), os() {}
+
+    std::wstring operator()(sqlite3_stmt* stmt) const { 
         clear(os);
 
-        const DWORD rate_in_hertz = entry.sampleRate();
+        const int rate_in_hertz = sqlite3_column_int(stmt, column_index);
         os << (rate_in_hertz / 1000)
            << L" kHz";
         return os.str();
     }
 };
 
-struct FileSizeFormatter
+struct FileSizeFormatter : public Formatter
 {
     mutable std::wostringstream os;
-    // need to define ctors since wostringstream has no copy ctor.
-    FileSizeFormatter() {}
-    FileSizeFormatter(const FileSizeFormatter&) : os() {}
 
-    std::wstring operator()(const PlaylistEntry& entry) const {
+    FileSizeFormatter(int column_index) : Formatter(column_index) {}
+
+    // need to define copy ctor since wostringstream has no copy ctor.
+    FileSizeFormatter(const FileSizeFormatter& rhs) : Formatter(rhs), os() {}
+
+    std::wstring operator()(sqlite3_stmt* stmt) const {
         clear(os);
-        formatSize( os, entry.fileSize() );
+        formatSize( os, sqlite3_column_int64(stmt, column_index) );
         return os.str();
     }
 
@@ -1319,6 +1508,22 @@ struct FileSizeFormatter
     }
 };
 
+struct RawStringFormatter : public Formatter
+{
+    RawStringFormatter(int column_index) : Formatter(column_index) {}
+    std::wstring operator()(sqlite3_stmt* stmt) const {
+        return static_cast<const std::wstring::value_type*>( sqlite3_column_text16(stmt, column_index) );
+    }
+};
+
+struct RawIntFormatter : public Formatter
+{
+    RawIntFormatter(int column_index) : Formatter(column_index) {}
+    std::wstring operator()(sqlite3_stmt* stmt) const {
+        return boost::lexical_cast<std::wstring>( sqlite3_column_int(stmt, column_index) );
+    }
+};
+
 /*!
     \brief Helper class for AIMPManager26::getFormattedEntryTitle() function.
            Implementation of AIMP title format analog.
@@ -1330,32 +1535,25 @@ public:
 
     PlaylistEntryTitleFormatter()
     {
-#define _MAKE_FUNC_(function) boost::bind( createStringMakerFunctor(&function), boost::bind(&function,    _1) )
-        auto artist_maker = _MAKE_FUNC_(PlaylistEntry::artist);
+        auto artist_formatter = boost::bind<std::wstring>(RawStringFormatter(ARTIST), _1);
         using namespace boost::assign;
         insert(formatters_)
-            ( L'A', _MAKE_FUNC_(PlaylistEntry::album) )
-            ( L'a', artist_maker )
-            //( L'B', _MAKE_FUNC_(PlaylistEntry::bitrate) ) // use BitrateFormatter which adds units(ex.: kbps)
-            ( L'B', boost::bind<std::wstring>(BitrateFormatter(), _1) )
-            //( L'C', _MAKE_FUNC_(PlaylistEntry::channelsCount) ) // use ChannelsCountFormatter which uses string representation (ex.: Mono/Stereo)
-            ( L'C', boost::bind<std::wstring>(ChannelsCountFormatter(), _1) )
-            ( L'E', boost::bind<std::wstring>(FileNameExtentionFormatter(), _1) )
-            //( L'F', _MAKE_FUNC_(PlaylistEntry::filename) ) getting filename is disabled.
-            ( L'G', _MAKE_FUNC_(PlaylistEntry::genre) )
-            //( L'H', _MAKE_FUNC_(PlaylistEntry::sampleRate) ) // this returns rate in Hertz, so use adequate SampleRateFormatter.
-            ( L'H', boost::bind<std::wstring>(SampleRateFormatter(), _1) )
-            //( L'L', _MAKE_FUNC_(PlaylistEntry::duration) ) // this returns milliseconds, so use adequate DurationFormatter.
-            ( L'L', boost::bind<std::wstring>(DurationFormatter(), _1) )
-            ( L'M', _MAKE_FUNC_(PlaylistEntry::rating) )
-            ( L'R', artist_maker ) // format R = a in AIMP3.
-            //( L'S', _MAKE_FUNC_(PlaylistEntry::fileSize) ) // this returns size in bytes, so use adequate FileSizeFormatter.
-            ( L'S', boost::bind<std::wstring>(FileSizeFormatter(), _1) )
-            ( L'T', _MAKE_FUNC_(PlaylistEntry::title) )
-            ( L'Y', _MAKE_FUNC_(PlaylistEntry::date) )
+            ( L'A', boost::bind<std::wstring>(RawStringFormatter(ALBUM), _1) )
+            ( L'a', artist_formatter )
+            ( L'B', boost::bind<std::wstring>(BitrateFormatter(BITRATE), _1) )
+            ( L'C', boost::bind<std::wstring>(ChannelsCountFormatter(CHANNELS_COUNT), _1) )
+            ( L'E', boost::bind<std::wstring>(FileNameExtentionFormatter(FILENAME), _1) )
+            //( L'F', boost::bind<std::wstring>(RawStringFormatter(FILENAME), _1) ) getting filename is disabled.
+            ( L'G', boost::bind<std::wstring>(RawStringFormatter(GENRE), _1) )
+            ( L'H', boost::bind<std::wstring>(SampleRateFormatter(SAMPLERATE), _1) )
+            ( L'L', boost::bind<std::wstring>(DurationFormatter(DURATION), _1) )
+            ( L'M', boost::bind<std::wstring>(RawIntFormatter(RATING), _1) )
+            ( L'R', artist_formatter ) // format R = a in AIMP3.
+            ( L'S', boost::bind<std::wstring>(FileSizeFormatter(FILESIZE), _1) )
+            ( L'T', boost::bind<std::wstring>(RawStringFormatter(TITLE), _1) )
+            ( L'Y', boost::bind<std::wstring>(RawStringFormatter(DATE), _1) )
         ;
         formatters_end_ = formatters_.end();
-#undef _MAKE_FUNC_
     }
 
     static bool endOfFormatString(std::wstring::const_iterator curr_char,
@@ -1367,7 +1565,7 @@ public:
     }
 
     // returns count of characters read.
-    size_t format(const PlaylistEntry& entry,
+    size_t format(sqlite3_stmt* stmt,
                   std::wstring::const_iterator begin,
                   std::wstring::const_iterator end,
                   char_t end_of_string,
@@ -1380,7 +1578,7 @@ public:
                     ++curr_char;
                     const auto formatter_it = formatters_.find(*curr_char);
                     if (formatter_it != formatters_end_) {
-                        formatted_string += formatter_it->second(entry);
+                        formatted_string += formatter_it->second(stmt);
                         curr_char += 1; // go to char next to format argument.
                     } else {
                         switch(*curr_char) {
@@ -1397,15 +1595,15 @@ public:
                                         // %IF(a, b, c): means a.empty() ? c : b;
                                         ++curr_char;
                                         std::wstring a;
-                                        std::advance( curr_char, format(entry, curr_char, end, L',', a) ); // read a.
+                                        std::advance( curr_char, format(stmt, curr_char, end, L',', a) ); // read a.
                                         ++curr_char;
 
                                         std::wstring b;
-                                        std::advance( curr_char, format(entry, curr_char, end, L',', b) ); // read b.
+                                        std::advance( curr_char, format(stmt, curr_char, end, L',', b) ); // read b.
                                         ++curr_char;
 
                                         std::wstring c;
-                                        std::advance( curr_char, format(entry, curr_char, end, L')', c) ); // read c.
+                                        std::advance( curr_char, format(stmt, curr_char, end, L')', c) ); // read c.
                                         ++curr_char;
 
                                         formatted_string.append(a.empty() ? c : b);
@@ -1427,28 +1625,51 @@ public:
         return static_cast<size_t>( std::distance(begin, curr_char) );
     }
 
-    std::wstring format(const PlaylistEntry& entry, const std::wstring& format_string) const // throw std::invalid_argument
+    std::wstring format(TrackDescription track_desc, const std::wstring& format_string, sqlite3* playlists_db) const // throw std::invalid_argument
     {
-        const auto begin = format_string.begin(),
-                   end   = format_string.end();
-        std::wstring formatted_string;
-        format(entry, begin, end, L'\0', formatted_string);
-        return formatted_string;
+        std::ostringstream query;
+        auto f = [](ENTRY_FIELD_ID id) { return getField(id); };
+        query << "SELECT "
+              << f(ALBUM) << ',' << f(ARTIST) << ',' << f(DATE) << ',' << f(FILENAME) << ',' << f(GENRE) << ',' << f(TITLE) << ','
+              << f(BITRATE) << ',' << f(CHANNELS_COUNT) << ',' << f(DURATION) << ',' << f(FILESIZE) << ',' << f(RATING) << ',' << f(SAMPLERATE)
+              << " FROM PlaylistsEntries WHERE playlist_id=" << track_desc.playlist_id << " AND entry_id=" << track_desc.track_id;
+
+        sqlite3_stmt* stmt = createStmt( playlists_db, query.str() );
+        ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+        for(;;) {
+		    int rc_db = sqlite3_step(stmt);
+            if (SQLITE_ROW == rc_db) {
+                const auto begin = format_string.begin(),
+                           end   = format_string.end();
+                std::wstring formatted_string;
+                format(stmt, begin, end, L'\0', formatted_string);
+                return formatted_string;
+            } else if (SQLITE_DONE == rc_db) {
+                break;
+            } else {
+                const std::string msg = MakeString() << "sqlite3_step() error "
+                                                     << rc_db << ": " << sqlite3_errmsg(playlists_db)
+                                                     << ". Query: " << query.str();
+                throw std::runtime_error(msg);
+		    }
+        }
+        throw std::runtime_error(MakeString() << "Track " << track_desc << " not found at "__FUNCTION__);
     }
 
 private:
 
-    template<class T>
-    struct WStringMaker : std::unary_function<const T&, std::wstring> {
-        std::wstring operator()(const T& arg) const
-            { return boost::lexical_cast<std::wstring>(arg); }
+    enum ENTRY_FIELD_ID {
+        ALBUM = 0, ARTIST, DATE, FILENAME, GENRE, TITLE, BITRATE, CHANNELS_COUNT, DURATION, FILESIZE, RATING, SAMPLERATE, FIELDS_COUNT
     };
+    static const char* getField(ENTRY_FIELD_ID field_index) {
+        const char* fields[] = {"album", "artist", "date", "filename", "genre", "title", "bitrate", "channels_count", "duration", "filesize", "rating", "samplerate"};
+        Utilities::AssertArraySize<ENTRY_FIELD_ID::FIELDS_COUNT>(fields);
+        assert(field_index < FIELDS_COUNT);
+        return fields[field_index];
+    }
 
-    template<class T, class R>
-    WStringMaker<R> createStringMakerFunctor( R (T::*)() const )
-        { return WStringMaker<R>(); }
-
-    typedef boost::function<std::wstring(const PlaylistEntry&)> EntryFieldStringGetter;
+    typedef boost::function<std::wstring(sqlite3_stmt*)> EntryFieldStringGetter;
     typedef std::map<char_t, EntryFieldStringGetter> Formatters;
     Formatters formatters_;
     Formatters::const_iterator formatters_end_;
@@ -1461,9 +1682,9 @@ private:
 
 std::wstring AIMPManager26::getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const // throw std::invalid_argument
 {
-
-    return playlistentry_title_formatter.format(getEntry(track_desc),
-                                                StringEncoding::utf8_to_utf16(format_string_utf8)
+    return playlistentry_title_formatter.format(getAbsoluteTrackDesc(track_desc),
+                                                StringEncoding::utf8_to_utf16(format_string_utf8),
+                                                playlists_db_
                                                 );
 }
 

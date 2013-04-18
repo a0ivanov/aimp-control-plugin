@@ -68,8 +68,8 @@ void AIMPManager31::reloadQueuedEntries() // throws std::runtime_error
 
     const int entries_count = aimp3_playlist_queue_->QueueEntryGetCount();
     for (int entry_index = 0; entry_index < entries_count; ++entry_index) {
-        HPLSENTRY entry_id;
-        HRESULT r = aimp3_playlist_queue_->QueueEntryGet(entry_index, &entry_id);
+        HPLSENTRY entry_handle;
+        HRESULT r = aimp3_playlist_queue_->QueueEntryGet(entry_index, &entry_handle);
 
         if (S_OK != r) {
             const std::string msg = MakeString() << "IAIMPAddonsPlaylistQueue::QueueEntryGet() error " 
@@ -77,7 +77,7 @@ void AIMPManager31::reloadQueuedEntries() // throws std::runtime_error
             throw std::runtime_error(msg);
         }
 
-        r = aimp3_playlist_manager_->EntryPropertyGetValue( entry_id, AIMP_PLAYLIST_ENTRY_PROPERTY_INFO,
+        r = aimp3_playlist_manager_->EntryPropertyGetValue( entry_handle, AIMP_PLAYLIST_ENTRY_PROPERTY_INFO,
                                                             &file_info_helper.getEmptyFileInfo(), sizeof(file_info_helper.getEmptyFileInfo())
                                                             );
 
@@ -89,7 +89,7 @@ void AIMPManager31::reloadQueuedEntries() // throws std::runtime_error
 
         { // get rating manually, since AIMP3 does not fill TAIMPFileInfo::Rating value.
             int rating = 0;
-            r = aimp3_playlist_manager_->EntryPropertyGetValue( entry_id, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_MARK, &rating, sizeof(rating) );    
+            r = aimp3_playlist_manager_->EntryPropertyGetValue( entry_handle, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_MARK, &rating, sizeof(rating) );    
             if (S_OK != r) {
                 rating =  0;
             }
@@ -107,7 +107,7 @@ void AIMPManager31::reloadQueuedEntries() // throws std::runtime_error
                                                     throw std::runtime_error(msg); \
                                                 }
                 int rc_db;
-                TrackDescription track_desc = getTrackDescOfQueuedEntry(entry_id);
+                TrackDescription track_desc = getTrackDescOfQueuedEntry(entry_handle);
                 bind(int,    1, track_desc.playlist_id);
                 // bind all values
                 const AIMP3SDK::TAIMPFileInfo& info = file_info_helper.getFileInfoWithCorrectStringLengths();
@@ -141,20 +141,15 @@ void AIMPManager31::reloadQueuedEntries() // throws std::runtime_error
     }
 }
 
-TrackDescription AIMPManager31::getTrackDescOfQueuedEntry(AIMP3SDK::HPLSENTRY entry_id) const // throws std::runtime_error
+TrackDescription AIMPManager31::getTrackDescOfQueuedEntry(AIMP3SDK::HPLSENTRY entry_handle) const // throws std::runtime_error
 {
     // We rely on fact that AIMP always have queued entry in one of playlists.
-    int entry_index;
-    { // find entry index (which is currently used as id).
-    HRESULT r = aimp3_playlist_manager_->EntryPropertyGetValue(entry_id, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_INDEX, &entry_index, sizeof(entry_index));
-    if (S_OK != r) {
-        throw std::runtime_error(MakeString() << __FUNCTION__" error: EntryPropertyGetValue(AIMP_PLAYLIST_ENTRY_PROPERTY_INDEX) returned " << r);
-    }
-    }
+
+    const PlaylistEntryID entry_id = castToPlaylistEntryID(entry_handle);
 
     // find playlist id.
-    const std::string& query = MakeString() << "SELECT playlist_id, title FROM PlaylistsEntries "
-                                            << "WHERE entry_id = " << entry_index;
+    const std::string& query = MakeString() << "SELECT playlist_id FROM PlaylistsEntries "
+                                            << "WHERE entry_id = " << entry_id;
 
     sqlite3* playlists_db = playlists_db_;
     sqlite3_stmt* stmt = createStmt( playlists_db, query.c_str() );
@@ -164,11 +159,7 @@ TrackDescription AIMPManager31::getTrackDescOfQueuedEntry(AIMP3SDK::HPLSENTRY en
 		int rc_db = sqlite3_step(stmt);
         if (SQLITE_ROW == rc_db) {
             int playlist_id = sqlite3_column_int(stmt, 0);
-            const PlaylistEntry& entry = getEntry(TrackDescription(playlist_id, entry_index));
-            const wchar_t* title = reinterpret_cast<const wchar_t*>(sqlite3_column_text16(stmt, 1));
-            if (entry.title() == title) { // hope it's small probability to have the same titles at the same indexes in loaded playlists.
-                return TrackDescription(playlist_id, entry_index);        
-            }
+            return TrackDescription(playlist_id, entry_id);
         } else if (SQLITE_DONE == rc_db) {
             break;
         } else {
@@ -179,12 +170,12 @@ TrackDescription AIMPManager31::getTrackDescOfQueuedEntry(AIMP3SDK::HPLSENTRY en
 		}
     }
 
-    throw std::runtime_error(MakeString() << "Queued entry is not found at existing playlists unexpectedly. Entry AIMP id: " << entry_id << ", index in playlist: " << entry_index);
+    throw std::runtime_error(MakeString() << "Queued entry is not found at existing playlists unexpectedly. Entry id: " << entry_id);
 }
 
 void AIMPManager31::moveQueueEntry(TrackDescription track_desc, int new_queue_index) // throws std::runtime_error
 {
-    AIMP3SDK::HPLSENTRY entry_handle = getEntryHandle(track_desc);
+    AIMP3SDK::HPLSENTRY entry_handle = castToHPLSENTRY(getAbsoluteEntryID(track_desc.track_id));
     HRESULT r = aimp3_playlist_queue_->QueueEntryMove(entry_handle, new_queue_index);
     if (S_OK != r) {
         const std::string msg = MakeString() << "IAIMPAddonsPlaylistQueue::QueueEntryMove() error " << r;
@@ -204,7 +195,7 @@ void AIMPManager31::moveQueueEntry(int old_queue_index, int new_queue_index) // 
 void AIMPManager31::enqueueEntryForPlay(TrackDescription track_desc, bool insert_at_queue_beginning) // throws std::runtime_error
 {
     using namespace AIMP3SDK;
-    AIMP3SDK::HPLSENTRY entry_handle = getEntryHandle(track_desc);
+    AIMP3SDK::HPLSENTRY entry_handle = castToHPLSENTRY(getAbsoluteEntryID(track_desc.track_id));
 
     HRESULT r = aimp3_playlist_queue_->QueueEntryAdd(entry_handle, insert_at_queue_beginning);
     if (S_OK != r) {
@@ -215,7 +206,7 @@ void AIMPManager31::enqueueEntryForPlay(TrackDescription track_desc, bool insert
 void AIMPManager31::removeEntryFromPlayQueue(TrackDescription track_desc) // throws std::runtime_error
 {
     using namespace AIMP3SDK;
-    AIMP3SDK::HPLSENTRY entry_handle = getEntryHandle(track_desc);
+    AIMP3SDK::HPLSENTRY entry_handle = castToHPLSENTRY(getAbsoluteEntryID(track_desc.track_id));
 
     HRESULT r = aimp3_playlist_queue_->QueueEntryRemove(entry_handle);
     if (S_OK != r) {

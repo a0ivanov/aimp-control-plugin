@@ -6,6 +6,7 @@
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/asio.hpp>
+#include "utils/util.h"
 
 struct sqlite3;
 
@@ -75,15 +76,13 @@ public:
 
     virtual TrackDescription getAbsoluteTrackDesc(TrackDescription track_desc) const;  // throws std::runtime_error
 
+    virtual crc32_t getPlaylistCRC32(PlaylistID playlist_id) const; // throws std::runtime_error
+
     virtual PLAYLIST_ENTRY_SOURCE_TYPE getTrackSourceType(TrackDescription track_desc) const; // throws std::runtime_error
 
     virtual PLAYBACK_STATE getPlaybackState() const;
 
-    virtual const PlaylistsListType& getPlayLists() const;
-
-    virtual const Playlist& getPlaylist(PlaylistID playlist_id) const; // throw std::runtime_error
-
-    virtual const PlaylistEntry& getEntry(TrackDescription track_desc) const; // throw std::runtime_error
+    //virtual PlaylistEntry getEntry(TrackDescription track_desc) const; // throw std::runtime_error
 
     virtual std::wstring getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const; // throw std::invalid_argument
     
@@ -101,6 +100,9 @@ public:
     virtual void onTick();
 
     sqlite3* playlists_db()
+        { return playlists_db_; }
+
+    sqlite3* playlists_db() const
         { return playlists_db_; }
 
 private:
@@ -139,10 +141,10 @@ private:
         \throw std::invalid_argument if playlist with specified ID does not exist.
         \throw std::runtime_error if error occured while loading entries data.
     */
-    void loadEntries(Playlist& playlist); // throws std::runtime_error
+    void loadEntries(PlaylistID playlist_id); // throws std::runtime_error
 
     //! Loads playlist by AIMP internal index.
-    Playlist loadPlaylist(int playlist_index); // throws std::runtime_error
+    void loadPlaylist(int playlist_index); // throws std::runtime_error
 
     //! initializes all requiered for work AIMP SDK interfaces.
     void initializeAIMPObjects(); // throws std::runtime_error
@@ -153,8 +155,6 @@ private:
     boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp2_playlist_manager_;  //!< to work with playlists and tracks.
     boost::intrusive_ptr<AIMP2SDK::IAIMP2Extended>         aimp2_extended_;          //!< to work aimp miscellaneous aspects.
     boost::intrusive_ptr<AIMP2SDK::IAIMP2CoverArtManager>  aimp2_cover_art_manager_; //!< to work with track's album covers.
-
-    PlaylistsListType playlists_; //!< playlists list. Currently it is map of playlist ID to Playlist object.
 
     //! type for internal AIMP events notifiers. Maps internal AIMP event ID to string description of this ID.
     typedef std::map<int, std::string> CallbackIdNameMap;
@@ -180,7 +180,7 @@ private:
     void shutdownPlaylistDB();
     void deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id);
     void deletePlaylistFromPlaylistDB(PlaylistID playlist_id);
-    void updatePlaylistCrcInDB(const Playlist& playlist);
+    void updatePlaylistCrcInDB(PlaylistID playlist_id, crc32_t crc32); // throws std::runtime_error
 
     // types for notifications of external event listeners.
     typedef std::map<EventsListenerID, EventsListener> EventListeners;
@@ -189,6 +189,10 @@ private:
     EventsListenerID next_listener_id_; //!< unique ID describes external listener.
 
     sqlite3* playlists_db_;
+
+    PlaylistCRC32& getPlaylistCRC32Object(PlaylistID playlist_id) const; // throws std::runtime_error
+    typedef std::map<PlaylistID, PlaylistCRC32> PlaylistCRC32List;
+    mutable PlaylistCRC32List playlist_crc32_list_;
 
     // These class were made friend only for easy emulate web ctl plugin behavior. Remove when possible.
     friend class AimpRpcMethods::EmulationOfWebCtlPlugin;
@@ -203,5 +207,17 @@ AIMP2SDK_STATUS cast(AIMPManager::STATUS status); // throws std::bad_cast
 
 template<>
 AIMPManager26::STATUS cast(AIMP2SDK_STATUS status); // throws std::bad_cast
+
+template<typename T>
+T getEntryField(sqlite3* db, const char* field, TrackDescription track_desc);
+
+template<>
+std::wstring getEntryField(sqlite3* db, const char* field, TrackDescription track_desc);
+
+template<>
+DWORD getEntryField(sqlite3* db, const char* field, TrackDescription track_desc);
+
+template<>
+INT64 getEntryField(sqlite3* db, const char* field, TrackDescription track_desc);
 
 } // namespace AIMPPlayer

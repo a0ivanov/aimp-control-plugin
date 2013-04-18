@@ -46,7 +46,7 @@ private:
     void initializeAIMPObjects(); // throws std::runtime_error
     void initPlaylistDB(); // throws std::runtime_error
 
-    TrackDescription getTrackDescOfQueuedEntry(AIMP3SDK::HPLSENTRY entry_id) const; // throws std::runtime_error;
+    TrackDescription getTrackDescOfQueuedEntry(AIMP3SDK::HPLSENTRY entry_handle) const; // throws std::runtime_error;
     void deleteQueuedEntriesFromPlaylistDB();
 
     boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistQueue> aimp3_playlist_queue_;

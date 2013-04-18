@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "utils.h"
+#include "../aimp/manager_impl_common.h"
 
 namespace {
 using namespace ControlPlugin::PluginLogger;
@@ -128,27 +129,44 @@ void setControlPanelInfo(const AIMPManager& aimp_manager, Rpc::Value& result)
 
 void setPlaylistsContentChangeInfo(const AIMPPlayer::AIMPManager& aimp_manager, Rpc::Value& result)
 {
-    result["playlists_changed"] = true;
-    
-    Rpc::Value& playlists_rpc = result["playlists"];
-    const auto& playlists = aimp_manager.getPlayLists();
-    playlists_rpc.setSize( playlists.size() );
+    using namespace Utilities;
 
-    int i = 0;
-    for (const auto& id_playlist_pair : playlists) {
-        Rpc::Value& playlist_rpc = playlists_rpc[i++];
-        const auto& playlist = id_playlist_pair.second;
-        playlist_rpc["id"] = playlist.id();
-        playlist_rpc["crc32"] = static_cast<int>( playlist.crc32() );
-    }
-     // ??? result["playlist_id_to_reload"];
+    std::ostringstream query;
+    query << "SELECT id, crc32 FROM Playlists";
+
+    sqlite3* db = AIMPPlayer::getPlaylistsDB(aimp_manager);
+    sqlite3_stmt* stmt = createStmt( db, query.str() );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    result["playlists_changed"] = true;
+    Rpc::Value& playlists_rpc = result["playlists"];
+
+    for(int playlist_index = 0; ; ++playlist_index) {
+		int rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+            playlists_rpc.setSize(playlist_index + 1);
+            Rpc::Value& playlist_rpc = playlists_rpc[playlist_index];
+            const PlaylistID id = sqlite3_column_int(stmt, 0);
+            crc32_t crc32       = sqlite3_column_int(stmt, 1);
+            playlist_rpc["id"] = id;
+            playlist_rpc["crc32"] = static_cast<int>(crc32); // static_cast<int>( aimp_manager.getPlaylistCRC32(id) ); 
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                 << rc_db << ": " << sqlite3_errmsg(db)
+                                                 << ". Query: " << query.str();
+            throw std::runtime_error(msg);
+		}
+    }    
 }
 
 const std::string& getStringFieldID(PlaylistEntry::FIELD_IDs id)
 {
     // Notice, order and count of should be syncronized with PlaylistEntry::FIELD_IDs.
-    static std::string fields_ids[] = {"id", "title", "artist", "album", "date", "genre", "bitrate", "duration", "filename", "filesize", "rating", "internal_aimp_id", "activity_flag" };
-    //enum PlaylistEntry::FIELD_IDs   { ID,   TITLE,   ARTIST,   ALBUM,   DATE,   GENRE,   BITRATE,   DURATION,   FILENAME,   FILESIZE,   RATING,   INTERNAL_AIMP_ID,   ACTIVITY_FLAG,   FIELDS_COUNT };
+    static std::string fields_ids[] = {"id", "album", "artist", "date", "filename", "genre", "title", "bitrate", "channels_count", "duration", "filesize", "rating", "samplerate" };
+    //enum PlaylistEntry::FIELD_IDs   { ID,  ALBUM,   ARTIST,   DATE,   FILENAME,   GENRE,   TITLE,   BITRATE,   CHANNELS_COUNT,   DURATION,   FILESIZE,   RATING,    SAMPLE_RATE }
+    
     Utilities::AssertArraySize<PlaylistEntry::FIELDS_COUNT>(fields_ids);
     assert(0 <= id && id < PlaylistEntry::FIELDS_COUNT);
     return fields_ids[id];

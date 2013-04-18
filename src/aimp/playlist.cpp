@@ -2,130 +2,32 @@
 
 #include "stdafx.h"
 #include "aimp/playlist.h"
-#include "aimp/common_types.h"
-#include "plugin/logger.h"
-#include "utils/string_encoding.h"
-#include <boost/crc.hpp>
 #include "utils/util.h"
 
-namespace {
-using namespace ControlPlugin::PluginLogger;
-ModuleLoggerType& logger()
-    { return getLogManager().getModuleLogger<AIMPPlayer::AIMPManager>(); }
-}
+namespace AIMPPlayer {
 
-namespace AIMPPlayer
-{
-
-Playlist::Playlist()
-    : 
-    entries_( boost::make_shared<EntriesListType>() ),
-    crc32_total_(0),
-    crc32_properties_(0),
-    crc32_entries_(0)
+PlaylistCRC32::PlaylistCRC32(PlaylistID playlist_id, sqlite3* playlist_db)
+    :
+    playlist_id_(playlist_id),
+    playlist_db_(playlist_db),
+    crc32_total_(kCRC32_UNINITIALIZED),
+    crc32_properties_(kCRC32_UNINITIALIZED),
+    crc32_entries_(kCRC32_UNINITIALIZED)
 {}
 
-Playlist::Playlist( const WCHAR* title,
-                    DWORD file_count,
-                    INT64 duration,
-                    INT64 size_of_all_entries_in_bytes,
-                    PlaylistID id
-                   )
-    :
-    title_(title),
-    file_count_(file_count),
-    duration_(duration),
-    size_of_all_entries_in_bytes_(size_of_all_entries_in_bytes),
-    id_(id),
-    entries_( boost::make_shared<EntriesListType>() ),
-    crc32_total_(0),
-    crc32_properties_(0),
-    crc32_entries_(0)
+crc32_t PlaylistCRC32::crc32()
 {
-}
-
-Playlist::Playlist(Playlist&& rhs)
-    :
-    title_( std::move(rhs.title_) ),
-    file_count_(rhs.file_count_),
-    duration_(rhs.duration_),
-    size_of_all_entries_in_bytes_(rhs.size_of_all_entries_in_bytes_),
-    id_(rhs.id_),
-    entries_( std::move(rhs.entries_) ),
-    crc32_total_(rhs.crc32_total_),
-    crc32_properties_(rhs.crc32_properties_),
-    crc32_entries_(rhs.crc32_entries_)
-{}
-
-Playlist& Playlist::operator=(Playlist&& rhs)
-{
-    Playlist tmp( std::move(rhs) );
-    swap(tmp);
-    return *this;
-}
-
-void Playlist::swap(Playlist& rhs)
-{
-    using std::swap;
-    swap(title_, rhs.title_);
-    swap(file_count_, rhs.file_count_);
-    swap(duration_, rhs.duration_);
-    swap(size_of_all_entries_in_bytes_, rhs.size_of_all_entries_in_bytes_);
-    swap(id_, rhs.id_);
-    swap(entries_, rhs.entries_);
-    swap(crc32_total_, rhs.crc32_total_);
-    swap(crc32_properties_, rhs.crc32_properties_);
-    swap(crc32_entries_, rhs.crc32_entries_);
-}
-
-const EntriesListType& Playlist::entries() const
-{
-    assert(entries_);
-    return *entries_;
-}
-
-EntriesListType& Playlist::entries()
-{
-    assert(entries_);
-    crc32_entries_ = crc32_total_ = 0;
-    return *entries_;
-}
-
-crc32_t Playlist::calc_crc32_properties() const
-{
-    const crc32_t members_crc32_list [] = {
-        Utilities::crc32( title() ),
-        Utilities::crc32( entriesCount() ),
-        Utilities::crc32( duration() ),
-        Utilities::crc32( sizeOfAllEntriesInBytes() )
-    };
-
-    return Utilities::crc32( &members_crc32_list[0], sizeof(members_crc32_list) );
-}
-
-crc32_t Playlist::calc_crc32_entries() const
-{
-    boost::crc_32_type crc32_calculator;
-    for(const AIMPPlayer::PlaylistEntry& entry : entries()) {
-        const crc32_t crc = entry.crc32();
-        crc32_calculator.process_bytes( &crc, sizeof(crc) );
-    }
-    return crc32_calculator.checksum();
-}
-
-crc32_t Playlist::crc32() const
-{
-    if (crc32_properties_ == 0) {
+    if (crc32_properties_ == kCRC32_UNINITIALIZED) {
         crc32_properties_ = calc_crc32_properties();
-        crc32_total_ = 0;
+        crc32_total_ = kCRC32_UNINITIALIZED;
     }
 
-    if (crc32_entries_ == 0) {
+    if (crc32_entries_ == kCRC32_UNINITIALIZED) {
         crc32_entries_ = calc_crc32_entries();
-        crc32_total_ = 0;
+        crc32_total_ = kCRC32_UNINITIALIZED;
     }
 
-    if (crc32_total_ == 0) {
+    if (crc32_total_ == kCRC32_UNINITIALIZED) {
         // if crc32 was not passed as parameter, calc it here
         const crc32_t crc32_list[] = {
             crc32_properties_,
@@ -136,5 +38,105 @@ crc32_t Playlist::crc32() const
     }
     return crc32_total_;
 }
+
+crc32_t crc32_text16(const void* text16) 
+{
+    const wchar_t* text = static_cast<const wchar_t*>(text16);
+    return Utilities::crc32( text, wcslen(text) * sizeof(text[0]) );
+}
+
+crc32_t PlaylistCRC32::calc_crc32_properties()
+{
+    using namespace Utilities;
+
+    std::ostringstream query;
+    query << "SELECT title, entries_count, duration, size_of_entries FROM Playlists WHERE id=" << playlist_id_;
+
+    sqlite3* db = playlist_db_;
+    sqlite3_stmt* stmt = createStmt( db, query.str() );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    for(;;) {
+		int rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+            assert(sqlite3_column_count(stmt) == 4);
+
+            const crc32_t members_crc32_list [] = {
+                    crc32_text16( sqlite3_column_text16(stmt, 0) ),
+                Utilities::crc32( sqlite3_column_int   (stmt, 1) ),
+                Utilities::crc32( sqlite3_column_int64 (stmt, 2) ),
+                Utilities::crc32( sqlite3_column_int64 (stmt, 3) )
+            };
+
+            return Utilities::crc32( &members_crc32_list[0], sizeof(members_crc32_list) );
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                 << rc_db << ": " << sqlite3_errmsg(db)
+                                                 << ". Query: " << query.str();
+            throw std::runtime_error(msg);
+		}
+    }
+    throw std::runtime_error(MakeString() << "Playlist " << playlist_id_ << " is not found in "__FUNCTION__);
+}
+
+crc32_t crc32_entry(sqlite3_stmt* stmt);
+
+crc32_t PlaylistCRC32::calc_crc32_entries()
+{
+    using namespace Utilities;
+
+    std::ostringstream query;
+    query << "SELECT "
+          << "album, artist, date, filename, genre, title, bitrate, channels_count, duration, filesize, rating, samplerate"
+          << " FROM PlaylistsEntries WHERE playlist_id=" << playlist_id_;
+
+    sqlite3* db = playlist_db_;
+    sqlite3_stmt* stmt = createStmt( db, query.str() );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    boost::crc_32_type crc32_calculator;
+    for(;;) {
+		int rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+            const crc32_t crc = crc32_entry(stmt);
+            crc32_calculator.process_bytes( &crc, sizeof(crc) );
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                 << rc_db << ": " << sqlite3_errmsg(db)
+                                                 << ". Query: " << query.str();
+            throw std::runtime_error(msg);
+		}
+    }
+
+    return crc32_calculator.checksum();
+}
+
+crc32_t crc32_entry(sqlite3_stmt* stmt)
+{
+    assert(sqlite3_column_count(stmt) == 12);
+
+    using namespace Utilities;
+    const crc32_t members_crc32_list [] = {
+            crc32_text16( sqlite3_column_text16(stmt, 0) ),
+            crc32_text16( sqlite3_column_text16(stmt, 1) ),
+            crc32_text16( sqlite3_column_text16(stmt, 2) ),
+            crc32_text16( sqlite3_column_text16(stmt, 3) ),
+            crc32_text16( sqlite3_column_text16(stmt, 4) ),
+            crc32_text16( sqlite3_column_text16(stmt, 5) ),
+                          sqlite3_column_int   (stmt, 6),
+                          sqlite3_column_int   (stmt, 7),
+                          sqlite3_column_int   (stmt, 8),
+        Utilities::crc32( sqlite3_column_int64 (stmt, 9) ),
+                          sqlite3_column_int   (stmt,10),
+                          sqlite3_column_int   (stmt,11),
+    };
+
+    return Utilities::crc32( &members_crc32_list[0], sizeof(members_crc32_list) );
+}
+
 
 } // namespace AIMPPlayer
