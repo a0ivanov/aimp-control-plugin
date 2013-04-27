@@ -14,13 +14,16 @@ namespace Http {
 request_parser::request_parser()
     :
     content_length_(0),
-    state_(method_start)
+    state_(method_start),
+    content_consumed_(0)
 {
 }
 
 void request_parser::reset()
 {
     state_ = method_start;
+    mpfd_parser_ = nullptr;
+    content_consumed_ = 0;
 }
 
 std::string request_parser::content_length_name_ = "Content-Length";
@@ -222,7 +225,7 @@ boost::tribool request_parser::consume(Request& req, char input)
                 if ( headers_equal(req.headers[i].name, content_length_name_) ) {
                     try {
                         content_length_ = boost::lexical_cast<std::size_t>(req.headers[i].value);
-                        state_ = content;
+                        state_ = select_content_parser;
                         return boost::indeterminate;
                     } catch (boost::bad_lexical_cast&) {
                         return false;
@@ -233,6 +236,24 @@ boost::tribool request_parser::consume(Request& req, char input)
         } else {
             return false;
         }
+    case select_content_parser: {
+        state_ = content;
+
+        auto content_type_header = [](const header& h) {
+            return h.name == "Content-Type"; /// TODO: use std::string.
+        };
+        const auto header_it = std::find_if(req.headers.begin(), req.headers.end(), content_type_header);
+        if (header_it != req.headers.end()) {
+            if (boost::starts_with(header_it->value, "multipart/form-data;")) { /// TODO: use std::string.
+                mpfd_parser_ = std::unique_ptr<mpfd_parser>(new mpfd_parser());
+                mpfd_parser_->SetUploadedFilesStorage(mpfd_parser::StoreUploadedFilesInMemory);
+                mpfd_parser_->SetMaxCollectedDataLength(20*1024);
+                mpfd_parser_->SetContentType(header_it->value);
+                state_ = content_multipart_formdata;
+            }
+        }
+        return boost::indeterminate;
+                                }
     case content:
         // Content.
         if (req.content.size() < content_length_) {
@@ -242,6 +263,9 @@ boost::tribool request_parser::consume(Request& req, char input)
             }
             return boost::indeterminate;
         }
+        return false;
+    case content_multipart_formdata:
+        assert(!"mpfd must not be processed by one char");
         return false;
     default:
         return false;

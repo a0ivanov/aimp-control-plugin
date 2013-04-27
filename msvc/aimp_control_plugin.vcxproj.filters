@@ -53,6 +53,12 @@
     <Filter Include="src\sqlite">
       <UniqueIdentifier>{49dc5284-c8e9-471f-9f24-a4cf8fc422ad}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\http server\mpfd_parser">
+      <UniqueIdentifier>{2ab640e7-bfb4-4d20-91dd-88c48d8fd09d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\upload_track">
+      <UniqueIdentifier>{cfb236ae-471d-4b79-bd2e-90fc7c84e0a7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\stdafx.cpp">
@@ -171,6 +177,18 @@
     </ClCompile>
     <ClCompile Include="..\src\aimp\manager3.1.cpp">
       <Filter>src\aimp_manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\http_server\mpfd_parser\Exception.cpp">
+      <Filter>src\http server\mpfd_parser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\http_server\mpfd_parser\Field.cpp">
+      <Filter>src\http server\mpfd_parser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\http_server\mpfd_parser\Parser.cpp">
+      <Filter>src\http server\mpfd_parser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\upload_track\upload_track_request_handler.cpp">
+      <Filter>src\upload_track</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -368,6 +386,18 @@
     </ClInclude>
     <ClInclude Include="..\src\aimp\aimp3_util.h">
       <Filter>src\aimp_manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\http_server\mpfd_parser\Exception.h">
+      <Filter>src\http server\mpfd_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\http_server\mpfd_parser\Field.h">
+      <Filter>src\http server\mpfd_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\http_server\mpfd_parser\Parser.h">
+      <Filter>src\http server\mpfd_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\upload_track\request_handler.h">
+      <Filter>src\upload_track</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

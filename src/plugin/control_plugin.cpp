@@ -17,6 +17,7 @@
 #include "http_server/request_handler.h"
 #include "http_server/server.h"
 #include "download_track/request_handler.h"
+#include "upload_track/request_handler.h"
 #include "utils/string_encoding.h"
 
 #include <FreeImagePlus.h>
@@ -389,12 +390,14 @@ HRESULT AIMPControlPlugin::initialize()
         createRpcMethods();
 
         download_track_request_handler_.reset( new DownloadTrack::RequestHandler(*aimp_manager_) );
+        upload_track_request_handler_.reset( new UploadTrack::RequestHandler(*aimp_manager_) );
 
         using namespace StringEncoding;
         // create HTTP request handler.
         http_request_handler_.reset( new Http::RequestHandler( utf16_to_system_ansi_encoding( getWebServerDocumentRoot().native() ),
                                                                *rpc_request_handler_,
-                                                               *download_track_request_handler_
+                                                               *download_track_request_handler_,
+                                                               *upload_track_request_handler_
                                                               )
                                     );
         // create XMLRPC server.
@@ -441,6 +444,8 @@ HRESULT AIMPControlPlugin::Finalize()
     http_request_handler_.reset();
 
     download_track_request_handler_.reset();
+
+    upload_track_request_handler_.reset();
 
     rpc_request_handler_.reset();
 

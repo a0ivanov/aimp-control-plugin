@@ -16,8 +16,9 @@
 // headers for DelayedResponseSender class
 #include <boost/enable_shared_from_this.hpp>
 
-namespace Rpc { class RequestHandler; }
+namespace Rpc           { class RequestHandler; }
 namespace DownloadTrack { class RequestHandler; }
+namespace UploadTrack   { class RequestHandler; }
 
 namespace Http
 {
@@ -35,11 +36,13 @@ public:
     /// Construct with document root directory and Rpc handler.
     explicit RequestHandler(const std::string& document_root,
                             Rpc::RequestHandler& rpc_request_handler,
-                            DownloadTrack::RequestHandler& download_track_request_handler)
+                            DownloadTrack::RequestHandler& download_track_request_handler,
+                            UploadTrack::RequestHandler& upload_track_request_handler)
         :
         document_root_(document_root),
         rpc_request_handler_(rpc_request_handler),
-        download_track_request_handler_(download_track_request_handler)
+        download_track_request_handler_(download_track_request_handler),
+        upload_track_request_handler_(upload_track_request_handler)
     {}
 
     /*
@@ -68,6 +71,7 @@ private:
 
     Rpc::RequestHandler& rpc_request_handler_;
     DownloadTrack::RequestHandler& download_track_request_handler_;
+    UploadTrack::RequestHandler& upload_track_request_handler_;
 };
 
 

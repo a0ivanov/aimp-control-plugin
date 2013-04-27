@@ -131,6 +131,9 @@
     <ClCompile Include="..\src\http_server\http_request_handler.cpp" />
     <ClCompile Include="..\src\http_server\http_request_parser.cpp" />
     <ClCompile Include="..\src\http_server\mime_types.cpp" />
+    <ClCompile Include="..\src\http_server\mpfd_parser\Exception.cpp" />
+    <ClCompile Include="..\src\http_server\mpfd_parser\Field.cpp" />
+    <ClCompile Include="..\src\http_server\mpfd_parser\Parser.cpp" />
     <ClCompile Include="..\src\http_server\reply.cpp" />
     <ClCompile Include="..\src\http_server\server.cpp" />
     <ClCompile Include="..\src\jsonrpc\jsonrpc_request_parser.cpp" />
@@ -161,6 +164,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\src\upload_track\upload_track_request_handler.cpp" />
     <ClCompile Include="..\src\utils\base64.cpp" />
     <ClCompile Include="..\src\utils\image.cpp" />
     <ClCompile Include="..\src\utils\string_encoding.cpp" />
@@ -197,6 +201,9 @@
     <ClInclude Include="..\src\http_server\connection.h" />
     <ClInclude Include="..\src\http_server\header.h" />
     <ClInclude Include="..\src\http_server\mime_types.h" />
+    <ClInclude Include="..\src\http_server\mpfd_parser\Exception.h" />
+    <ClInclude Include="..\src\http_server\mpfd_parser\Field.h" />
+    <ClInclude Include="..\src\http_server\mpfd_parser\Parser.h" />
     <ClInclude Include="..\src\http_server\reply.h" />
     <ClInclude Include="..\src\http_server\request.h" />
     <ClInclude Include="..\src\http_server\request_handler.h" />
@@ -223,6 +230,7 @@
     <ClInclude Include="..\src\sqlite\sqlite.h" />
     <ClInclude Include="..\src\sqlite\sqlite_unicode.h" />
     <ClInclude Include="..\src\stdafx.h" />
+    <ClInclude Include="..\src\upload_track\request_handler.h" />
     <ClInclude Include="..\src\utils\base64.h" />
     <ClInclude Include="..\src\utils\image.h" />
     <ClInclude Include="..\src\utils\iunknown_impl.h" />

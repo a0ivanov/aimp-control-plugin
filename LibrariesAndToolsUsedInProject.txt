@@ -20,6 +20,8 @@ FreeImage is used under the (GNU GPL or FIPL), version (license version).
 http://www.sqlite.org
 Great thanks to ioannis(http://www.mail-archive.com/sqlite-users@sqlite.org/msg30403.html) for sqlite3_unicode.c.
 
+6) MPFDParser
+http://grigory.info/MPFDParser.About.html
 
 Client code uses:
 
