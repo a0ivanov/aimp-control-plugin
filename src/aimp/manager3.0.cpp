@@ -1666,4 +1666,16 @@ void AIMPManager30::deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id)
     executeQuery(query, playlists_db_, __FUNCTION__);
 }
 
+void AIMPManager30::addFileToPlaylist(const boost::filesystem::wpath& path, PlaylistID playlist_id) // throws std::runtime_error
+{
+    boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistStrings> strings( new AIMP3SDK::TAIMPAddonsPlaylistStrings() );
+    strings->ItemAdd(const_cast<PWCHAR>(path.native().c_str()), nullptr);
+
+    const AIMP3SDK::HPLS playlist_handle = cast<AIMP3SDK::HPLS>( getAbsolutePlaylistID(playlist_id) );
+    HRESULT r = aimp3_playlist_manager_->StorageAddEntries( playlist_handle, strings.get() );
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << "IAIMPAddonsPlaylistManager::StorageAddEntries() failed. Result " << r);
+    }
+}
+
 } // namespace AIMPPlayer

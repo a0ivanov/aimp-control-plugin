@@ -9,7 +9,6 @@
 #include <string>
 #include <boost/logic/tribool.hpp>
 #include <boost/tuple/tuple.hpp>
-#include "mpfd_parser/Parser.h"
 
 namespace Http {
 
@@ -67,13 +66,11 @@ private:
         if (content_consumed_ < content_length_) {   
             assert(begin <= end);
             const std::size_t length = std::distance(begin, end);
-            assert(mpfd_parser_);
-            mpfd_parser_->AcceptSomeData(begin, length);
+            req.mpfd_parser.AcceptSomeData(begin, length);
             content_consumed_ += length;
             boost::tribool result = boost::indeterminate;
             if (content_consumed_ == content_length_) {
                 result = true; // all content has been consumed, stop parsing.
-                req;
             }
             return boost::make_tuple(result, end);
         }
@@ -136,8 +133,6 @@ private:
         content_multipart_formdata
     } state_;
 
-    typedef MPFD::Parser mpfd_parser;
-    std::unique_ptr<mpfd_parser> mpfd_parser_;
     std::size_t content_consumed_;
 };
 

@@ -22,7 +22,6 @@ request_parser::request_parser()
 void request_parser::reset()
 {
     state_ = method_start;
-    mpfd_parser_ = nullptr;
     content_consumed_ = 0;
 }
 
@@ -245,10 +244,9 @@ boost::tribool request_parser::consume(Request& req, char input)
         const auto header_it = std::find_if(req.headers.begin(), req.headers.end(), content_type_header);
         if (header_it != req.headers.end()) {
             if (boost::starts_with(header_it->value, "multipart/form-data;")) { /// TODO: use std::string.
-                mpfd_parser_ = std::unique_ptr<mpfd_parser>(new mpfd_parser());
-                mpfd_parser_->SetUploadedFilesStorage(mpfd_parser::StoreUploadedFilesInMemory);
-                mpfd_parser_->SetMaxCollectedDataLength(20*1024);
-                mpfd_parser_->SetContentType(header_it->value);
+                req.mpfd_parser.SetUploadedFilesStorage(Request::mpfd_parser_t::StoreUploadedFilesInMemory);
+                req.mpfd_parser.SetMaxCollectedDataLength(20*1024);
+                req.mpfd_parser.SetContentType(header_it->value);
                 state_ = content_multipart_formdata;
             }
         }

@@ -390,7 +390,13 @@ HRESULT AIMPControlPlugin::initialize()
         createRpcMethods();
 
         download_track_request_handler_.reset( new DownloadTrack::RequestHandler(*aimp_manager_) );
-        upload_track_request_handler_.reset( new UploadTrack::RequestHandler(*aimp_manager_) );
+
+        {
+        const fs::wpath temp_dir_to_store_tracks_being_added = fs::temp_directory_path() / kPLUGIN_SHORT_NAME;
+        fs::create_directories(temp_dir_to_store_tracks_being_added);
+
+        upload_track_request_handler_.reset( new UploadTrack::RequestHandler(*aimp_manager_, temp_dir_to_store_tracks_being_added) );
+        }
 
         using namespace StringEncoding;
         // create HTTP request handler.

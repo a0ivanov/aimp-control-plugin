@@ -38,6 +38,8 @@ namespace MPFD {
 
         std::map<std::string, Field *> GetFieldsMap();
 
+        const std::map<std::string, Field *> GetFieldsMap() const;
+
     private:
         int WhereToStoreUploadedFiles;
 

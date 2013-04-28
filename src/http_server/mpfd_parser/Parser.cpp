@@ -12,6 +12,10 @@ std::map<std::string, MPFD::Field *> MPFD::Parser::GetFieldsMap() {
     return Fields;
 }
 
+const std::map<std::string, MPFD::Field *> MPFD::Parser::GetFieldsMap() const {
+    return Fields;
+}
+
 MPFD::Parser::Parser() {
     DataCollector = NULL;
     DataCollectorLength = 0;
