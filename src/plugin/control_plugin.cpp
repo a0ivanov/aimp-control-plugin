@@ -90,9 +90,9 @@ PluginLogger::LogManager& AIMPControlPlugin::getLogManager()
     return plugin_instance->plugin_logger_;
 }
 
-PluginSettings::Manager& AIMPControlPlugin::getSettingsManager()
+const PluginSettings::Settings& AIMPControlPlugin::settings()
 {
-    return plugin_instance->settings_manager_;
+    return plugin_instance->settings_manager_.settings();
 }
 
 AIMPControlPlugin::AIMPControlPlugin()
@@ -291,17 +291,17 @@ void AIMPControlPlugin::loadSettings()
 
 void AIMPControlPlugin::initializeLogger()
 {
-    if (settings_manager_.settings().logger.severity_level < PluginLogger::severity_levels_count) {
-        plugin_logger_.setSeverity(settings_manager_.settings().logger.severity_level);
+    if (settings().logger.severity_level < PluginLogger::severity_levels_count) {
+        plugin_logger_.setSeverity(settings().logger.severity_level);
         // get absolute path to log directory.
-        boost::filesystem::wpath log_directory = settings_manager_.settings().logger.directory;
+        boost::filesystem::wpath log_directory = settings().logger.directory;
         if ( !log_directory.is_complete() ) {
             log_directory = plugin_work_directory_ / log_directory;
         }
 
         try {
             plugin_logger_.startLog(log_directory,
-                                    settings_manager_.settings().logger.modules_to_log
+                                    settings().logger.modules_to_log
                                    );
         } catch (FileLogError& e) {
             // file log is impossible.
@@ -397,7 +397,7 @@ HRESULT AIMPControlPlugin::initialize()
 
             upload_track_request_handler_.reset( new UploadTrack::RequestHandler(*aimp_manager_,
                                                                                  temp_dir_to_store_tracks_being_added,
-                                                                                 settings_manager_.settings().misc.enable_track_upload
+                                                                                 settings().misc.enable_track_upload
                                                                                  )
                                                 );
         }
@@ -412,8 +412,8 @@ HRESULT AIMPControlPlugin::initialize()
                                     );
         // create XMLRPC server.
         server_.reset(new Http::Server( *server_io_service_,
-                                        settings_manager_.settings().http_server.ip_to_bind,
-                                        settings_manager_.settings().http_server.port,
+                                        settings().http_server.ip_to_bind,
+                                        settings().http_server.port,
                                         *http_request_handler_
                                        )
                       );
@@ -650,7 +650,7 @@ boost::filesystem::wpath AIMPControlPlugin::getWebServerDocumentRoot() const // 
 {
     // get document root from settings.
     namespace fs = boost::filesystem;
-    fs::wpath document_root_path = settings_manager_.settings().http_server.document_root;
+    fs::wpath document_root_path = settings().http_server.document_root;
     if ( !document_root_path.is_complete() ) {
         document_root_path = plugin_work_directory_ / document_root_path;
     }

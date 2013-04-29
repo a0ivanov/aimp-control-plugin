@@ -36,7 +36,7 @@ void RequestHandler::trySendInitCookies(const Request& req, Reply& rep)
         )
     {
         using namespace ControlPlugin::PluginSettings;
-        const Settings& settings = ControlPlugin::AIMPControlPlugin::getSettingsManager().settings();
+        const Settings& settings = ControlPlugin::AIMPControlPlugin::settings();
         BOOST_FOREACH(auto& cookie_namevalue, settings.http_server.init_cookies) {
             rep.headers.push_back(header());
             header& h = rep.headers.back();
