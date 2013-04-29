@@ -90,6 +90,10 @@ public:
 
     virtual int trackRating(TrackDescription track_desc) const; // throws std::runtime_error
 
+    virtual void addFileToPlaylist(const boost::filesystem::wpath& path, PlaylistID playlist_id); // throws std::runtime_error
+    
+    virtual PlaylistID createPlaylist(const std::wstring& title);
+
     // AIMP3 specific functionality, not supported by AIMP2.
 
     /*!
@@ -104,10 +108,6 @@ public:
         { return playlists_db_; }
     sqlite3* playlists_db() const
         { return playlists_db_; }
-
-    virtual void addFileToPlaylist(const boost::filesystem::wpath& path, PlaylistID playlist_id); // throws std::runtime_error
-    
-    virtual PlaylistID createPlaylist(const std::wstring& title);
 
 private:
 

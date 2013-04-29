@@ -91,6 +91,10 @@ public:
 
     virtual int trackRating(TrackDescription track_desc) const; // throws std::runtime_error
 
+    virtual void addFileToPlaylist(const boost::filesystem::wpath& path, PlaylistID playlist_id); // throws std::runtime_error
+    
+    virtual PlaylistID createPlaylist(const std::wstring& title);
+
     virtual void saveCoverToFile(TrackDescription track_desc, const std::wstring& filename, int cover_width = 0, int cover_height = 0) const; // throw std::runtime_error
 
     virtual EventsListenerID registerListener(EventsListener listener);

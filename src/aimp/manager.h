@@ -261,6 +261,11 @@ public:
     */
     virtual int trackRating(TrackDescription track_desc) const = 0; // throws std::runtime_error
 
+    virtual void addFileToPlaylist(const boost::filesystem::wpath& path, PlaylistID playlist_id) = 0; // throws std::runtime_error
+    
+    virtual PlaylistID createPlaylist(const std::wstring& title) = 0;
+
+
     /*!
         \brief Registers notifier which will be called when specified event will occur.
                Client must call unRegisterListener() with gained ID to unsubscribe from notifications.

@@ -21,6 +21,45 @@ namespace fs = boost::filesystem;
 
 const wchar_t * const kPlaylistTitle = L"Control plugin";
 
+void fill_reply_disabled(Http::Reply& rep);
+
+bool RequestHandler::handle_request(const Http::Request& req, Http::Reply& rep)
+{
+    using namespace Http;
+
+    if (!enabled_) {
+        fill_reply_disabled(rep);
+        return true;
+    }
+
+    try {
+        for (auto field_it : req.mpfd_parser.GetFieldsMap()) {
+            const MPFD::Field& field_const = *field_it.second;
+            MPFD::Field& field = const_cast<MPFD::Field&>(field_const);
+
+            const std::string filename = field.GetFileName();
+            const fs::wpath path = temp_dir_ / filename;
+
+            { // save to temp dir.
+            std::ofstream out(path.native(), std::ios_base::out | std::ios_base::binary);
+            out.write(field.GetFileContent(), field.GetFileContentSize());
+            out.close();
+            }
+                
+            aimp_manager_.addFileToPlaylist(path, getTargetPlaylist());
+
+            // we should not erase file since AIMP will use it.
+            //fs::remove(path);
+        }
+        rep = Reply::stock_reply(Reply::ok);
+    } catch (MPFD::Exception&) {
+        rep = Reply::stock_reply(Reply::bad_request);
+    } catch (std::exception&) {
+        rep = Reply::stock_reply(Reply::forbidden);
+    }
+    return true;
+}
+
 void fill_reply_disabled(Http::Reply& rep)
 {
     rep.status = Http::Reply::forbidden;
@@ -32,66 +71,22 @@ void fill_reply_disabled(Http::Reply& rep)
     rep.headers[1].value = "text/html";
 }
 
-bool RequestHandler::handle_request(const Http::Request& req, Http::Reply& rep)
-{
-    using namespace Http;
-
-    if (!enabled_) {
-        fill_reply_disabled(rep);
-        return true;
-    }
-
-    if ( AIMPPlayer::AIMPManager30* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager30*>(&aimp_manager_) ) {
-        try {
-            for (auto field_it : req.mpfd_parser.GetFieldsMap()) {
-                const MPFD::Field& field_const = *field_it.second;
-                MPFD::Field& field = const_cast<MPFD::Field&>(field_const);
-
-                const std::string filename = field.GetFileName();
-                const fs::wpath path = temp_dir_ / filename;
-
-                { // save to temp dir.
-                std::ofstream out(path.native(), std::ios_base::out | std::ios_base::binary);
-                out.write(field.GetFileContent(), field.GetFileContentSize());
-                out.close();
-                }
-                
-                aimp3_manager->addFileToPlaylist(path, getTargetPlaylist());
-
-                // we should not erase file since AIMP will use it.
-                //fs::remove(path);
-                
-            }
-            rep = Reply::stock_reply(Reply::ok);
-        } catch (MPFD::Exception&) {
-            rep = Reply::stock_reply(Reply::bad_request);
-        } catch (std::exception&) {
-            rep = Reply::stock_reply(Reply::forbidden);
-        }
-    }
-    return true;
-}
-
 bool getPlaylistByTitle(sqlite3* db, const char* title, PlaylistID* playlist_id);
 
 int RequestHandler::getTargetPlaylist()
 {
-    if ( AIMPPlayer::AIMPManager30* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager30*>(&aimp_manager_) ) {
-        if (!target_playlist_id_created_) {
-            if (!getPlaylistByTitle(getPlaylistsDB(aimp_manager_),
-                                    StringEncoding::utf16_to_utf8(kPlaylistTitle).c_str(),
-                                    &target_playlist_id_)
-                )
-            {
-                target_playlist_id_ = aimp3_manager->createPlaylist(kPlaylistTitle);
-            }
-            
-            target_playlist_id_created_ = true;
+    if (!target_playlist_id_created_) {
+        if (!getPlaylistByTitle(getPlaylistsDB(aimp_manager_),
+                                StringEncoding::utf16_to_utf8(kPlaylistTitle).c_str(),
+                                &target_playlist_id_)
+            )
+        {
+            target_playlist_id_ = aimp_manager_.createPlaylist(kPlaylistTitle);
         }
-        return target_playlist_id_;
+            
+        target_playlist_id_created_ = true;
     }
-
-    throw std::runtime_error(__FUNCTION__": AIMP3 is supported only.");
+    return target_playlist_id_;
 }
 
 bool getPlaylistByTitle(sqlite3* db, const char* title, PlaylistID* playlist_id)

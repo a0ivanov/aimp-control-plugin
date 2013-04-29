@@ -1808,4 +1808,26 @@ void AIMPManager26::deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id)
     }
 }
 
+void AIMPManager26::addFileToPlaylist(const boost::filesystem::wpath& path, PlaylistID playlist_id) // throws std::runtime_error
+{
+    AIMP2SDK::IPLSStrings* strings;   
+    if (aimp2_controller_->AIMP_NewStrings(&strings)) {
+        ON_BLOCK_EXIT_OBJ((*strings), &AIMP2SDK::IPLSStrings::Release);
+        if (!strings->AddFile(const_cast<PWCHAR>( path.native().c_str() ), nullptr)) {
+            throw std::runtime_error(MakeString() << "IPLSStrings::AddFile() failed.");
+        }
+
+        if (!aimp2_controller_->AIMP_PLS_AddFiles(getAbsolutePlaylistID(playlist_id), strings)) {
+            throw std::runtime_error(MakeString() << "IAIMP2Controller::AIMP_PLS_AddFiles() failed.");
+        }
+    }
+}
+
+PlaylistID AIMPManager26::createPlaylist(const std::wstring& title)
+{
+    return aimp2_playlist_manager_->AIMP_PLS_NewEx(const_cast<PWCHAR>(title.c_str()),
+                                                   false
+                                                   );
+}
+
 } // namespace AIMPPlayer
