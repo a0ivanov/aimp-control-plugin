@@ -1,33 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <settings>
-	<httpserver>
-		<!-- Examples: "localhost", "192.168.0.1", ""(to bind to all network interfaces). -->
-		<ip_to_bind>localhost</ip_to_bind>
-        
-		<port>3333</port>
-        
-		<!-- Full path to browser scripts directory. -->
-		<document_root>./htdocs</document_root>
-	</httpserver>
-	
-	<logging>
-		<!-- Directory where log files are stored. Base directory is directory where this settings file is located. -->
-		<directory>./</directory>       
-    
-		<!-- Possible values are: debug, info, warning, error, critical, none(logging is disabled). 
-			 By default, only most important log messages are saved to log file, other messages are ignored.
-		-->
-		<severity>critical</severity>
-        
-		<!-- Modules where logging is enabled. Currently plugin consists of 4 modules: plugin, aimp_manager, http_server, rpc_server. -->
-		<modules>
-			<module>plugin</module>
-			<module>aimp_manager</module>
-			<module>http_server</module>
-			<module>rpc_server</module>
-		</modules>
-	</logging>
-    
+    <httpserver>
+        <!-- Examples: "localhost", "192.168.0.1", ""(to bind to all network interfaces). -->
+        <ip_to_bind>localhost</ip_to_bind>
+
+        <port>3333</port>
+
+        <!-- Full path to browser scripts directory. -->
+        <document_root>./htdocs</document_root>
+    </httpserver>
+
+    <logging>
+        <!-- Directory where log files are stored. Base directory is directory where this settings file is located. -->
+        <directory>./</directory>
+
+        <!-- Possible values are: debug, info, warning, error, critical, none(logging is disabled).
+             By default, only most important log messages are saved to log file, other messages are ignored.
+        -->
+        <severity>critical</severity>
+
+        <!-- Modules where logging is enabled. Currently plugin consists of 4 modules: plugin, aimp_manager, http_server, rpc_server. -->
+        <modules>
+            <module>plugin</module>
+            <module>aimp_manager</module>
+            <module>http_server</module>
+            <module>rpc_server</module>
+        </modules>
+    </logging>
+
     <misc>
         <enable_track_upload>false</enable_track_upload>
     </misc>
