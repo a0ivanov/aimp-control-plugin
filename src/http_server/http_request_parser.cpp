@@ -250,7 +250,7 @@ boost::tribool request_parser::consume(Request& req, char input)
                 state_ = content_multipart_formdata;
             }
         }
-        return boost::indeterminate;
+        return consume(req, input);
                                 }
     case content:
         // Content.
