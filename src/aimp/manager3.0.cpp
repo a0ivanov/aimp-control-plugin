@@ -1678,4 +1678,11 @@ void AIMPManager30::addFileToPlaylist(const boost::filesystem::wpath& path, Play
     }
 }
 
+PlaylistID AIMPManager30::createPlaylist(const std::wstring& title)
+{
+    return cast<PlaylistID>(aimp3_playlist_manager_->StorageCreate(const_cast<PWCHAR>(title.c_str()),
+                                                                   false)
+                            );
+}
+
 } // namespace AIMPPlayer

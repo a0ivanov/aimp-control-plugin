@@ -19,15 +19,21 @@ public:
     RequestHandler(AIMPPlayer::AIMPManager& aimp_manager, boost::filesystem::wpath temp_dir)
         :
         aimp_manager_(aimp_manager),
-        temp_dir_(temp_dir)
+        temp_dir_(temp_dir),
+        target_playlist_id_(0),
+        target_playlist_id_created_(false)
     {}
 
     bool handle_request(const Http::Request& req, Http::Reply& rep); // throws std::exception.
 
 private:
 
+    int getTargetPlaylist();
+
     AIMPPlayer::AIMPManager& aimp_manager_;
     boost::filesystem::wpath temp_dir_;
+    int target_playlist_id_;
+    bool target_playlist_id_created_;
 };
 
 } // namespace UploadTrack

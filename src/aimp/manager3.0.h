@@ -107,6 +107,8 @@ public:
 
     virtual void addFileToPlaylist(const boost::filesystem::wpath& path, PlaylistID playlist_id); // throws std::runtime_error
     
+    virtual PlaylistID createPlaylist(const std::wstring& title);
+
 private:
 
     void onAimpCoreMessage(DWORD AMessage, int AParam1, void *AParam2, HRESULT *AResult);
