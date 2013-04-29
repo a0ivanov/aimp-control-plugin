@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include "http_server/header.h"
+#include "http_server/mpfd_parser/Parser.h"
 
 namespace Http {
 
@@ -32,6 +33,11 @@ struct Request
 
     /// The optional content sent with the request.
     std::string content;
+
+    /// The optional multipart form data content sent with the request.
+    /// Will contain all data.
+    typedef MPFD::Parser mpfd_parser_t;
+    mpfd_parser_t mpfd_parser;
 };
 
 } // namespace Http

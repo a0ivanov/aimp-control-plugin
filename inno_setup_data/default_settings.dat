@@ -27,4 +27,8 @@
 			<module>rpc_server</module>
 		</modules>
 	</logging>
+    
+    <misc>
+        <enable_track_upload>false</enable_track_upload>
+    </misc>
 </settings>

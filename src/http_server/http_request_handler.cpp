@@ -8,6 +8,7 @@
 #include "stdafx.h"
 #include "http_server/request_handler.h"
 #include "download_track/request_handler.h"
+#include "upload_track/request_handler.h"
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -23,6 +24,7 @@
 namespace Http {
 
 const std::string kDOWNLOAD_TRACK_TAG("/downloadTrack/"),
+                  kUPLOAD_TRACK_TAG("/uploadTrack"),
                   kCookieHeaderName("Cookie");
 
 void RequestHandler::trySendInitCookies(const Request& req, Reply& rep)
@@ -75,6 +77,8 @@ bool RequestHandler::handle_request(const Request& req, Reply& rep, ICometDelaye
         return false; // response sending will be delayed.
     } else if ( Utilities::stringStartsWith(req.uri, kDOWNLOAD_TRACK_TAG) ) { // handle special download track request.
         return download_track_request_handler_.handle_request(req, rep);
+    } else if ( Utilities::stringStartsWith(req.uri, kUPLOAD_TRACK_TAG) ) { // handle special upload track request.
+        return upload_track_request_handler_.handle_request(req, rep);
     } else {
         handle_file_request(req, rep);
     }

@@ -33,11 +33,21 @@ public:
                                                       InputIterator begin,
                                                       InputIterator end)
     {
-        while (begin != end) {
-            boost::tribool result = consume(req, *begin++);
-            if (result || !result) {
-                return boost::make_tuple(result, begin);
+        switch (state_) {
+        case content_multipart_formdata:
+            return parse_mpfd(req, begin, end);
+        default:
+            while (begin != end) {
+                boost::tribool result = consume(req, *begin++);
+                if (result || !result) {
+                    return boost::make_tuple(result, begin);
+                }
+
+                if (state_ == content_multipart_formdata) {
+                    return parse_mpfd(req, --begin, end);
+                }
             }
+            break;
         }
 
         boost::tribool result = boost::indeterminate;
@@ -45,6 +55,27 @@ public:
     }
 
 private:
+
+    template <typename InputIterator>
+    boost::tuple<boost::tribool, InputIterator> parse_mpfd(Request& req,
+                                                           InputIterator begin,
+                                                           InputIterator end)
+    {
+        assert (state_ == content_multipart_formdata);
+
+        if (content_consumed_ < content_length_) {   
+            assert(begin <= end);
+            const std::size_t length = std::distance(begin, end);
+            req.mpfd_parser.AcceptSomeData(begin, length);
+            content_consumed_ += length;
+            boost::tribool result = boost::indeterminate;
+            if (content_consumed_ == content_length_) {
+                result = true; // all content has been consumed, stop parsing.
+            }
+            return boost::make_tuple(result, end);
+        }
+        return boost::make_tuple(false, begin);
+    }
 
     /// The name of the content length header.
     static std::string content_length_name_;
@@ -97,8 +128,12 @@ private:
         header_value,
         expecting_newline_2,
         expecting_newline_3,
-        content
+        select_content_parser,
+        content,
+        content_multipart_formdata
     } state_;
+
+    std::size_t content_consumed_;
 };
 
 } // namespace Http

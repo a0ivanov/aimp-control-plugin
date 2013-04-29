@@ -11,9 +11,10 @@
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
 
-namespace Http { class RequestHandler; }
-namespace Rpc { class RequestHandler; }
+namespace Http          { class RequestHandler; }
+namespace Rpc           { class RequestHandler; }
 namespace DownloadTrack { class RequestHandler; }
+namespace UploadTrack   { class RequestHandler; }
 namespace AIMP2SDK { class IAIMP2Controller; }
 
 //! contains class which implements AIMP SDK interfaces and interacts with AIMP player.
@@ -138,6 +139,7 @@ private:
 
     boost::shared_ptr<Rpc::RequestHandler> rpc_request_handler_; //!< XML/Json RPC request handler. Used by Http::RequestHandler object.
     boost::shared_ptr<DownloadTrack::RequestHandler> download_track_request_handler_; //!< Download track request handler. Used by Http::RequestHandler object.
+    boost::shared_ptr<UploadTrack::RequestHandler> upload_track_request_handler_; //!< Upload track request handler. Used by Http::RequestHandler object.
     boost::shared_ptr<Http::RequestHandler> http_request_handler_; //!< Http request handler, used by Http::Server object.
     boost::shared_ptr<boost::asio::io_service> server_io_service_;
     boost::shared_ptr<Http::Server> server_; //!< Simple Http server.

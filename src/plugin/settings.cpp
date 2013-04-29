@@ -112,6 +112,11 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
         init_cookies.clear();
     }
 
+
+    std::wstring tmp = pt.get<std::wstring>(L"settings.misc.enable_track_upload", L"false");
+    std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
+    bool enable_track_upload = tmp == L"true" || tmp == L"1";
+
     // all work has been done, save result.
     using std::swap;
     settings.http_server.ip_to_bind.swap(server_ip_to_bind);
@@ -122,6 +127,8 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
     settings.logger.severity_level = log_severity_level;
     settings.logger.directory.swap(log_directory);
     settings.logger.modules_to_log.swap(modules_to_log);
+
+    settings.misc.enable_track_upload = enable_track_upload;
 }
 
 void Manager::load(const boost::filesystem::wpath& filename)
@@ -130,8 +137,9 @@ void Manager::load(const boost::filesystem::wpath& filename)
         wptree pt;
         loadPropertyTreeFromFile(pt, filename);
         loadSettingsFromPropertyTree(settings_, pt);
-    } catch (std::exception&) {
+    } catch (std::exception& e) {
         // do nothing here, reading of file config failed, so default values(which were set in ctor) will be used.
+        (void)e;
     }
 }
 
@@ -173,6 +181,8 @@ void saveSettingsToPropertyTree(const Settings& settings, wptree& pt) // throws 
     BOOST_FOREACH(const std::string& name, settings.logger.modules_to_log) {
         pt.add( L"settings.logging.modules.module", system_ansi_encoding_to_utf16(name) ); // add() method is used instead put() since put() add only first module for some reason.
     }
+
+    pt.put(L"settings.misc.enable_track_upload", settings.misc.enable_track_upload);
 }
 
 void Manager::save(const boost::filesystem::wpath& filename) const
