@@ -24,6 +24,10 @@ struct Settings
         std::wstring directory; //<! path to directory to store logs.
         std::set<std::string> modules_to_log; //!< names of modules where logging is enabled.
     } logger;
+
+    struct Misc {
+        bool enable_track_upload;
+    } misc;
 };
 
 

@@ -21,9 +21,25 @@ namespace fs = boost::filesystem;
 
 const wchar_t * const kPlaylistTitle = L"Control plugin";
 
+void fill_reply_disabled(Http::Reply& rep)
+{
+    rep.status = Http::Reply::forbidden;
+    rep.content = "403 Forbidden<br/> Track upload is disabled in Control plugin settings.";
+    rep.headers.resize(2);
+    rep.headers[0].name = "Content-Length";
+    rep.headers[0].value = boost::lexical_cast<std::string>(rep.content.size());
+    rep.headers[1].name = "Content-Type";
+    rep.headers[1].value = "text/html";
+}
+
 bool RequestHandler::handle_request(const Http::Request& req, Http::Reply& rep)
 {
     using namespace Http;
+
+    if (!enabled_) {
+        fill_reply_disabled(rep);
+        return true;
+    }
 
     if ( AIMPPlayer::AIMPManager30* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager30*>(&aimp_manager_) ) {
         try {
