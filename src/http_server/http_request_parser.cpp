@@ -26,6 +26,7 @@ void request_parser::reset()
 }
 
 std::string request_parser::content_length_name_ = "Content-Length";
+const std::string content_type_name = "Content-Type";
 
 boost::tribool request_parser::consume(Request& req, char input)
 {
@@ -238,16 +239,16 @@ boost::tribool request_parser::consume(Request& req, char input)
     case select_content_parser: {
         state_ = content;
 
-        auto content_type_header = [](const header& h) {
-            return h.name == "Content-Type"; /// TODO: use std::string.
-        };
-        const auto header_it = std::find_if(req.headers.begin(), req.headers.end(), content_type_header);
+        const auto header_it = std::find_if(req.headers.begin(), req.headers.end(),
+                                            [](const header& h) { return h.name == content_type_name; }
+                                            );
         if (header_it != req.headers.end()) {
-            if (boost::starts_with(header_it->value, "multipart/form-data;")) { /// TODO: use std::string.
+            if (boost::starts_with(header_it->value, "multipart/form-data;")) {
                 req.mpfd_parser.SetUploadedFilesStorage(Request::mpfd_parser_t::StoreUploadedFilesInMemory);
                 req.mpfd_parser.SetMaxCollectedDataLength(20*1024);
                 req.mpfd_parser.SetContentType(header_it->value);
                 state_ = content_multipart_formdata;
+                return boost::indeterminate;
             }
         }
         return consume(req, input);
