@@ -736,6 +736,7 @@ void AIMPManager26::startPlayback()
 
 void AIMPManager26::startPlayback(TrackDescription track_desc) // throws std::runtime_error
 {
+    track_desc = getAbsoluteTrackDesc(track_desc);
     if ( FALSE == aimp2_player_->PlayTrack(track_desc.playlist_id, track_desc.track_id) ) {
         throw std::runtime_error( MakeString() << "Error in "__FUNCTION__" with " << track_desc );
     }
@@ -1136,6 +1137,7 @@ AIMPManager::PLAYBACK_STATE AIMPManager26::getPlaybackState() const
 
 void AIMPManager26::enqueueEntryForPlay(TrackDescription track_desc, bool insert_at_queue_beginning) // throws std::runtime_error
 {
+    track_desc = getAbsoluteTrackDesc(track_desc);
     if ( S_OK != aimp2_playlist_manager_->AIMP_PLS_Entry_QueueSet(track_desc.playlist_id, track_desc.track_id, insert_at_queue_beginning) ) {
         throw std::runtime_error(MakeString() << "Error in "__FUNCTION__" with " << track_desc);
     }
@@ -1143,6 +1145,7 @@ void AIMPManager26::enqueueEntryForPlay(TrackDescription track_desc, bool insert
 
 void AIMPManager26::removeEntryFromPlayQueue(TrackDescription track_desc) // throws std::runtime_error
 {
+    track_desc = getAbsoluteTrackDesc(track_desc);
     if ( S_OK != aimp2_playlist_manager_->AIMP_PLS_Entry_QueueRemove(track_desc.playlist_id, track_desc.track_id) ) {
         throw std::runtime_error(MakeString() << "Error in "__FUNCTION__" with " << track_desc);
     }
@@ -1155,6 +1158,8 @@ int AIMPManager26::trackRating(TrackDescription track_desc) const // throws std:
 
 void AIMPManager26::saveCoverToFile(TrackDescription track_desc, const std::wstring& filename, int cover_width, int cover_height) const // throw std::runtime_error
 {
+    track_desc = getAbsoluteTrackDesc(track_desc);
+
     try {
         using namespace ImageUtils;
         std::auto_ptr<AIMPCoverImage> cover( getCoverImage(track_desc, cover_width, cover_height) );
@@ -1172,7 +1177,7 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMPManager26::getCoverImage(TrackDesc
         throw std::invalid_argument(MakeString() << "Error in "__FUNCTION__ << ". Negative cover size.");
     }
 
-    const std::wstring& entry_filename = getEntryField<std::wstring>(playlists_db_, "filename", getAbsoluteTrackDesc(track_desc));
+    const std::wstring& entry_filename = getEntryField<std::wstring>(playlists_db_, "filename", track_desc);
     const SIZE request_full_size = { 0, 0 };
     HBITMAP cover_bitmap_handle = aimp2_cover_art_manager_->GetCoverArtForFile(const_cast<PWCHAR>( entry_filename.c_str() ), &request_full_size);
 

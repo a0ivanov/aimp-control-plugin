@@ -1338,6 +1338,8 @@ void AIMPManager30::removeEntryFromPlayQueue(TrackDescription track_desc) // thr
 
 void AIMPManager30::saveCoverToFile(TrackDescription track_desc, const std::wstring& filename, int cover_width, int cover_height) const // throw std::runtime_error
 {
+    track_desc = getAbsoluteTrackDesc(track_desc);
+
     try {
         using namespace ImageUtils;
         std::auto_ptr<AIMPCoverImage> cover( getCoverImage(track_desc, cover_width, cover_height) );
@@ -1355,7 +1357,7 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMPManager30::getCoverImage(TrackDesc
         throw std::invalid_argument(MakeString() << "Error in "__FUNCTION__ << ". Negative cover size.");
     }
 
-    const std::wstring& entry_filename = getEntryField<std::wstring>(playlists_db_, "filename", getAbsoluteEntryID(track_desc.track_id));
+    const std::wstring& entry_filename = getEntryField<std::wstring>(playlists_db_, "filename", track_desc.track_id);
     HBITMAP cover_bitmap_handle = aimp3_coverart_manager_->CoverArtGetForFile(const_cast<PWCHAR>( entry_filename.c_str() ), nullptr,
 			                                                                  nullptr, 0);
 
