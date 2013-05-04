@@ -37,24 +37,35 @@ bool RequestHandler::handle_request(const Http::Request& req, Http::Reply& rep)
         const PlaylistID playlist_id = getPlaylistID(req.uri);
 
         for (auto field_it : req.mpfd_parser.GetFieldsMap()) {
-            
-            
             const MPFD::Field& field_const = *field_it.second;
             MPFD::Field& field = const_cast<MPFD::Field&>(field_const);
 
-            const std::string filename = field.GetFileName();
-            const fs::wpath path = temp_dir_ / filename;
+            switch (field.GetType()) {
+            case MPFD::Field::FileType:
+                {
+                const std::string filename = field.GetFileName();
+                const fs::wpath path = temp_dir_ / filename;
 
-            { // save to temp dir.
-            std::ofstream out(path.native(), std::ios_base::out | std::ios_base::binary);
-            out.write(field.GetFileContent(), field.GetFileContentSize());
-            out.close();
-            }
+                { // save to temp dir.
+                std::ofstream out(path.native(), std::ios_base::out | std::ios_base::binary);
+                out.write(field.GetFileContent(), field.GetFileContentSize());
+                out.close();
+                }
             
-            aimp_manager_.addFileToPlaylist(path, playlist_id);
-
-            // we should not erase file since AIMP will use it.
-            //fs::remove(path);
+                aimp_manager_.addFileToPlaylist(path, playlist_id);
+                // we should not erase file since AIMP will use it.
+                //fs::remove(path);
+                break;
+                }
+            case MPFD::Field::TextType:
+                {
+                aimp_manager_.addURLToPlaylist(field.GetTextTypeContent(), playlist_id);
+                break;
+                }
+            default:
+                assert(!"unexpected type");
+                break;
+            }
         }
         rep = Reply::stock_reply(Reply::ok);
     } catch (MPFD::Exception&) {

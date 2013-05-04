@@ -1830,6 +1830,13 @@ void AIMPManager26::addFileToPlaylist(const boost::filesystem::wpath& path, Play
     }
 }
 
+void AIMPManager26::addURLToPlaylist(const std::string& url, PlaylistID playlist_id) // throws std::runtime_error
+{
+    boost::filesystem::wpath path(StringEncoding::utf8_to_utf16(url));
+
+    addFileToPlaylist(path, playlist_id);
+}
+
 PlaylistID AIMPManager26::createPlaylist(const std::wstring& title)
 {
     return aimp2_playlist_manager_->AIMP_PLS_NewEx(const_cast<PWCHAR>(title.c_str()),
