@@ -19,9 +19,10 @@ using namespace std;
 
 namespace fs = boost::filesystem;
 
-const wchar_t * const kPlaylistTitle = L"Control plugin";
-
 void fill_reply_disabled(Http::Reply& rep);
+PlaylistID getPlaylistID(const std::string& uri);
+
+const std::string kPlaylistIDTag("/playlist_id/");
 
 bool RequestHandler::handle_request(const Http::Request& req, Http::Reply& rep)
 {
@@ -33,7 +34,11 @@ bool RequestHandler::handle_request(const Http::Request& req, Http::Reply& rep)
     }
 
     try {
+        const PlaylistID playlist_id = getPlaylistID(req.uri);
+
         for (auto field_it : req.mpfd_parser.GetFieldsMap()) {
+            
+            
             const MPFD::Field& field_const = *field_it.second;
             MPFD::Field& field = const_cast<MPFD::Field&>(field_const);
 
@@ -45,8 +50,8 @@ bool RequestHandler::handle_request(const Http::Request& req, Http::Reply& rep)
             out.write(field.GetFileContent(), field.GetFileContentSize());
             out.close();
             }
-                
-            aimp_manager_.addFileToPlaylist(path, getTargetPlaylist());
+            
+            aimp_manager_.addFileToPlaylist(path, playlist_id);
 
             // we should not erase file since AIMP will use it.
             //fs::remove(path);
@@ -71,60 +76,16 @@ void fill_reply_disabled(Http::Reply& rep)
     rep.headers[1].value = "text/html";
 }
 
-bool getPlaylistByTitle(sqlite3* db, const char* title, PlaylistID* playlist_id);
-
-int RequestHandler::getTargetPlaylist()
-{
-    if (!target_playlist_id_created_) {
-        if (!getPlaylistByTitle(getPlaylistsDB(aimp_manager_),
-                                StringEncoding::utf16_to_utf8(kPlaylistTitle).c_str(),
-                                &target_playlist_id_)
-            )
-        {
-            target_playlist_id_ = aimp_manager_.createPlaylist(kPlaylistTitle);
-        }
-            
-        target_playlist_id_created_ = true;
+PlaylistID getPlaylistID(const std::string& uri)
+{    
+    size_t start_index = uri.find(kPlaylistIDTag);
+    if (start_index == string::npos) {
+        throw std::runtime_error("can't find playlist id tag in uri");
     }
-    return target_playlist_id_;
-}
-
-bool getPlaylistByTitle(sqlite3* db, const char* title, PlaylistID* playlist_id)
-{
-    using namespace Utilities;
-
-    std::ostringstream query;
-
-    query << "SELECT id FROM Playlists WHERE title = ?";
-
-    sqlite3_stmt* stmt = createStmt( db, query.str() );
-    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
-
-    int rc_db = sqlite3_bind_text(stmt, 1, title, strlen(title), SQLITE_STATIC);
-    if (SQLITE_OK != rc_db) {
-        const std::string msg = MakeString() << "sqlite3_bind_text16() error " << rc_db;
-        throw std::runtime_error(msg);
-    }
-
-    for(;;) {
-		rc_db = sqlite3_step(stmt);
-        if (SQLITE_ROW == rc_db) {
-            assert(sqlite3_column_count(stmt) == 1);
-            if (playlist_id) {
-                *playlist_id = sqlite3_column_int(stmt, 0);
-            }
-            return true;
-        } else if (SQLITE_DONE == rc_db) {
-            break;
-        } else {
-            const std::string msg = MakeString() << "sqlite3_step() error "
-                                                 << rc_db << ": " << sqlite3_errmsg(db)
-                                                 << ". Query: " << query.str();
-            throw std::runtime_error(msg);
-		}
-    }
-
-    return false;
+    start_index += kPlaylistIDTag.length();
+    const string id(uri.c_str(), start_index, uri.length() - start_index);
+    const PlaylistID playlist_id = boost::lexical_cast<PlaylistID>(id);
+    return playlist_id;
 }
 
 } // namespace UploadTrack
