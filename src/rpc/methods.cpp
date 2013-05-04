@@ -550,6 +550,11 @@ std::string GetPlaylistEntries::getOrderString(const Rpc::Value& params) const
                 result.pop_back();
             }
         }
+
+        // by default order by index to have AIMP playlist's order.
+        if (result.empty()) {
+            result = "ORDER BY entry_index ASC";
+        }
     } else {
         result = "ORDER BY queue_index ASC";
     }

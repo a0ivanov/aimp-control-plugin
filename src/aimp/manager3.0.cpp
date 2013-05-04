@@ -509,7 +509,7 @@ void AIMPManager30::loadEntries(PlaylistID playlist_id) // throws std::runtime_e
 
     deletePlaylistEntriesFromPlaylistDB(playlist_id); // remove old entries before adding new ones.
 
-    sqlite3_stmt* stmt = createStmt(playlists_db_, "INSERT INTO PlaylistsEntries VALUES (?,?,?,?,?,"
+    sqlite3_stmt* stmt = createStmt(playlists_db_, "INSERT INTO PlaylistsEntries VALUES (?,?,?,?,?,?,"
                                                                                         "?,?,?,?,?,"
                                                                                         "?,?,?,?,?)"
                                     );
@@ -559,19 +559,20 @@ void AIMPManager30::loadEntries(PlaylistID playlist_id) // throws std::runtime_e
             // bind all values
             const AIMP3SDK::TAIMPFileInfo& info = file_info_helper.getFileInfoWithCorrectStringLengths();
             bind(int,    2, entry_id);
-            bindText(    3, Album);
-            bindText(    4, Artist);
-            bindText(    5, Date);
-            bindText(    6, FileName);
-            bindText(    7, Genre);
-            bindText(    8, Title);
-            bind(int,    9, info.BitRate);
-            bind(int,   10, info.Channels);
-            bind(int,   11, info.Duration);
-            bind(int64, 12, info.FileSize);
-            bind(int,   13, rating);
-            bind(int,   14, info.SampleRate);
-            bind(int64, 15, crc32(info));
+            bind(int,    3, entry_index);
+            bindText(    4, Album);
+            bindText(    5, Artist);
+            bindText(    6, Date);
+            bindText(    7, FileName);
+            bindText(    8, Genre);
+            bindText(    9, Title);
+            bind(int,   10, info.BitRate);
+            bind(int,   11, info.Channels);
+            bind(int,   12, info.Duration);
+            bind(int64, 13, info.FileSize);
+            bind(int,   14, rating);
+            bind(int,   15, info.SampleRate);
+            bind(int64, 16, crc32(info));
 
             rc_db = sqlite3_step(stmt);
             if (SQLITE_DONE != rc_db) {
@@ -1576,6 +1577,7 @@ void AIMPManager30::initPlaylistDB() // throws std::runtime_error
     rc = sqlite3_exec(playlists_db_,
                       "CREATE TABLE PlaylistsEntries ( playlist_id    INTEGER,"
                                                       "entry_id       INTEGER,"
+                                                      "entry_index    INTEGER,"
                                                       "album          VARCHAR(128),"
                                                       "artist         VARCHAR(128),"
                                                       "date           VARCHAR(16),"

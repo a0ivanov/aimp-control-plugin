@@ -288,9 +288,9 @@ void AIMPManager26::loadEntries(PlaylistID playlist_id) // throws std::runtime_e
     
     deletePlaylistEntriesFromPlaylistDB(playlist_id); // remove old entries before adding new ones.
 
-    sqlite3_stmt* stmt = createStmt(playlists_db_, "INSERT INTO PlaylistsEntries VALUES (?,?,?,?,?,"
-                                                                                        "?,?,?,?,?,"
-                                                                                        "?,?,?,?,?)"
+    sqlite3_stmt* stmt = createStmt(playlists_db_, "INSERT INTO PlaylistsEntries VALUES (?,?,?,?,?,?,"
+                                                                                         "?,?,?,?,?,"
+                                                                                         "?,?,?,?,?)"
                                     );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
@@ -323,20 +323,21 @@ void AIMPManager26::loadEntries(PlaylistID playlist_id) // throws std::runtime_e
             {
                 // bind all values
                 const AIMP2SDK::AIMP2FileInfo& info = file_info_helper.getFileInfoWithCorrectStringLengths();
-                bind(int,    2, entry_index);
-                bindText(    3, Album);
-                bindText(    4, Artist);
-                bindText(    5, Date);
-                bindText(    6, FileName);
-                bindText(    7, Genre);
-                bindText(    8, Title);
-                bind(int,    9, info.nBitRate);
-                bind(int,   10, info.nChannels);
-                bind(int,   11, info.nDuration);
-                bind(int64, 12, info.nFileSize);
-                bind(int,   13, info.nRating);
-                bind(int,   14, info.nSampleRate);
-                bind(int64, 15, crc32(info));
+                bind(int,    2, entry_index); // id is the index for AIMP2.
+                bind(int,    3, entry_index); // for consistency with AIMP3.
+                bindText(    4, Album);
+                bindText(    5, Artist);
+                bindText(    6, Date);
+                bindText(    7, FileName);
+                bindText(    8, Genre);
+                bindText(    9, Title);
+                bind(int,   10, info.nBitRate);
+                bind(int,   11, info.nChannels);
+                bind(int,   12, info.nDuration);
+                bind(int64, 13, info.nFileSize);
+                bind(int,   14, info.nRating);
+                bind(int,   15, info.nSampleRate);
+                bind(int64, 16, crc32(info));
 
                 rc_db = sqlite3_step(stmt);
                 if (SQLITE_DONE != rc_db) {
@@ -588,7 +589,7 @@ bool AIMPManager26::isLoadedPlaylistEqualsAimpPlaylist(PlaylistID playlist_id) c
     std::ostringstream query;
     query << "SELECT "
           << "album, artist, date, filename, genre, title, bitrate, channels_count, duration, filesize, rating, samplerate"
-          << " FROM PlaylistsEntries WHERE playlist_id=" << playlist_id << " ORDER BY entry_id";
+          << " FROM PlaylistsEntries WHERE playlist_id=" << playlist_id << " ORDER BY entry_index";
 
     sqlite3* db = playlists_db_;
     sqlite3_stmt* stmt = createStmt( db, query.str() );
@@ -1713,6 +1714,7 @@ void AIMPManager26::initPlaylistDB() // throws std::runtime_error
     rc = sqlite3_exec(playlists_db_,
                       "CREATE TABLE PlaylistsEntries ( playlist_id    INTEGER,"
                                                       "entry_id       INTEGER,"
+                                                      "entry_index    INTEGER," // for AIMP2 it is the same as entry_id.
                                                       "album          VARCHAR(128),"
                                                       "artist         VARCHAR(128),"
                                                       "date           VARCHAR(16),"
