@@ -32,13 +32,24 @@ ModuleLoggerType& logger()
 namespace AimpRpcMethods
 {
 
+const PlaylistID kPlaylistIdNotUsed = 0;
+
 using namespace Rpc;
+
+TrackDescription AIMPRPCMethod::getTrackDesc(const Rpc::Value& params) const // throws Rpc::Exception
+{
+    const bool require_playlist_id = dynamic_cast<AIMPManager30*>(&aimp_manager_) == nullptr;
+    const PlaylistID playlist_id = require_playlist_id ? params["playlist_id"]
+                                                       : params.isMember("playlist_id") ? params["playlist_id"]
+                                                                                        : kPlaylistIdNotUsed;
+    return TrackDescription(playlist_id, params["track_id"]);
+}
 
 ResponseType Play::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
     const Rpc::Value& params = root_request["params"];
-    if (params.type() == Rpc::Value::TYPE_OBJECT && params.size() == 2) {
-        const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
+    if (params.type() == Rpc::Value::TYPE_OBJECT && params.size() > 0) {
+        const TrackDescription track_desc(getTrackDesc(params));
         try {
             aimp_manager_.startPlayback(track_desc);
         } catch (std::runtime_error&) {
@@ -225,11 +236,8 @@ ResponseType RadioCaptureMode::execute(const Rpc::Value& root_request, Rpc::Valu
 ResponseType GetFormattedEntryTitle::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
     const Rpc::Value& params = root_request["params"];
-    if (params.type() == Rpc::Value::TYPE_OBJECT && params.size() != 3) {
-        throw Rpc::Exception("Wrong arguments count. Wait 3 arguments: int track_id, int playlist_id, string format_string", WRONG_ARGUMENT);
-    }
 
-    const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
+    const TrackDescription track_desc(getTrackDesc(params));
     try {
         using namespace StringEncoding;
         root_response["result"]["formatted_string"] = utf16_to_utf8( aimp_manager_.getFormattedEntryTitle(track_desc, params["format_string"]) );
@@ -245,11 +253,7 @@ ResponseType GetFormattedEntryTitle::execute(const Rpc::Value& root_request, Rpc
 ResponseType EnqueueTrack::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
     const Rpc::Value& params = root_request["params"];
-    if (params.type() != Rpc::Value::TYPE_OBJECT || params.size() < 2) {
-        throw Rpc::Exception("Wrong arguments count. Wait at least 2 int values: track_id, playlist_id.", WRONG_ARGUMENT);
-    }
-
-    const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
+    const TrackDescription track_desc(getTrackDesc(params));
     const bool insert_at_queue_beginning = params.isMember("insert_at_queue_beginning") ? bool(params["insert_at_queue_beginning"]) 
                                                                                         : false; // by default insert at the end of queue.
 
@@ -271,7 +275,7 @@ ResponseType QueueTrackMove::execute(const Rpc::Value& root_request, Rpc::Value&
             if (params.isMember("old_queue_index")) {
                 aimp3_manager->moveQueueEntry(params["old_queue_index"], params["new_queue_index"]);
             } else {
-                TrackDescription track_desc(params["playlist_id"], params["track_id"]);
+                const TrackDescription track_desc(getTrackDesc(params));
                 aimp3_manager->moveQueueEntry(track_desc, params["new_queue_index"]);
             }            
             root_response["result"] = "";
@@ -286,11 +290,7 @@ ResponseType QueueTrackMove::execute(const Rpc::Value& root_request, Rpc::Value&
 ResponseType RemoveTrackFromPlayQueue::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
     const Rpc::Value& params = root_request["params"];
-    if (params.type() != Rpc::Value::TYPE_OBJECT || params.size() != 2) {
-        throw Rpc::Exception("Wrong arguments count. Wait 2 int values: track_id, playlist_id.", WRONG_ARGUMENT);
-    }
-
-    const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
+    const TrackDescription track_desc(getTrackDesc(params));
     try {
         aimp_manager_.removeEntryFromPlayQueue(track_desc);
         root_response["result"] = "";
@@ -903,10 +903,7 @@ ResponseType GetPlaylistEntryInfo::execute(const Rpc::Value& root_request, Rpc::
 {
     const Rpc::Value& params = root_request["params"];
 
-    const PlaylistID kPlaylistIdNotUsed = 0;
-    const TrackDescription track_desc(aimp_manager_.getAbsolutePlaylistID(params.isMember("playlist_id") ? params["playlist_id"] : kPlaylistIdNotUsed),
-                                      aimp_manager_.getAbsoluteEntryID( params["track_id"])
-                                      );
+    const TrackDescription track_desc = aimp_manager_.getAbsoluteTrackDesc( getTrackDesc(params) );
 
     using namespace Utilities;
 
@@ -959,12 +956,8 @@ ResponseType GetPlaylistEntryInfo::execute(const Rpc::Value& root_request, Rpc::
 ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
     const Rpc::Value& params = root_request["params"];
-    if (params.type() != Rpc::Value::TYPE_OBJECT || params.size() < 2) {
-        throw Rpc::Exception("Wrong arguments count. Wait at least 2 int values: track_id, playlist_id.", WRONG_ARGUMENT);
-    }
 
-    const TrackDescription desc(params["playlist_id"], params["track_id"]);
-    const TrackDescription track_desc(aimp_manager_.getAbsoluteTrackDesc(desc));
+    const TrackDescription track_desc( aimp_manager_.getAbsoluteTrackDesc( getTrackDesc(params) ) );
 
     int cover_width;
     int cover_height;
@@ -1227,11 +1220,8 @@ ResponseType GetPlayerControlPanelState::execute(const Rpc::Value& /*root_reques
 ResponseType SetTrackRating::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
     const Rpc::Value& params = root_request["params"];
-    if (params.type() != Rpc::Value::TYPE_OBJECT || params.size() != 3) {
-        throw Rpc::Exception("Wrong arguments count. Wait 3 int values: track ID, playlist ID, rating", WRONG_ARGUMENT);
-    }
 
-    const TrackDescription track_desc(params["playlist_id"], params["track_id"]);
+    const TrackDescription track_desc(getTrackDesc(params));
     const int rating( Utilities::limit_value<int>(params["rating"], 0, 5) ); // set rating range [0, 5]
 
     AIMPManager30* aimp3_manager = dynamic_cast<AIMPManager30*>(&aimp_manager_);

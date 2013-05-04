@@ -80,6 +80,8 @@ public:
 
 protected:
 
+    TrackDescription getTrackDesc(const Rpc::Value& params) const; // throws Rpc::Exception
+
     AIMPManager& aimp_manager_;
     Rpc::RequestHandler& rpc_request_handler_;
 
