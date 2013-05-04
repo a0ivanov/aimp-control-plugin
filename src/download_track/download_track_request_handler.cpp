@@ -38,7 +38,7 @@ PlaylistID getPlaylistID(const std::string& request_uri)
     }
 
     const string id(request_uri.c_str(), start_index, end_index - start_index);
-    const PlaylistID playlist_id = boost::lexical_cast<std::size_t>(id);
+    const PlaylistID playlist_id = boost::lexical_cast<PlaylistID>(id);
     return playlist_id;
 }
 
@@ -50,7 +50,7 @@ PlaylistEntryID getTrackID(const std::string& request_uri)
     }
     start_index += track_id_tag.length();
     const string id(request_uri.c_str(), start_index, request_uri.length() - start_index);
-    const PlaylistID track_id = boost::lexical_cast<std::size_t>(id);
+    const PlaylistEntryID track_id = boost::lexical_cast<PlaylistEntryID>(id);
     return track_id;
 }
 
