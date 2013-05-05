@@ -8,6 +8,7 @@
 #include "aimp/manager2.6.h"
 #include "aimp/manager_impl_common.h"
 #include "plugin/logger.h"
+#include "plugin/control_plugin.h"
 #include "rpc/exception.h"
 #include "rpc/value.h"
 #include "rpc/request_handler.h"
@@ -1270,9 +1271,16 @@ ResponseType Version::execute(const Rpc::Value& /*root_request*/, Rpc::Value& ro
     return RESPONSE_IMMEDIATE;
 }
 
+ResponseType PluginCapabilities::execute(const Rpc::Value& /*root_request*/, Rpc::Value& root_response)
+{
+    Rpc::Value& result = root_response["result"];
+    result["upload_track"] = ControlPlugin::AIMPControlPlugin::settings().misc.enable_track_upload;
+    
+    return RESPONSE_IMMEDIATE;
+}
+
 } // namespace AimpRpcMethods
 
-#include "aimp/manager2.6.h"
 
 namespace AimpRpcMethods
 {

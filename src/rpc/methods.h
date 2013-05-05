@@ -1114,6 +1114,27 @@ public:
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 };
 
+/*! 
+    \brief Returns plugin capabilities.
+    \return object which describes capabilities:
+         Example: \code "result":{"upload_track":true} \endcode
+
+*/
+class PluginCapabilities : public AIMPRPCMethod
+{
+public:
+    PluginCapabilities(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request_handler)
+        : AIMPRPCMethod("PluginCapabilities", aimp_manager, rpc_request_handler)
+    {}
+
+    std::string help()
+    {
+        return "";
+    }
+
+    Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
+};
+
 class EmulationOfWebCtlPlugin : public AIMPRPCMethod
 {
 public:
