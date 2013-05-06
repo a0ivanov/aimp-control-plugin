@@ -1147,7 +1147,8 @@ function initAimpControlPage()
     initPlaylistControls();
 }
 
-function makeMenu(id, items) {
+function makeMenu(id, items)
+{
     var html = '<ul id="' + id + '">';
     for (var i in items) {
         var item = items[i];   
@@ -1164,7 +1165,8 @@ function removeMenu(menu)
     menu.remove();
 }
 
-function makeFileUpload(id, playlist_id) {
+function makeFileUpload(id, playlist_id)
+{
     var html = '<input id="' + id + '" type="file" name="files[]" data-url="uploadTrack/playlist_id/' + playlist_id + '" multiple>';
     return html;
 }
