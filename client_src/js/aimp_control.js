@@ -1142,9 +1142,46 @@ function makeMenu(id, items) {
     return html;
 }
 
-function removeMenu(menu) {
+function removeMenu(menu)
+{
     menu.menu('destroy');
     menu.remove();
+}
+
+function makeFileUpload(id, playlist_id) {
+    var html = '<input id="' + id + '" type="file" name="files[]" data-url="uploadTrack/playlist_id/' + playlist_id + '" multiple>';
+    return html;
+}
+
+function removeFileUpload(fileupload)
+{
+    fileupload.fileupload('destroy');
+    fileupload.remove();
+}
+
+function getActivePlaylistID()
+{
+    //var active_playlist_index = .tabs('option', 'active');
+    var active_tab = $('.ui-tabs-active a', $playlists_tabs);
+    var id = getPlaylistIdFromTabId(active_tab.attr('href'));
+    return id;
+}
+
+function showFileUploadDialog()
+{
+    var control_id = 'fileupload';
+    $('#playlist_controls').append(makeFileUpload(control_id, getActivePlaylistID()));
+    $('#' + control_id).fileupload({
+        sequentialUploads: true,
+        done: function (e, data) {
+        },
+        fail: function (e, data) {
+            alert('upload failure');
+        },
+        always: function (e, data) {
+            removeFileUpload($('#' + control_id));
+        }
+    });
 }
 
 function createPlaylistControlMenu(menu_id)
@@ -1163,10 +1200,10 @@ function createPlaylistControlMenu(menu_id)
         select: function( event, ui ) {
             switch(ui.item[0].id) {
             case 'file':
-                
+                showFileUploadDialog();
                 break;
             case 'url':
-                
+                alert('todo');
                 break;
             }
             removeMenu(add_entity_menu);

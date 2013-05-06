@@ -34,17 +34,22 @@ http://jqueryui.com
 3) Plugins for jQuery library:
     3.1) DataTables
     http://www.datatables.net
+    Copyright (c) 2008-2010, Allan Jardine
     3.2) Cookie
     http://plugins.jquery.com/files/jquery.cookie.js.txt
     Copyright (c) 2006 Klaus Hartl (stilbuero.de)
     3.3) Star Rating
     http://www.fyneworks.com/jquery/star-rating
+    Copyright © 2008 Fyneworks.com
     3.4) Select boxes
     http://www.texotela.co.uk/code/jquery/select
     Copyright (c) 2006-2010 Sam Collett (http://www.texotela.co.uk)
     3.5) jScroller2
     http://jscroller2.markusbordihn.de
     Copyright (c) 2008 Markus Bordihn (markusbordihn.de)
+    3.6) jQuery-File-Upload
+    https://github.com/blueimp/jQuery-File-Upload
+    Copyright 2010, Sebastian Tschan
 
 4) JSON/XML-RPC Client
 http://code.google.com/p/json-xml-rpc
