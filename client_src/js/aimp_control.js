@@ -201,6 +201,14 @@ function createEntriesControl(playlist_id)
 
 function gotoCurrentTrackInPlaylist(force_page_and_playlist_switch_local)
 {
+    // clear highlighting if player is stopped.
+    if (control_panel_state.playback_state == 'stopped') {
+        for (var i in $playlists_tables) {
+            removeHighlightFromAllRows($playlists_tables[i]);    
+        }
+        return;
+    }
+    
     // check if playlist content is loaded and load it if it does not.
     if (control_panel_state.hasOwnProperty('playlist_id')) {
         if ($playlists_tabs != null) {
