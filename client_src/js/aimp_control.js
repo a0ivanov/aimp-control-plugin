@@ -262,6 +262,9 @@ function gotoCurrentPlaylist(playlist_id)
 function tryToLocateCurrentTrackInPlaylistOnCurrentPageOnly(entry_page_number, entry_index_on_page)
 {
     var $playlist_table = getPlaylistDataTable(control_panel_state.playlist_id);
+    if ($playlist_table === undefined) {
+        return;
+    }
     var oSettings = $playlist_table.fnSettings();
     
     var index_of_first_entry_on_page = entry_page_number * oSettings._iDisplayLength;
@@ -276,6 +279,9 @@ function tryToLocateCurrentTrackInPlaylistOnCurrentPageOnly(entry_page_number, e
 function tryToLocateCurrentTrackInPlaylist(entry_page_number, entry_index_on_page)
 {
     var $playlist_table = getPlaylistDataTable(control_panel_state.playlist_id);
+    if ($playlist_table === undefined) {
+        return;
+    }
     var oSettings = $playlist_table.fnSettings();
     var index_of_first_entry_on_page = entry_page_number * oSettings._iDisplayLength;
     if (oSettings._iDisplayStart != index_of_first_entry_on_page) {
@@ -287,8 +293,10 @@ function tryToLocateCurrentTrackInPlaylist(entry_page_number, entry_index_on_pag
     } else {
         // highlight current track.
         var dt_row = $(oSettings.aoData).get(entry_index_on_page);
-        var nRow = dt_row.nTr;
-        highlightCurrentRow($playlist_table, nRow);
+        if (dt_row !== undefined) { // data have been loaded.
+            var nRow = dt_row.nTr;
+            highlightCurrentRow($playlist_table, nRow);
+        }
     }
 }
 
