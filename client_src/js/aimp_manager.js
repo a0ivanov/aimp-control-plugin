@@ -42,7 +42,8 @@ function AimpManager() {
                                           'GetPlaylists', 'GetPlaylistEntries', 'GetEntryPositionInDataTable', 'GetPlaylistEntriesCount', 'GetFormattedEntryTitle', 'GetPlaylistEntryInfo', 'SetTrackRating', // playlists and tracks utils
                                           'GetCover', // album cover URI getter
                                           'DownloadTrack', // track URI getter
-                                          'SubscribeOnAIMPStateUpdateEvent' // subscribe for AIMP player state notifications
+                                          'SubscribeOnAIMPStateUpdateEvent', // subscribe for AIMP player state notifications
+					  'PluginCapabilities'
                                          ]
                                }
     );
@@ -511,6 +512,14 @@ getCover : function(params, callbacks) {
 */
 downloadTrack : function(params, callbacks) {
     this.callRpc(this.aimp_service.DownloadTrack, params, callbacks);
+},
+
+/*
+    Returns AIMP Control plugin capabilities.
+        Param callbacks - see description in AimpManager comments.
+*/
+pluginCapabilities : function(callbacks) {
+    this.callRpc(this.aimp_service.PluginCapabilities, {}, callbacks);
 }
 
 }; // AimpManager.prototype

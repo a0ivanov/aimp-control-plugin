@@ -96,6 +96,10 @@ body {
     height: auto;
 }
 
+#playlist_controls .ui-menu {
+    width: 100px;
+}
+
 /* Playback panel, current track scroller */
 #scroll_current_track_container {
     height: 20px;

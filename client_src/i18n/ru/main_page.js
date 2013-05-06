@@ -78,5 +78,9 @@ track_contol_menu_download_track : 'Скачать',
 track_info_dialog_caption : 'Информация о треке',
 track_info_dialog_cancel_rating : 'Без оценки',
 
+playlist_contol_menu_add : 'Добавить треки в плейлист',
+playlist_contol_menu_item_add_file : 'Файл',
+playlist_contol_menu_item_add_url : 'Ссылка',
+
 all_entries : 'Все'
 }

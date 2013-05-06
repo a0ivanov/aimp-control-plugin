@@ -1128,7 +1128,84 @@ function initAimpControlPage()
     subscribeOnTrackPositionChangeEvent(); ///!!! this can be done on track playing start.
     initSettingsDialog();
     loadPlaylists();
+    initPlaylistControls();
 }
+
+function makeMenu(id, items) {
+    var html = '<ul id="' + id + '">';
+    for (var i in items) {
+        var item = items[i];   
+        var item_html = '<li id="' + item['id'] + '"><a href="#">' + getText(item['text_id']) + '</a></li>';
+        html += item_html;
+    }
+    html += '</ul>';
+    return html;
+}
+
+function removeMenu(menu) {
+    menu.menu('destroy');
+    menu.remove();
+}
+
+function createPlaylistControlMenu(menu_id)
+{    
+    var items = [{id:'file', text_id: 'playlist_contol_menu_item_add_file'},
+                 {id:'url',  text_id: 'playlist_contol_menu_item_add_url'}
+                 ];
+    
+    // prepare menu.
+    var playlist_controls = $('#playlist_controls');   
+    playlist_controls.append(makeMenu(menu_id, items));
+    
+    var add_entity_menu = $('#' + menu_id);
+
+    add_entity_menu.menu({
+        select: function( event, ui ) {
+            switch(ui.item[0].id) {
+            case 'file':
+                
+                break;
+            case 'url':
+                
+                break;
+            }
+            removeMenu(add_entity_menu);
+        }
+    });    
+}
+
+function initPlaylistControls()
+{
+    // prepare button
+    var add_entity_button = $('#add_entity_to_playlist_button');
+    add_entity_button.button({
+        text : false,
+        icons: { primary: 'ui-icon-plusthick' },
+        label : getText('playlist_contol_menu_add'),
+        disabled : true
+    }).click(function() {
+        var menu_id = 'add_entity_to_playlist_menu';
+        var add_entity_menu = $('#' + menu_id);
+        if (add_entity_menu.length != 0) {
+            removeMenu(add_entity_menu);
+        } else {
+            createPlaylistControlMenu(menu_id);        
+        }        
+    });
+    
+    aimp_manager.pluginCapabilities(
+                                    {
+                                      on_success : function(result) {
+                                        if (result.hasOwnProperty('upload_track') && result['upload_track']) {
+                                            add_entity_button.button('option', 'disabled', false);    
+                                        }
+                                      },
+                                      on_exception : undefined, // do nothing, menu will remain disabled.
+                                      on_complete : undefined
+                                    }
+    );
+}
+
 
 function initTrackInfoDialog()
 {

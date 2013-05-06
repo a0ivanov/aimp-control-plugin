@@ -77,5 +77,9 @@ track_contol_menu_download_track : 'Download',
 track_info_dialog_caption : 'Track info',
 track_info_dialog_cancel_rating : 'Not rated',
 
+playlist_contol_menu_add : 'Add items',
+playlist_contol_menu_item_add_file : 'File',
+playlist_contol_menu_item_add_url : 'URL',
+
 all_entries : 'All'
 }

@@ -35,6 +35,8 @@
 <script type="text/javascript" src="js/jquery.rating.js"></script>
 <!--playlist-->
 <script type="text/javascript" src="dataTables/media/js/jquery.dataTables.js"></script>
+<!-- playlist control menu -->
+<script src="jquery-ui/development-bundle/ui/jquery.ui.menu.js"></script>  
 <!--autoscroller-->
 <script type="text/javascript" src="js/jscroller2-1.61-src.js"></script>
 <!--cookie utils-->
@@ -115,8 +117,13 @@
     </tbody>
 </table>
 
-<div id="playlists">
-    <ul></ul>
+<div id="playlists_container">
+    <div id="playlists">
+        <ul></ul>
+    </div>    
+    <div id="playlist_controls">
+        <button id="add_entity_to_playlist_button"></button>
+    </div>
 </div>
 
 <div id="settings-dialog-form">
