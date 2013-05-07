@@ -79,6 +79,8 @@ track_info_dialog_caption : 'Информация о треке',
 track_info_dialog_cancel_rating : 'Без оценки',
 
 playlist_contol_menu_add : 'Добавить треки в плейлист',
+playlist_contol_menu_add_disabled : 'Добавление треков в плейлист отключено в настройках плагина AIMP Control',
+playlist_contol_menu_add_not_supported : 'Добавление треков в плейлист не поддерживается плагином. Пожалуйста, обновите плагин до текущей версии.',
 playlist_contol_menu_item_add_file : 'Файл',
 playlist_contol_menu_item_add_url : 'Ссылка',
 playlist_contol_dialog_file_add_title: 'Добавление файлов',

@@ -78,6 +78,8 @@ track_info_dialog_caption : 'Track info',
 track_info_dialog_cancel_rating : 'Not rated',
 
 playlist_contol_menu_add : 'Add items',
+playlist_contol_menu_add_disabled : 'Adding items to playlist is disabled in AIMP Control plugin settings',
+playlist_contol_menu_add_not_supported : 'Adding items to playlist is not supported by plugin. Please upgrade to latest version.',
 playlist_contol_menu_item_add_file : 'File',
 playlist_contol_menu_item_add_url : 'URL',
 playlist_contol_dialog_file_add_title: 'Add files',

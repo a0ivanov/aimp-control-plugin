@@ -1349,11 +1349,18 @@ function initPlaylistControls()
     aimp_manager.pluginCapabilities(
                                     {
                                       on_success : function(result) {
-                                        if (result.hasOwnProperty('upload_track') && result['upload_track']) {
-                                            add_entity_button.button('option', 'disabled', false);    
+                                        if (result.hasOwnProperty('upload_track')) {
+                                            if (result['upload_track']) {
+                                                add_entity_button.button('option', 'disabled', false);
+                                            } else {
+                                                add_entity_button.button('option', 'label', getText('playlist_contol_menu_add_disabled'));
+                                            }
                                         }
                                       },
-                                      on_exception : undefined, // do nothing, menu will remain disabled.
+                                      on_exception : function(error, localized_error_message) {
+                                        // do nothing, menu will remain disabled.
+                                        add_entity_button.button('option', 'label', getText('playlist_contol_menu_add_not_supported'));
+                                      },
                                       on_complete : undefined
                                     }
     );
