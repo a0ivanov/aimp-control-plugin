@@ -1165,9 +1165,13 @@ function removeMenu(menu)
     menu.remove();
 }
 
-function makeFileUpload(id, playlist_id)
+function makeFileUploadHtml(id, playlist_id)
 {
-    var html = '<input id="' + id + '" type="file" name="files[]" data-url="uploadTrack/playlist_id/' + playlist_id + '" multiple>';
+    var html =    '<p>' + getText('playlist_contol_dialog_file_add_message') + '</p>'
+                + '<span class="btn btn-success fileinput-button">'
+                    + '<span>' + getText('playlist_contol_dialog_file_add_button_caption') + '</span>'
+                    + '<input id="' + id + '" type="file" name="files[]" data-url="uploadTrack/playlist_id/' + playlist_id + '" multiple>'
+                + '</span>';
     return html;
 }
 
@@ -1185,10 +1189,43 @@ function getActivePlaylistID()
     return id;
 }
 
+function makeDialogHtml(dialog_id, title, inner_html) {
+    var html =   '<div id="' + dialog_id + '" title="' + title + '">'
+                    + inner_html
+               + '</div>';
+    return html;
+}
+
+function removeDialog(ctrl)
+{
+    ctrl.dialog('destroy');
+    ctrl.remove();
+}
+
 function showFileUploadDialog()
 {
+    var dialog_id = 'fileupload_dialog';
+    
     var control_id = 'fileupload';
-    $('#playlist_controls').append(makeFileUpload(control_id, getActivePlaylistID()));
+    $('#playlist_controls').append(
+        makeDialogHtml( dialog_id,
+                        getText('playlist_contol_dialog_file_add_title'),
+                        makeFileUploadHtml(control_id, getActivePlaylistID())
+        )
+    );
+    
+    $('#playlist_controls').find('.fileinput-button').each(function () {
+        var input = $(this).find('input:file').detach();
+        $(this)
+            .button({icons: {primary: 'ui-icon-plusthick'}})
+            .append(input);
+    });
+    
+    function cleanUp() {
+        removeFileUpload($('#' + control_id));
+        removeDialog($('#' + dialog_id));   
+    }
+    
     $('#' + control_id).fileupload({
         sequentialUploads: true,
         done: function (e, data) {
@@ -1197,7 +1234,13 @@ function showFileUploadDialog()
             alert('upload failure');
         },
         always: function (e, data) {
-            removeFileUpload($('#' + control_id));
+            cleanUp();
+        }
+    });
+    
+    $('#' + dialog_id).dialog({
+        close: function( event, ui ) {
+            cleanUp();
         }
     });
 }

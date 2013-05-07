@@ -81,6 +81,9 @@ track_info_dialog_cancel_rating : 'Без оценки',
 playlist_contol_menu_add : 'Добавить треки в плейлист',
 playlist_contol_menu_item_add_file : 'Файл',
 playlist_contol_menu_item_add_url : 'Ссылка',
+playlist_contol_dialog_file_add_title: 'Добавление файлов',
+playlist_contol_dialog_file_add_message: 'Выберите файлы или перетащите их на страницу',
+playlist_contol_dialog_file_add_button_caption: 'Выберите файлы',
 
 all_entries : 'Все'
 }

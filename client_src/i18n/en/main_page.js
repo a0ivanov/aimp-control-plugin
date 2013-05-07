@@ -80,6 +80,9 @@ track_info_dialog_cancel_rating : 'Not rated',
 playlist_contol_menu_add : 'Add items',
 playlist_contol_menu_item_add_file : 'File',
 playlist_contol_menu_item_add_url : 'URL',
+playlist_contol_dialog_file_add_title: 'Add files',
+playlist_contol_dialog_file_add_message: 'Choose files or drag&drop here',
+playlist_contol_dialog_file_add_button_caption: 'Add files',
 
 all_entries : 'All'
 }
