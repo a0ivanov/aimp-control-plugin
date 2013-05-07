@@ -83,6 +83,8 @@ playlist_contol_menu_item_add_url : 'URL',
 playlist_contol_dialog_file_add_title: 'Add files',
 playlist_contol_dialog_file_add_message: 'Choose files or drag&drop here',
 playlist_contol_dialog_file_add_button_caption: 'Add files',
+playlist_contol_dialog_url_add_title: 'Add URL',
+playlist_contol_dialog_url_add_button_title: 'Add',
 
 all_entries : 'All'
 }

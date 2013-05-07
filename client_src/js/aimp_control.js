@@ -1168,7 +1168,7 @@ function removeMenu(menu)
 function makeFileUploadHtml(id, playlist_id)
 {
     var html =    '<p>' + getText('playlist_contol_dialog_file_add_message') + '</p>'
-                + '<span class="btn btn-success fileinput-button">'
+                + '<span class="fileinput-button">'
                     + '<span>' + getText('playlist_contol_dialog_file_add_button_caption') + '</span>'
                     + '<input id="' + id + '" type="file" name="files[]" data-url="uploadTrack/playlist_id/' + playlist_id + '" multiple>'
                 + '</span>';
@@ -1239,6 +1239,46 @@ function showFileUploadDialog()
     });
     
     $('#' + dialog_id).dialog({
+        modal: true,
+        close: function( event, ui ) {
+            cleanUp();
+        }
+    });
+}
+
+function makeUrlUploadHtml(playlist_id)
+{
+    var upload_uri = 'uploadTrack/playlist_id/' + playlist_id;
+    
+    var html =  '<form action="' + upload_uri + '" enctype="multipart/form-data" method="post">'
+                    + '<p>' + getText('playlist_contol_menu_item_add_url') + '<br/>'
+    
+                    + '<input type="text" name="url" size="40">'
+                    + '</p>'
+                    + '<div>'
+                        + '<input type="submit" value="' + getText('playlist_contol_dialog_url_add_button_title') + '">'
+                    + '</div>'
+              + '</form>';
+    return html;
+}
+
+function showUrlUploadDialog()
+{
+    var dialog_id = 'url_upload_dialog';
+    
+    $('#playlist_controls').append(
+        makeDialogHtml( dialog_id,
+                        getText('playlist_contol_dialog_url_add_title'),
+                        makeUrlUploadHtml(getActivePlaylistID())
+        )
+    );
+    
+    function cleanUp() {
+        removeDialog($('#' + dialog_id));   
+    }
+    
+    $('#' + dialog_id).dialog({
+        modal: true,
         close: function( event, ui ) {
             cleanUp();
         }
@@ -1264,7 +1304,7 @@ function createPlaylistControlMenu(menu_id)
                 showFileUploadDialog();
                 break;
             case 'url':
-                alert('todo');
+                showUrlUploadDialog();
                 break;
             }
             removeMenu(add_entity_menu);

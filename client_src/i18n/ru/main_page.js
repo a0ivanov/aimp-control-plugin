@@ -84,6 +84,8 @@ playlist_contol_menu_item_add_url : 'Ссылка',
 playlist_contol_dialog_file_add_title: 'Добавление файлов',
 playlist_contol_dialog_file_add_message: 'Выберите файлы или перетащите их на страницу',
 playlist_contol_dialog_file_add_button_caption: 'Выберите файлы',
+playlist_contol_dialog_url_add_title: 'Добавление ссылки',
+playlist_contol_dialog_url_add_button_title: 'Добавить',
 
 all_entries : 'Все'
 }
