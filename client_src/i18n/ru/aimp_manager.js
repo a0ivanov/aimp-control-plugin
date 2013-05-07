@@ -27,5 +27,6 @@ error_album_cover_load_failed : 'Ошибка при загрузке облож
 error_rating_set_failed : 'Ошибка при сохранении рейтинга',
 error_status_set_failed : 'Ошибка при сохранении статуса',
 error_radio_capture_set_failed : 'Ошибка при установке режима "Захват радио"',
-error_move_track_in_queue_failed: 'Ошибка перемещения трека в очереди'
+error_move_track_in_queue_failed: 'Ошибка перемещения трека в очереди',
+error_add_url_to_playlist_failed: 'Ошибка добавления ссылки в плейлист'
 }

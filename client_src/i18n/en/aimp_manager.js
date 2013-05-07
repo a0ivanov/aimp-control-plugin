@@ -26,5 +26,6 @@ error_album_cover_load_failed : 'Album cover loading failed',
 error_rating_set_failed : 'Rating set failed',
 error_status_set_failed : 'Status set failed',
 error_radio_capture_set_failed : 'Radio capture mode set failed',
-error_move_track_in_queue_failed: 'Moving track in queue failed'
+error_move_track_in_queue_failed: 'Moving track in queue failed',
+error_add_url_to_playlist_failed: 'Add URL to playlist failed'
 }

@@ -1246,18 +1246,15 @@ function showFileUploadDialog()
     });
 }
 
-function makeUrlUploadHtml(playlist_id)
+function makeUrlUploadHtml(id)
 {
-    var upload_uri = 'uploadTrack/playlist_id/' + playlist_id;
-    
-    var html =  '<form action="' + upload_uri + '" enctype="multipart/form-data" method="post">'
-                    + '<p>' + getText('playlist_contol_menu_item_add_url') + '<br/>'
-    
-                    + '<input type="text" name="url" size="40">'
+    var html =  '<form id="' + id + '" action="" enctype="multipart/form-data" method="post">'
+                    + '<p>'
+                        + getText('playlist_contol_menu_item_add_url')
+                        + '<br/>'
+                        + '<input type="text" id="url" name="url" size="40">'
                     + '</p>'
-                    + '<div>'
-                        + '<input type="submit" value="' + getText('playlist_contol_dialog_url_add_button_title') + '">'
-                    + '</div>'
+                    + '<input class="button" type="submit" value="' + getText('playlist_contol_dialog_url_add_button_title') + '">'
               + '</form>';
     return html;
 }
@@ -1265,11 +1262,11 @@ function makeUrlUploadHtml(playlist_id)
 function showUrlUploadDialog()
 {
     var dialog_id = 'url_upload_dialog';
-    
+    var form_id = 'url_upload_form';
     $('#playlist_controls').append(
         makeDialogHtml( dialog_id,
                         getText('playlist_contol_dialog_url_add_title'),
-                        makeUrlUploadHtml(getActivePlaylistID())
+                        makeUrlUploadHtml(form_id)
         )
     );
     
@@ -1277,6 +1274,24 @@ function showUrlUploadDialog()
         removeDialog($('#' + dialog_id));   
     }
     
+    // post via ajax to avoid redirect to action page on form submit button click.
+    $('#' + form_id + ' .button').click(function() {
+        var url = $('input#url').val();
+        aimp_manager.addURLToPlaylist(  { playlist_id: parseInt(getActivePlaylistID()),
+                                          url: url
+                                        },
+                                        {
+                                          on_success : undefined,
+                                          on_exception : function(error, localized_error_message) {
+                                            alert(localized_message);
+                                          },
+                                          on_complete : undefined
+                                        }
+        );
+        cleanUp();
+        return false;
+    });
+
     $('#' + dialog_id).dialog({
         modal: true,
         close: function( event, ui ) {

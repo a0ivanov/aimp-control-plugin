@@ -1279,6 +1279,23 @@ ResponseType PluginCapabilities::execute(const Rpc::Value& /*root_request*/, Rpc
     return RESPONSE_IMMEDIATE;
 }
 
+ResponseType AddURLToPlaylist::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+{
+    const Rpc::Value& params = root_request["params"];
+    const PlaylistID playlist_id = params["playlist_id"];
+    const std::string& url = params["url"];
+
+    try {
+        aimp_manager_.addURLToPlaylist(url, playlist_id);
+    } catch (std::runtime_error& e) {
+        throw Rpc::Exception(e.what(), ADD_URL_TO_PLAYLIST_FAILED);
+    }
+
+    Rpc::Value& result = root_response["result"];
+    result = Rpc::Value::Object();
+    return RESPONSE_IMMEDIATE;
+}
+
 } // namespace AimpRpcMethods
 
 

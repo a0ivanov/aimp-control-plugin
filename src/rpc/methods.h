@@ -52,7 +52,8 @@ enum ERROR_CODES {
                    RATING_SET_FAILED = 23, /*!< can't set rating. */
                    STATUS_SET_FAILED = 24, /*!< can't set status. */
                    RADIO_CAPTURE_MODE_SET_FAILED = 25, /*!< can't update radio capture mode. Possible reason: currenly playing track source is not radio, but usual file. */
-                   MOVE_TRACK_IN_QUEUE_FAILED = 26 /*!< can't update position of track in queue. Possible reason: position index is out of range. */
+                   MOVE_TRACK_IN_QUEUE_FAILED = 26, /*!< can't update position of track in queue. Possible reason: position index is out of range. */
+                   ADD_URL_TO_PLAYLIST_FAILED = 27 /*!< can't add url to playlist. Possible reason: playlist was not found. */
 };
 
 using namespace AIMPPlayer;
@@ -1125,6 +1126,27 @@ class PluginCapabilities : public AIMPRPCMethod
 public:
     PluginCapabilities(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request_handler)
         : AIMPRPCMethod("PluginCapabilities", aimp_manager, rpc_request_handler)
+    {}
+
+    std::string help()
+    {
+        return "";
+    }
+
+    Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
+};
+
+/*! 
+    \brief Add URL to specified playlist.
+    \param playlist_id - int
+    \param url - string
+    \return empty object on success, error description on error.
+*/
+class AddURLToPlaylist : public AIMPRPCMethod
+{
+public:
+    AddURLToPlaylist(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request_handler)
+        : AIMPRPCMethod("AddURLToPlaylist", aimp_manager, rpc_request_handler)
     {}
 
     std::string help()

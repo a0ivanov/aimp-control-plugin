@@ -589,6 +589,7 @@ void AIMPControlPlugin::createRpcMethods()
                                     );
     REGISTER_AIMP_RPC_METHOD(Version);
     REGISTER_AIMP_RPC_METHOD(PluginCapabilities);
+    REGISTER_AIMP_RPC_METHOD(AddURLToPlaylist);
     // Emulator of Aimp WebCtl plugin.
     REGISTER_AIMP_RPC_METHOD(EmulationOfWebCtlPlugin);
 #undef REGISTER_AIMP_RPC_METHOD

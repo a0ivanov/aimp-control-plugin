@@ -43,7 +43,8 @@ function AimpManager() {
                                           'GetCover', // album cover URI getter
                                           'DownloadTrack', // track URI getter
                                           'SubscribeOnAIMPStateUpdateEvent', // subscribe for AIMP player state notifications
-					  'PluginCapabilities'
+					  'PluginCapabilities',
+					  'AddURLToPlaylist'
                                          ]
                                }
     );
@@ -65,7 +66,8 @@ function AimpManager() {
                            RATING_SET_FAILED,
                            STATUS_SET_FAILED,
                            RADIO_CAPTURE_SET_FAILED,
-                           MOVE_TRACK_IN_QUEUE_FAILED
+                           MOVE_TRACK_IN_QUEUE_FAILED,
+                           ADD_URL_TO_PLAYLIST_FAILED
         };
         */
 
@@ -92,7 +94,8 @@ function AimpManager() {
             23 : 'error_rating_set_failed',
             24 : 'error_status_set_failed',
             25 : 'error_radio_capture_set_failed',
-            26 : 'error_move_track_in_queue_failed'
+            26 : 'error_move_track_in_queue_failed',
+	    27 : 'error_add_url_to_playlist_failed'
         };
     }
     initLocalizedErrorMessages();
@@ -520,6 +523,16 @@ downloadTrack : function(params, callbacks) {
 */
 pluginCapabilities : function(callbacks) {
     this.callRpc(this.aimp_service.PluginCapabilities, {}, callbacks);
+},
+
+/*
+    Returns AIMP Control plugin capabilities.
+	Param params.playlist_id - playlist ID.
+	Param params.url - URL being added.
+        Param callbacks - see description in AimpManager comments.
+*/
+addURLToPlaylist : function(params, callbacks) {
+    this.callRpc(this.aimp_service.AddURLToPlaylist, params, callbacks);
 }
 
 }; // AimpManager.prototype
