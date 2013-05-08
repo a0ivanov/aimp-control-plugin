@@ -1696,4 +1696,22 @@ PlaylistID AIMPManager30::createPlaylist(const std::wstring& title)
                             );
 }
 
+void AIMPManager30::lockPlaylist(PlaylistID playlist_id) // throws std::runtime_error
+{
+    const AIMP3SDK::HPLS playlist_handle = cast<AIMP3SDK::HPLS>( getAbsolutePlaylistID(playlist_id) );
+    HRESULT r = aimp3_playlist_manager_->StorageBeginUpdate(playlist_handle);
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << "IAIMPAddonsPlaylistManager::StorageBeginUpdate() failed. Result " << r);
+    }
+}
+
+void AIMPManager30::unlockPlaylist(PlaylistID playlist_id) // throws std::runtime_error
+{
+    const AIMP3SDK::HPLS playlist_handle = cast<AIMP3SDK::HPLS>( getAbsolutePlaylistID(playlist_id) );
+    HRESULT r = aimp3_playlist_manager_->StorageEndUpdate(playlist_handle);
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << "IAIMPAddonsPlaylistManager::StorageEndUpdate() failed. Result " << r);
+    }
+}
+
 } // namespace AIMPPlayer
