@@ -96,8 +96,17 @@ body {
     height: auto;
 }
 
+#playlist_controls {
+    margin-top: 0.5em;
+}
+
 #playlist_controls .ui-menu {
     width: 100px;
+}
+
+#add_entity_to_playlist_button {    
+    width: 26px;
+    height: 26px;
 }
 
 #file_upload_progress {
