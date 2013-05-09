@@ -1165,13 +1165,29 @@ function removeMenu(menu)
     menu.remove();
 }
 
-function makeFileUploadHtml(id, playlist_id)
+function makeFileUploadHtml(id, upload_progress_id, playlist_id)
 {
-    var html =    '<p>' + getText('playlist_contol_dialog_file_add_message') + '</p>'
-                + '<span class="fileinput-button">'
-                    + '<span>' + getText('playlist_contol_dialog_file_add_button_caption') + '</span>'
-                    + '<input id="' + id + '" type="file" name="files[]" data-url="uploadTrack/playlist_id/' + playlist_id + '" multiple>'
-                + '</span>';
+    var html =    '<table width="100%" >'
+                    + '<tbody>'
+                    + '<tr>'
+                        + '<td>'
+                            + '<p>' + getText('playlist_contol_dialog_file_add_message') + '</p>'
+                            + '<span class="fileinput-button">'
+                                + '<span>' + getText('playlist_contol_dialog_file_add_button_caption') + '</span>'
+                                + '<input id="' + id + '" type="file" name="files[]" data-url="uploadTrack/playlist_id/' + playlist_id + '" multiple>'
+                            + '</span>'
+                        + '</td>'
+                    + '</tr>'
+                    + '<tr>'
+                        + '<td>'
+                            + '<div id="' + upload_progress_id + '">'
+                                + '<div class="bar" style="width: 0%;"></div>'
+                            + '</div>'
+                        + '</td>'
+                    + '</tr>'
+                    + '</tbody>'
+                + '</table>'
+    ;
     return html;
 }
 
@@ -1207,10 +1223,12 @@ function showFileUploadDialog()
     var dialog_id = 'fileupload_dialog';
     
     var control_id = 'fileupload';
+    var upload_progress_id = 'file_upload_progress';
+    
     $('#playlist_controls').append(
         makeDialogHtml( dialog_id,
                         getText('playlist_contol_dialog_file_add_title'),
-                        makeFileUploadHtml(control_id, getActivePlaylistID())
+                        makeFileUploadHtml(control_id, upload_progress_id, getActivePlaylistID())
         )
     );
     
@@ -1235,6 +1253,13 @@ function showFileUploadDialog()
         },
         always: function (e, data) {
             cleanUp();
+        },
+        progressall: function (e, data) {
+            var progress = parseInt(data.loaded / data.total * 100, 10);
+            $('#' + upload_progress_id + ' .bar').css(
+                'width',
+                progress + '%'
+            );
         }
     });
     

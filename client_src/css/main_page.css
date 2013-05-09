@@ -100,6 +100,15 @@ body {
     width: 100px;
 }
 
+/* #file_upload_progress  {
+    clear: both;
+}
+ */
+#file_upload_progress .bar {
+    height: 18px;
+    background: green;
+}
+
 /* Playback panel, current track scroller */
 #scroll_current_track_container {
     height: 20px;
