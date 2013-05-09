@@ -1269,7 +1269,9 @@ function showFileUploadDialog()
     }
     
     $('#' + control_id).fileupload({
+        singleFileUploads: false,
         sequentialUploads: true,
+        multipart: true,
         done: function (e, data) {
         },
         fail: function (e, data) {
