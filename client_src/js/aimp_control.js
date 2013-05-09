@@ -24,8 +24,13 @@ function syncronizeControlMenus() {
     }
 }
 
+function getPlaylistTableID(playlist_id)
+{
+    return 'entries_table_' + playlist_id;
+}
+
 function getPlaylistDataTable(playlist_id) {
-    return $playlists_tables['entries_table_' + playlist_id];
+    return $playlists_tables[getPlaylistTableID(playlist_id)];
 }
 
 function removeHighlightFromAllRows($table) {
@@ -137,6 +142,11 @@ function createEntriesControl(playlist_id)
 
             var on_success = function(fnCallback) {
                 return function(result) {
+                    if (undefined === $playlists_tables[getPlaylistTableID(playlist_id)]) {
+                        // this means that playlist table was destroyed before we get content.
+                        return;
+                    }
+                    
                     // call DataTables function - data getter.
                     fnCallback({
                                 sEcho : sEcho,
@@ -193,7 +203,7 @@ function createEntriesControl(playlist_id)
     
     $table.fnSettings().aaSorting = []; // disable sorting by 0 column.
     
-    $playlists_tables['entries_table_' + playlist_id] = $table;
+    $playlists_tables[getPlaylistTableID(playlist_id)] = $table;
     
     need_goto_current_track_once_on_playlist_content_load = control_panel_state.hasOwnProperty('playlist_id') ? playlist_id == control_panel_state.playlist_id
                                                                                                               : true;
@@ -373,7 +383,7 @@ function addControlMenuToEachEntry(oSettings)
                 },
                 label: getText('track_contol_menu_open')
             }).click(onContextMenuButtonClick);
-        });
+        });   
     }
 }
 
@@ -646,7 +656,7 @@ function deletePlaylistsControls()
 }
 
 function isPlaylistContentLoaded(playlist_id) {
-    return $playlists_tables['entries_table_' + playlist_id] !== undefined;
+    return $playlists_tables[getPlaylistTableID(playlist_id)] !== undefined;
 }
 
 function loadPlaylistContentIfNotLoadedYet(playlist_id)
