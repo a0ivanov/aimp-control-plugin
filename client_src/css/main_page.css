@@ -100,13 +100,20 @@ body {
     width: 100px;
 }
 
-/* #file_upload_progress  {
-    clear: both;
+#file_upload_progress {
+    margin-top: 1em;
 }
- */
-#file_upload_progress .bar {
-    height: 18px;
-    background: green;
+
+#file_upload_progress.ui-progressbar {
+    position: relative;
+}
+
+#file_upload_progress .progress-label {
+    position: absolute;
+    left: 50%;
+    top: 4px;
+    font-weight: bold;
+    text-shadow: 1px 1px 0 #fff;
 }
 
 /* Playback panel, current track scroller */

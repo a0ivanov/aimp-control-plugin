@@ -1181,7 +1181,7 @@ function makeFileUploadHtml(id, upload_progress_id, playlist_id)
                     + '<tr>'
                         + '<td>'
                             + '<div id="' + upload_progress_id + '">'
-                                + '<div class="bar" style="width: 0%;"></div>'
+                                + '<div class="progress-label"></div>'
                             + '</div>'
                         + '</td>'
                     + '</tr>'
@@ -1239,9 +1239,23 @@ function showFileUploadDialog()
             .append(input);
     });
     
+    var progressbar = $('#' + upload_progress_id),
+        progressLabel = $('.progress-label', progressbar);
+ 
+    progressbar.progressbar({
+        value: false,
+        change: function() {
+            progressLabel.text( progressbar.progressbar('value') + '%');
+        },
+        complete: function() {
+            //progressLabel.text( "Complete!" );
+        }
+    });
+    
     function cleanUp() {
         removeFileUpload($('#' + control_id));
-        removeDialog($('#' + dialog_id));   
+        removeDialog($('#' + dialog_id));
+        $('#' + upload_progress_id).progressbar('destroy');
     }
     
     $('#' + control_id).fileupload({
@@ -1256,10 +1270,7 @@ function showFileUploadDialog()
         },
         progressall: function (e, data) {
             var progress = parseInt(data.loaded / data.total * 100, 10);
-            $('#' + upload_progress_id + ' .bar').css(
-                'width',
-                progress + '%'
-            );
+            progressbar.progressbar('value', progress);
         }
     });
     
