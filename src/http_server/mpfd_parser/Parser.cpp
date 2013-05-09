@@ -5,7 +5,7 @@
 //
 // Contacts and other info are on the WEB page:  grigory.info/MPFDParser
 
-
+#include <boost/lexical_cast.hpp>
 #include "Parser.h"
 
 std::map<std::string, MPFD::Field *> MPFD::Parser::GetFieldsMap() {
@@ -177,6 +177,12 @@ void MPFD::Parser::_ParseHeaders(std::string headers) {
             throw Exception(std::string("Cannot find closing quote of \"name=\" attribute.\nThe headers are: \"") + headers + std::string("\""));
         } else {
             ProcessingFieldName = headers.substr(name_pos + 6, name_end_pos - (name_pos + 6));
+            { // make it unique to avoid memleak and field loosing.
+            std::string original = ProcessingFieldName;
+            for (int index = 0; Fields.find(ProcessingFieldName) != Fields.end(); ++index) {
+                ProcessingFieldName = original + boost::lexical_cast<std::string>(index);
+            }
+            }
             Fields[ProcessingFieldName] = new Field();
         }
 
