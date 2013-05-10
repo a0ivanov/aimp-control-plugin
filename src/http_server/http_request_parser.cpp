@@ -245,7 +245,7 @@ boost::tribool request_parser::consume(Request& req, char input)
         if (header_it != req.headers.end()) {
             if (boost::starts_with(header_it->value, "multipart/form-data;")) {
                 req.mpfd_parser.SetUploadedFilesStorage(Request::mpfd_parser_t::StoreUploadedFilesInMemory);
-                req.mpfd_parser.SetMaxCollectedDataLength(20*1024);
+                req.mpfd_parser.SetMaxCollectedDataLength(75 * 1024 * 1024);
                 req.mpfd_parser.SetContentType(header_it->value);
                 state_ = content_multipart_formdata;
                 return boost::indeterminate;
