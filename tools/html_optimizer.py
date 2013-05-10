@@ -86,7 +86,7 @@ def main():
     # <script type="text/javascript" src="js_script0.js"/>
     # <script language="javascript">foo();</script>
     # <script type="text/javascript" src="js_script1.js"/>
-    # where js_script0.js is concatination of script1.js and script2.js, js_script1.js is script3.js
+    # where js_script0.js is concatenation of script1.js and script2.js, js_script1.js is script3.js
     for script in list( head_element.iter('script') ):
         scripts_to_merge_paths = scripts_to_merge_paths_list[-1]
         if script.get('type') == 'text/javascript' or script.get('language') == 'javascript':
