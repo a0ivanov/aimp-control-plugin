@@ -29,6 +29,9 @@
     </logging>
 
     <misc>
+        <!-- Use it carefully. There is no any validation of uploaded files: all files are passed to AIMP directly. 
+             There is risk of uploading dangerous files that can corrupt your system or steal your data.
+        -->
         <enable_track_upload>false</enable_track_upload>
     </misc>
 </settings>
