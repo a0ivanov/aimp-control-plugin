@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef WEBCTLRPC_REQUEST_PARSER_H
-#define WEBCTLRPC_REQUEST_PARSER_H
+#pragma once
 
 #include "rpc/request_parser.h"
 
@@ -18,5 +17,3 @@ class RequestParser : public Rpc::RequestParser
 };
 
 } // namespace WebCtlRpc
-
-#endif // #ifndef WEBCTLRPC_REQUEST_PARSER_H

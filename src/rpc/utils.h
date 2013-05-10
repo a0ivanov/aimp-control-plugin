@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef RPC_UTILS_H
-#define RPC_UTILS_H
+#pragma once
 
 /*!
     \brief rpc_utils.h file contains function for generate RPC answers in unified manner.
@@ -200,5 +199,3 @@ private:
 } // namespace AimpRpcMethods::RpcValueSetHelpers
 
 } // namespace AimpRpcMethods
-
-#endif // #ifndef RPC_UTILS_H

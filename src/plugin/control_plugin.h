@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef AIMP_CONTROL_PLUGIN_H
-#define AIMP_CONTROL_PLUGIN_H
+#pragma once
 
 #include "aimp/aimp2_sdk.h"
 #include "aimp/aimp3_sdk/aimp3_sdk.h"
@@ -231,5 +230,3 @@ private:
 };
 
 } // namespace ControlPlugin
-
-#endif // #ifndef AIMP_CONTROL_PLUGIN_H

@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef UTILITIES_H
-#define UTILITIES_H
+#pragma once
 
 #include "boost/timer.hpp"
 #include <string>
@@ -140,5 +139,3 @@ std::wstring getExecutableProductVersion(const TCHAR* pszFilePath); // throws st
 std::wstring getCurrentExecutablePath(); // throws std::runtime_error
 
 } // namespace Utilities
-
-#endif // #ifndef UTILITIES_H

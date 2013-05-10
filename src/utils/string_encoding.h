@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef STRING_ENCODING_UTILS_H
-#define STRING_ENCODING_UTILS_H
+#pragma once
 
 #include <string>
 
@@ -113,5 +112,3 @@ public:
 };
 
 } // namespace StringEncoding
-
-#endif // #ifndef STRING_ENCODING_UTILS_H

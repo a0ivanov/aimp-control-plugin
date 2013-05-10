@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef LOGGER_H
-#define LOGGER_H
+#pragma once
 
 #pragma warning (push, 3)
 #include <boost/log/common.hpp>
@@ -180,5 +179,3 @@ public:
 };
 
 } } // namespace ControlPlugin::PluginLogger
-
-#endif // #ifndef LOGGER_H

@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef RPC_RESPONSE_SERIALIZER_H
-#define RPC_RESPONSE_SERIALIZER_H
+#pragma once
 
 #include <string>
 
@@ -27,5 +26,3 @@ protected:
 };
 
 } // namespace Rpc
-
-#endif // #ifndef RPC_RESPONSE_SERIALIZER_H

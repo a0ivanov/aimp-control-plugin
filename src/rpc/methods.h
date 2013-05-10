@@ -3,8 +3,7 @@
     \file
     \mainpage AIMP Control RPC functionality
 */
-#ifndef RPC_METHODS_H
-#define RPC_METHODS_H
+#pragma once
 
 #include "aimp/manager.h"
 #include "method.h"
@@ -1227,5 +1226,3 @@ private:
 };
 
 } // namespace AimpRpcMethods
-
-#endif // #ifndef RPC_METHODS_H

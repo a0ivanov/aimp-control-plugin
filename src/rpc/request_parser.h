@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef RPC_REQUEST_PARSER_H
-#define RPC_REQUEST_PARSER_H
+#pragma once
 
 #include <string>
 #include <cassert>
@@ -34,5 +33,3 @@ protected:
 };
 
 } // namespace Rpc
-
-#endif // #ifndef RPC_REQUEST_PARSER_H

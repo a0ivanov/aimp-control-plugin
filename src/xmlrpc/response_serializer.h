@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef XMLRPC_RESPONSE_SERIALIZER_H
-#define XMLRPC_RESPONSE_SERIALIZER_H
+#pragma once
 
 #include "rpc/response_serializer.h"
 
@@ -23,5 +22,3 @@ private:
 };
 
 } // namespace XmlRpc
-
-#endif // #ifndef XMLRPC_RESPONSE_SERIALIZER_H

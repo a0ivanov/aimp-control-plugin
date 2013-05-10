@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef AIMP_MANAGER_H
-#define AIMP_MANAGER_H
+#pragma once
 
 #include "config.h"
 #include "playlist.h"
@@ -291,5 +290,3 @@ inline bool aimpStatusValid(int status)
     { return (AIMPManager::STATUS_FIRST < status && status < AIMPManager::STATUS_LAST); }
 
 } // namespace AIMPPlayer
-
-#endif // #ifndef AIMP_MANAGER_H

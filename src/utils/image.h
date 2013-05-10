@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef IMAGE_UTILS_H
-#define IMAGE_UTILS_H
+#pragma once
 
 #include <FreeImagePlus.h>
 #include <vector>
@@ -49,5 +48,3 @@ private:
 SIZE getBitmapSize(HBITMAP bitmap_handle); // throw std::runtime_error
 
 } // namespace ImageUtils
-
-#endif // #ifndef IMAGE_UTILS_H

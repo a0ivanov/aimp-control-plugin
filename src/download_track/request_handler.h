@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef DOWNLOAD_TRACK_REQUEST_HANDLER_H
-#define DOWNLOAD_TRACK_REQUEST_HANDLER_H
+#pragma once
 
 namespace AIMPPlayer { class AIMPManager; }
 namespace Http {
@@ -31,5 +30,3 @@ private:
 };
 
 } // namespace DownloadTrack
-
-#endif // #ifndef DOWNLOAD_TRACK_REQUEST_HANDLER_H

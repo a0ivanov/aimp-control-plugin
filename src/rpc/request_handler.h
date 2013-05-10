@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef RPC_REQUEST_HANDLER_H
-#define RPC_REQUEST_HANDLER_H
+#pragma once
 
 #include <boost/logic/tribool.hpp>
 #include <boost/ptr_container/ptr_map.hpp>
@@ -114,5 +113,3 @@ private:
 typedef boost::shared_ptr<RpcCallerDescription> RpcCallerDescription_ptr;
 
 } // namespace Rpc
-
-#endif // #ifndef RPC_REQUEST_HANDLER_H

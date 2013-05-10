@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef RPCFRONTEND_H
-#define RPCFRONTEND_H
+#pragma once
 
 #include <string>
 
@@ -23,5 +22,3 @@ public:
 };
 
 } // namespace Rpc
-
-#endif // #ifndef RPCFRONTEND_H

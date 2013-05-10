@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef TRACK_DESCRIPTION_H
-#define TRACK_DESCRIPTION_H
+#pragma once
 
 #include <iosfwd>
 #include "common_types.h"
@@ -30,5 +29,3 @@ bool operator<(const TrackDescription& left, const TrackDescription& right);
 bool operator==(const TrackDescription& left, const TrackDescription& right);
 
 } // namespace AIMPPlayer
-
-#endif // #ifndef TRACK_DESCRIPTION_H

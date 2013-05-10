@@ -1,8 +1,5 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef RPCMETHOD_H
-#define RPCMETHOD_H
-
 #include <string>
 #include <boost/noncopyable.hpp>
 
@@ -47,5 +44,3 @@ protected:
 };
 
 } // namespace Rpc
-
-#endif // #ifndef RPCMETHOD_H

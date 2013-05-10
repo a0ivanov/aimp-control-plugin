@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef AIMP_COMMON_TYPES_H
-#define AIMP_COMMON_TYPES_H
+#pragma once
 
 #include <vector>
 #include <map>
@@ -21,5 +20,3 @@ enum ORDER_DIRECTION { ASCENDING = 0, DESCENDING };
 enum ENTRY_FIELDS_ORDERABLE { ID = 0, TITLE, ARTIST, ALBUM, DATE, GENRE, BITRATE, DURATION, FILESIZE, RATING, FIELDS_ORDERABLE_SIZE };
 
 } // namespace AIMPPlayer
-
-#endif // #ifndef AIMP_COMMON_TYPES_H

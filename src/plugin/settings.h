@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef PLUGIN_SETTINGS_H
-#define PLUGIN_SETTINGS_H
+#pragma once
 
 #include <exception>
 #include <set>
@@ -87,5 +86,3 @@ public:
 };
 
 } } // namespace ControlPlugin::PluginSettings
-
-#endif // #ifndef PLUGIN_SETTINGS_H

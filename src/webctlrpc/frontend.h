@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef WEBCTLRPCFRONTEND_H
-#define WEBCTLRPCFRONTEND_H
+#pragma once
 
 #include "rpc/frontend.h"
 #include "webctlrpc/request_parser.h"
@@ -30,5 +29,3 @@ private:
 };
 
 } // namespace WebCtlRpc
-
-#endif // #ifndef WEBCTLRPCFRONTEND_H

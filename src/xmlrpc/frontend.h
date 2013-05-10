@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef XMLRPCFRONTEND_H
-#define XMLRPCFRONTEND_H
+#pragma once
 
 #include "rpc/frontend.h"
 #include "xmlrpc/request_parser.h"
@@ -30,5 +29,3 @@ private:
 };
 
 } // namespace XmlRpc
-
-#endif // #ifndef XMLRPCFRONTEND_H

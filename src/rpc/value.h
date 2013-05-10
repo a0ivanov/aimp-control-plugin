@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef RPCVALUE_H
-#define RPCVALUE_H
+#pragma once
 
 #include <iosfwd>
 #include <string>
@@ -134,5 +133,3 @@ inline std::ostream& operator<<(std::ostream& os, const Value& value)
 }
 
 } // namespace Rpc
-
-#endif // #ifndef RPCVALUE_H

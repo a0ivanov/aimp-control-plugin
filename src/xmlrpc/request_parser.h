@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef XMLRPC_REQUEST_PARSER_H
-#define XMLRPC_REQUEST_PARSER_H
+#pragma once
 
 #include "rpc/request_parser.h"
 
@@ -18,5 +17,3 @@ class RequestParser : public Rpc::RequestParser
 };
 
 } // namespace XmlRpc
-
-#endif // #ifndef XMLRPC_REQUEST_PARSER_H

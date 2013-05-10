@@ -1,7 +1,6 @@
 // Copyright (c) 2013, Alexey Ivanov
 
-#ifndef RPCEXCEPTION_H
-#define RPCEXCEPTION_H
+#pragma once
 
 #include <string>
 
@@ -49,5 +48,3 @@ private:
 };
 
 } // namespace Rpc
-
-#endif // #ifndef RPCEXCEPTION_H
