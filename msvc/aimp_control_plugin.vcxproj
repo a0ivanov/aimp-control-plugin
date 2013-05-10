@@ -134,6 +134,7 @@
     <ClCompile Include="..\src\http_server\mpfd_parser\Exception.cpp" />
     <ClCompile Include="..\src\http_server\mpfd_parser\Field.cpp" />
     <ClCompile Include="..\src\http_server\mpfd_parser\Parser.cpp" />
+    <ClCompile Include="..\src\http_server\mpfd_parser_factory.cpp" />
     <ClCompile Include="..\src\http_server\reply.cpp" />
     <ClCompile Include="..\src\http_server\server.cpp" />
     <ClCompile Include="..\src\jsonrpc\jsonrpc_request_parser.cpp" />
@@ -204,6 +205,7 @@
     <ClInclude Include="..\src\http_server\mpfd_parser\Exception.h" />
     <ClInclude Include="..\src\http_server\mpfd_parser\Field.h" />
     <ClInclude Include="..\src\http_server\mpfd_parser\Parser.h" />
+    <ClInclude Include="..\src\http_server\mpfd_parser_factory.h" />
     <ClInclude Include="..\src\http_server\reply.h" />
     <ClInclude Include="..\src\http_server\request.h" />
     <ClInclude Include="..\src\http_server\request_handler.h" />

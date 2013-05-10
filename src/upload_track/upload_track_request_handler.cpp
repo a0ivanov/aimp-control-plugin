@@ -47,22 +47,15 @@ bool RequestHandler::handle_request(const Http::Request& req, Http::Reply& rep)
         };
         ON_BLOCK_EXIT(unlock_playlist, playlist_id);
 
-        for (auto field_it : req.mpfd_parser.GetFieldsMap()) {
+        for (auto field_it : req.mpfd_parser->GetFieldsMap()) {
             const MPFD::Field& field_const = *field_it.second;
             MPFD::Field& field = const_cast<MPFD::Field&>(field_const);
 
             switch (field.GetType()) {
             case MPFD::Field::FileType:
-                {
-                const std::string filename = field.GetFileName();
-                const fs::wpath path = temp_dir_ / filename;
-
-                { // save to temp dir.
-                std::ofstream out(path.native(), std::ios_base::out | std::ios_base::binary);
-                out.write(field.GetFileContent(), field.GetFileContentSize());
-                out.close();
-                }
-            
+                {;
+                const fs::wpath path = fs::path(field.GetTempFileName()).parent_path() / field.GetFileName();
+                fs::copy_file(field.GetTempFileName(), path, fs::copy_option::overwrite_if_exists); // can't use rename here since parser will close file in Field's dtor.
                 aimp_manager_.addFileToPlaylist(path, playlist_id);
                 // we should not erase file since AIMP will use it.
                 //fs::remove(path);
@@ -81,7 +74,8 @@ bool RequestHandler::handle_request(const Http::Request& req, Http::Reply& rep)
         rep = Reply::stock_reply(Reply::ok);
     } catch (MPFD::Exception&) {
         rep = Reply::stock_reply(Reply::bad_request);
-    } catch (std::exception&) {
+    } catch (std::exception& e) {
+        (void)e;
         rep = Reply::stock_reply(Reply::forbidden);
     }
     return true;

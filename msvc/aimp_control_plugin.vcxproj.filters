@@ -190,6 +190,9 @@
     <ClCompile Include="..\src\upload_track\upload_track_request_handler.cpp">
       <Filter>src\upload_track</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\http_server\mpfd_parser_factory.cpp">
+      <Filter>src\http server</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\stdafx.h">
@@ -398,6 +401,9 @@
     </ClInclude>
     <ClInclude Include="..\src\upload_track\request_handler.h">
       <Filter>src\upload_track</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\http_server\mpfd_parser_factory.h">
+      <Filter>src\http server</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

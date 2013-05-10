@@ -66,7 +66,8 @@ private:
         if (content_consumed_ < content_length_) {   
             assert(begin <= end);
             const std::size_t length = std::distance(begin, end);
-            req.mpfd_parser.AcceptSomeData(begin, length);
+            assert(req.mpfd_parser);
+            req.mpfd_parser->AcceptSomeData(begin, length);
             content_consumed_ += length;
             boost::tribool result = boost::indeterminate;
             if (content_consumed_ == content_length_) {

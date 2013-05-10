@@ -36,8 +36,7 @@ struct Request
 
     /// The optional multipart form data content sent with the request.
     /// Will contain all data.
-    typedef MPFD::Parser mpfd_parser_t;
-    mpfd_parser_t mpfd_parser;
+    std::shared_ptr<MPFD::Parser> mpfd_parser;
 };
 
 } // namespace Http

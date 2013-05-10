@@ -16,6 +16,7 @@
 #include "http_server/request_handler.h"
 #include "http_server/request_handler.h"
 #include "http_server/server.h"
+#include "http_server/mpfd_parser_factory.h"
 #include "download_track/request_handler.h"
 #include "upload_track/request_handler.h"
 #include "utils/string_encoding.h"
@@ -395,8 +396,10 @@ HRESULT AIMPControlPlugin::initialize()
             const fs::wpath temp_dir_to_store_tracks_being_added = fs::temp_directory_path() / kPLUGIN_SHORT_NAME;
             fs::create_directories(temp_dir_to_store_tracks_being_added);
 
+            Http::MPFD::ParserFactory::instance(Http::MPFD::ParserFactory::ParserFactoryPtr(new Http::MPFD::ParserFactoryImpl(temp_dir_to_store_tracks_being_added))
+                                                );
+
             upload_track_request_handler_.reset( new UploadTrack::RequestHandler(*aimp_manager_,
-                                                                                 temp_dir_to_store_tracks_being_added,
                                                                                  settings().misc.enable_track_upload
                                                                                  )
                                                 );
