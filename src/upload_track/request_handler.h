@@ -17,9 +17,7 @@ public:
     RequestHandler(AIMPPlayer::AIMPManager& aimp_manager, bool enabled)
         :
         aimp_manager_(aimp_manager),
-        enabled_(enabled),
-        target_playlist_id_(0),
-        target_playlist_id_created_(false)
+        enabled_(enabled)
     {}
 
     bool handle_request(const Http::Request& req, Http::Reply& rep); // throws std::exception.
@@ -30,8 +28,6 @@ private:
 
     AIMPPlayer::AIMPManager& aimp_manager_;
     bool enabled_;
-    int target_playlist_id_;
-    bool target_playlist_id_created_;
 };
 
 } // namespace UploadTrack
