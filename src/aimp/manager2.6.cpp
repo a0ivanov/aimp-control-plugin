@@ -580,9 +580,12 @@ bool AIMPManager26::isLoadedPlaylistEqualsAimpPlaylist(PlaylistID playlist_id) c
 {
     // PROFILE_EXECUTION_TIME(__FUNCTION__);
 
-    const size_t loaded_entries_count = getEntriesCountDB(playlist_id, playlists_db_);
     const int entries_count = aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
+
+#if _DEBUG
+    const size_t loaded_entries_count = getEntriesCountDB(playlist_id, playlists_db_);
     assert(entries_count >= 0 && static_cast<size_t>(entries_count) == loaded_entries_count); // function returns correct result only if entries count in loaded and actual playlists are equal.
+#endif
 
     using namespace Utilities;
 
