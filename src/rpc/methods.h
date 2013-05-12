@@ -32,6 +32,14 @@ namespace AimpRpcMethods
 {
 
 /*!
+    \page ids_info Playlist/track identifiers
+    \section special_ids_sec Special IDs
+    ID -1 is used as currently playing playlist/track.
+    \section misc_sec Miscellaneous
+    On AIMP3+ playlist ID is not needed because of track ID is unique there.
+*/
+
+/*!
     \brief Error codes which RPC functions return.
     \internal Use codes in range [11-1000] for RPC methods errors. Rpc server uses range [1-10] for its errors. \endinternal
 */
@@ -92,8 +100,8 @@ private:
 
 /*! 
     \brief Starts playback.
-    \param track_id - int. Special ID is -1 which means currently playing track.
-    \param playlist_id - int. Special ID is -1 which means currently playing playlist.
+    \param track_id - int. \ref ids_info "More"
+    \param playlist_id - int. \ref ids_info "More"
     \remark If no params is specified, starts playback of current track in current playlist.
     \return object which describes:
         - success:<BR>
@@ -387,8 +395,8 @@ public:
     \brief Returns formatted string for specified track.
 
            Acts like printf() analog, see details below.
-    \param track_id - int.
-    \param playlist_id - int.
+    \param track_id - int. \ref ids_info "More"
+    \param playlist_id - int. \ref ids_info "More".
     \param format_string - string, can contain following format arguments:
     \verbatim
     %A - album
@@ -445,8 +453,8 @@ typedef GetFormattedEntryTitle get_formatted_entry_title;
 
 /*! 
     \brief Returns info about track.
-    \param track_id - int
-    \param playlist_id - int.
+    \param track_id - int. \ref ids_info "More"
+    \param playlist_id - int. \ref ids_info "More".
     \return object which describes specified track.
             Example:\code{"album":"L.A. Noire Official Soundtrack","artist":"Andrew Hale and Simon Hale","bitrate":320,"channels_count":2,"date":"2011",
                           "duration":198557,"filesize":7944619,"genre":"Soundtrack","id":52841544,"playlist_id":40396992,
@@ -471,8 +479,8 @@ public:
 
 /*! 
     \brief Enqueues track for playing.
-    \param track_id - int
-    \param playlist_id - int
+    \param track_id - int. \ref ids_info "More"
+    \param playlist_id - int. \ref ids_info "More"
     \param insert_at_queue_beginning - boolean, optional, default is false. If true enqueue at the beginning of queue.
 */
 class EnqueueTrack : public AIMPRPCMethod
@@ -493,8 +501,8 @@ public:
 
 /*! 
     \brief Removes track from AIMP play queue.
-    \param track_id - int
-    \param playlist_id - int
+    \param track_id - int. \ref ids_info "More"
+    \param playlist_id - int. \ref ids_info "More"
 */
 class RemoveTrackFromPlayQueue : public AIMPRPCMethod
 {
@@ -514,9 +522,9 @@ public:
 
 /*! 
     \brief Moves track to specified position in queue.
-    \param track_id - int, optional. If specified param playlist_id is obligatory. Note: track should be already queued. 
+    \param track_id - int, optional. If specified param playlist_id is obligatory on AIMP2. Note: track should be already queued.  
     \param playlist_id - int, optional. If specified param track_id is obligatory. Note: track should be already queued.
-    \param old_queue_index - int, optional. If specified params track_id and track_id are not needed.
+    \param old_queue_index - int, optional. If specified params track_id and playlist_id are not needed.
     \param new_queue_index - int.
 */
 class QueueTrackMove : public AIMPRPCMethod
@@ -613,7 +621,7 @@ struct PaginationInfo : boost::noncopyable {
 
 /*! 
     \brief Returns list of playlist entries.
-    \param playlist_id - int
+    \param playlist_id - int. \ref special_ids_sec "More"
     \param format_string - string, optional. If specified entry will be presented as string, instead set of fields. Mutual exclusive with 'fields' param.
     \param fields - array of strings, optional. List of fields that need to be filled.
            If 'fields' param is not specified the function treats it equals "id, title".
@@ -733,8 +741,8 @@ private:
 
 /*! 
     \brief Returns page number and index of track on page.
-    \param track_id - int
-    \param playlist_id - int
+    \param track_id - int. \ref ids_info "More"
+    \param playlist_id - int. \ref ids_info "More"
     \param start_index - the same as GetPlaylistEntries 's param.
     \param entries_count - the same as GetPlaylistEntries 's param.
     \param order_fields - the same as GetPlaylistEntries 's param.
@@ -773,7 +781,7 @@ private:
 
 /*! 
     \brief Returns count of entries in playlist.
-    \param playlist_id - int
+    \param playlist_id - int. \ref special_ids_sec "More"
     \return count of entries.
             Example:\code0\endcode            
 */
@@ -851,8 +859,8 @@ private:
 
 /*! 
     \brief Returns URI of album cover.
-    \param playlist_id - int
-    \param track_id - int
+    \param playlist_id - int. \ref ids_info "More"
+    \param track_id - int. \ref ids_info "More"
     \param cover_width - int, optional.
     \param cover_height - int, optional.
     
@@ -1069,8 +1077,8 @@ private:
         Current implementation just saves path to track and rating in text file since AIMP SDK does not support rating change now.
         No checks are performed(ex. rating already exists for file and etc.) since it is temporarily stub.
 
-    \param track_id - int
-    \param playlist_id - int
+    \param track_id - int. \ref ids_info "More"
+    \param playlist_id - int. \ref ids_info "More"
     \param rating - int. Range [0-5], zero means rating is not set.
 */
 class SetTrackRating : public AIMPRPCMethod
@@ -1137,7 +1145,7 @@ public:
 
 /*! 
     \brief Add URL to specified playlist.
-    \param playlist_id - int
+    \param playlist_id - int. \ref special_ids_sec "More"
     \param url - string
     \return empty object on success, error description on error.
 */
