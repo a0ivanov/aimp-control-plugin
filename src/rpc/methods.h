@@ -46,6 +46,7 @@ namespace AimpRpcMethods
     \section track_upload_sec Uploading track
         Use POST request with multipart form data content to URI /uploadTrack/playlist_id/\<playlst_id\><BR>
         Multiple file upload in one request is supported.<BR>
+        Files will be stored at "%TMP%\Control plugin" directory.<BR>
         Internet radio URL adding to playlist is also supported by using text input field type. But URL can be added in more convenient way by AddURLToPlaylist.
 */
 
