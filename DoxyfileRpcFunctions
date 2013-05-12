@@ -1024,7 +1024,7 @@ GENERATE_HTMLHELP      = YES
 # can add a path in front of the file if the result should not be
 # written to the html output directory.
 
-CHM_FILE               = PluginRpcFunctions.chm
+CHM_FILE               = PluginRpcFunctions-$(PROJECT_VERSION).chm
 
 # If the GENERATE_HTMLHELP tag is set to YES, the HHC_LOCATION tag can
 # be used to specify the location (absolute path including file name) of
