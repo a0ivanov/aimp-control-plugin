@@ -40,6 +40,16 @@ namespace AimpRpcMethods
 */
 
 /*!
+    \page non_rpc_features Other features
+    \section track_download_sec Downloading track
+        Use GET request to URI /downloadTrack/playlist_id/\<playlst_id\>/track_id/\<track_id\>
+    \section track_upload_sec Uploading track
+        Use POST request with multipart form data content to URI /uploadTrack/playlist_id/\<playlst_id\><BR>
+        Multiple file upload in one request is supported.<BR>
+        Internet radio URL adding to playlist is also supported by using text input field type. But URL can be added in more convenient way by AddURLToPlaylist.
+*/
+
+/*!
     \brief Error codes which RPC functions return.
     \internal Use codes in range [11-1000] for RPC methods errors. Rpc server uses range [1-10] for its errors. \endinternal
 */
