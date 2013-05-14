@@ -1081,7 +1081,7 @@ private:
 };
 
 /*!
-    \brief Set track rating.
+    \brief Sets track rating.
 
     On AIMP3: fully functional.<BR>
     On AIMP2: 
@@ -1155,7 +1155,7 @@ public:
 };
 
 /*! 
-    \brief Add URL to specified playlist.
+    \brief Adds URL to specified playlist.
     \param playlist_id - int. \ref special_ids_sec "More"
     \param url - string
     \return empty object on success, error description on error.
