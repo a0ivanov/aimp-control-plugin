@@ -109,6 +109,8 @@ public:
     virtual void lockPlaylist(PlaylistID playlist_id); // throws std::runtime_error
     virtual void unlockPlaylist(PlaylistID playlist_id); // throws std::runtime_error
 
+    virtual std::wstring supportedTrackExtentions(); // throws std::runtime_error
+
     sqlite3* playlists_db()
         { return playlists_db_; }
     sqlite3* playlists_db() const

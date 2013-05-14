@@ -1714,4 +1714,15 @@ void AIMPManager30::unlockPlaylist(PlaylistID playlist_id) // throws std::runtim
     }
 }
 
+std::wstring AIMPManager30::supportedTrackExtentions() // throws std::runtime_error
+{
+    std::wstring exts(512, '\0');
+    HRESULT r = aimp3_player_manager_->SupportsExts(AIMP3SDK::AIMP_SUPPORTS_EXTS_FORMAT_AUDIO, const_cast<std::wstring::value_type*>(exts.c_str()), exts.length());
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << "IAIMPAddonsPlayerManager::SupportsExts() failed. Result " << r);
+    }
+    exts.resize(wcslen(exts.c_str()));
+    return exts;
+}
+
 } // namespace AIMPPlayer
