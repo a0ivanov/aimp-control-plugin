@@ -97,7 +97,7 @@ bool fileTypeSupported(const std::wstring& ext_to_check, AIMPManager30* aimp3_ma
                  );
 #pragma warning (pop)
     for (auto& ext : exts) {
-        ext.erase(0, 1); // remove '.'
+        ext.erase(0, 1); // remove '*'
     }
     return exts.end() != std::find_if(exts.begin(), exts.end(),
                                       [ext_to_check](const std::wstring& ext) { return ext == ext_to_check; }
