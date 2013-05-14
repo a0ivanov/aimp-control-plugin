@@ -23,7 +23,7 @@ namespace fs = boost::filesystem;
 
 void fill_reply_disabled(Http::Reply& rep);
 PlaylistID getPlaylistID(const std::string& uri);
-bool fileTypeSupported(const std::wstring& ext_to_check, AIMPManager30* aimp3_manager);
+bool fileTypeSupported(const std::wstring& ext_to_check, AIMPPlayer::AIMPManager& aimp_manager);
 
 const std::string kPlaylistIDTag("/playlist_id/");
 
@@ -57,10 +57,8 @@ bool RequestHandler::handle_request(const Http::Request& req, Http::Reply& rep)
             case MPFD::Field::FileType:
                 {;
                 const fs::wpath path = fs::path(field.GetTempFileName()).parent_path() / field.GetFileName();
-                if (AIMPManager30* aimp3_manager = dynamic_cast<AIMPManager30*>(&aimp_manager_)) {
-                    if (!fileTypeSupported(path.extension().native(), aimp3_manager)) {
-                        continue;
-                    }
+                if (!fileTypeSupported(path.extension().native(), aimp_manager_)) {
+                    continue;
                 }
                 fs::copy_file(field.GetTempFileName(), path, fs::copy_option::overwrite_if_exists); // can't use rename here since parser will close file in Field's dtor.
                 aimp_manager_.addFileToPlaylist(path, playlist_id);
@@ -88,16 +86,26 @@ bool RequestHandler::handle_request(const Http::Request& req, Http::Reply& rep)
     return true;
 }
 
-bool fileTypeSupported(const std::wstring& ext_to_check, AIMPManager30* aimp3_manager)
+bool fileTypeSupported(const std::wstring& ext_to_check, AIMPPlayer::AIMPManager& aimp_manager)
 {
-    std::vector<std::wstring> exts;
-#pragma warning (push, 3)
-    boost::split(   exts, aimp3_manager->supportedTrackExtentions(),
-                    [](std::wstring::value_type c) { return c == L';'; }
-                 );
-#pragma warning (pop)
-    for (auto& ext : exts) {
-        ext.erase(0, 1); // remove '*'
+    static std::vector<std::wstring> exts;
+
+    if (exts.empty()) {
+    #pragma warning (push, 3)
+        std::wstring exts_str;
+        if (AIMPManager30* aimp3_manager = dynamic_cast<AIMPManager30*>(&aimp_manager)) {
+            exts_str = aimp3_manager->supportedTrackExtentions();
+        } else {
+            exts_str = L"*.aiff;*.aif;*.mp3;*.mp2;*.mp1;*.ogg;*.oga;*.wav;*.umx;*.mod;*.mo3;*.it;*.s3m;*.mtm;*.xm;*.aac;*.m4a;*.m4b;*.mp4;*.ac3;*.ape;*.mac;*.flac;*.fla;*.midi;*.mid;*.rmi;*.kar;*.mpc;*.mp+;*.mpp;*.opus;*.spx;*.tta;*.wma;*.wv;*.ofr;*.ofs;*.tak;*.cda;"; // got from aimp3.
+        }
+        
+        boost::split(exts, exts_str,
+                     [](std::wstring::value_type c) { return c == L';'; }
+                     );
+    #pragma warning (pop)
+        for (auto& ext : exts) {
+            ext.erase(0, 1); // remove '*'
+        }
     }
     return exts.end() != std::find_if(exts.begin(), exts.end(),
                                       [ext_to_check](const std::wstring& ext) { return ext == ext_to_check; }
