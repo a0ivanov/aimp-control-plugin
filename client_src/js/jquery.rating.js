@@ -306,7 +306,14 @@
 			// trigger change on current or last selected input
 			$(current.length? current : lastipt ).trigger({ type:'change', selfTriggered:true });
 			// click callback, as requested here: http://plugins.jquery.com/node/1655
-			if((wantCallBack || wantCallBack == undefined) && control.callback) control.callback.apply(current[0], [current.val(), $('a', control.current)[0]]);// callback event
+			if((wantCallBack || wantCallBack == undefined) && control.callback) {
+				if(control.current === null) {
+					control.callback.apply(control.cancel[0].parentNode, [control.cancelValue, $('a', control.cancel)[0]]);// callback event
+				}
+				else{
+					control.callback.apply(current[0], [current.val(), $('a', control.current)[0]]);// callback event
+				}
+			}
 			// don't break the chain
 			return this;
   },// $.fn.rating.select
