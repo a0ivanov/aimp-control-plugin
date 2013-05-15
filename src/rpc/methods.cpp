@@ -46,6 +46,11 @@ TrackDescription AIMPRPCMethod::getTrackDesc(const Rpc::Value& params) const // 
     return TrackDescription(playlist_id, params["track_id"]);
 }
 
+Rpc::Value::Object emptyResult()
+{
+    return Rpc::Value::Object();
+}
+
 ResponseType Play::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
     const Rpc::Value& params = root_request["params"];
@@ -260,7 +265,7 @@ ResponseType EnqueueTrack::execute(const Rpc::Value& root_request, Rpc::Value& r
 
     try {
         aimp_manager_.enqueueEntryForPlay(track_desc, insert_at_queue_beginning);
-        root_response["result"] = "";
+        root_response["result"] = emptyResult();
     } catch (std::runtime_error&) {
         throw Rpc::Exception("Enqueue track failed. Reason: internal AIMP error.", ENQUEUE_TRACK_FAILED);
     }
@@ -279,7 +284,7 @@ ResponseType QueueTrackMove::execute(const Rpc::Value& root_request, Rpc::Value&
                 const TrackDescription track_desc(getTrackDesc(params));
                 aimp3_manager->moveQueueEntry(track_desc, params["new_queue_index"]);
             }            
-            root_response["result"] = "";
+            root_response["result"] = emptyResult();
         } catch (std::runtime_error&) {
             throw Rpc::Exception("Enqueue track failed. Reason: internal AIMP error.", MOVE_TRACK_IN_QUEUE_FAILED);
         }
@@ -294,7 +299,7 @@ ResponseType RemoveTrackFromPlayQueue::execute(const Rpc::Value& root_request, R
     const TrackDescription track_desc(getTrackDesc(params));
     try {
         aimp_manager_.removeEntryFromPlayQueue(track_desc);
-        root_response["result"] = "";
+        root_response["result"] = emptyResult();
     } catch (std::runtime_error&) {
         throw Rpc::Exception("Removing track from play queue failed. Reason: internal AIMP error.", DEQUEUE_TRACK_FAILED);
     }
