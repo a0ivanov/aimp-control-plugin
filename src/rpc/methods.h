@@ -493,6 +493,15 @@ public:
     \param track_id - int. \ref ids_info "More"
     \param playlist_id - int. \ref ids_info "More"
     \param insert_at_queue_beginning - boolean, optional, default is false. If true enqueue at the beginning of queue.
+    \return object which describes:
+        - success:<BR>
+            Example: \code "result":{} \endcode
+        - failure: object which describes error: {code, message}<BR>
+            Error codes in addition to \link #Rpc::ERROR_CODES Common errors\endlink:
+                - ::ENQUEUE_TRACK_FAILED
+
+            Example: \code {"error":{"code":18,"message":"Enqueue track failed. Reason: internal AIMP error."}} \endcode
+
 */
 class EnqueueTrack : public AIMPRPCMethod
 {
@@ -514,6 +523,14 @@ public:
     \brief Removes track from AIMP play queue.
     \param track_id - int. \ref ids_info "More"
     \param playlist_id - int. \ref ids_info "More"
+    \return object which describes:
+        - success:<BR>
+            Example: \code "result":{} \endcode
+        - failure: object which describes error: {code, message}<BR>
+            Error codes in addition to \link #Rpc::ERROR_CODES Common errors\endlink:
+                - ::DEQUEUE_TRACK_FAILED
+
+            Example: \code {"error":{"code":19,"message":"Removing track from play queue failed. Reason: internal AIMP error."}} \endcode
 */
 class RemoveTrackFromPlayQueue : public AIMPRPCMethod
 {
@@ -537,6 +554,14 @@ public:
     \param playlist_id - int, optional. If specified param track_id is obligatory. Note: track should be already queued.
     \param old_queue_index - int, optional. If specified params track_id and playlist_id are not needed.
     \param new_queue_index - int.
+    \return object which describes:
+        - success:<BR>
+            Example: \code "result":{} \endcode
+        - failure: object which describes error: {code, message}<BR>
+            Error codes in addition to \link #Rpc::ERROR_CODES Common errors\endlink:
+                - ::MOVE_TRACK_IN_QUEUE_FAILED
+
+            Example: \code {"error":{"code":26,"message":"Enqueue track failed. Reason: internal AIMP error."}} \endcode
 */
 class QueueTrackMove : public AIMPRPCMethod
 {
@@ -1158,7 +1183,14 @@ public:
     \brief Adds URL to specified playlist.
     \param playlist_id - int. \ref special_ids_sec "More"
     \param url - string
-    \return empty object on success, error description on error.
+    \return object which describes:
+        - success:<BR>
+            Example: \code "result":{} \endcode
+        - failure: object which describes error: {code, message}<BR>
+            Error codes in addition to \link #Rpc::ERROR_CODES Common errors\endlink:
+                - ::ADD_URL_TO_PLAYLIST_FAILED
+
+            Example: \code {"error":{"code":27,"message":"IAIMPAddonsPlaylistManager::StorageAddEntries() failed. Result -2147024890"}} \endcode
 */
 class AddURLToPlaylist : public AIMPRPCMethod
 {
