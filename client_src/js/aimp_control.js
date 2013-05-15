@@ -627,7 +627,7 @@ function initRatingField(field_settings) {
         var playlist_id = getPlaylistIdFromTableId(oObj.oSettings.sTableId);
         var track_id = oObj.aData[0];
         var div_id = 'track_rating_' + playlist_id + '_' + track_id;
-		var star_name = 'rating_star_' +  playlist_id + '_' + track_id; // since v4 of rating plugin name must be unique.
+        var star_name = 'rating_star_' +  playlist_id + '_' + track_id; // name must be unique since v4 of rating plugin.
         var html = '<div id="' + div_id + '">';
         for (var i = 1; i <= 5; i++) {
             html += '<input name="' + star_name + '" type="radio" class="rating_star" value="' + i + '"'
@@ -735,9 +735,9 @@ function loadPlaylists()
     );
 }
 
-function disableRadioCaptureButton()
+function isCurrentTrackSourceRadio()
 {
-    return !control_panel_state.hasOwnProperty('current_track_source_radio') || !control_panel_state.current_track_source_radio;
+    return control_panel_state.hasOwnProperty('current_track_source_radio') && control_panel_state.current_track_source_radio;
 }
 
 /* Init control panel controls */
@@ -909,7 +909,7 @@ function updateControlPanel()
     
     // radio capture button
     var radio_capture_button = $('#radio_capture');
-    var disable_radio_capture_button = disableRadioCaptureButton();
+    var disable_radio_capture_button = !isCurrentTrackSourceRadio();
     radio_capture_button.button(disable_radio_capture_button ? 'disable' : 'enable');
     radio_capture_button.button('option', {
                                               label: getText(disable_radio_capture_button ? 'control_panel_radio_capture_disabled' :
