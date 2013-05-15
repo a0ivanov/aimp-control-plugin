@@ -627,10 +627,10 @@ function initRatingField(field_settings) {
         var playlist_id = getPlaylistIdFromTableId(oObj.oSettings.sTableId);
         var track_id = oObj.aData[0];
         var div_id = 'track_rating_' + playlist_id + '_' + track_id;
-
+		var star_name = 'rating_star_' +  playlist_id + '_' + track_id; // since v4 of rating plugin name must be unique.
         var html = '<div id="' + div_id + '">';
         for (var i = 1; i <= 5; i++) {
-            html += '<input type="radio" class="rating_star" value="' + i + '"'
+            html += '<input name="' + star_name + '" type="radio" class="rating_star" value="' + i + '"'
                     + (i == aimp_rating ? ' checked="true"' : '')
                     + '/>';
         }
