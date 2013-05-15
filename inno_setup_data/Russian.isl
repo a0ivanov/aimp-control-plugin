@@ -317,3 +317,8 @@ AimpVerionSelectionMsg2=Выберите версию AIMP
 AimpVerionSelectionMsg3=Установить плагин для
 
 AimpApplicationTerminateQuery=Для успешной установки необходимо закрыть AIMP. Закрыть сейчас?
+
+DonatePageTitle=Пожертвование
+DonatePageTitle2=Поддержать разработку
+DonateMsg=Пожалуйста, подумайте о пожертвовании, чтобы поддержать разработку.
+DonateButton=Поддержать

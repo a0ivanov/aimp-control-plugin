@@ -47,8 +47,9 @@ AllowUNCPath=false
 AppendDefaultDirName=true
 
 [Languages]
-Name: english; MessagesFile: inno_setup_data\English.isl; LicenseFile: Lisense-English.txt; InfoAfterFile: inno_setup_data\InfoAfterInstall-English.txt
-Name: russian; MessagesFile: inno_setup_data\Russian.isl; LicenseFile: Lisense-Russian.txt; InfoAfterFile: inno_setup_data\InfoAfterInstall-Russian.txt
+; Language name is used on Donation page as {language} constant.
+Name: en; MessagesFile: inno_setup_data\English.isl; LicenseFile: Lisense-English.txt; InfoAfterFile: inno_setup_data\InfoAfterInstall-English.txt
+Name: ru; MessagesFile: inno_setup_data\Russian.isl; LicenseFile: Lisense-Russian.txt; InfoAfterFile: inno_setup_data\InfoAfterInstall-Russian.txt
 
 [Files]
 Source: {#SrcApp}; DestDir: {app}; Flags: ignoreversion
@@ -65,6 +66,7 @@ var
   AimpVersionSelectionPage: TInputOptionWizardPage;
   SettingsFileDestination: String;
 
+procedure InitDonationPage; forward;
 procedure InitializeWizard;
 begin
   { Set AIMP player version, used to determine default path of Aimp's Plugins directory. }
@@ -88,6 +90,8 @@ begin
                                               ''
                                               );
   BrowserScriptsDirPage.Add('');
+
+  InitDonationPage();
 end;
 
 procedure TerminateAimpExecutionIfNeedeed(); forward;
@@ -329,4 +333,46 @@ begin
       RemoveInstalledBrowserScripts();
     end;
   end;
+end;
+
+procedure DonationButtonOnClick(Sender: TObject);
+var
+  ErrorCode: Integer;
+  URL: String;
+begin
+  URL := 'http://www.a0ivanov.ru/donate_' + ExpandConstant('{language}') + '.html';
+
+  if not ShellExec('', URL, '', '', SW_SHOW, ewNoWait, ErrorCode) then
+  begin
+    // handle failure if necessary
+  end;
+end;
+  
+procedure InitDonationPage;
+var
+  Page: TWizardPage;
+  Button: TNewButton;
+  Label1: TLabel;
+begin
+  Page := CreateCustomPage(wpInfoAfter, ExpandConstant('{cm:DonatePageTitle}'), ExpandConstant('{cm:DonateMsg}')); // cm:DonatePageTitle2
+
+  Label1 := TLabel.Create(Page);
+  Label1.AutoSize := False;
+  Label1.Top := ScaleY(15);
+  Label1.Left := ScaleX(0);
+  Label1.Width := Page.SurfaceWidth;
+  Label1.Alignment := taCenter;
+  Label1.Caption := ExpandConstant('{cm:DonateMsg}');
+  Label1.WordWrap := True;
+  Label1.Parent := Page.Surface;
+  
+
+  Button := TNewButton.Create(Page);
+  Button.Width := ScaleX(80);
+  Button.Height := ScaleY(26);
+  Button.Caption := ExpandConstant('{cm:DonateButton}');
+  Button.OnClick := @DonationButtonOnClick;
+  Button.Parent := Page.Surface;
+  Button.Top := Label1.Top + Label1.Height + ScaleY(8);
+  Button.Left := Label1.Left + (Label1.Width - Button.Width) / 2;
 end;
