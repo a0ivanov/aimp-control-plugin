@@ -393,13 +393,15 @@ HRESULT AIMPControlPlugin::initialize()
         download_track_request_handler_.reset( new DownloadTrack::RequestHandler(*aimp_manager_) );
 
         {
-            // Use custom tmp dir path getter to avoid issue with junction point as tmp dir.
-            const fs::wpath temp_dir_to_store_tracks_being_added = Utilities::temp_directory_path() / kPLUGIN_SHORT_NAME;
+            if (settings().misc.enable_track_upload) {
+                // Use custom tmp dir path getter to avoid issue with junction point as tmp dir.
+                const fs::wpath temp_dir_to_store_tracks_being_added = Utilities::temp_directory_path() / kPLUGIN_SHORT_NAME;
             
-            fs::create_directories(temp_dir_to_store_tracks_being_added);
+                fs::create_directories(temp_dir_to_store_tracks_being_added);
 
-            Http::MPFD::ParserFactory::instance(Http::MPFD::ParserFactory::ParserFactoryPtr(new Http::MPFD::ParserFactoryImpl(temp_dir_to_store_tracks_being_added))
-                                                );
+                Http::MPFD::ParserFactory::instance(Http::MPFD::ParserFactory::ParserFactoryPtr(new Http::MPFD::ParserFactoryImpl(temp_dir_to_store_tracks_being_added))
+                                                    );
+            }
 
             upload_track_request_handler_.reset( new UploadTrack::RequestHandler(*aimp_manager_,
                                                                                  settings().misc.enable_track_upload
