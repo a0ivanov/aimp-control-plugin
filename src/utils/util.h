@@ -138,4 +138,7 @@ std::wstring getExecutableProductVersion(const TCHAR* pszFilePath); // throws st
 
 std::wstring getCurrentExecutablePath(); // throws std::runtime_error
 
+// Does not perform is_directory test like boost::filesystem::temp_directory_path does.
+boost::filesystem::wpath temp_directory_path();
+
 } // namespace Utilities

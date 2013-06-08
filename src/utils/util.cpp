@@ -115,4 +115,29 @@ std::wstring getCurrentExecutablePath() // throws std::runtime_error
     return path;
 }
 
+boost::filesystem::wpath temp_directory_path()
+{
+    using namespace boost::filesystem;
+
+    std::vector<wpath::value_type> buf(GetTempPathW(0, NULL));
+
+    if (buf.empty() || GetTempPathW(buf.size(), &buf[0])==0) {
+        return wpath();
+    }
+          
+    buf.pop_back();
+      
+    wpath p(buf.begin(), buf.end());
+      
+    /*
+    if ((ec&&!is_directory(p, *ec))||(!ec&&!is_directory(p))) {
+        ::SetLastError(ENOTDIR);
+        error(true, p, ec, "boost::filesystem::temp_directory_path");
+        return path();
+    }
+    */
+      
+    return p;
+}
+
 } // namespace Utilities
