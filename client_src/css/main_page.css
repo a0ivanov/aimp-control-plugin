@@ -12,15 +12,6 @@ body {
 }
 
 /* Control panel */
-#cp {
-    top:0;
-    position: fixed;
-    width: 100%;
-    height: 65px;
-    z-index:5;
-    background: white;
-}
-
 #control_panel_buttons {
     padding : 5px 4px;
     margin: 0;
@@ -68,11 +59,6 @@ body {
 }
 
 /* Playlists */
-#playlists_container {
-    padding-top:60px;
-	z-index:4;
-}
-
 #playlists .ui-icon {
     display: inline-block;
     width: 12px;
