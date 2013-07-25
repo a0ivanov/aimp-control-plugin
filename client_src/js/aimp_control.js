@@ -198,7 +198,7 @@ function createEntriesControl(playlist_id)
         bJQueryUI : true,
         sPaginationType : 'full_numbers',
         bAutoWidth : false,
-        aLengthMenu : [10, 25, 50, 100] // [[10, 25, 50, -1], [10, 25, 50, getText('all_entries')]]
+        aLengthMenu : [10, 25, 50, 100, 1000] // [[10, 25, 50, -1], [10, 25, 50, getText('all_entries')]]
     } );
     
     $table.fnSettings().aaSorting = []; // disable sorting by 0 column.
