@@ -79,53 +79,55 @@
 </head>
 
 <body>
-<table>
-    <tbody>
-    <tr>
-        <td>
-            <div id="control_panel" class="aimp-panel ui-widget-header ui-corner-all">
-                <div id="control_panel_buttons">
-                    <button id="play"></button>
-                    <button id="stop"></button>
-                    <button id="previous"></button>
-                    <button id="next"></button>
+<div id="cp" >
+    <table >
+        <tbody>
+        <tr>
+            <td>
+                <div id="control_panel" class="aimp-panel ui-widget-header ui-corner-all">
+                    <div id="control_panel_buttons">
+                        <button id="play"></button>
+                        <button id="stop"></button>
+                        <button id="previous"></button>
+                        <button id="next"></button>
 
-                    <input type="checkbox" id="shuffle" /><label for="shuffle"></label>
-                    <input type="checkbox" id="repeat" /><label for="repeat"></label>
-                    <input type="checkbox" id="radio_capture" /><label for="radio_capture"></label>
-                    <button id="show_settings_form"></button>
+                        <input type="checkbox" id="shuffle" /><label for="shuffle"></label>
+                        <input type="checkbox" id="repeat" /><label for="repeat"></label>
+                        <input type="checkbox" id="radio_capture" /><label for="radio_capture"></label>
+                        <button id="show_settings_form"></button>
 
-                    <div id="volume_controls">
-                        <div id="mute_button_holder">
-                            <div id="mute_button">
-                                <span id="mute_icon" class="ui-icon"></span>
+                        <div id="volume_controls">
+                            <div id="mute_button_holder">
+                                <div id="mute_button">
+                                    <span id="mute_icon" class="ui-icon"></span>
+                                </div>
                             </div>
+                            <div id="volume_slider"></div>
                         </div>
-                        <div id="volume_slider"></div>
                     </div>
                 </div>
-            </div>
-        </td>
-        <td valign="top">
-            <div id="playback_panel_container" class="aimp-panel ui-widget-header ui-corner-all">
-                <span id="playback_state_label"></span>
-                <div>
-                    <div id="scroll_current_track_container">
-                        <div class="jscroller2_left jscroller2_speed-20 jscroller2_alternate jscroller2_ignoreleave jscroller2_dynamic" style="white-space:nowrap; margin: 0;"></div>
+            </td>
+            <td valign="top">
+                <div id="playback_panel_container" class="aimp-panel ui-widget-header ui-corner-all">
+                    <span id="playback_state_label"></span>
+                    <div>
+                        <div id="scroll_current_track_container">
+                            <div class="jscroller2_left jscroller2_speed-20 jscroller2_alternate jscroller2_ignoreleave jscroller2_dynamic" style="white-space:nowrap; margin: 0;"></div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </td>
-    </tr>
-    <tr>
-        <td colspan="2">
-            <div id="track_progress_bar"></div>
-        </td>
-    </tr>
-    </tbody>
-</table>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <div id="track_progress_bar"></div>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
 
-<div id="playlists_container">
+<div id="playlists_container" >
     <div id="playlists">
         <ul></ul>
     </div>    
