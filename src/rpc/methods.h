@@ -950,11 +950,16 @@ private:
     RandomNumbersGenerator die_;
     std::wstring random_file_part_;
 
-    // cover files map
-    typedef std::list<std::wstring> FilenamesList;
-    typedef std::map<TrackDescription, FilenamesList> CoverFilenames;
-    CoverFilenames cover_filenames_;
-    const std::wstring* isCoverExistsInCoverDirectory(TrackDescription track_desc, std::size_t width, std::size_t height) const;
+    // cover cache.
+    struct CacheInfo {
+        boost::filesystem::wpath cover_path;
+        typedef std::list<std::wstring> Filenames;
+        Filenames filenames;
+    };
+    typedef std::map<TrackDescription, CacheInfo> CoverCache;
+    CoverCache cover_cache_;
+    const std::wstring* isCoverExistsInCoverDirectory(TrackDescription track_desc, std::size_t width, std::size_t height, const boost::filesystem::wpath* cover_path) const;
+    const std::wstring* findInCacheInfoBySize(const CacheInfo& info, std::size_t width, std::size_t height) const;
 };
 
 /*! 

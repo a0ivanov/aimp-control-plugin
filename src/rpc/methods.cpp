@@ -983,7 +983,12 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
         cover_width = cover_height = 0; // by default request full size cover.
     }
 
-    const std::wstring* cover_uri_cached = isCoverExistsInCoverDirectory(track_desc, cover_width, cover_height);
+    fs::wpath album_cover_filename;
+    bool album_cover_image_file_exists = aimp_manager_.isCoverImageFileExist(track_desc, &album_cover_filename);
+
+    const std::wstring* cover_uri_cached = isCoverExistsInCoverDirectory(track_desc, cover_width, cover_height,
+                                                                         album_cover_image_file_exists ? &album_cover_filename : nullptr
+                                                                         );
 
     if (cover_uri_cached) {
         // picture already exists.
@@ -1002,21 +1007,23 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
     boost::filesystem::wpath temp_unique_filename (document_root_ / cover_uri);
 
     try {
-        fs::wpath album_cover_filename;
+        
+        CacheInfo& cache_info = cover_cache_[track_desc];
         if (   (cover_width == 0 && cover_height == 0) // use direct copy only if no scaling is requested.
-            && aimp_manager_.isCoverImageFileExist(track_desc, &album_cover_filename)
+            && album_cover_image_file_exists
             )
         {
             cover_uri.replace_extension           (album_cover_filename.extension());
             temp_unique_filename.replace_extension(album_cover_filename.extension());
 
             fs::copy_file(album_cover_filename, temp_unique_filename);
+            cache_info.cover_path = album_cover_filename;
         } else {
             aimp_manager_.saveCoverToFile(track_desc, temp_unique_filename.native(), cover_width, cover_height);
         }
         const std::wstring& cover_uri_generic = cover_uri.generic_wstring();
         root_response["result"]["album_cover_uri"] = StringEncoding::utf16_to_utf8(cover_uri_generic);
-        cover_filenames_[track_desc].push_back(cover_uri_generic);
+        cache_info.filenames.push_back(cover_uri_generic);
     } catch (StringEncoding::EncodingError&) {
         throw Rpc::Exception("Getting cover failed. Reason: bad temporary directory for store covers.", ALBUM_COVER_LOAD_FAILED);
     } catch (std::runtime_error&) {
@@ -1044,7 +1051,33 @@ void GetCover::prepare_cover_directory() // throws runtime_error
     }
 }
 
-const std::wstring* GetCover::isCoverExistsInCoverDirectory(TrackDescription track_desc, std::size_t width, std::size_t height) const
+const std::wstring* GetCover::isCoverExistsInCoverDirectory(TrackDescription track_desc, std::size_t width, std::size_t height, const fs::wpath* cover_path) const
+{
+    // search in map current file covers of different sizes.
+    const auto iter = cover_cache_.find(track_desc);
+    if (cover_cache_.end() != iter) {
+        const CacheInfo& cache_info = iter->second;
+        if ( const std::wstring* fn = findInCacheInfoBySize(cache_info, width, height) ) {
+            return fn;
+        }
+    }
+
+    // search in other cached track covers.
+    if (cover_path) {
+        for (const auto& p : cover_cache_) { // complexity O(N)
+            const CacheInfo& cache_info = p.second;
+            if (cache_info.cover_path == *cover_path) {
+                if ( const std::wstring* fn = findInCacheInfoBySize(cache_info, width, height) ) {
+                    return fn;
+                }
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+const std::wstring* GetCover::findInCacheInfoBySize(const CacheInfo& cache_info, std::size_t width, std::size_t height) const
 {
     //! search first entry of string "widthxheight" in filename string.
     struct MatchSize {
@@ -1059,17 +1092,15 @@ const std::wstring* GetCover::isCoverExistsInCoverDirectory(TrackDescription tra
 
         std::wstring string_to_find_;
     };
-    // search in map of filenames lists.
-    const auto iter = cover_filenames_.find(track_desc);
-    if (cover_filenames_.end() != iter) {
-        const FilenamesList& list = iter->second;
-        // search in filenames.
-        const auto filename_iter = std::find_if( list.begin(), list.end(), MatchSize(width, height) );
-        if (list.end() != filename_iter) {
-            // return pointer to found filename.
-            return &(*filename_iter);
-        }
+
+    const CacheInfo::Filenames& names = cache_info.filenames;
+    // search in filenames.
+    const auto filename_iter = std::find_if( names.begin(), names.end(), MatchSize(width, height) );
+    if (names.end() != filename_iter) {
+        // return pointer to found filename.
+        return &(*filename_iter);
     }
+
     return nullptr;
 }
 
