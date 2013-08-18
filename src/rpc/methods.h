@@ -952,14 +952,22 @@ private:
 
     // cover cache.
     struct CacheInfo {
-        boost::filesystem::wpath cover_path;
+        boost::shared_ptr<boost::filesystem::wpath> cover_path;
         typedef std::list<std::wstring> Filenames;
-        Filenames filenames;
+        boost::shared_ptr<Filenames> filenames;
     };
     typedef std::map<TrackDescription, CacheInfo> CoverCache;
     CoverCache cover_cache_;
-    const std::wstring* isCoverExistsInCoverDirectory(TrackDescription track_desc, std::size_t width, std::size_t height, const boost::filesystem::wpath* cover_path) const;
-    const std::wstring* findInCacheInfoBySize(const CacheInfo& info, std::size_t width, std::size_t height) const;
+
+    struct CacheSearchResult {
+        const CacheInfo* info;
+        std::size_t uri_index;
+        CacheSearchResult(const CacheInfo* info = nullptr, std::size_t uri_index = 0) : info(info), uri_index(uri_index) {}
+        operator bool() { return info != nullptr; }
+    };
+
+    CacheSearchResult isCoverExistInCoverDirectory(TrackDescription track_desc, std::size_t width, std::size_t height, const boost::filesystem::wpath* cover_path) const;
+    CacheSearchResult findInCacheInfoBySize(const CacheInfo& info, std::size_t width, std::size_t height) const;
 };
 
 /*! 
