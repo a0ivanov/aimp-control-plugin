@@ -983,19 +983,21 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
         cover_width = cover_height = 0; // by default request full size cover.
     }
 
+    Cache::SearchResult cache_search_result = cache_.isCoverCachedForCurrentTrack(track_desc, cover_width, cover_height);
     fs::wpath album_cover_filename;
-    bool album_cover_image_file_exists = aimp_manager_.isCoverImageFileExist(track_desc, &album_cover_filename);
-
-    Cache::SearchResult cache_search_result = cache_.isCoverExistInCoverDirectory(track_desc, cover_width, cover_height,
-                                                                                  album_cover_image_file_exists ? &album_cover_filename : nullptr
-                                                                                  );
+    if (!cache_search_result) {
+        if (aimp_manager_.isCoverImageFileExist(track_desc, &album_cover_filename)) {
+            cache_search_result = cache_.isCoverCachedForAnotherTrack(album_cover_filename, cover_width, cover_height);
+            if (cache_search_result) {
+                cache_.cacheBasedOnPreviousResult(track_desc, cache_search_result);    
+            }
+        }
+    }
+    
     if (cache_search_result) {
-        // add to cache if it not yet. It's possible if cover has been found in cached covers of other tracks.
-        cache_.cacheBasedOnPreviousResult(track_desc, cache_search_result);
-
         // picture already exists.
         try {
-            auto uri_it = cache_search_result.info->filenames->begin();
+            auto uri_it = cache_search_result.entry->filenames->begin();
             std::advance(uri_it, cache_search_result.uri_index);
             root_response["result"]["album_cover_uri"] = StringEncoding::utf16_to_utf8(*uri_it);
         } catch (StringEncoding::EncodingError&) {
@@ -1009,6 +1011,8 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
     cover_uri.replace_extension(L".jpg");
 
     boost::filesystem::wpath temp_unique_filename (document_root_ / cover_uri);
+
+    const bool album_cover_image_file_exists = !album_cover_filename.empty();
 
     try {
         if (   (cover_width == 0 && cover_height == 0) // use direct copy only if no scaling is requested.
@@ -1057,54 +1061,49 @@ void GetCover::prepare_cover_directory() // throws runtime_error
 
 void GetCover::Cache::cacheNew(TrackDescription track_desc, const fs::wpath& album_cover_filename, const std::wstring& cover_uri_generic)
 {
-    Info& info = infos_[track_desc];
+    Entry& entry = entries_[track_desc];
     if (!album_cover_filename.empty()) {
-        info.cover_path = boost::make_shared<fs::wpath>(album_cover_filename);
+        path_track_map_.insert( std::make_pair(album_cover_filename, track_desc) );
     }
 
-    if (!info.filenames) {
-        info.filenames = boost::make_shared<Info::Filenames>();
-    }
-    info.filenames->push_back(cover_uri_generic);
+    assert(!entry.filenames);
+    entry.filenames = boost::make_shared<Entry::Filenames>();
+    entry.filenames->push_back(cover_uri_generic); 
 }
 
 void GetCover::Cache::cacheBasedOnPreviousResult(TrackDescription track_desc, GetCover::Cache::SearchResult search_result)
 {
-    auto it = infos_.find(track_desc);
-    if (infos_.end() == it) {
-        Info& info = infos_[track_desc];
-        info.cover_path = search_result.info->cover_path;
-        info.filenames = search_result.info->filenames;
-    }
+    Entry& entry = entries_[track_desc];
+    entry.filenames = search_result.entry->filenames;
 }
 
-GetCover::Cache::SearchResult GetCover::Cache::isCoverExistInCoverDirectory(TrackDescription track_desc, std::size_t width, std::size_t height, const fs::wpath* cover_path) const
+GetCover::Cache::SearchResult GetCover::Cache::isCoverCachedForCurrentTrack(TrackDescription track_desc, std::size_t width, std::size_t height) const
 {
     // search in map current file covers of different sizes.
-    const auto iter = infos_.find(track_desc);
-    if (infos_.end() != iter) {
-        const Info& cache_info = iter->second;
-        if ( Cache::SearchResult r = findInInfoBySize(cache_info, width, height) ) {
+    const auto entry_it = entries_.find(track_desc);
+    if (entries_.end() != entry_it) {
+        if ( Cache::SearchResult r = findInEntryBySize(entry_it->second, width, height) ) {
             return r;
-        }
-    }
-
-    // search in other cached track covers.
-    if (cover_path) {
-        for (const auto& p : infos_) { // complexity O(N)
-            const Info& cache_info = p.second;
-            if (cache_info.cover_path && *cache_info.cover_path == *cover_path) {
-                if ( Cache::SearchResult r = findInInfoBySize(cache_info, width, height) ) {
-                    return r;
-                }
-            }
         }
     }
 
     return Cache::SearchResult();
 }
 
-GetCover::Cache::SearchResult GetCover::Cache::findInInfoBySize(const Info& cache_info, std::size_t width, std::size_t height) const
+GetCover::Cache::SearchResult GetCover::Cache::isCoverCachedForAnotherTrack(const boost::filesystem::wpath& cover_path, std::size_t width, std::size_t height) const
+{
+    // search in other cached track covers.
+    assert(!cover_path.empty());
+
+    auto track_it = path_track_map_.find(cover_path);
+    if (path_track_map_.end() != track_it) {
+        return isCoverCachedForCurrentTrack(track_it->second, width, height);
+    } 
+
+    return Cache::SearchResult();
+}
+
+GetCover::Cache::SearchResult GetCover::Cache::findInEntryBySize(const Entry& cache_info, std::size_t width, std::size_t height) const
 {
     //! search first entry of string "widthxheight" in filename string.
     struct MatchSize {
@@ -1120,7 +1119,7 @@ GetCover::Cache::SearchResult GetCover::Cache::findInInfoBySize(const Info& cach
         std::wstring string_to_find_;
     };
 
-    const Info::Filenames& names = *cache_info.filenames;
+    const Entry::Filenames& names = *cache_info.filenames;
     // search in filenames.
     const auto filename_iter = std::find_if( names.begin(), names.end(), MatchSize(width, height) );
     if (names.end() != filename_iter) {

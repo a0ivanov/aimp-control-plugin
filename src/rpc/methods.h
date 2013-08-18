@@ -952,30 +952,33 @@ private:
 
     class Cache {
     public:
-        struct Info {
-            boost::shared_ptr<boost::filesystem::wpath> cover_path;
+        struct Entry {
             typedef std::list<std::wstring> Filenames;
             boost::shared_ptr<Filenames> filenames;
         };
 
-        typedef std::map<TrackDescription, Info> InfoMap;
- 
         struct SearchResult {
-            const Info* info;
+            const Entry* entry;
             std::size_t uri_index;
-            SearchResult(const Info* info = nullptr, std::size_t uri_index = 0) : info(info), uri_index(uri_index) {}
-            operator bool() { return info != nullptr; }
+            SearchResult(const Entry* entry = nullptr, std::size_t uri_index = 0) : entry(entry), uri_index(uri_index) {}
+            operator bool() { return entry != nullptr; }
         };
 
         void cacheNew(TrackDescription track_desc, const boost::filesystem::wpath& album_cover_filename, const std::wstring& cover_uri_generic);
         void cacheBasedOnPreviousResult(TrackDescription track_desc, GetCover::Cache::SearchResult search_result);
 
-        SearchResult isCoverExistInCoverDirectory(TrackDescription track_desc, std::size_t width, std::size_t height, const boost::filesystem::wpath* cover_path) const;
+        SearchResult isCoverCachedForCurrentTrack(TrackDescription track_desc, std::size_t width, std::size_t height) const;
         
-    private:
-        SearchResult findInInfoBySize(const Info& info, std::size_t width, std::size_t height) const;
+        SearchResult isCoverCachedForAnotherTrack(const boost::filesystem::wpath& cover_path, std::size_t width, std::size_t height) const;
 
-        InfoMap infos_;
+    private:
+        SearchResult findInEntryBySize(const Entry& info, std::size_t width, std::size_t height) const;
+
+        typedef std::map<TrackDescription, Entry> EntryMap;
+        EntryMap entries_;
+
+        typedef std::map<boost::filesystem::wpath, TrackDescription> PathTrackMap;
+        PathTrackMap path_track_map_;
     };
 
     Cache cache_;
