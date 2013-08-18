@@ -986,19 +986,12 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
     fs::wpath album_cover_filename;
     bool album_cover_image_file_exists = aimp_manager_.isCoverImageFileExist(track_desc, &album_cover_filename);
 
-    CacheSearchResult cache_search_result = isCoverExistInCoverDirectory(track_desc, cover_width, cover_height,
-                                                                         album_cover_image_file_exists ? &album_cover_filename : nullptr
-                                                                         );
+    Cache::SearchResult cache_search_result = cache_.isCoverExistInCoverDirectory(track_desc, cover_width, cover_height,
+                                                                                  album_cover_image_file_exists ? &album_cover_filename : nullptr
+                                                                                  );
     if (cache_search_result) {
         // add to cache if it not yet. It's possible if cover has been found in cached covers of other tracks.
-        auto it = cover_cache_.find(track_desc);
-        if (cover_cache_.end() == it) {
-            CacheInfo& cache_info = cover_cache_[track_desc];
-            if (album_cover_image_file_exists) {
-                cache_info.cover_path = cache_search_result.info->cover_path;
-            }
-            cache_info.filenames = cache_search_result.info->filenames;
-        }
+        cache_.cacheBasedOnPreviousResult(track_desc, cache_search_result);
 
         // picture already exists.
         try {
@@ -1033,15 +1026,8 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
         const std::wstring& cover_uri_generic = cover_uri.generic_wstring();
         root_response["result"]["album_cover_uri"] = StringEncoding::utf16_to_utf8(cover_uri_generic);
 
-        // add to cache.
-        CacheInfo& cache_info = cover_cache_[track_desc];
-        if (album_cover_image_file_exists) {
-            cache_info.cover_path = boost::make_shared<fs::wpath>(album_cover_filename);
-        }
-        if (!cache_info.filenames) {
-            cache_info.filenames = boost::make_shared<CacheInfo::Filenames>();
-        }
-        cache_info.filenames->push_back(cover_uri_generic);
+        cache_.cacheNew(track_desc, album_cover_filename, cover_uri_generic);
+
     } catch (StringEncoding::EncodingError&) {
         throw Rpc::Exception("Getting cover failed. Reason: bad temporary directory for store covers.", ALBUM_COVER_LOAD_FAILED);
     } catch (std::runtime_error&) {
@@ -1069,33 +1055,56 @@ void GetCover::prepare_cover_directory() // throws runtime_error
     }
 }
 
-GetCover::CacheSearchResult GetCover::isCoverExistInCoverDirectory(TrackDescription track_desc, std::size_t width, std::size_t height, const fs::wpath* cover_path) const
+void GetCover::Cache::cacheNew(TrackDescription track_desc, const fs::wpath& album_cover_filename, const std::wstring& cover_uri_generic)
+{
+    Info& info = infos_[track_desc];
+    if (!album_cover_filename.empty()) {
+        info.cover_path = boost::make_shared<fs::wpath>(album_cover_filename);
+    }
+
+    if (!info.filenames) {
+        info.filenames = boost::make_shared<Info::Filenames>();
+    }
+    info.filenames->push_back(cover_uri_generic);
+}
+
+void GetCover::Cache::cacheBasedOnPreviousResult(TrackDescription track_desc, GetCover::Cache::SearchResult search_result)
+{
+    auto it = infos_.find(track_desc);
+    if (infos_.end() == it) {
+        Info& info = infos_[track_desc];
+        info.cover_path = search_result.info->cover_path;
+        info.filenames = search_result.info->filenames;
+    }
+}
+
+GetCover::Cache::SearchResult GetCover::Cache::isCoverExistInCoverDirectory(TrackDescription track_desc, std::size_t width, std::size_t height, const fs::wpath* cover_path) const
 {
     // search in map current file covers of different sizes.
-    const auto iter = cover_cache_.find(track_desc);
-    if (cover_cache_.end() != iter) {
-        const CacheInfo& cache_info = iter->second;
-        if ( CacheSearchResult r = findInCacheInfoBySize(cache_info, width, height) ) {
+    const auto iter = infos_.find(track_desc);
+    if (infos_.end() != iter) {
+        const Info& cache_info = iter->second;
+        if ( Cache::SearchResult r = findInInfoBySize(cache_info, width, height) ) {
             return r;
         }
     }
 
     // search in other cached track covers.
     if (cover_path) {
-        for (const auto& p : cover_cache_) { // complexity O(N)
-            const CacheInfo& cache_info = p.second;
+        for (const auto& p : infos_) { // complexity O(N)
+            const Info& cache_info = p.second;
             if (cache_info.cover_path && *cache_info.cover_path == *cover_path) {
-                if ( CacheSearchResult r = findInCacheInfoBySize(cache_info, width, height) ) {
+                if ( Cache::SearchResult r = findInInfoBySize(cache_info, width, height) ) {
                     return r;
                 }
             }
         }
     }
 
-    return CacheSearchResult();
+    return Cache::SearchResult();
 }
 
-GetCover::CacheSearchResult GetCover::findInCacheInfoBySize(const CacheInfo& cache_info, std::size_t width, std::size_t height) const
+GetCover::Cache::SearchResult GetCover::Cache::findInInfoBySize(const Info& cache_info, std::size_t width, std::size_t height) const
 {
     //! search first entry of string "widthxheight" in filename string.
     struct MatchSize {
@@ -1111,15 +1120,15 @@ GetCover::CacheSearchResult GetCover::findInCacheInfoBySize(const CacheInfo& cac
         std::wstring string_to_find_;
     };
 
-    const CacheInfo::Filenames& names = *cache_info.filenames;
+    const Info::Filenames& names = *cache_info.filenames;
     // search in filenames.
     const auto filename_iter = std::find_if( names.begin(), names.end(), MatchSize(width, height) );
     if (names.end() != filename_iter) {
         // return pointer to found filename.
-        return CacheSearchResult(&cache_info, std::distance(names.begin(), filename_iter));
+        return SearchResult(&cache_info, std::distance(names.begin(), filename_iter));
     }
 
-    return CacheSearchResult();
+    return SearchResult();
 }
 
 std::wstring GetCover::getTempFileNameForAlbumCover(TrackDescription track_desc, std::size_t width, std::size_t height)
