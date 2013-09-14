@@ -1024,6 +1024,11 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
 
             fs::copy_file(album_cover_filename, temp_unique_filename);
         } else {
+            if (!free_image_dll_is_available_) {
+                Rpc::Exception e("Getting cover failed. Reason: FreeImage DLLs are not available.", ALBUM_COVER_LOAD_FAILED);
+                BOOST_LOG_SEV(logger(), error) << "Getting cover failed in "__FUNCTION__ << ". Reason: " << e.message();
+                throw e;
+            }
             aimp_manager_.saveCoverToFile(track_desc, temp_unique_filename.native(), cover_width, cover_height);
         }
 
@@ -1032,9 +1037,11 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
 
         cache_.cacheNew(track_desc, album_cover_filename, cover_uri_generic);
 
-    } catch (StringEncoding::EncodingError&) {
+    } catch (fs::filesystem_error& e) {
+        BOOST_LOG_SEV(logger(), error) << "Getting cover failed in "__FUNCTION__ << ". Reason: " << e.what();
         throw Rpc::Exception("Getting cover failed. Reason: bad temporary directory for store covers.", ALBUM_COVER_LOAD_FAILED);
-    } catch (std::runtime_error&) {
+    } catch (std::exception& e) {
+        BOOST_LOG_SEV(logger(), error) << "Getting cover failed in "__FUNCTION__ << ". Reason: " << e.what();
         throw Rpc::Exception("Getting cover failed. Reason: album cover extraction or saving error.", ALBUM_COVER_LOAD_FAILED);
     }
     return RESPONSE_IMMEDIATE;

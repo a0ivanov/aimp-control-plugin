@@ -565,8 +565,9 @@ void AIMPControlPlugin::createRpcMethods()
 
     // track's album cover.
     try {
-        if (!free_image_dll_is_available_) {
-            throw std::runtime_error("FreeImage DLL is not available");
+        const bool aimp_support_reading_cover_directly_from_external_file = ControlPlugin::plugin2_instance == nullptr;
+        if (!aimp_support_reading_cover_directly_from_external_file && !free_image_dll_is_available_) {
+            throw std::runtime_error("FreeImage DLL is not available and AIMP2 does not support direct access to album covers.");
         }
 
         // add document root and path to directory for storing album covers in GetCover method.
@@ -574,7 +575,8 @@ void AIMPControlPlugin::createRpcMethods()
                                                 new GetCover(*aimp_manager_,
                                                              *rpc_request_handler_,
                                                              getWebServerDocumentRoot(),
-                                                             L"album_covers_cache" // directory in document root to store temp image files.
+                                                             L"album_covers_cache", // directory in document root to store temp image files.
+                                                             free_image_dll_is_available_
                                                              )
                                                                     )
                                         );
