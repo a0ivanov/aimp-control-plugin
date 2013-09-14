@@ -1047,6 +1047,8 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
     return RESPONSE_IMMEDIATE;
 }
 
+void remove_read_only_attribute(const fs::wpath& path);
+
 void GetCover::prepare_cover_directory() // throws runtime_error
 {
     namespace fs = boost::filesystem;
@@ -1055,6 +1057,9 @@ void GetCover::prepare_cover_directory() // throws runtime_error
     try {
         // cleare cache before using.
         const fs::wpath& cover_dir = cover_directory();
+
+        remove_read_only_attribute(cover_dir);
+
         if (fs::exists(cover_dir)) {
             fs::remove_all(cover_dir);
         }
@@ -1063,6 +1068,14 @@ void GetCover::prepare_cover_directory() // throws runtime_error
         fs::create_directory(cover_dir);
     } catch (fs::filesystem_error& e) {
         throw std::runtime_error( MakeString() << "album cover cache directory preparation failure. Reason: " << e.what() );
+    }
+}
+
+void remove_read_only_attribute(const fs::wpath& path)
+{
+    const auto path_native = path.native();
+    if (!SetFileAttributes(path_native.c_str(), GetFileAttributes(path_native.c_str()) & ~FILE_ATTRIBUTE_READONLY)) {
+        throw std::runtime_error(Utilities::MakeString() << "Fail to remove read-only attribute from file " << path_native.c_str() << ". Reason: " << GetLastError());
     }
 }
 
