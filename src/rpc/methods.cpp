@@ -1058,9 +1058,8 @@ void GetCover::prepare_cover_directory() // throws runtime_error
         // cleare cache before using.
         const fs::wpath& cover_dir = cover_directory();
 
-        remove_read_only_attribute(cover_dir);
-
         if (fs::exists(cover_dir)) {
+            remove_read_only_attribute(cover_dir);
             fs::remove_all(cover_dir);
         }
     
