@@ -58,9 +58,9 @@ Win32 build of Subversion
     Used for creating PDB file with links to source files in SVN repository. Usefull for debugging.
 
 FreeImage
-    Download FreeImage DLL(for example, FreeImage 3.15.0 [WIN32]) from http://freeimage.sourceforge.net/download.html and unzip to some folder.
+    Download FreeImage DLL(for example, FreeImage 3.15.4 [WIN32]) from http://freeimage.sourceforge.net/download.html and unzip to some folder.
     If you do not want use precompiled package you can download source distribution.
-    Requiired only for enabling Rpc function which extracts album cover.
+    Required only for enabling Rpc function which extracts album cover on AIMP2 and extended support on AIMP3.
 
 SQLite
     It will be needed if AIMP will use sqlite with new interface.

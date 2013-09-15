@@ -12,5 +12,10 @@ Installing plugin:
     httpserver.document_root - set full path to htdocs directory.
     httpserver.ip_to_bind - set address of network interface where plugin server will work.
     
+4) Optional, album cover support 
+    Copy following files to "<installed AIMP path>\Plugins\Control Plugin" directory:
+        FreeImage.dll
+        FreeImagePlus.dll
+        
 Test plugin work:
     Open plugin's page in browser. Default URL is http://localhost:3333/index.htm.

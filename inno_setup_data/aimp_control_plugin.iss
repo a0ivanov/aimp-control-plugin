@@ -7,6 +7,7 @@
 #define AppVerStr StripBuild(FileVerStr)
 #define PluginWorkDirectoryName "Control Plugin"
 #define AimpPluginsDirectoryName "Plugins"
+#define FreeImage_VERSION GetEnv('FreeImage_VERSION')
 
 [Setup]
 
@@ -52,10 +53,12 @@ Name: en; MessagesFile: inno_setup_data\English.isl; LicenseFile: Lisense-Englis
 Name: ru; MessagesFile: inno_setup_data\Russian.isl; LicenseFile: Lisense-Russian.txt; InfoAfterFile: inno_setup_data\InfoAfterInstall-Russian.txt
 
 [Files]
-Source: {#SrcApp}; DestDir: {app}; Flags: ignoreversion
-Source: temp_build\Release\htdocs\*; DestDir: {code:GetBrowserScriptsDir}; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SrcApp}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "temp_build\Release\htdocs\*"; DestDir: "{code:GetBrowserScriptsDir}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
-Source: inno_setup_data\default_settings.dat; DestDir: {code:GetPluginSettingsDir}; DestName: settings.dat; Flags: onlyifdoesntexist; AfterInstall: "AfterInstallSettingsFile( ExpandConstant('{code:GetPluginSettingsDir}\settings.dat') )"; 
+Source: "inno_setup_data\default_settings.dat"; DestDir: "{code:GetPluginSettingsDir}"; DestName: "settings.dat"; Flags: onlyifdoesntexist; AfterInstall: AfterInstallSettingsFile( ExpandConstant('{code:GetPluginSettingsDir}\settings.dat') )
+Source: "3rd_party\FreeImage\{#FreeImage_VERSION}\Dist\FreeImage.dll"; DestDir: "{code:GetFreeImageDLLsDstDir}"; Flags: ignoreversion
+Source: "3rd_party\FreeImage\{#FreeImage_VERSION}\Wrapper\FreeImagePlus\dist\FreeImagePlus.dll"; DestDir: "{code:GetFreeImageDLLsDstDir}"; Flags: ignoreversion
 
 [Registry]
 ; etc.
@@ -132,6 +135,11 @@ begin
 end;
 
 function GetPluginSettingsDir(Param: String): String;
+begin
+  Result := ExpandConstant('{app}\{#PluginWorkDirectoryName}')
+end;
+
+function GetFreeImageDLLsDstDir(Param: String): String;
 begin
   Result := ExpandConstant('{app}\{#PluginWorkDirectoryName}')
 end;

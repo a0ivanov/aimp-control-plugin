@@ -15,17 +15,23 @@ call setup_environment.bat
     :: add htdocs
     tools\7z a -t7z !FULLPATH_ZIP! ^
              .\%CLIENT_SRC_RELEASE_DIR% || goto ERROR_HANDLER
-    :: and plugin DLL
+    :: add plugin DLL
     tools\7z a -t7z !FULLPATH_ZIP! ^
              .\%TEMP_BUILD_DIR%\aimp_control_plugin.dll || goto ERROR_HANDLER         
-    :: and default settings.dat
+    :: add default settings.dat
     copy /Y .\inno_setup_data\default_settings.dat .\%TEMP_BUILD_DIR%\settings.dat || goto ERROR_HANDLER 
     tools\7z a -t7z !FULLPATH_ZIP! ^
              .\%TEMP_BUILD_DIR%\settings.dat || goto ERROR_HANDLER             
-    :: and Readme.dat
-    copy /Y .\HowToSetupPluginFrom7zPackage.txt .\%TEMP_BUILD_DIR%\Readme.txt || goto ERROR_HANDLER 
+    :: add Readme.dat
+    copy /Y .\HowToSetupPluginFrom7zPackage.txt .\%TEMP_BUILD_DIR%\Readme.txt || goto ERROR_HANDLER
     tools\7z a -t7z !FULLPATH_ZIP! ^
              .\%TEMP_BUILD_DIR%\Readme.txt || goto ERROR_HANDLER
+    :: add FreeImage DLLs
+    tools\7z a -t7z !FULLPATH_ZIP! ^
+             .\3rd_party\FreeImage\%FreeImage_VERSION%\Dist\FreeImage.dll || goto ERROR_HANDLER
+    tools\7z a -t7z !FULLPATH_ZIP! ^
+             .\3rd_party\FreeImage\%FreeImage_VERSION%\Wrapper\FreeImagePlus\dist\FreeImagePlus.dll || goto ERROR_HANDLER
+
 echo Archive created.
 exit /B
 
