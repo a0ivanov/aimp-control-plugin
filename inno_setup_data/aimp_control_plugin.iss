@@ -49,8 +49,8 @@ AppendDefaultDirName=true
 
 [Languages]
 ; Language name is used on Donation page as {language} constant.
-Name: en; MessagesFile: inno_setup_data\English.isl; LicenseFile: Lisense-English.txt; InfoAfterFile: inno_setup_data\InfoAfterInstall-English.txt
-Name: ru; MessagesFile: inno_setup_data\Russian.isl; LicenseFile: Lisense-Russian.txt; InfoAfterFile: inno_setup_data\InfoAfterInstall-Russian.txt
+Name: en; MessagesFile: inno_setup_data\English.isl; LicenseFile: Lisense-English.txt;
+Name: ru; MessagesFile: inno_setup_data\Russian.isl; LicenseFile: Lisense-Russian.txt;
 
 [Files]
 Source: "{#SrcApp}"; DestDir: "{app}"; Flags: ignoreversion
@@ -67,7 +67,11 @@ Source: "3rd_party\FreeImage\{#FreeImage_VERSION}\Wrapper\FreeImagePlus\dist\Fre
 var
   BrowserScriptsDirPage: TInputDirWizardPage;
   AimpVersionSelectionPage: TInputOptionWizardPage;
+  NetworkSetupPage: TInputOptionWizardPage;
+  AfterInstallPage: TOutputMsgMemoWizardPage;
+  AllowNetworkAccess: Boolean;
   SettingsFileDestination: String;
+  Port: Integer;
 
 procedure InitDonationPage; forward;
 procedure InitializeWizard;
@@ -95,9 +99,27 @@ begin
   BrowserScriptsDirPage.Add('');
 
   InitDonationPage();
+  
+  NetworkSetupPage := CreateInputOptionPage(BrowserScriptsDirPage.ID,
+                                            ExpandConstant('{cm:NetworkSetupTitle}'),
+                                            ExpandConstant('{cm:NetworkSetupDescription}'),
+                                            ExpandConstant('{cm:NetworkSetupSubDescription}'),
+                                            False, False);
+
+  NetworkSetupPage.Add(ExpandConstant('{cm:NetworkSetupCheckBox}'));
+  
+  AfterInstallPage := CreateOutputMsgMemoPage(wpInfoAfter,
+   SetupMessage(msgWizardInfoAfter),
+   SetupMessage(msgInfoAfterLabel),
+   SetupMessage(msgInfoAfterClickLabel),
+   '' // memo text will be set later by AfterInstallPage.RichEditViewer.RTFText.
+  );
+  
+  Port := 3333;
 end;
 
 procedure TerminateAimpExecutionIfNeedeed(); forward;
+function GetInfoAfterMemoText() : String; forward;
 
 procedure CurPageChanged(CurPageID: Integer);
 begin
@@ -116,6 +138,11 @@ begin
                                                          ExpandConstant('{code:GetPluginWorkDir}\htdocs')
                                                        );
     end
+  else if CurPageID = wpReady then
+     begin
+     AllowNetworkAccess := NetworkSetupPage.Values[0];
+     AfterInstallPage.RichEditViewer.RTFText := GetInfoAfterMemoText();
+     end
 end;
 
 function GetBrowserScriptsDir(Param: String): String;
@@ -198,6 +225,11 @@ begin
   DocRootNode := DocRootNodes.item(0);
   DocRootNode.Text := GetBrowserScriptsDir('');
 
+  if (AllowNetworkAccess) then
+    XMLDoc.selectNodes('//httpserver/ip_to_bind').item(0).Text := '';
+
+  Port := XMLDoc.selectNodes('//httpserver/port').item(0).Text;
+  
   { Save the XML document }
   XMLDoc.Save(Path);
   //MsgBox('Saved the modified XML as ''' + Path + '''.', mbInformation, mb_Ok);
@@ -383,4 +415,71 @@ begin
   Button.Parent := Page.Surface;
   Button.Top := Label1.Top + Label1.Height + ScaleY(8);
   Button.Left := Label1.Left + (Label1.Width - Button.Width) / 2;
+end;
+
+procedure GetIpAddresses(Addresses : TStringList); forward;
+function GetInfoAfterMemoText(): String;
+var
+  SL : TStringList;
+  I: Integer;
+  Msg: String;
+begin
+  if (AllowNetworkAccess) then
+     begin
+     Msg := ExpandConstant('{cm:InfoAfterPageMemoTextRemoteBegin}'); 
+     SL := TStringList.Create;
+     GetIpAddresses(SL);
+     For I := 0 to SL.Count - 1 do
+       begin
+        Msg := Msg + #13#10 + FmtMessage('http://%1:%2/index.htm', [SL.Strings[I], IntToStr(Port)]);
+       end;
+     SL.Free;
+     Msg := Msg + #13#10 + ExpandConstant('{cm:InfoAfterPageMemoTextRemoteEnd}'); 
+     end
+   else
+     Msg := ExpandConstant('{cm:InfoAfterPageMemoTextLocal}');
+   Result := Msg;
+end;
+
+const
+ ERROR_INSUFFICIENT_BUFFER = 122;
+
+function GetIpAddrTable( pIpAddrTable: Array of Byte;
+  var pdwSize: Cardinal; bOrder: WordBool ): DWORD;
+external 'GetIpAddrTable@IpHlpApi.dll stdcall';
+
+procedure GetIpAddresses(Addresses : TStringList);
+var 
+ Size : Cardinal;
+ Buffer : Array of Byte;
+ IpAddr : String;
+ AddrCount : Integer;
+ I, J : Integer;
+begin
+  // Find Size
+  if GetIpAddrTable(Buffer,Size,False) = ERROR_INSUFFICIENT_BUFFER then
+  begin
+     // Allocate Buffer with large enough size
+     SetLength(Buffer,Size);
+     // Get List of IP Addresses into Buffer
+     if GetIpAddrTable(Buffer,Size,True) = 0 then
+     begin
+       // Find out how many addresses will be returned.
+       AddrCount := (Buffer[1] * 256) + Buffer[0];
+       // Loop through addresses.
+       For I := 0 to AddrCount -1 do
+       begin
+         IpAddr := '';
+         // Loop through each byte of the address
+         For J := 0 to 3 do
+         begin
+           if J > 0 then
+             IpAddr := IpAddr + '.';
+           // Navigagte through record structure to find correct byte of Addr
+           IpAddr := IpAddr + IntToStr(Buffer[I*24+J+4]);
+         end;
+         Addresses.Add(IpAddr);
+       end;
+     end;
+  end;
 end;

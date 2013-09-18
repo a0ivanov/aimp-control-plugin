@@ -1,3 +1,0 @@
-﻿By default plugin starts local HTTP server at localhost, port 3333.
-Test link: http://localhost:3333/index.htm
-HTTP server's address can be changed in plugin's configuration file.

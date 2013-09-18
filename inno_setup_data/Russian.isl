@@ -125,7 +125,7 @@ UserInfoNameRequired=Вы должны ввести имя.
 ; *** "Select Destination Location" wizard page
 WizardSelectDir=Выбор папки установки
 SelectDirDesc=В какую папку Вы хотите установить [name]?
-SelectDirLabel3=Программа установит [name] в следующую папку.%nПримечание: для успешного запуска плагина необходимо указать папку Plugins, которая находится рядом с исполняемым файлом AIMP.
+SelectDirLabel3=Программа установит [name] в следующую папку.
 SelectDirBrowseLabel=Нажмите «Далее», чтобы продолжить. Если Вы хотите выбрать другую папку, нажмите «Обзор».
 DiskSpaceMBLabel=Требуется как минимум [mb] Мб свободного дискового пространства.
 ToUNCPathname=Установка не может выполняться в папку по её сетевому имени. Если Вы устанавливаете в сетевую папку, Вы должны подключить её в виде сетевого диска.
@@ -316,9 +316,18 @@ AimpVerionSelectionMsg1=Версия проигрывателя
 AimpVerionSelectionMsg2=Выберите версию AIMP
 AimpVerionSelectionMsg3=Установить плагин для
 
+NetworkSetupTitle=Доступ из сети
+NetworkSetupDescription=Видимость плагина из сети
+NetworkSetupSubDescription=Установите флажок, если нужно, чтобы другие устройства в сети имели возможность подключаться к этому ПК (как из локальной сети, так и из интернета).
+NetworkSetupCheckBox=Запустить сервер на всех доступных сетевых интерфейсах
+
 AimpApplicationTerminateQuery=Для успешной установки необходимо закрыть AIMP. Закрыть сейчас?
 
 DonatePageTitle=Пожертвование
 DonatePageTitle2=Поддержать разработку
 DonateMsg=Пожалуйста, подумайте о пожертвовании, чтобы поддержать разработку.
 DonateButton=Поддержать
+
+InfoAfterPageMemoTextLocal=По умолчанию плагин запускает локальный HTTP сервер localhost, порт 3333.%nПроверочная ссылка: http://localhost:3333/index.htm%nАдрес HTTP сервера может быть изменен в файле конфигурации плагина.
+InfoAfterPageMemoTextRemoteBegin=Плагин будет доступен по следующим ссылкам
+InfoAfterPageMemoTextRemoteEnd=Это может быть изменено в файле конфигурации плагина.
