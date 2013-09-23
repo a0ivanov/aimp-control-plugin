@@ -120,6 +120,7 @@ end;
 
 procedure TerminateAimpExecutionIfNeedeed(); forward;
 function GetInfoAfterMemoText() : String; forward;
+function DefaultWritableBrowserScriptsDir(): String; forward;
 
 procedure CurPageChanged(CurPageID: Integer);
 begin
@@ -134,15 +135,33 @@ begin
     SettingsFileDestination := ExpandConstant('{code:GetPluginSettingsDir}\settings.dat');
   
     { Set default values, using settings that were stored last time if possible }
-    BrowserScriptsDirPage.Values[0] := GetPreviousData( 'BrowserScriptsDir',
-                                                         ExpandConstant('{code:GetPluginWorkDir}\htdocs')
-                                                       );
+    BrowserScriptsDirPage.Values[0] := DefaultWritableBrowserScriptsDir();
     end
   else if CurPageID = wpReady then
      begin
      AllowNetworkAccess := NetworkSetupPage.Values[0];
      AfterInstallPage.RichEditViewer.RTFText := GetInfoAfterMemoText();
      end
+end;
+
+function DefaultWritableBrowserScriptsDir(): String;
+begin
+  //GetPreviousData( 'BrowserScriptsDir',
+  //                  ExpandConstant('{code:GetPluginWorkDir}\htdocs')
+  //                );
+  
+  Result := ExpandConstant('{userappdata}\{code:GetAimpPlayerAppDataDirName}\{#PluginWorkDirectoryName}\htdocs');
+end;
+
+function IsAimp2(): Boolean; forward;
+
+function GetAimpPlayerAppDataDirName(): String;
+begin
+  { Return the name of AppData directory for selected AIMP player version }
+  if IsAimp2() then
+	  Result := 'AIMP'
+  else
+	  Result := 'AIMP3';
 end;
 
 function GetBrowserScriptsDir(Param: String): String;
@@ -349,7 +368,7 @@ begin
   // default return value
   Result := 0;
 
-  // get the uninstall string of the old app
+  // get the uninstall string of the old app.
   sBrowserScriptsDir := GetBrowserScriptsString();
   if sBrowserScriptsDir <> '' then begin
     sBrowserScriptsDir := RemoveQuotes(sBrowserScriptsDir);
@@ -367,7 +386,7 @@ begin
   begin
     if (IsUpgrade()) then
     begin
-      // Do not uninstall previous version till it will be posssible remain settings file.
+      // Do not uninstall previous version till it will be possible remain settings file.
       // Instead old remove browser scripts.
       // UnInstallOldVersion();
       RemoveInstalledBrowserScripts();
