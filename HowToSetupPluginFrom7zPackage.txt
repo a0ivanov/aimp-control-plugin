@@ -1,18 +1,19 @@
-Installing plugin:
+How to install plugin:
 
 1) Put aimp_control_plugin.dll in AIMP player's "Plugins" directory.
-
-2) Create plugin settings.dat file.
+2) Put 'htdocs' directory to path which is writeable for AIMP. Do not put it in Program Files dir.
+    This is required for album cover support. If you do not need it put it in any folder.
+3) Create plugin settings.dat file.
     There are two ways to do that:
         2.1) Just launch AIMP and exit, plugin will save default settings file in plugin folder("Control Plugin") in AIMP Plugins directory.
              "<installed AIMP path>\Plugins\Control Plugin\settings.dat"
         2.2) Copy settings.dat from 7z package to "<installed AIMP path>\Plugins\Control Plugin" directory.
 
-3) In settings.dat set following values:
+4) In settings.dat set following values:
     httpserver.document_root - set full path to htdocs directory.
     httpserver.ip_to_bind - set address of network interface where plugin server will work.
     
-4) Optional, album cover support 
+5) Optional, album cover support 
     Copy following files to "<installed AIMP path>\Plugins\Control Plugin" directory:
         FreeImage.dll
         FreeImagePlus.dll
