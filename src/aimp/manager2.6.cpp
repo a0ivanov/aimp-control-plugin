@@ -505,7 +505,7 @@ void AIMPManager26::checkIfPlaylistsChanged()
                 playlists_to_delete.push_back(id);
             }
         };
-        foreach_row("SELECT playlist_id FROM Playlists", playlists_db_, handler);
+        foreach_row("SELECT id FROM Playlists", playlists_db_, handler);
 
         for (PlaylistID playlist_id : playlists_to_delete) {
             playlist_crc32_list_.erase(playlist_id);
