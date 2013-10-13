@@ -342,7 +342,7 @@ ResponseType GetPlaylists::execute(const Rpc::Value& root_request, Rpc::Value& r
     }
 
     std::ostringstream query;
-    query << "SELECT " << getColumnsString() << " FROM Playlists";
+    query << "SELECT " << getColumnsString() << " FROM Playlists ORDER BY playlist_index";
 
     sqlite3* playlists_db = AIMPPlayer::getPlaylistsDB(aimp_manager_);
     sqlite3_stmt* stmt = createStmt( playlists_db,

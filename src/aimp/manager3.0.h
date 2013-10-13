@@ -154,7 +154,7 @@ private:
 
     //! Loads playlist by AIMP internal index.
     void loadPlaylist(int playlist_index); // throws std::runtime_error
-    void loadPlaylist(AIMP3SDK::HPLS handle); // throws std::runtime_error
+    void loadPlaylist(AIMP3SDK::HPLS handle, int playlist_index); // throws std::runtime_error
 
     void initPlaylistDB(); // throws std::runtime_error
     void shutdownPlaylistDB();

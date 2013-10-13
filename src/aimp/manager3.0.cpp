@@ -255,7 +255,7 @@ void AIMPManager30::onStorageAdded(AIMP3SDK::HPLS handle)
 {
     try {
         BOOST_LOG_SEV(logger(), debug) << "onStorageAdded: id = " << cast<PlaylistID>(handle);
-        loadPlaylist(handle);
+        loadPlaylist(handle, 0); // TODO: find out how to get playlist index by handle.
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     } catch (std::exception& e) {
         BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << handle << ". Reason: " << e.what();
@@ -368,10 +368,10 @@ void AIMPManager30::loadPlaylist(int playlist_index)
         throw std::runtime_error(MakeString() << error_prefix << "IAIMPAddonsPlaylistManager::StorageGet failed");
     }
 
-    return loadPlaylist(handle);
+    return loadPlaylist(handle, playlist_index);
 }
 
-void AIMPManager30::loadPlaylist(AIMP3SDK::HPLS handle)
+void AIMPManager30::loadPlaylist(AIMP3SDK::HPLS handle, int playlist_index)
 {
     const PlaylistID playlist_id = cast<PlaylistID>(handle);
 
@@ -414,7 +414,7 @@ void AIMPManager30::loadPlaylist(AIMP3SDK::HPLS handle)
 
     { // db code
     sqlite3_stmt* stmt = createStmt(playlists_db_,
-                                    "REPLACE INTO Playlists VALUES (?,?,?,?,?,?)"
+                                    "REPLACE INTO Playlists VALUES (?,?,?,?,?,?,?)"
                                     );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
@@ -431,11 +431,12 @@ void AIMPManager30::loadPlaylist(AIMP3SDK::HPLS handle)
 
     int rc_db;
     bind(int,   1, playlist_id);
-    bindText(   2, name, wcslen(name) );
-    bind(int,   3, entries_count);
-    bind(int64, 4, duration);
-    bind(int64, 5, size);
-    bind(int64, 6, kCRC32_UNINITIALIZED);
+    bind(int,   2, playlist_index);
+    bindText(   3, name, wcslen(name) );
+    bind(int,   4, entries_count);
+    bind(int64, 5, duration);
+    bind(int64, 6, size);
+    bind(int64, 7, kCRC32_UNINITIALIZED);
 #undef bind
 #undef bindText
     rc_db = sqlite3_step(stmt);
@@ -1608,6 +1609,7 @@ void AIMPManager30::initPlaylistDB() // throws std::runtime_error
     ON_BLOCK_EXIT(&sqlite3_free, errmsg);
     rc = sqlite3_exec(playlists_db_,
                       "CREATE TABLE Playlists ( id              INTEGER,"
+                                               "playlist_index  INTEGER,"
                                                "title           VARCHAR(260),"
                                                "entries_count   INTEGER,"
                                                "duration        BIGINT,"

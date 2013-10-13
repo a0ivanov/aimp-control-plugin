@@ -140,7 +140,7 @@ void AIMPManager26::loadPlaylist(int playlist_index)
 
     { // db code
     sqlite3_stmt* stmt = createStmt(playlists_db_,
-                                    "REPLACE INTO Playlists VALUES (?,?,?,?,?,?)"
+                                    "REPLACE INTO Playlists VALUES (?,?,?,?,?,?,?)"
                                     );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
@@ -157,11 +157,12 @@ void AIMPManager26::loadPlaylist(int playlist_index)
 
     int rc_db;
     bind( int,  1, id );
-    bindText(   2, name, wcslen(name) );
-    bind( int,  3, files_count );
-    bind(int64, 4, duration);
-    bind(int64, 5, size);
-    bind(int64, 6, kCRC32_UNINITIALIZED);
+    bind( int,  2, playlist_index );
+    bindText(   3, name, wcslen(name) );
+    bind( int,  4, files_count );
+    bind(int64, 5, duration);
+    bind(int64, 6, size);
+    bind(int64, 7, kCRC32_UNINITIALIZED);
 #undef bind
 #undef bindText
     rc_db = sqlite3_step(stmt);
@@ -1751,6 +1752,7 @@ void AIMPManager26::initPlaylistDB() // throws std::runtime_error
     ON_BLOCK_EXIT(&sqlite3_free, errmsg);
     rc = sqlite3_exec(playlists_db_,
                       "CREATE TABLE Playlists ( id              INTEGER,"
+                                               "playlist_index  INTEGER,"
                                                "title           VARCHAR(260),"
                                                "entries_count   INTEGER,"
                                                "duration        BIGINT,"
