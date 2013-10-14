@@ -99,6 +99,8 @@ public:
 
     virtual void saveCoverToFile(TrackDescription track_desc, const std::wstring& filename, int cover_width = 0, int cover_height = 0) const; // throw std::runtime_error
 
+    virtual void removeTrack(TrackDescription track_desc, bool physically = false); // throws std::runtime_error
+
     virtual EventsListenerID registerListener(EventsListener listener);
 
     virtual void unRegisterListener(EventsListenerID listener_id);

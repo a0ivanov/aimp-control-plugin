@@ -94,6 +94,8 @@ public:
     
     virtual void addURLToPlaylist(const std::string& url, PlaylistID playlist_id); // throws std::runtime_error
 
+    virtual void removeTrack(TrackDescription track_desc, bool physically = false); // throws std::runtime_error
+
     virtual PlaylistID createPlaylist(const std::wstring& title);
 
     // AIMP3 specific functionality, not supported by AIMP2.

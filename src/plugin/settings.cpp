@@ -117,6 +117,10 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
     std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
     bool enable_track_upload = tmp == L"true" || tmp == L"1";
 
+    tmp = pt.get<std::wstring>(L"settings.misc.enable_physical_track_deletion", L"false");
+    std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
+    bool enable_physical_track_deletion = tmp == L"true" || tmp == L"1";
+    
     // all work has been done, save result.
     using std::swap;
     settings.http_server.ip_to_bind.swap(server_ip_to_bind);
@@ -129,6 +133,7 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
     settings.logger.modules_to_log.swap(modules_to_log);
 
     settings.misc.enable_track_upload = enable_track_upload;
+    settings.misc.enable_physical_track_deletion = enable_physical_track_deletion;
 }
 
 void Manager::load(const boost::filesystem::wpath& filename)
@@ -183,6 +188,7 @@ void saveSettingsToPropertyTree(const Settings& settings, wptree& pt) // throws 
     }
 
     pt.put(L"settings.misc.enable_track_upload", settings.misc.enable_track_upload);
+    pt.put(L"settings.misc.enable_physical_track_deletion", settings.misc.enable_physical_track_deletion);
 }
 
 void Manager::save(const boost::filesystem::wpath& filename) const

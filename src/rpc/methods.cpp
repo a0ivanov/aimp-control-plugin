@@ -9,6 +9,7 @@
 #include "aimp/manager_impl_common.h"
 #include "plugin/logger.h"
 #include "plugin/control_plugin.h"
+#include "plugin/settings.h"
 #include "rpc/exception.h"
 #include "rpc/value.h"
 #include "rpc/request_handler.h"
@@ -1356,7 +1357,7 @@ ResponseType PluginCapabilities::execute(const Rpc::Value& /*root_request*/, Rpc
 {
     Rpc::Value& result = root_response["result"];
     result["upload_track"] = ControlPlugin::AIMPControlPlugin::settings().misc.enable_track_upload;
-    
+    result["physical_track_deletion"] = ControlPlugin::AIMPControlPlugin::settings().misc.enable_physical_track_deletion;
     return RESPONSE_IMMEDIATE;
 }
 
@@ -1370,6 +1371,34 @@ ResponseType AddURLToPlaylist::execute(const Rpc::Value& root_request, Rpc::Valu
         aimp_manager_.addURLToPlaylist(url, playlist_id);
     } catch (std::runtime_error& e) {
         throw Rpc::Exception(e.what(), ADD_URL_TO_PLAYLIST_FAILED);
+    }
+
+    Rpc::Value& result = root_response["result"];
+    result = Rpc::Value::Object();
+    return RESPONSE_IMMEDIATE;
+}
+
+RemoveTrack::RemoveTrack(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request_handler)
+    : AIMPRPCMethod("RemoveTrack", aimp_manager, rpc_request_handler)
+{
+    const ControlPlugin::PluginSettings::Settings& settings = ControlPlugin::AIMPControlPlugin::settings();
+    enable_physical_track_deletion_ = settings.misc.enable_physical_track_deletion;
+}
+
+ResponseType RemoveTrack::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+{
+    const Rpc::Value& params = root_request["params"];
+
+    const bool physically = params.isMember("physically") ? params["physically"] : false;
+    if (physically && !enable_physical_track_deletion_) {
+        throw Rpc::Exception("Physical deletion is disabled", REMOVE_TRACK_PHYSICAL_DELETION_DISABLED);
+    } 
+
+    const TrackDescription track_desc(getTrackDesc(params));
+    try {
+        aimp_manager_.removeTrack(track_desc, physically);
+    } catch (std::runtime_error& e) {
+        throw Rpc::Exception(e.what(), REMOVE_TRACK_FAILED);
     }
 
     Rpc::Value& result = root_response["result"];

@@ -1691,6 +1691,51 @@ void AIMPManager30::addURLToPlaylist(const std::string& url, PlaylistID playlist
     addFileToPlaylist(path, playlist_id);
 }
 
+void AIMPManager30::removeTrack(TrackDescription track_desc, bool physically) // throws std::runtime_error
+{
+    const AIMP3SDK::HPLS playlist_handle = cast<AIMP3SDK::HPLS>( getAbsolutePlaylistID(track_desc.playlist_id) );
+    const AIMP3SDK::HPLSENTRY entry_handle = cast<AIMP3SDK::HPLSENTRY>( getAbsoluteEntryID(track_desc.track_id) );
+
+    if (physically) {
+        class Filter {
+        public:
+            static BOOL WINAPI needToRemove(AIMP3SDK::TAIMPFileInfo* AFileInfo, void* AUserData) {
+                AIMP3SDK::TAIMPFileInfo* toFind = static_cast<AIMP3SDK::TAIMPFileInfo*>(AUserData);
+                return     AFileInfo->BitRate == toFind->BitRate
+                        && AFileInfo->Channels == toFind->Channels
+                        && AFileInfo->Duration == toFind->Duration
+                        && AFileInfo->FileSize == toFind->FileSize
+                        && AFileInfo->Rating == toFind->Rating
+                        && AFileInfo->SampleRate == toFind->SampleRate
+                        && AFileInfo->TrackNumber == toFind->TrackNumber
+                ;
+            }
+        };
+
+        AIMP3Util::FileInfoHelper file_info_helper;
+        HRESULT r = aimp3_playlist_manager_->EntryPropertyGetValue( entry_handle, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_INFO,
+                                                                    &file_info_helper.getEmptyFileInfo(), sizeof(file_info_helper.getEmptyFileInfo()) ); 
+        if (S_OK != r) {
+            throw std::runtime_error(MakeString() << "Error of IAIMPAddonsPlaylistManager::EntryPropertyGetValue() " << r << " in "__FUNCTION__" with " << track_desc);
+        }
+
+        r = aimp3_playlist_manager_->StorageDeleteByFilter(playlist_handle, physically,	&Filter::needToRemove, &file_info_helper.getFileInfo());
+        if (S_OK != r) {
+            throw std::runtime_error(MakeString() << "Error of IAIMPAddonsPlaylistManager::StorageDeleteByFilter() " << r << " in "__FUNCTION__" with " << track_desc);
+        }
+    } else {
+        int index;
+        HRESULT r = aimp3_playlist_manager_->EntryPropertyGetValue( entry_handle, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_INDEX, &index, sizeof(index) );
+        if (r != S_OK) {
+            throw std::runtime_error(MakeString() << "IAIMPAddonsPlaylistManager::EntryPropertyGetValue() failed. Result " << r);
+        }
+        r = aimp3_playlist_manager_->StorageDelete(playlist_handle, index);
+        if (r != S_OK) {
+            throw std::runtime_error(MakeString() << "IAIMPAddonsPlaylistManager::StorageDelete() failed. Result " << r);
+        }
+    }
+}
+
 PlaylistID AIMPManager30::createPlaylist(const std::wstring& title)
 {
     return cast<PlaylistID>(aimp3_playlist_manager_->StorageCreate(const_cast<PWCHAR>(title.c_str()),

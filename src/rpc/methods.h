@@ -71,7 +71,9 @@ enum ERROR_CODES {
                    STATUS_SET_FAILED = 24, /*!< can't set status. */
                    RADIO_CAPTURE_MODE_SET_FAILED = 25, /*!< can't update radio capture mode. Possible reason: currenly playing track source is not radio, but usual file. */
                    MOVE_TRACK_IN_QUEUE_FAILED = 26, /*!< can't update position of track in queue. Possible reason: position index is out of range. */
-                   ADD_URL_TO_PLAYLIST_FAILED = 27 /*!< can't add url to playlist. Possible reason: playlist was not found. */
+                   ADD_URL_TO_PLAYLIST_FAILED = 27, /*!< can't add url to playlist. Possible reason: playlist was not found. */
+                   REMOVE_TRACK_FAILED = 28, /*!< can't remove track from playlist. Possible reason: track was not found. */
+                   REMOVE_TRACK_PHYSICAL_DELETION_DISABLED = 29 /*!< can't remove track physically. Reason: user has disabled it in plugin settings. */
 };
 
 using namespace AIMPPlayer;
@@ -1191,7 +1193,7 @@ public:
 /*! 
     \brief Returns plugin capabilities.
     \return object which describes capabilities:
-         Example: \code "result":{"upload_track":true} \endcode
+         Example: \code "result":{"physical_track_deletion":false,"upload_track":true} \endcode
 
 */
 class PluginCapabilities : public AIMPRPCMethod
@@ -1235,6 +1237,43 @@ public:
     }
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
+};
+
+/*! 
+    \brief Removes specified track from playlist.
+
+    Please use PluginCapabilities to determine if such functionality is enabled by user.
+
+    \param track_id - int.
+    \param playlist_id - int.
+    \param physically - bool, optional. Default: false.
+    
+    Notice: AIMP 3.51 build 1288 shows confirmation dialog. So it useless for remote control.
+    
+    \return object which describes:
+        - success:<BR>
+            Example: \code "result":{} \endcode
+        - failure: object which describes error: {code, message}<BR>
+            Error codes in addition to \link #Rpc::ERROR_CODES Common errors\endlink:
+                - ::REMOVE_TRACK_FAILED
+                - ::REMOVE_TRACK_PHYSICAL_DELETION_DISABLED
+
+            Example: \code {"error":{"code":29,"message":"Physical deletion is disabled"}} \endcode
+*/
+class RemoveTrack : public AIMPRPCMethod
+{
+public:
+    RemoveTrack(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request_handler);
+
+    std::string help()
+    {
+        return "";
+    }
+
+    Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
+private:
+
+    bool enable_physical_track_deletion_;
 };
 
 class EmulationOfWebCtlPlugin : public AIMPRPCMethod

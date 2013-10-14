@@ -26,6 +26,7 @@ struct Settings
 
     struct Misc {
         bool enable_track_upload;
+        bool enable_physical_track_deletion;
     } misc;
 };
 

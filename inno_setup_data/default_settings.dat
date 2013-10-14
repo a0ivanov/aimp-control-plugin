@@ -33,5 +33,10 @@
              There is risk of uploading dangerous files that can corrupt your system or steal your data.
         -->
         <enable_track_upload>false</enable_track_upload>
+        
+        <!-- Use it carefully.
+             There is risk of removing all music data.
+        -->
+        <enable_physical_track_deletion>false</enable_physical_track_deletion>
     </misc>
 </settings>

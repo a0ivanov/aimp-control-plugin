@@ -1849,4 +1849,17 @@ PlaylistID AIMPManager26::createPlaylist(const std::wstring& title)
                                                    );
 }
 
+void AIMPManager26::removeTrack(TrackDescription track_desc, bool physically) // throws std::runtime_error
+{
+    if (physically) {
+        BOOST_LOG_SEV(logger(), warning) << __FUNCTION__": AIMP2 SDK does not support track physical removing";
+    }
+
+    track_desc = getAbsoluteTrackDesc(track_desc);
+
+    if (!aimp2_playlist_manager_->AIMP_PLS_Entry_Delete(track_desc.playlist_id, track_desc.track_id)) {
+        throw std::runtime_error("IAIMP2PlaylistManager2::AIMP_PLS_Entry_Delete error.");
+    }
+}
+
 } // namespace AIMPPlayer

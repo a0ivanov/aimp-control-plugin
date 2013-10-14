@@ -266,6 +266,7 @@ public:
 
     virtual PlaylistID createPlaylist(const std::wstring& title) = 0;
 
+    virtual void removeTrack(TrackDescription track_desc, bool physically = false) = 0; // throws std::runtime_error
 
     /*!
         \brief Registers notifier which will be called when specified event will occur.
