@@ -39,6 +39,18 @@ AIMPManager31::~AIMPManager31()
 void AIMPManager31::initializeAIMPObjects()
 {
     using namespace AIMP3SDK;
+
+    IAIMPAddonsPlaylistManager* playlist_manager;
+    if (S_OK != aimp3_core_unit_->QueryInterface(IID_IAIMPAddonsPlaylistManager, 
+                                                 reinterpret_cast<void**>(&playlist_manager)
+                                                 ) 
+        )
+    {
+        throw std::runtime_error("Creation object IAIMPAddonsPlaylistManager failed"); 
+    }
+    aimp3_playlist_manager_.reset(playlist_manager);
+    playlist_manager->Release();
+
     IAIMPAddonsPlaylistQueue* playlist_queue;
     if (S_OK != aimp3_core_unit_->QueryInterface(IID_IAIMPAddonsPlaylistQueue,
                                                  reinterpret_cast<void**>(&playlist_queue)

@@ -220,7 +220,7 @@ void AIMPManager30::initializeAIMPObjects()
     player_manager->Release();
 
     IAIMPAddonsPlaylistManager* playlist_manager;
-    if (S_OK != aimp3_core_unit_->QueryInterface(IID_IAIMPAddonsPlaylistManager, 
+    if (S_OK != aimp3_core_unit_->QueryInterface(IID_IAIMPAddonsPlaylistManager30,
                                                  reinterpret_cast<void**>(&playlist_manager)
                                                  ) 
         )
