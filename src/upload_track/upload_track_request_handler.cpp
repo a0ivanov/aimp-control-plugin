@@ -55,8 +55,9 @@ bool RequestHandler::handle_request(const Http::Request& req, Http::Reply& rep)
 
             switch (field.GetType()) {
             case MPFD::Field::FileType:
-                {;
-                const fs::wpath path = fs::path(field.GetTempFileName()).parent_path() / field.GetFileName();
+                {
+                const std::wstring filename = StringEncoding::utf8_to_utf16( field.GetFileName() );
+                const fs::wpath path = fs::path(field.GetTempFileName()).parent_path() / filename;
                 if (!fileTypeSupported(path.extension().native(), aimp_manager_)) {
                     continue;
                 }
