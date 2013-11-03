@@ -4,6 +4,7 @@
 #include "aimp3_sdk/aimp3_sdk.h"
 #include "playlist_entry.h"
 #include "utils/util.h"
+#include <boost/filesystem.hpp>
 
 namespace AIMPPlayer {
 namespace AIMP3Util {
@@ -19,6 +20,24 @@ public:
 
     AIMP3SDK::TAIMPFileInfo& getEmptyFileInfo()
     {
+        resetInfo();
+        return info_;
+    }
+
+    AIMP3SDK::TAIMPFileInfo& getFileInfo()
+        { return info_; }
+
+    AIMP3SDK::TAIMPFileInfo& getFileInfoWithCorrectStringLengthsAndNonEmptyTitle()
+    {
+        fixStringLengths();
+        fixEmptyTitle();
+        return info_;
+    }
+
+private:
+
+    void resetInfo()
+    {
         memset( &info_, 0, sizeof(info_) );
         info_.StructSize = sizeof(info_);
         // clear all buffers content
@@ -29,7 +48,7 @@ public:
         // set buffers length
         info_.AlbumBufferSizeInChars = info_.ArtistBufferSizeInChars = info_.DateBufferSizeInChars
         = info_.DateBufferSizeInChars = info_.FileNameBufferSizeInChars = info_.GenreBufferSizeInChars = info_.TitleBufferSizeInChars
-        = kFIELDBUFFERSIZE;
+        = kFIELDBUFFERSIZEINCHARS;
 
         // set buffers
         info_.AlbumBuffer = album;
@@ -38,53 +57,60 @@ public:
         info_.FileNameBuffer = filename;
         info_.GenreBuffer = genre;
         info_.TitleBuffer = title;
-
-        return info_;
     }
 
-    AIMP3SDK::TAIMPFileInfo& getFileInfo()
-        { return info_; }
-
-    AIMP3SDK::TAIMPFileInfo& getFileInfoWithCorrectStringLengths()
+    void fixStringLengths()
     {
         // fill string lengths if Aimp does not do this.
-        if (info_.AlbumBufferSizeInChars == kFIELDBUFFERSIZE) {
+        if (info_.AlbumBufferSizeInChars == kFIELDBUFFERSIZEINCHARS) {
             info_.AlbumBufferSizeInChars = std::wcslen(info_.AlbumBuffer);
         }
 
-        if (info_.ArtistBufferSizeInChars == kFIELDBUFFERSIZE) {
+        if (info_.ArtistBufferSizeInChars == kFIELDBUFFERSIZEINCHARS) {
             info_.ArtistBufferSizeInChars = std::wcslen(info_.ArtistBuffer);
         }
 
-        if (info_.DateBufferSizeInChars == kFIELDBUFFERSIZE) {
+        if (info_.DateBufferSizeInChars == kFIELDBUFFERSIZEINCHARS) {
             info_.DateBufferSizeInChars = std::wcslen(info_.DateBuffer);
         }
 
-        if (info_.FileNameBufferSizeInChars == kFIELDBUFFERSIZE) {
+        if (info_.FileNameBufferSizeInChars == kFIELDBUFFERSIZEINCHARS) {
             info_.FileNameBufferSizeInChars = std::wcslen(info_.FileNameBuffer);
         }
 
-        if (info_.GenreBufferSizeInChars == kFIELDBUFFERSIZE) {
+        if (info_.GenreBufferSizeInChars == kFIELDBUFFERSIZEINCHARS) {
             info_.GenreBufferSizeInChars = std::wcslen(info_.GenreBuffer);
         }
 
-        if (info_.TitleBufferSizeInChars == kFIELDBUFFERSIZE) {
+        if (info_.TitleBufferSizeInChars == kFIELDBUFFERSIZEINCHARS) {
             info_.TitleBufferSizeInChars = std::wcslen(info_.TitleBuffer);
         }
-
-        return info_;
     }
 
-private:
+    // assumption: fixEmptyTitle() method has been already called.
+    void fixEmptyTitle()
+    {
+        if (info_.TitleBufferSizeInChars == 0) {
+            boost::filesystem::wpath path(info_.FileNameBuffer);
+            path.replace_extension();
+            const boost::filesystem::wpath& filename = path.filename();
+            info_.TitleBufferSizeInChars = std::min((size_t)kFIELDBUFFERSIZE, std::wcslen(filename.c_str()));
+#pragma warning (push, 4)
+#pragma warning( disable : 4996 )
+            std::wcsncpy(info_.TitleBuffer, filename.c_str(), info_.TitleBufferSizeInChars);
+#pragma warning (pop)
+        }
+    }
 
     AIMP3SDK::TAIMPFileInfo info_;
     static const DWORD kFIELDBUFFERSIZE = MAX_PATH;
-    WCHAR album[kFIELDBUFFERSIZE + 1];
-    WCHAR artist[kFIELDBUFFERSIZE + 1];
-    WCHAR date[kFIELDBUFFERSIZE + 1];
-    WCHAR filename[kFIELDBUFFERSIZE + 1];
-    WCHAR genre[kFIELDBUFFERSIZE + 1];
-    WCHAR title[kFIELDBUFFERSIZE + 1];
+    static const DWORD kFIELDBUFFERSIZEINCHARS = kFIELDBUFFERSIZE - 1;
+    WCHAR album[kFIELDBUFFERSIZE];
+    WCHAR artist[kFIELDBUFFERSIZE];
+    WCHAR date[kFIELDBUFFERSIZE];
+    WCHAR filename[kFIELDBUFFERSIZE];
+    WCHAR genre[kFIELDBUFFERSIZE];
+    WCHAR title[kFIELDBUFFERSIZE];
 };
 
 } // namespace AIMP3Util

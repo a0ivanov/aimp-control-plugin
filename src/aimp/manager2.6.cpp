@@ -200,25 +200,7 @@ public:
 
     AIMP2SDK::AIMP2FileInfo& getEmptyFileInfo()
     {
-        memset( &info_, 0, sizeof(info_) );
-        info_.cbSizeOf = sizeof(info_);
-        // clear all buffers content
-        WCHAR* field_buffers[] = { album, artist, date, filename, genre, title };
-        BOOST_FOREACH(WCHAR* field_buffer, field_buffers) {
-            memset( field_buffer, 0, kFIELDBUFFERSIZE * sizeof(field_buffer[0]) );
-        }
-        // set buffers length
-        info_.nAlbumLen = info_.nArtistLen = info_.nDateLen
-        = info_.nDateLen = info_.nFileNameLen = info_.nGenreLen = info_.nTitleLen
-        = kFIELDBUFFERSIZE;
-        // set buffers
-        info_.sAlbum = album;
-        info_.sArtist = artist;
-        info_.sDate = date;
-        info_.sFileName = filename;
-        info_.sGenre = genre;
-        info_.sTitle = title;
-
+        resetInfo();
         return info_;
     }
 
@@ -230,40 +212,83 @@ public:
     DWORD trackID() const
         { return info_.nTrackID; }
 
-    AIMP2SDK::AIMP2FileInfo& getFileInfoWithCorrectStringLengths()
+    AIMP2SDK::AIMP2FileInfo& getFileInfoWithCorrectStringLengthsAndNonEmptyTitle()
     {
-        // fill string lengths if Aimp do not do this.
-        if (info_.nAlbumLen == kFIELDBUFFERSIZE) {
-            info_.nAlbumLen = std::wcslen(info_.sAlbum);
-        }
-
-        if (info_.nArtistLen == kFIELDBUFFERSIZE) {
-            info_.nArtistLen = std::wcslen(info_.sArtist);
-        }
-
-        if (info_.nDateLen == kFIELDBUFFERSIZE) {
-            info_.nDateLen = std::wcslen(info_.sDate);
-        }
-
-        if (info_.nFileNameLen == kFIELDBUFFERSIZE) {
-            info_.nFileNameLen = std::wcslen(info_.sFileName);
-        }
-
-        if (info_.nGenreLen == kFIELDBUFFERSIZE) {
-            info_.nGenreLen = std::wcslen(info_.sGenre);
-        }
-
-        if (info_.nTitleLen == kFIELDBUFFERSIZE) {
-            info_.nTitleLen = std::wcslen(info_.sTitle);
-        }
-
+        fixStringLengths();
+        fixEmptyTitle();
         return info_;
     }
 
 private:
 
+    void resetInfo()
+    {
+        memset( &info_, 0, sizeof(info_) );
+        info_.cbSizeOf = sizeof(info_);
+        // clear all buffers content
+        WCHAR* field_buffers[] = { album, artist, date, filename, genre, title };
+        BOOST_FOREACH(WCHAR* field_buffer, field_buffers) {
+            memset( field_buffer, 0, kFIELDBUFFERSIZE * sizeof(field_buffer[0]) );
+        }
+        // set buffers length
+        info_.nAlbumLen = info_.nArtistLen = info_.nDateLen
+        = info_.nDateLen = info_.nFileNameLen = info_.nGenreLen = info_.nTitleLen
+        = kFIELDBUFFERSIZEINCHARS;
+        // set buffers
+        info_.sAlbum = album;
+        info_.sArtist = artist;
+        info_.sDate = date;
+        info_.sFileName = filename;
+        info_.sGenre = genre;
+        info_.sTitle = title;
+    }
+
+    void fixStringLengths()
+    {
+        // fill string lengths if Aimp do not do this.
+        if (info_.nAlbumLen == kFIELDBUFFERSIZEINCHARS) {
+            info_.nAlbumLen = std::wcslen(info_.sAlbum);
+        }
+
+        if (info_.nArtistLen == kFIELDBUFFERSIZEINCHARS) {
+            info_.nArtistLen = std::wcslen(info_.sArtist);
+        }
+
+        if (info_.nDateLen == kFIELDBUFFERSIZEINCHARS) {
+            info_.nDateLen = std::wcslen(info_.sDate);
+        }
+
+        if (info_.nFileNameLen == kFIELDBUFFERSIZEINCHARS) {
+            info_.nFileNameLen = std::wcslen(info_.sFileName);
+        }
+
+        if (info_.nGenreLen == kFIELDBUFFERSIZEINCHARS) {
+            info_.nGenreLen = std::wcslen(info_.sGenre);
+        }
+
+        if (info_.nTitleLen == kFIELDBUFFERSIZEINCHARS) {
+            info_.nTitleLen = std::wcslen(info_.sTitle);
+        }
+    }
+
+    // assumption: fixEmptyTitle() method has been already called.
+    void fixEmptyTitle()
+    {
+        if (info_.nTitleLen == 0) {
+            boost::filesystem::wpath path(info_.sFileName);
+            path.replace_extension();
+            const boost::filesystem::wpath& filename = path.filename();
+            info_.nTitleLen = std::min((size_t)kFIELDBUFFERSIZE, std::wcslen(filename.c_str()));
+#pragma warning (push, 4)
+#pragma warning( disable : 4996 )
+            std::wcsncpy(info_.sTitle, filename.c_str(), info_.nTitleLen);
+#pragma warning (pop)
+        }
+    }
+
     AIMP2SDK::AIMP2FileInfo info_;
-    static const DWORD kFIELDBUFFERSIZE = 256;
+    static const DWORD kFIELDBUFFERSIZE = MAX_PATH;
+    static const DWORD kFIELDBUFFERSIZEINCHARS = kFIELDBUFFERSIZE - 1;
     WCHAR album[kFIELDBUFFERSIZE];
     WCHAR artist[kFIELDBUFFERSIZE];
     WCHAR date[kFIELDBUFFERSIZE];
@@ -323,7 +348,7 @@ void AIMPManager26::loadEntries(PlaylistID playlist_id) // throws std::runtime_e
             // special db code
             {
                 // bind all values
-                const AIMP2SDK::AIMP2FileInfo& info = file_info_helper.getFileInfoWithCorrectStringLengths();
+                const AIMP2SDK::AIMP2FileInfo& info = file_info_helper.getFileInfoWithCorrectStringLengthsAndNonEmptyTitle();
                 bind(int,    2, entry_index); // id is the index for AIMP2.
                 bind(int,    3, entry_index); // for consistency with AIMP3.
                 bindText(    4, Album);
@@ -614,7 +639,7 @@ bool AIMPManager26::isLoadedPlaylistEqualsAimpPlaylist(PlaylistID playlist_id) c
 		int rc_db = sqlite3_step(stmt);
         if (SQLITE_ROW == rc_db) {
             // need to compare loaded_entry with file_info_helper.info_;
-            const AIMP2SDK::AIMP2FileInfo& aimp_entry = file_info_helper.getFileInfoWithCorrectStringLengths();
+            const AIMP2SDK::AIMP2FileInfo& aimp_entry = file_info_helper.getFileInfoWithCorrectStringLengthsAndNonEmptyTitle();
             if ( crc32_entry(stmt) != Utilities::crc32(aimp_entry) ) {
                 return false;
             }

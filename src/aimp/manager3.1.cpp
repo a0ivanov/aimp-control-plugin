@@ -122,7 +122,7 @@ void AIMPManager31::reloadQueuedEntries() // throws std::runtime_error
                 TrackDescription track_desc = getTrackDescOfQueuedEntry(entry_handle);
                 bind(int,    1, track_desc.playlist_id);
                 // bind all values
-                const AIMP3SDK::TAIMPFileInfo& info = file_info_helper.getFileInfoWithCorrectStringLengths();
+                const AIMP3SDK::TAIMPFileInfo& info = file_info_helper.getFileInfoWithCorrectStringLengthsAndNonEmptyTitle();
                 bind(int,    2, track_desc.track_id);
                 bind(int,    3, entry_index);
                 bindText(    4, Album);

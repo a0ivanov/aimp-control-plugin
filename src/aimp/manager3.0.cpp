@@ -558,7 +558,9 @@ void AIMPManager30::loadEntries(PlaylistID playlist_id) // throws std::runtime_e
 
         { // special db code
             // bind all values
-            const AIMP3SDK::TAIMPFileInfo& info = file_info_helper.getFileInfoWithCorrectStringLengths();
+            
+
+            const AIMP3SDK::TAIMPFileInfo& info = file_info_helper.getFileInfoWithCorrectStringLengthsAndNonEmptyTitle();
             bind(int,    2, entry_id);
             bind(int,    3, entry_index);
             bindText(    4, Album);
