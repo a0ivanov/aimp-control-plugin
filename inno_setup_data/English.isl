@@ -344,10 +344,13 @@ AimpVerionSelectionMsg1=Player version
 AimpVerionSelectionMsg2=Choose AIMP player version
 AimpVerionSelectionMsg3=Install plugin for
 
-NetworkSetupTitle=Network access
-NetworkSetupDescription=Plugin network capabilities.
-NetworkSetupSubDescription=Check the box below if you want other devices to be able to connect to this PC (either from local network or from internet).
-NetworkSetupCheckBox=Allow plugin's server to use all network interfaces.
+PluginOptionsTitle=Additional functionality
+PluginOptionsDescription=Extra features that are disabled by default.
+PluginOptionsSubDescription=Following functionality can be potentially dangerous.
+
+OptionNetworkCheckBox=Allow connecting to plugin both from local network and from internet. Service will be available on all network interfaces.
+OptionUploadTracksCheckBox=Allow track uploading.
+OptionPhysicalTrackDeletionCheckBox=Allow physical track deletion from disk.
 
 AimpApplicationTerminateQuery=It is necessary to close AIMP player for succeed plugin installation. Close now?
 

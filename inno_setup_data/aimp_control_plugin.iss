@@ -67,9 +67,11 @@ Source: "3rd_party\FreeImage\{#FreeImage_VERSION}\Wrapper\FreeImagePlus\dist\Fre
 var
   BrowserScriptsDirPage: TInputDirWizardPage;
   AimpVersionSelectionPage: TInputOptionWizardPage;
-  NetworkSetupPage: TInputOptionWizardPage;
+  PluginOptionsPage: TInputOptionWizardPage;
   AfterInstallPage: TOutputMsgMemoWizardPage;
   AllowNetworkAccess: Boolean;
+  AllowFilesUpload: Boolean;
+  AllowFilesDeletion: Boolean;
   SettingsFileDestination: String;
   Port: Integer;
 
@@ -100,13 +102,15 @@ begin
 
   InitDonationPage();
   
-  NetworkSetupPage := CreateInputOptionPage(BrowserScriptsDirPage.ID,
-                                            ExpandConstant('{cm:NetworkSetupTitle}'),
-                                            ExpandConstant('{cm:NetworkSetupDescription}'),
-                                            ExpandConstant('{cm:NetworkSetupSubDescription}'),
+  PluginOptionsPage := CreateInputOptionPage(BrowserScriptsDirPage.ID,
+                                            ExpandConstant('{cm:PluginOptionsTitle}'),
+                                            ExpandConstant('{cm:PluginOptionsDescription}'),
+                                            ExpandConstant('{cm:PluginOptionsSubDescription}'),
                                             False, False);
 
-  NetworkSetupPage.Add(ExpandConstant('{cm:NetworkSetupCheckBox}'));
+  PluginOptionsPage.Add(ExpandConstant('{cm:OptionNetworkCheckBox}'));
+  PluginOptionsPage.Add(ExpandConstant('{cm:OptionUploadTracksCheckBox}'));
+  PluginOptionsPage.Add(ExpandConstant('{cm:OptionPhysicalTrackDeletionCheckBox}'));
   
   AfterInstallPage := CreateOutputMsgMemoPage(wpInfoAfter,
    SetupMessage(msgWizardInfoAfter),
@@ -139,7 +143,9 @@ begin
     end
   else if CurPageID = wpReady then
      begin
-     AllowNetworkAccess := NetworkSetupPage.Values[0];
+     AllowNetworkAccess := PluginOptionsPage.Values[0];
+     AllowFilesUpload := PluginOptionsPage.Values[1];
+     AllowFilesDeletion := PluginOptionsPage.Values[2];
      AfterInstallPage.RichEditViewer.RTFText := GetInfoAfterMemoText();
      end
 end;
@@ -218,6 +224,14 @@ begin
   SetPreviousData(PreviousDataKey, 'BrowserScriptsDir', BrowserScriptsDirPage.Values[0]);
 end;
 
+function BooleanToString(condition: Boolean): String;
+begin
+  if (condition) then
+    Result := 'true'
+  else
+    Result := 'false';
+end;
+
 procedure AfterInstallSettingsFile(Path: String);
 var
   // See http://msdn.microsoft.com/en-us/library/ms757878(VS.85).aspx for details about
@@ -247,13 +261,16 @@ begin
   if (AllowNetworkAccess) then
     XMLDoc.selectNodes('//httpserver/ip_to_bind').item(0).Text := '';
 
+  // No checking to allow rewriting of the existing values.
+  XMLDoc.selectNodes('//misc/enable_track_upload').item(0).Text := BooleanToString(AllowFilesUpload);     
+  XMLDoc.selectNodes('//misc/enable_physical_track_deletion').item(0).Text := BooleanToString(AllowFilesDeletion);
+
   Port := XMLDoc.selectNodes('//httpserver/port').item(0).Text;
   
   { Save the XML document }
   XMLDoc.Save(Path);
   //MsgBox('Saved the modified XML as ''' + Path + '''.', mbInformation, mb_Ok);
 end;
-
 
 function UpdateReadyMemo(Space, NewLine, MemoUserInfoInfo, MemoDirInfo, MemoTypeInfo,
   MemoComponentsInfo, MemoGroupInfo, MemoTasksInfo: String): String;

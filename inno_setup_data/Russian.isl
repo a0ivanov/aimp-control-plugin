@@ -316,10 +316,13 @@ AimpVerionSelectionMsg1=Версия проигрывателя
 AimpVerionSelectionMsg2=Выберите версию AIMP
 AimpVerionSelectionMsg3=Установить плагин для
 
-NetworkSetupTitle=Доступ из сети
-NetworkSetupDescription=Видимость плагина из сети
-NetworkSetupSubDescription=Установите флажок, если нужно, чтобы другие устройства в сети имели возможность подключаться к этому ПК (как из локальной сети, так и из интернета).
-NetworkSetupCheckBox=Запустить сервер на всех доступных сетевых интерфейсах
+PluginOptionsTitle=Настройка дополнительных возможностей
+PluginOptionsDescription=Эти функции отключены по-умолчанию.
+PluginOptionsSubDescription=Использование данных возможностей представляет потенциальную опасность для сохраности Ваших данных.
+
+OptionNetworkCheckBox=Разрешить подключение к плагину как из локальной сети, так и из интернета. Сервис плагина будет доступен на всех доступных сетевых интерфейсах.
+OptionUploadTracksCheckBox=Разрешить загрузку треков в плеер.
+OptionPhysicalTrackDeletionCheckBox=Разрешить удаление треков с диска.
 
 AimpApplicationTerminateQuery=Для успешной установки необходимо закрыть AIMP. Закрыть сейчас?
 
