@@ -237,6 +237,8 @@ public:
     */
     virtual std::wstring getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const = 0; // throw std::invalid_argument
 
+    virtual std::wstring getEntryFilename(TrackDescription track_desc) const = 0; // throw std::invalid_argument
+
     /*
         Returns true if there is album cover is located in separate file (not embedded into track metadata) and it is available.
         argument path will be set if it is not null_ptr and album cover file is available.

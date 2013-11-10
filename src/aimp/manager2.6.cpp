@@ -1723,6 +1723,19 @@ std::wstring AIMPManager26::getFormattedEntryTitle(TrackDescription track_desc, 
                                                 );
 }
 
+std::wstring AIMPManager26::getEntryFilename(TrackDescription track_desc) const // throw std::invalid_argument
+{
+    TrackDescription track_desc_ = getAbsoluteTrackDesc(track_desc);
+
+    WCHAR filename[MAX_PATH + 1] = {0};
+    boolean result = aimp2_playlist_manager_->AIMP_PLS_Entry_FileNameGet(track_desc_.playlist_id, track_desc_.track_id,
+                                                                         &filename[0], ARRAYSIZE(filename) - 1 // tested: it requires string char count, not buffer size.
+                                                                         );
+    if (!result) {
+        throw std::runtime_error(MakeString() << "IAIMPAddonsPlaylistManager::AIMP_PLS_Entry_FileNameGet() failed.");
+    }
+    return filename;
+}
 
 void AIMPManager26::initPlaylistDB() // throws std::runtime_error
 {

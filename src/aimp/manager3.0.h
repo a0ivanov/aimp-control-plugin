@@ -76,6 +76,8 @@ public:
 
     virtual PLAYBACK_STATE getPlaybackState() const;
 
+    virtual std::wstring getEntryFilename(TrackDescription track_desc) const; // throw std::invalid_argument
+
     virtual std::wstring getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const;
 
     virtual bool isCoverImageFileExist(TrackDescription track_desc, boost::filesystem::wpath* path = nullptr) const;
