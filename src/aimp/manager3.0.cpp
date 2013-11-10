@@ -1676,10 +1676,21 @@ void AIMPManager30::deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id)
 
 void AIMPManager30::addFileToPlaylist(const boost::filesystem::wpath& path, PlaylistID playlist_id) // throws std::runtime_error
 {
-    boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistStrings> strings( new AIMP3SDK::TAIMPAddonsPlaylistStrings() );
-    strings->ItemAdd(const_cast<PWCHAR>(path.native().c_str()), nullptr);
-
     const AIMP3SDK::HPLS playlist_handle = cast<AIMP3SDK::HPLS>( getAbsolutePlaylistID(playlist_id) );
+    
+    { // tmp: check readonly property due to bug AIMP3 SDK bug: it give no error when trying to add track to protected playlist.
+    BOOL readonly;
+    HRESULT r = aimp3_playlist_manager_->StoragePropertyGetValue( playlist_handle, AIMP3SDK::AIMP_PLAYLIST_STORAGE_PROPERTY_READONLY, &readonly, sizeof(readonly) );
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << "IAIMPAddonsPlaylistManager::StoragePropertyGetValue(AIMP_PLAYLIST_STORAGE_PROPERTY_READONLY) failed. Result " << r);
+    }
+    if (readonly) {
+        throw std::runtime_error(MakeString() << "Unable to modify playlist " << readonly << ". Playlist is read only.");
+    }
+    }
+
+    boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistStrings> strings( new AIMP3SDK::TAIMPAddonsPlaylistStrings() );
+    strings->ItemAdd(const_cast<PWCHAR>(path.native().c_str()), nullptr);   
     HRESULT r = aimp3_playlist_manager_->StorageAddEntries( playlist_handle, strings.get() );
     if (S_OK != r) {
         throw std::runtime_error(MakeString() << "IAIMPAddonsPlaylistManager::StorageAddEntries() failed. Result " << r);
