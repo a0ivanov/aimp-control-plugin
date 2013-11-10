@@ -1708,7 +1708,8 @@ void AIMPManager30::removeTrack(TrackDescription track_desc, bool physically) //
 {
     const AIMP3SDK::HPLS playlist_handle = cast<AIMP3SDK::HPLS>( getAbsolutePlaylistID(track_desc.playlist_id) );
     const AIMP3SDK::HPLSENTRY entry_handle = cast<AIMP3SDK::HPLSENTRY>( getAbsoluteEntryID(track_desc.track_id) );
-
+    
+    /* This deletion method caused confirmation dialog show on AIMP player 3.55.1320 and older.
     if (physically) {
         class Filter {
         public:
@@ -1735,7 +1736,7 @@ void AIMPManager30::removeTrack(TrackDescription track_desc, bool physically) //
         r = aimp3_playlist_manager_->StorageDeleteByFilter(playlist_handle, physically,	&Filter::needToRemove, &file_info_helper.getFileInfo());
         if (S_OK != r) {
             throw std::runtime_error(MakeString() << "Error of IAIMPAddonsPlaylistManager::StorageDeleteByFilter() " << r << " in "__FUNCTION__" with " << track_desc);
-        }
+        } 
     } else {
         int index;
         HRESULT r = aimp3_playlist_manager_->EntryPropertyGetValue( entry_handle, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_INDEX, &index, sizeof(index) );
@@ -1745,6 +1746,46 @@ void AIMPManager30::removeTrack(TrackDescription track_desc, bool physically) //
         r = aimp3_playlist_manager_->StorageDelete(playlist_handle, index);
         if (r != S_OK) {
             throw std::runtime_error(MakeString() << "IAIMPAddonsPlaylistManager::StorageDelete() failed. Result " << r);
+        }
+    }
+    */
+    fs::path filename_to_delete;
+    if (physically) {
+        // Because of AIMP deletion method caused confirmation dialog show on AIMP player 3.55.1320 and older, we use manual deletion.
+        WCHAR filename[MAX_PATH + 1] = {0};
+        HRESULT r = aimp3_playlist_manager_->EntryPropertyGetValue( entry_handle, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_FILENAME, &filename[0], (ARRAYSIZE(filename) - 1) * sizeof(filename[0]) );
+        if (S_OK != r) {
+            throw std::runtime_error(MakeString() << "IAIMPAddonsPlaylistManager::EntryPropertyGetValue(AIMP_PLAYLIST_ENTRY_PROPERTY_FILENAME) failed. Result " << r);
+        }
+        filename_to_delete = filename;
+    }
+
+    const bool need_switch_track = (cast<AIMP3SDK::HPLSENTRY>( getPlayingEntry() ) == entry_handle);
+        
+    int index;
+    HRESULT r = aimp3_playlist_manager_->EntryPropertyGetValue( entry_handle, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_INDEX, &index, sizeof(index) );
+    if (r != S_OK) {
+        throw std::runtime_error(MakeString() << "IAIMPAddonsPlaylistManager::EntryPropertyGetValue() failed. Result " << r);
+    }
+    r = aimp3_playlist_manager_->StorageDelete(playlist_handle, index);
+    if (r != S_OK) {
+        throw std::runtime_error(MakeString() << "IAIMPAddonsPlaylistManager::StorageDelete() failed. Result " << r);
+    }
+
+    if (!filename_to_delete.empty()) {
+        // Because of AIMP deletion method caused confirmation dialog show on AIMP player 3.55.1320 and older, we use manual deletion.
+        if (need_switch_track) {
+            playNextTrack();
+        }
+
+        if (fs::exists(filename_to_delete)) {
+            boost::system::error_code ec;
+            fs::remove(filename_to_delete, ec);
+            if (ec) {
+                std::string msg = MakeString() << "boost::filesystem::remove() failed. Result " << ec << ". Filename: " << StringEncoding::utf16_to_utf8(filename_to_delete.native());
+                BOOST_LOG_SEV(logger(), error) << "AIMPManager30::removeTrack error: " << msg;
+                throw std::runtime_error(msg);
+            }
         }
     }
 }
