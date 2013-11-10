@@ -79,8 +79,13 @@ public:
   void start()
   {
     boost::system::error_code ec;
-    file_.assign(::CreateFile(filename_.c_str(), GENERIC_READ, 0, 0,
-          OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0), ec);
+    HANDLE h = ::CreateFile(filename_.c_str(), GENERIC_READ, FILE_SHARE_READ, 0,
+                            OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, 0);
+    if (h == INVALID_HANDLE_VALUE) {
+        BOOST_LOG_SEV(logger(), error) << "TransmitFile. CreateFile error: " << GetLastError();
+    }
+
+    file_.assign(h, ec);
     if (file_.is_open())
     {
       transmit_file(socket(), file_,
