@@ -1263,7 +1263,7 @@ public:
 class RemoveTrack : public AIMPRPCMethod
 {
 public:
-    RemoveTrack(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request_handler);
+    RemoveTrack(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request_handler, boost::asio::io_service& io_service);
 
     std::string help()
     {
@@ -1271,9 +1271,24 @@ public:
     }
 
     Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
+
 private:
 
+    // link response sender with root_request.
+    struct ResponseSenderDescriptor {
+        Rpc::Value root_request;
+        boost::shared_ptr<Rpc::DelayedResponseSender> sender;
+        ResponseSenderDescriptor(const Rpc::Value& root_request,
+                                 boost::shared_ptr<Rpc::DelayedResponseSender> sender)
+            : root_request(root_request), sender(sender)
+        {}
+    };
+
+    void onTimerDeleteTrack(const boost::filesystem::path& filename, ResponseSenderDescriptor& response_sender_descriptor, const boost::system::error_code& e);
+
     bool enable_physical_track_deletion_;
+    static const int kTRACK_DELETION_DELAY_SEC = 2;
+    boost::asio::deadline_timer track_deletion_timer_;
 };
 
 class EmulationOfWebCtlPlugin : public AIMPRPCMethod

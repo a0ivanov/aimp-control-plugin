@@ -1378,8 +1378,9 @@ ResponseType AddURLToPlaylist::execute(const Rpc::Value& root_request, Rpc::Valu
     return RESPONSE_IMMEDIATE;
 }
 
-RemoveTrack::RemoveTrack(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request_handler)
-    : AIMPRPCMethod("RemoveTrack", aimp_manager, rpc_request_handler)
+RemoveTrack::RemoveTrack(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request_handler, boost::asio::io_service& io_service)
+    : AIMPRPCMethod("RemoveTrack", aimp_manager, rpc_request_handler),
+      track_deletion_timer_(io_service)
 {
     const ControlPlugin::PluginSettings::Settings& settings = ControlPlugin::AIMPControlPlugin::settings();
     enable_physical_track_deletion_ = settings.misc.enable_physical_track_deletion;
@@ -1395,15 +1396,58 @@ ResponseType RemoveTrack::execute(const Rpc::Value& root_request, Rpc::Value& ro
     } 
 
     const TrackDescription track_desc(getTrackDesc(params));
+    bool remove_track_manually = aimp_manager_.getAbsoluteTrackDesc(track_desc) == aimp_manager_.getPlayingTrack();
+    fs::path filename_to_delete;
+    if (physically && remove_track_manually) {
+        try {
+            filename_to_delete = aimp_manager_.getEntryFilename(track_desc);
+        } catch (std::exception&) {
+            remove_track_manually = false;
+        }
+    }
+
     try {
-        aimp_manager_.removeTrack(track_desc, physically);
+        aimp_manager_.removeTrack(track_desc, physically && !remove_track_manually);
     } catch (std::runtime_error&) {
         throw Rpc::Exception("Removing track failed", REMOVE_TRACK_FAILED);
     }
 
-    Rpc::Value& result = root_response["result"];
-    result = Rpc::Value::Object();
-    return RESPONSE_IMMEDIATE;
+    if (filename_to_delete.empty()) {
+        Rpc::Value& result = root_response["result"];
+        result = Rpc::Value::Object();
+        return RESPONSE_IMMEDIATE;
+    } else {
+        aimp_manager_.playNextTrack();
+        // TODO: also here we should check if there is only one track in all playlists to stop playback.
+
+        DelayedResponseSender_ptr comet_delayed_response_sender = rpc_request_handler_.getDelayedResponseSender();
+        assert(comet_delayed_response_sender != nullptr);
+
+        track_deletion_timer_.expires_from_now( boost::posix_time::seconds(kTRACK_DELETION_DELAY_SEC) );
+        track_deletion_timer_.async_wait( boost::bind( &RemoveTrack::onTimerDeleteTrack, this, filename_to_delete, ResponseSenderDescriptor(root_request, comet_delayed_response_sender), _1 ) );
+        return RESPONSE_DELAYED;
+    }
+}
+
+void RemoveTrack::onTimerDeleteTrack(const fs::path& filename, RemoveTrack::ResponseSenderDescriptor& response_sender_descriptor, const boost::system::error_code& e)
+{
+    if (!e) { // Timer expired normally.
+        boost::system::error_code ec;
+        fs::remove(filename, ec);
+        if (!ec) {
+            Rpc::Value response;
+            response["result"] = Rpc::Value::Object();
+            response["id"] = response_sender_descriptor.root_request["id"];
+            response_sender_descriptor.sender->sendResponseSuccess(response);
+            return;
+        }
+
+        BOOST_LOG_SEV(logger(), error) << "Error of fs::remove in "__FUNCTION__". File: " << StringEncoding::utf16_to_utf8(filename.native()) << ". Reason: " << ec;
+    } else if (e != boost::asio::error::operation_aborted) { // "operation_aborted" error code is sent when timer is cancelled.
+        BOOST_LOG_SEV(logger(), error) << "err:"__FUNCTION__" timer error:" << e;
+    }
+
+    response_sender_descriptor.sender->sendResponseFault(response_sender_descriptor.root_request, "Removing track failed", REMOVE_TRACK_FAILED);
 }
 
 } // namespace AimpRpcMethods
