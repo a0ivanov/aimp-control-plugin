@@ -128,8 +128,8 @@ ResponseType Status::execute(const Rpc::Value& root_request, Rpc::Value& root_re
         if ( params.isMember("value") ) { // set mode if argument was passed.
             try {
                 aimp_manager_.setStatus(status, params["value"]);
-            } catch (std::runtime_error& e) {
-                throw Rpc::Exception(e.what(), STATUS_SET_FAILED);
+            } catch (std::runtime_error&) {
+                throw Rpc::Exception("Status set failed", STATUS_SET_FAILED);
             }
         }
 
@@ -1369,8 +1369,8 @@ ResponseType AddURLToPlaylist::execute(const Rpc::Value& root_request, Rpc::Valu
 
     try {
         aimp_manager_.addURLToPlaylist(url, playlist_id);
-    } catch (std::runtime_error& e) {
-        throw Rpc::Exception(e.what(), ADD_URL_TO_PLAYLIST_FAILED);
+    } catch (std::runtime_error&) {
+        throw Rpc::Exception("Adding track to playlist failed", ADD_URL_TO_PLAYLIST_FAILED);
     }
 
     Rpc::Value& result = root_response["result"];
@@ -1397,8 +1397,8 @@ ResponseType RemoveTrack::execute(const Rpc::Value& root_request, Rpc::Value& ro
     const TrackDescription track_desc(getTrackDesc(params));
     try {
         aimp_manager_.removeTrack(track_desc, physically);
-    } catch (std::runtime_error& e) {
-        throw Rpc::Exception(e.what(), REMOVE_TRACK_FAILED);
+    } catch (std::runtime_error&) {
+        throw Rpc::Exception("Removing track failed", REMOVE_TRACK_FAILED);
     }
 
     Rpc::Value& result = root_response["result"];
