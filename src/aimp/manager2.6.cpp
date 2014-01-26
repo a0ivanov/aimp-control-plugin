@@ -299,6 +299,8 @@ private:
 
 void AIMPManager26::loadEntries(PlaylistID playlist_id) // throws std::runtime_error
 {
+    PROFILE_EXECUTION_TIME(__FUNCTION__);
+
     { // handle crc32.
         try {
             getPlaylistCRC32Object(playlist_id).reset_entries();
