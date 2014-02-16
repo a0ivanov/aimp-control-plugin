@@ -23,6 +23,9 @@ Great thanks to ioannis(http://www.mail-archive.com/sqlite-users@sqlite.org/msg3
 6) MPFDParser
 http://grigory.info/MPFDParser.About.html
 
+7) Mongoose
+https://code.google.com/p/mongoose
+
 Client code uses:
 
 1) jQuery Javascript library
