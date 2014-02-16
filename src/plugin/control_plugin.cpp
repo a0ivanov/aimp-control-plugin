@@ -96,6 +96,11 @@ const PluginSettings::Settings& AIMPControlPlugin::settings()
     return plugin_instance->settings_manager_.settings();
 }
 
+boost::filesystem::wpath AIMPControlPlugin::getPluginDirectoryPath()
+{
+    return plugin_instance->getPluginDirectoryPath( plugin_instance->getAimpPluginsPath() );
+}
+
 AIMPControlPlugin::AIMPControlPlugin()
     :
     free_image_dll_is_available_(false),
@@ -109,7 +114,7 @@ AIMPControlPlugin::~AIMPControlPlugin()
     plugin_instance = nullptr;    
 }
 
-std::wstring AIMPControlPlugin::getAimpPath(int path_id)
+std::wstring AIMPControlPlugin::getAimpPath(int path_id) const
 {
     // by default return "".
     WCHAR buffer[MAX_PATH + 1] = {0};
@@ -164,7 +169,7 @@ std::wstring AIMPControlPlugin::getAimpProfilePath()
     return getAimpPath(profile_path_id);
 }
 
-std::wstring AIMPControlPlugin::getAimpPluginsPath()
+std::wstring AIMPControlPlugin::getAimpPluginsPath() const
 {
     const int plugins_path_id = aimp2_controller_ ? AIMP2SDK::AIMP_CFG_PLUGINS : AIMP3SDK::AIMP_CFG_PATH_PLUGINS;
     return getAimpPath(plugins_path_id);

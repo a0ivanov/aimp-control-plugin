@@ -46,6 +46,8 @@ public:
     //! Returns global reference to settings object.
     static const PluginSettings::Settings& settings();
 
+    static boost::filesystem::wpath getPluginDirectoryPath();
+
 private:
 
     HRESULT initialize();
@@ -78,8 +80,8 @@ private:
         Extracts path of Plugins directory. Usually it's Plugins directory near AIMP3.exe file.
         \return full path to plugins directory or (in case of error) current directory "".
     */
-    std::wstring getAimpPluginsPath();
-    std::wstring getAimpPath(int path_id); // helper for implementation of getAimpProfilePath/getAimpPluginsPath methods.
+    std::wstring getAimpPluginsPath() const;
+    std::wstring getAimpPath(int path_id) const; // helper for implementation of getAimpProfilePath/getAimpPluginsPath methods.
 
     boost::filesystem::wpath getPluginDirectoryPath(const boost::filesystem::wpath& base_directory) const;
 

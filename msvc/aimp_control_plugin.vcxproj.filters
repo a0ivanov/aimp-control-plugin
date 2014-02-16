@@ -59,6 +59,9 @@
     <Filter Include="src\upload_track">
       <UniqueIdentifier>{cfb236ae-471d-4b79-bd2e-90fc7c84e0a7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\http server\mongoose">
+      <UniqueIdentifier>{b31465f2-04be-4ff3-a620-577e16c32a88}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\stdafx.cpp">
@@ -191,6 +194,12 @@
       <Filter>src\upload_track</Filter>
     </ClCompile>
     <ClCompile Include="..\src\http_server\mpfd_parser_factory.cpp">
+      <Filter>src\http server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\http_server\mongoose\mongoose.c">
+      <Filter>src\http server\mongoose</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\http_server\auth_manager.cpp">
       <Filter>src\http server</Filter>
     </ClCompile>
   </ItemGroup>
@@ -403,6 +412,12 @@
       <Filter>src\upload_track</Filter>
     </ClInclude>
     <ClInclude Include="..\src\http_server\mpfd_parser_factory.h">
+      <Filter>src\http server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\http_server\mongoose\mongoose.h">
+      <Filter>src\http server\mongoose</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\http_server\auth_manager.h">
       <Filter>src\http server</Filter>
     </ClInclude>
   </ItemGroup>

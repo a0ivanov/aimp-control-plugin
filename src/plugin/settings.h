@@ -16,6 +16,7 @@ struct Settings
         std::string port; //!< port to listen. String type was chosen since it make easy IPv6 support.
         std::wstring document_root; //!< Path to directory.
         std::set<std::string> init_cookies; //! Cookies which server sends to client on page first load.
+        std::wstring realm; 
     } http_server;
 
     struct Logger {

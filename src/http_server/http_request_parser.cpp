@@ -9,6 +9,7 @@
 #include "request.h"
 #include <boost/lexical_cast.hpp>
 #include "mpfd_parser_factory.h"
+#include "http_server/header.h"
 
 namespace Http {
 
@@ -222,32 +223,30 @@ boost::tribool request_parser::consume(Request& req, char input)
     case expecting_newline_3:
         if (input == '\n') {
             // Check for optional Content-Length header.
-            for (std::size_t i = 0; i < req.headers.size(); ++i) {
-                if ( headers_equal(req.headers[i].name, content_length_name_) ) {
-                    try {
-                        content_length_ = boost::lexical_cast<std::size_t>(req.headers[i].value);
-                        state_ = select_content_parser;
-                        return boost::indeterminate;
-                    } catch (boost::bad_lexical_cast&) {
-                        return false;
-                    }
+            const std::string* content_length_value;
+            if (get_header_value(req.headers, content_length_name_, content_length_value)) {
+                try {
+                    content_length_ = boost::lexical_cast<std::size_t>(*content_length_value);
+                    state_ = select_content_parser;
+                    return boost::indeterminate;
+                } catch (boost::bad_lexical_cast&) {
+                    return false;
                 }
             }
-            return true; // no Content-Length header, stop parsing.
+            
+            return true; // no Content-Length header, stop parsing.           
         } else {
             return false;
         }
     case select_content_parser: {
         state_ = content;
 
-        const auto header_it = std::find_if(req.headers.begin(), req.headers.end(),
-                                            [](const header& h) { return h.name == content_type_name; }
-                                            );
-        if (header_it != req.headers.end()) {
-            if (boost::starts_with(header_it->value, "multipart/form-data;")) {
+        const std::string* content_type_value;
+        if (get_header_value(req.headers, content_type_name, content_type_value)) {
+            if (boost::starts_with(*content_type_value, "multipart/form-data;")) {
                 using namespace MPFD;
                 if (ParserFactory::instance()) {
-                    req.mpfd_parser = ParserFactory::instance()->createParser(header_it->value);
+                    req.mpfd_parser = ParserFactory::instance()->createParser(*content_type_value);
                     state_ = content_multipart_formdata;
                     return boost::indeterminate;
                 } else {
@@ -255,6 +254,7 @@ boost::tribool request_parser::consume(Request& req, char input)
                 }
             }
         }
+
         return consume(req, input);
                                 }
     case content:
@@ -304,19 +304,32 @@ bool request_parser::is_digit(int c)
     return c >= '0' && c <= '9';
 }
 
-bool request_parser::tolower_compare(char a, char b)
+bool tolower_compare(char a, char b)
 {
   return ::tolower(a) == ::tolower(b);
 }
 
-bool request_parser::headers_equal(const std::string& a, const std::string& b)
+bool headers_equal(const std::string& a, const std::string& b)
 {
   if ( a.length() != b.length() ) {
     return false;
   }
 
   return std::equal(a.begin(), a.end(), b.begin(),
-                    &request_parser::tolower_compare);
+                    &tolower_compare);
 }
+
+bool get_header_value(const std::vector<header>& headers, const std::string& header_name, const std::string*& header_value)
+{
+    const auto header_it = std::find_if(headers.begin(), headers.end(),
+                                        [header_name](const header& h) { return headers_equal(h.name, header_name); }
+                                        );
+    if (header_it != headers.end()) {
+        header_value = &(header_it->value);
+        return true;
+    }
+    return false;
+}
+
 
 } // namespace Http

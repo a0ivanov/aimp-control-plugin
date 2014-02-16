@@ -13,6 +13,7 @@
 namespace Http {
 
 struct Request;
+struct header;
 
 /// Parser for incoming requests.
 class request_parser
@@ -99,12 +100,6 @@ private:
     /// Check if a byte is a digit.
     static bool is_digit(int c);
 
-    /// Check if two characters are equal, without regard to case.
-    static bool tolower_compare(char a, char b);
-
-    /// Check whether the two request header names match.
-    static bool headers_equal(const std::string& a, const std::string& b);
-
     /// The current state of the parser.
     enum state
     {
@@ -136,6 +131,8 @@ private:
 
     std::size_t content_consumed_;
 };
+
+bool get_header_value(const std::vector<header>& headers, const std::string& header_name, const std::string*& header_value);
 
 } // namespace Http
 
