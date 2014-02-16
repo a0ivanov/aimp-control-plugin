@@ -10,9 +10,7 @@
         <document_root>./htdocs</document_root>
         
         <!-- Digest authentication realm. This need to be synchronized entries with .htpasswd file. -->
-        <authentication>
-            <realm>AIMP Control plugin</realm>
-        </authentication>
+        <realm>AIMP Control plugin</realm>
     </httpserver>
 
     <logging>
