@@ -159,12 +159,9 @@ void RequestHandler::fillAuthFailReply(Reply& rep)
 {
     rep.status = Reply::unauthorized;
 
-    std::string realm("AIMP Control"); ///??? read from settings
-    unsigned long nonce = (unsigned long)time(NULL);
-
     rep.headers.emplace_back();
     rep.headers.back().name = "WWW-Authenticate";
-    rep.headers.back().value = Utilities::MakeString() << "Digest qop=\"auth\", realm=\"" << realm << "\", nonce=\"" << nonce << "\"";
+    rep.headers.back().value = Utilities::MakeString() << "Digest qop=\"auth\", realm=\"" << auth_manager_.realm() << "\", nonce=\"" << auth_manager_.generate_nonce() << "\"";
 }
 
 bool RequestHandler::url_decode(const std::string& in, std::string& out)

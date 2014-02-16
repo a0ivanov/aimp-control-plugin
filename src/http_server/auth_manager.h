@@ -20,6 +20,10 @@ public:
 
     bool isAuthenticated(const Request&) const; 
 
+    const std::string& realm() const;
+
+    unsigned long generate_nonce() const;
+
 private:
 
     struct Impl;

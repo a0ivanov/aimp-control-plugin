@@ -38,9 +38,11 @@ struct AuthManager::Impl
     bool enabled_;
     HTEntries ht_entries_;
     static const std::string kHEADER_AUTHORIZATION_NAME;
+    std::string realm_;
 
     Impl()
-        : enabled_(false)
+        : enabled_(false),
+        realm_("AIMP Control plugin")
     {
         boost::filesystem::wpath password_file_path = ControlPlugin::AIMPControlPlugin::getPluginDirectoryPath();
         password_file_path /= kPASSWORDS_FILE_NAME;
@@ -113,15 +115,19 @@ struct AuthManager::Impl
         if (!mg_parse_header(hdr, "nonce", nonce, sizeof(nonce))) return 0;
 
         for(auto ht_entry : ht_entries_) {
-            if (ht_entry.user == user 
-                // NOTE(lsm): due to a bug in MSIE, we do not compare URIs
-                ///???   && !strcmp(conn->server->config_options[AUTH_DOMAIN], f_domain)
-                ) 
-            {
+            if ( ht_entry.user == user && ht_entry.realm == realm() ) {
                 return check_password(req.method.c_str(), ht_entry.ha1.c_str(), uri, nonce, nc, cnonce, qop, resp) == MG_AUTH_OK;
             }
         }
         return false;
+    }
+
+    const std::string& realm() const {
+        return realm_;
+    }
+
+    unsigned long generate_nonce() const {
+        return (unsigned long)time(nullptr);
     }
 };
 
@@ -143,6 +149,14 @@ bool AuthManager::enabled() const {
 
 bool AuthManager::isAuthenticated(const Request& req) const {
     return impl_->isAuthenticated(req);
+}
+
+const std::string& AuthManager::realm() const {
+    return impl_->realm();
+}
+
+unsigned long AuthManager::generate_nonce() const {
+    return impl_->generate_nonce();
 }
 
 } // namespace Authentication

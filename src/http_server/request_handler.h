@@ -65,7 +65,7 @@ private:
     */
     static void fillReplyWithContent(const std::string& content_type, Reply& rep);
 
-    static void fillAuthFailReply(Reply& rep);
+    void fillAuthFailReply(Reply& rep);
 
     void trySendInitCookies(const Request& req, Reply& rep);
 
