@@ -115,6 +115,15 @@ std::wstring getCurrentExecutablePath() // throws std::runtime_error
     return path;
 }
 
+std::wstring getPluginVersion()
+{
+    try {
+        return getExecutableProductVersion( getCurrentExecutablePath().c_str() );
+    } catch (...) {
+        return L"unknown"; 
+    }
+}
+
 boost::filesystem::wpath temp_directory_path()
 {
     using namespace boost::filesystem;

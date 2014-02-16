@@ -384,6 +384,7 @@ HRESULT AIMPControlPlugin::initialize()
         aimp_manager_ = CreateAIMPManager();
 
         BOOST_LOG_SEV(logger(), info) << "AIMP version: " << aimp_manager_->getAIMPVersion();
+        BOOST_LOG_SEV(logger(), info) << "Plugin version: " << StringEncoding::utf16_to_utf8( Utilities::getPluginVersion() );
 
         // create RPC request handler.
         rpc_request_handler_.reset( new Rpc::RequestHandler() );
