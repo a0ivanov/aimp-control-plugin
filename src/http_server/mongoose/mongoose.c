@@ -30,6 +30,7 @@
 #ifdef _MSC_VER
 #pragma warning (disable : 4127)  // FD_SET() emits warning, disable it
 #pragma warning (disable : 4204)  // missing c99 support
+#pragma warning (disable : 4996)  // The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name
 #endif
 
 #include <sys/types.h>
