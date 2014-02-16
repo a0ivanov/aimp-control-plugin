@@ -199,6 +199,9 @@
     <ClCompile Include="..\src\http_server\mongoose\mongoose.c">
       <Filter>src\http server\mongoose</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\http_server\auth_manager.cpp">
+      <Filter>src\http server</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\stdafx.h">
@@ -413,6 +416,9 @@
     </ClInclude>
     <ClInclude Include="..\src\http_server\mongoose\mongoose.h">
       <Filter>src\http server\mongoose</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\http_server\auth_manager.h">
+      <Filter>src\http server</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

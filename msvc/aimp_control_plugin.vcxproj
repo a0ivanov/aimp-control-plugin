@@ -127,6 +127,7 @@
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</CompileAsManaged>
     </ClCompile>
     <ClCompile Include="..\src\download_track\download_track_request_handler.cpp" />
+    <ClCompile Include="..\src\http_server\auth_manager.cpp" />
     <ClCompile Include="..\src\http_server\connection.cpp" />
     <ClCompile Include="..\src\http_server\http_request_handler.cpp" />
     <ClCompile Include="..\src\http_server\http_request_parser.cpp" />
@@ -207,6 +208,7 @@
     <ClInclude Include="..\src\aimp\track_description.h" />
     <ClInclude Include="..\src\config.h" />
     <ClInclude Include="..\src\download_track\request_handler.h" />
+    <ClInclude Include="..\src\http_server\auth_manager.h" />
     <ClInclude Include="..\src\http_server\connection.h" />
     <ClInclude Include="..\src\http_server\header.h" />
     <ClInclude Include="..\src\http_server\mime_types.h" />
