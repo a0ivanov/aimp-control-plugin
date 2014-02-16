@@ -93,6 +93,7 @@ const char *mg_get_header(const struct mg_connection *, const char *name);
 const char *mg_get_mime_type(const char *name, const char *default_mime_type);
 int mg_get_var(const struct mg_connection *conn, const char *var_name,
                char *buf, size_t buf_len);
+int mg_strncasecmp(const char *s1, const char *s2, size_t len);
 int mg_parse_header(const char *hdr, const char *var_name, char *buf, size_t);
 int mg_parse_multipart(const char *buf, int buf_len,
                        char *var_name, int var_name_len,
@@ -103,6 +104,10 @@ int mg_parse_multipart(const char *buf, int buf_len,
 void *mg_start_thread(void *(*func)(void *), void *param);
 char *mg_md5(char buf[33], ...);
 int mg_authorize_digest(struct mg_connection *c, FILE *fp);
+
+int check_password(const char *method, const char *ha1, const char *uri,
+                    const char *nonce, const char *nc, const char *cnonce,
+                    const char *qop, const char *response);
 
 // Callback function return codes
 enum { MG_REQUEST_NOT_PROCESSED, MG_REQUEST_PROCESSED, MG_REQUEST_CALL_AGAIN };

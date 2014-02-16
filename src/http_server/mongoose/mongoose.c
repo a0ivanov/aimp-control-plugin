@@ -1521,7 +1521,7 @@ static int mg_strcasecmp(const char *s1, const char *s2) {
   return diff;
 }
 
-static int mg_strncasecmp(const char *s1, const char *s2, size_t len) {
+int mg_strncasecmp(const char *s1, const char *s2, size_t len) {
   int diff = 0;
 
   if (len > 0)
@@ -3056,9 +3056,9 @@ char *mg_md5(char buf[33], ...) {
 }
 
 // Check the user's password, return 1 if OK
-static int check_password(const char *method, const char *ha1, const char *uri,
-                          const char *nonce, const char *nc, const char *cnonce,
-                          const char *qop, const char *response) {
+int check_password(const char *method, const char *ha1, const char *uri,
+                    const char *nonce, const char *nc, const char *cnonce,
+                    const char *qop, const char *response) {
   char ha2[32 + 1], expected_response[32 + 1];
 
 #if 0
