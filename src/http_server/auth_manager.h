@@ -4,6 +4,9 @@
 
 namespace Http
 {
+
+struct Request;
+
 namespace Authentication
 {
 
@@ -13,7 +16,9 @@ public:
     AuthManager();
     ~AuthManager();
 
-    bool enabled();
+    bool enabled() const;
+
+    bool isAuthenticated(const Request&) const; 
 
 private:
 

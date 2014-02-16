@@ -1,9 +1,13 @@
 #include "stdafx.h"
 #include "http_server/auth_manager.h"
+#include "http_server/request.h"
+#include "http_server/request_parser.h"
+#include "http_server/mongoose/mongoose.h"
 #include "plugin/control_plugin.h"
 #include "plugin/logger.h"
 #include "utils/string_encoding.h"
 #include "utils/util.h"
+
 
 namespace {
 using namespace ControlPlugin::PluginLogger;
@@ -33,6 +37,7 @@ struct AuthManager::Impl
 {
     bool enabled_;
     HTEntries ht_entries_;
+    static const std::string kHEADER_AUTHORIZATION_NAME;
 
     Impl()
         : enabled_(false)
@@ -83,12 +88,44 @@ struct AuthManager::Impl
         return entries;
     }
 
-    bool enabled() {
+    bool enabled() const {
         return enabled_;
     }
     
+    bool isAuthenticated(const Request& req) const {
+        const std::string* autorization_value;
+        if (!get_header_value(req.headers, kHEADER_AUTHORIZATION_NAME, autorization_value)) {
+            return false;
+        }
+        const char* hdr = autorization_value->c_str();
 
+        if (mg_strncasecmp(hdr, "Digest ", 7) != 0) return 0;
+
+        const int MAX_REQUEST_SIZE = 16384;
+        char user[100], nonce[100], uri[MAX_REQUEST_SIZE], cnonce[100], resp[100], qop[100], nc[100];
+
+        if (!mg_parse_header(hdr, "username", user, sizeof(user))) return 0;
+        if (!mg_parse_header(hdr, "cnonce", cnonce, sizeof(cnonce))) return 0;
+        if (!mg_parse_header(hdr, "response", resp, sizeof(resp))) return 0;
+        if (!mg_parse_header(hdr, "uri", uri, sizeof(uri))) return 0;
+        if (!mg_parse_header(hdr, "qop", qop, sizeof(qop))) return 0;
+        if (!mg_parse_header(hdr, "nc", nc, sizeof(nc))) return 0;
+        if (!mg_parse_header(hdr, "nonce", nonce, sizeof(nonce))) return 0;
+
+        for(auto ht_entry : ht_entries_) {
+            if (ht_entry.user == user 
+                // NOTE(lsm): due to a bug in MSIE, we do not compare URIs
+                ///???   && !strcmp(conn->server->config_options[AUTH_DOMAIN], f_domain)
+                ) 
+            {
+                return check_password(req.method.c_str(), ht_entry.ha1.c_str(), uri, nonce, nc, cnonce, qop, resp) == MG_AUTH_OK;
+            }
+        }
+        return false;
+    }
 };
+
+const std::string AuthManager::Impl::kHEADER_AUTHORIZATION_NAME = "Authorization";
 
 AuthManager::AuthManager()
     : impl_(new Impl())
@@ -100,8 +137,12 @@ AuthManager::~AuthManager()
 {
 }
 
-bool AuthManager::enabled() {
+bool AuthManager::enabled() const {
     return impl_->enabled();
+}
+
+bool AuthManager::isAuthenticated(const Request& req) const {
+    return impl_->isAuthenticated(req);
 }
 
 } // namespace Authentication
