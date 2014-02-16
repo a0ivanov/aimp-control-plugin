@@ -46,6 +46,7 @@ void Manager::setDefaultHttpServerSettings()
     s.ip_to_bind = "localhost";
     s.port = "3333";
     s.document_root = L"htdocs";
+    s.realm = L"AIMP Control plugin";
 }
 
 void loadPropertyTreeFromFile(wptree& pt, const boost::filesystem::wpath& filename) // throws std::exception
@@ -101,6 +102,8 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
     std::string server_port = utf16_to_system_ansi_encoding( pt.get<std::wstring>(L"settings.httpserver.port") );
 
     std::wstring server_document_root = pt.get<std::wstring>(L"settings.httpserver.document_root");
+    
+    std::wstring realm = pt.get<std::wstring>(L"settings.httpserver.realm");
 
     std::set<std::string> init_cookies;
     try {
@@ -127,6 +130,7 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
     settings.http_server.port.swap(server_port);
     settings.http_server.document_root.swap(server_document_root);
     settings.http_server.init_cookies.swap(init_cookies);
+    settings.http_server.realm.swap(realm);
 
     settings.logger.severity_level = log_severity_level;
     settings.logger.directory.swap(log_directory);
@@ -176,6 +180,7 @@ void saveSettingsToPropertyTree(const Settings& settings, wptree& pt) // throws 
     pt.put( L"settings.httpserver.ip_to_bind", system_ansi_encoding_to_utf16(settings.http_server.ip_to_bind) );
     pt.put( L"settings.httpserver.port", system_ansi_encoding_to_utf16(settings.http_server.port) );
     pt.put( L"settings.httpserver.document_root", settings.http_server.document_root );
+    pt.put( L"settings.httpserver.realm", settings.http_server.realm );
 
     // Put log directory in property tree
     pt.put(L"settings.logging.directory", settings.logger.directory);

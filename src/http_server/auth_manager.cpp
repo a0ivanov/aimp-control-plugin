@@ -41,9 +41,10 @@ struct AuthManager::Impl
     std::string realm_;
 
     Impl()
-        : enabled_(false),
-        realm_("AIMP Control plugin")
+        : enabled_(false)
     {
+        realm_ = StringEncoding::utf16_to_utf8(ControlPlugin::AIMPControlPlugin::settings().http_server.realm);
+
         boost::filesystem::wpath password_file_path = ControlPlugin::AIMPControlPlugin::getPluginDirectoryPath();
         password_file_path /= kPASSWORDS_FILE_NAME;
 
