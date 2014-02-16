@@ -7,7 +7,7 @@
 #include "plugin/logger.h"
 #include "utils/string_encoding.h"
 #include "utils/util.h"
-
+#include <boost/algorithm/string.hpp>
 
 namespace {
 using namespace ControlPlugin::PluginLogger;
@@ -77,8 +77,11 @@ struct AuthManager::Impl
         line_is.exceptions(std::ios_base::failbit | std::ios_base::badbit);
 
         while (std::getline(file, line, '\n')) {
+            boost::algorithm::trim(line);
+            if (line.empty()) continue;
+
             line_is.clear();
-            line_is.str(line);   
+            line_is.str(line);
 
             entries.emplace_back();
             HTEntry& entry = entries.back();
