@@ -131,6 +131,7 @@
     <ClCompile Include="..\src\http_server\http_request_handler.cpp" />
     <ClCompile Include="..\src\http_server\http_request_parser.cpp" />
     <ClCompile Include="..\src\http_server\mime_types.cpp" />
+    <ClCompile Include="..\src\http_server\mongoose\mongoose.c" />
     <ClCompile Include="..\src\http_server\mpfd_parser\Exception.cpp" />
     <ClCompile Include="..\src\http_server\mpfd_parser\Field.cpp" />
     <ClCompile Include="..\src\http_server\mpfd_parser\Parser.cpp" />
@@ -202,6 +203,7 @@
     <ClInclude Include="..\src\http_server\connection.h" />
     <ClInclude Include="..\src\http_server\header.h" />
     <ClInclude Include="..\src\http_server\mime_types.h" />
+    <ClInclude Include="..\src\http_server\mongoose\mongoose.h" />
     <ClInclude Include="..\src\http_server\mpfd_parser\Exception.h" />
     <ClInclude Include="..\src\http_server\mpfd_parser\Field.h" />
     <ClInclude Include="..\src\http_server\mpfd_parser\Parser.h" />
