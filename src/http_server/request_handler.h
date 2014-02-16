@@ -15,6 +15,7 @@
 
 // headers for DelayedResponseSender class
 #include <boost/enable_shared_from_this.hpp>
+#include "http_server/auth_manager.h"
 
 namespace Rpc           { class RequestHandler; }
 namespace DownloadTrack { class RequestHandler; }
@@ -64,10 +65,14 @@ private:
     */
     static void fillReplyWithContent(const std::string& content_type, Reply& rep);
 
+    static void fillAuthFailReply(Reply& rep);
+
     void trySendInitCookies(const Request& req, Reply& rep);
 
     // The directory containing the files to be served.
     std::string document_root_;
+
+    Authentication::AuthManager auth_manager_;
 
     Rpc::RequestHandler& rpc_request_handler_;
     DownloadTrack::RequestHandler& download_track_request_handler_;

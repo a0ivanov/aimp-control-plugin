@@ -11,8 +11,6 @@
 #define BLUETOOTH_ENABLED // move it to config
 #include "transport/asio/bluetooth_endpoint.hpp"
 #include "transport/asio/rfcomm.hpp"
-#include "auth_manager.h"
-
 
 namespace Http
 {
@@ -75,8 +73,6 @@ private:
     ConnectionIpTcp_ptr new_connection_,           // connection on interface read from settings file.
                         new_connection_localhost_; // localhost connection, use it unconditionally.
     ConnectionBluetoothRfcomm_ptr new_connection_bluetooth_;
-
-    Authentication::AuthManager auth_manager_;
 };
 
 } // namespace Http

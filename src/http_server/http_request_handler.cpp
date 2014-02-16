@@ -51,6 +51,14 @@ bool RequestHandler::handle_request(const Request& req, Reply& rep, ICometDelaye
 {
     trySendInitCookies(req, rep); // try to send init cookie on any request(not only RPC) cause we should render static web-interface controls with that cookies.
 
+    // authentication
+    if (auth_manager_.enabled()) {
+        if (!auth_manager_.isAuthenticated(req)) {
+            fillAuthFailReply(rep);
+            return true;
+        }
+    }
+
     if ( Rpc::Frontend* frontend = rpc_request_handler_.getFrontEnd(req.uri) ) { // handle RPC call.        
         std::string response_content_type;
         DelayedResponseSender_ptr comet_delayed_response_sender( new DelayedResponseSender(connection, *this) );
@@ -145,6 +153,18 @@ void RequestHandler::fillReplyWithContent(const std::string& content_type, Reply
     rep.headers.push_back(header());
     rep.headers.back().name = "Content-Type";
     rep.headers.back().value = content_type;
+}
+
+void RequestHandler::fillAuthFailReply(Reply& rep)
+{
+    rep.status = Reply::unauthorized;
+
+    std::string realm("AIMP Control"); ///??? read from settings
+    unsigned long nonce = (unsigned long)time(NULL);
+
+    rep.headers.emplace_back();
+    rep.headers.back().name = "WWW-Authenticate";
+    rep.headers.back().value = Utilities::MakeString() << "Digest qop=\"auth\", realm=\"" << realm << "\", nonce=\"" << nonce << "\"";
 }
 
 bool RequestHandler::url_decode(const std::string& in, std::string& out)
