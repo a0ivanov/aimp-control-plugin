@@ -41,7 +41,8 @@ Server::Server( boost::asio::io_service& io_service,
     request_handler_(request_handler),
     acceptor_(io_service_),
     acceptor_localhost_(io_service_),
-    acceptor_bluetooth_(io_service_)
+    acceptor_bluetooth_(io_service_),
+    auth_manager_()
 {
     try {
         open_specified_socket(address, port);
