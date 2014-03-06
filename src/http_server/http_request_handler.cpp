@@ -23,6 +23,13 @@
 
 namespace Http {
 
+namespace {
+using namespace ControlPlugin::PluginLogger;
+ModuleLoggerType& logger()
+    { return getLogManager().getModuleLogger<Server>(); }
+}
+
+
 const std::string kDOWNLOAD_TRACK_TAG("/downloadTrack/"),
                   kUPLOAD_TRACK_TAG("/uploadTrack"),
                   kCookieHeaderName("Cookie");
@@ -54,6 +61,12 @@ bool RequestHandler::handle_request(const Request& req, Reply& rep, ICometDelaye
     // authentication
     if (auth_manager_.enabled()) {
         if (!auth_manager_.isAuthenticated(req)) {
+            BOOST_LOG_SEV(logger(), debug) << "Unauthenticated access, headers: ";
+            for (auto& h : req.headers) {
+                BOOST_LOG_SEV(logger(), debug) << h.name << ": " << h.value;
+            }
+            BOOST_LOG_SEV(logger(), debug) << "Unauthenticated access, ...headers";
+
             fillAuthFailReply(rep);
             return true;
         }
