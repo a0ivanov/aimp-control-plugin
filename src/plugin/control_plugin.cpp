@@ -22,6 +22,7 @@
 #include "utils/string_encoding.h"
 
 #include <FreeImagePlus.h>
+#include <winerror.h>
 #include <Delayimp.h>
 
 #include <Guiddef.h>
@@ -630,6 +631,10 @@ LONG WINAPI DelayLoadDllExceptionFilter(PEXCEPTION_POINTERS pep)
     // If this is a Delay-load problem, ExceptionInformation[0] points
     // to a DelayLoadInfo structure that has detailed error info
     PDelayLoadInfo pdli = PDelayLoadInfo(pep->ExceptionRecord->ExceptionInformation[0]);
+
+#ifndef FACILITY_VISUALCPP
+#define FACILITY_VISUALCPP (109)
+#endif
 
     switch (pep->ExceptionRecord->ExceptionCode)
     {
