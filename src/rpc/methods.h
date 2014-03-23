@@ -675,7 +675,7 @@ struct PaginationInfo : boost::noncopyable {
             - duration
             - filesize
             - rating
-            - filename (returns folder name only)
+            - foldername
     \param start_index - int, optional(Default is 0). Beginnig of required entries range.
     \param entries_count - int, optional(Default is counnt of available entries). Required count of entries.
     \param order_fields - array of field descriptions, optional. It is used to order entries by multiple fields.
@@ -772,7 +772,8 @@ private:
                       kRSLT_KEY_COUNT_OF_FOUND_ENTRIES;
 
     const std::string kRQST_KEY_FIELD_PLAYLIST_ID,
-                      kRSLT_KEY_FIELD_QUEUE_INDEX;
+                      kRSLT_KEY_FIELD_QUEUE_INDEX,
+                      kRQST_KEY_FIELD_FOLDER_NAME;
 
     PaginationInfo* pagination_info_;
     bool queued_entries_mode_;

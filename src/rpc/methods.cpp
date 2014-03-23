@@ -425,6 +425,7 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager,
     kRSLT_KEY_COUNT_OF_FOUND_ENTRIES("count_of_found_entries"),
     kRQST_KEY_FIELD_PLAYLIST_ID("playlist_id"),
     kRSLT_KEY_FIELD_QUEUE_INDEX("queue_index"),
+    kRQST_KEY_FIELD_FOLDER_NAME("foldername"),
     pagination_info_(nullptr),
     queued_entries_mode_(false)
 {
@@ -450,7 +451,7 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager,
         ( getStringFieldID(PlaylistEntry::DURATION), int_setter )
         ( getStringFieldID(PlaylistEntry::FILESIZE), int64_setter )
         ( getStringFieldID(PlaylistEntry::RATING),   int_setter )
-        ( getStringFieldID(PlaylistEntry::FILENAME), folder_name_setter) // For now only folder name is supported.
+        ( kRQST_KEY_FIELD_FOLDER_NAME,               folder_name_setter) // For now only folder name is supported.
     ;
 
     // map RPC field names to related db field names. All field names are the same except rpc's 'id' is 'entry_id' in db.
@@ -458,6 +459,7 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager,
         fieldnames_rpc_to_db_[setter_it.first] = setter_it.first;
     }
     fieldnames_rpc_to_db_[getStringFieldID(PlaylistEntry::ID)] = "entry_id";
+    fieldnames_rpc_to_db_[kRQST_KEY_FIELD_FOLDER_NAME] = getStringFieldID(PlaylistEntry::FILENAME);
 
     // fields available for order.
     using namespace boost::assign;
