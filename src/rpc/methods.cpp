@@ -434,6 +434,10 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager,
     auto int_setter   = boost::bind( createSetter(&sqlite3_column_int),   _1, _2, _3 );
     auto int64_setter = boost::bind( createSetter(&sqlite3_column_int64), _1, _2, _3 );
     auto text_setter  = boost::bind( createSetter(&sqlite3_column_text),  _1, _2, _3 );
+    auto folder_name_setter = [](sqlite3_stmt* stmt, int column_index, Rpc::Value& rpc_value) {
+        const unsigned char* path = sqlite3_column_text(stmt, column_index);
+        rpc_value = getFolderNameFromPath(reinterpret_cast<const char*>(path));
+    };
 
     boost::assign::insert(entry_fields_filler_.setters_)
         ( getStringFieldID(PlaylistEntry::ID),       int_setter )
@@ -446,6 +450,7 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager,
         ( getStringFieldID(PlaylistEntry::DURATION), int_setter )
         ( getStringFieldID(PlaylistEntry::FILESIZE), int64_setter )
         ( getStringFieldID(PlaylistEntry::RATING),   int_setter )
+        ( getStringFieldID(PlaylistEntry::FILENAME), folder_name_setter) // For now only folder name is supported.
     ;
 
     // map RPC field names to related db field names. All field names are the same except rpc's 'id' is 'entry_id' in db.

@@ -196,6 +196,34 @@ private:
     std::string logger_msg_id_; // used to make log messages more informative.
 };
 
+inline std::string getFolderNameFromPath(const char* pathUTF8)
+{
+    // we have uft-8 string here but it seems we are good anyway when using simple search.
+    size_t length = pathUTF8 ? strlen(pathUTF8) : 0;
+    if (length > 0) {
+        size_t index_of_last_separator = std::string::npos;
+        for (int index = length - 1; index >= 0; --index) {
+            char c = pathUTF8[index];
+            if (c == '\\' || c == '/') {
+                if (index_of_last_separator == std::string::npos) {
+                    index_of_last_separator = index;
+                    continue;
+                } else {
+                    size_t index_of_first_separator = index;
+                    size_t index_of_folder_name = index_of_first_separator + 1,
+                           length_of_folder_name = index_of_last_separator > index_of_first_separator ? index_of_last_separator - index_of_first_separator - 1 : 0;
+                    if (index_of_folder_name < length) {
+                        return std::string(pathUTF8 + index_of_folder_name, length_of_folder_name);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    return std::string();
+}
+
 } // namespace AimpRpcMethods::RpcValueSetHelpers
 
 } // namespace AimpRpcMethods
