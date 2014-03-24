@@ -195,6 +195,10 @@ protected:
 private:
     
     PlaylistCRC32& getPlaylistCRC32Object(PlaylistID playlist_id) const; // throws std::runtime_error
+
+    // Returns -1 if handle not found in playlists list.
+    int getPlaylistIndexByHandle(AIMP3SDK::HPLS handle);
+
     typedef std::map<PlaylistID, PlaylistCRC32> PlaylistCRC32List;
     mutable PlaylistCRC32List playlist_crc32_list_;
 

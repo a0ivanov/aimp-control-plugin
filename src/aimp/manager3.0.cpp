@@ -255,7 +255,8 @@ void AIMPManager30::onStorageAdded(AIMP3SDK::HPLS handle)
 {
     try {
         BOOST_LOG_SEV(logger(), debug) << "onStorageAdded: id = " << cast<PlaylistID>(handle);
-        loadPlaylist(handle, 0); // TODO: find out how to get playlist index by handle.
+        int playlist_index = getPlaylistIndexByHandle(handle);
+        loadPlaylist(handle, playlist_index);
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     } catch (std::exception& e) {
         BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << handle << ". Reason: " << e.what();
@@ -331,6 +332,8 @@ void AIMPManager30::onStorageChanged(AIMP3SDK::HPLS handle, DWORD flags)
         }
 
         if (is_playlist_changed) {
+            int playlist_index = getPlaylistIndexByHandle(handle);
+            loadPlaylist(handle, playlist_index);
             updatePlaylistCrcInDB(playlist_id, getPlaylistCRC32(playlist_id));
             notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
         }
@@ -446,6 +449,17 @@ void AIMPManager30::loadPlaylist(AIMP3SDK::HPLS handle, int playlist_index)
         throw std::runtime_error(msg);
     }
     }
+}
+
+int AIMPManager30::getPlaylistIndexByHandle(AIMP3SDK::HPLS handle)
+{
+    for (int i = 0, count = aimp3_playlist_manager_->StorageGetCount(); i != count; ++i) {
+        if (handle == aimp3_playlist_manager_->StorageGet(i)) {
+            return i;
+        }
+    }
+
+    return -1;
 }
 
 PlaylistCRC32& AIMPManager30::getPlaylistCRC32Object(PlaylistID playlist_id) const // throws std::runtime_error
