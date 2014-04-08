@@ -1238,6 +1238,7 @@ void SubscribeOnAIMPStateUpdateEvent::aimpEventHandler(AIMPManager::EVENTS event
     switch (event)
     {
     case AIMPManager::EVENT_TRACK_POS_CHANGED: // it's sent with period 1 second in AIMP2, useless.
+        sendNotifications(CONTROL_PANEL_STATE_CHANGE_EVENT);
         break;
     case AIMPManager::EVENT_PLAY_FILE: // it's sent when playback started.
         sendNotifications(CURRENT_TRACK_CHANGE_EVENT);

@@ -1323,7 +1323,7 @@ void WINAPI AIMPManager26::internalAIMPStateNotifier(DWORD User, DWORD dwCBType)
     switch (dwCBType)
     {
     case AIMP_TRACK_POS_CHANGED: // it is sent with period 1 second.
-        event = EVENT_TRACK_POS_CHANGED;
+        // ignore on AIMP2. event = EVENT_TRACK_POS_CHANGED;
         break;
     case AIMP_PLAY_FILE: // sent when playback started.
         event = EVENT_PLAY_FILE;
