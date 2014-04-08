@@ -16,6 +16,8 @@ namespace ControlPlugin { namespace PluginSettings {
 using namespace PluginLogger;
 using boost::property_tree::wptree;
 
+static std::wstring kDEFAULT_REALM = L"AIMP Control plugin";
+
 Manager::Manager()
 {
     setDefaultLoggerSettings();
@@ -46,7 +48,7 @@ void Manager::setDefaultHttpServerSettings()
     s.ip_to_bind = "localhost";
     s.port = "3333";
     s.document_root = L"htdocs";
-    s.realm = L"AIMP Control plugin";
+    s.realm = kDEFAULT_REALM;
 }
 
 void loadPropertyTreeFromFile(wptree& pt, const boost::filesystem::wpath& filename) // throws std::exception
@@ -103,7 +105,7 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
 
     std::wstring server_document_root = pt.get<std::wstring>(L"settings.httpserver.document_root");
     
-    std::wstring realm = pt.get<std::wstring>(L"settings.httpserver.realm");
+    std::wstring realm = pt.get<std::wstring>(L"settings.httpserver.realm", kDEFAULT_REALM);
 
     std::set<std::string> init_cookies;
     try {
