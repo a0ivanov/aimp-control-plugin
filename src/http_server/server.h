@@ -21,6 +21,12 @@ typedef boost::shared_ptr<ConnectionBluetoothRfcomm> ConnectionBluetoothRfcomm_p
 typedef Connection<boost::asio::ip::tcp::socket> ConnectionIpTcp;
 typedef boost::shared_ptr<ConnectionIpTcp> ConnectionIpTcp_ptr;
 
+typedef boost::asio::bluetooth::rfcomm::acceptor BluetoothConnectionAcceptor;
+typedef boost::shared_ptr<BluetoothConnectionAcceptor> BluetoothConnectionAcceptor_ptr;
+
+typedef boost::asio::ip::tcp::acceptor IpTcpConnectionAcceptor;
+typedef boost::shared_ptr<IpTcpConnectionAcceptor> IpTcpConnectionAcceptor_ptr;
+
 /*
     HTTP async server.
     Uses Http::RequestHandler object to generate response to request.
@@ -42,37 +48,30 @@ public:
 private:
 
     // Handle completion of an asynchronous accept operation(ip::tcp).
-    void handle_accept(boost::asio::ip::tcp::acceptor& acceptor,
-                       ConnectionIpTcp_ptr& connection,
+    void handle_accept(IpTcpConnectionAcceptor_ptr acceptor,
+                       ConnectionIpTcp_ptr accepted_connection,
                        const boost::system::error_code& e);
 
     // Handle completion of an asynchronous accept operation(bluetooth::rfcomm).
-    void handle_accept_bluetooth(const boost::system::error_code& e);
+    void handle_accept_bluetooth(BluetoothConnectionAcceptor_ptr acceptor,
+                                 ConnectionBluetoothRfcomm_ptr accepted_connection,
+                                 const boost::system::error_code& e);
 
     void open_specified_socket(const std::string& address, const std::string& port);
+
+    void start_accept_connections_on(boost::asio::ip::tcp::endpoint endpoint);
 
     void open_localhost_socket(const std::string& port);
 
     void open_bluetooth_socket(); // throws std::runtime_error.
 
-    void register_bluetooth_service(); // throws std::runtime_error.
+    void register_bluetooth_service(BluetoothConnectionAcceptor_ptr acceptor); // throws std::runtime_error.
 
     // The io_service used to perform asynchronous operations.
     boost::asio::io_service& io_service_;
 
-    // Acceptors used to listen for incoming connections over ip::tcp.
-    boost::asio::ip::tcp::acceptor acceptor_,
-                                   acceptor_localhost_;
-    // Acceptors used to listen for incoming connections over bluetooth::rfcomm.
-    boost::asio::bluetooth::rfcomm::acceptor acceptor_bluetooth_;
-
     // The handler for all incoming requests.
     RequestHandler& request_handler_;
-
-    // The next connection to be accepted.
-    ConnectionIpTcp_ptr new_connection_,           // connection on interface read from settings file.
-                        new_connection_localhost_; // localhost connection, use it unconditionally.
-    ConnectionBluetoothRfcomm_ptr new_connection_bluetooth_;
 };
 
 } // namespace Http

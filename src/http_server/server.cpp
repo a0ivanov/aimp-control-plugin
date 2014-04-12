@@ -38,10 +38,7 @@ Server::Server( boost::asio::io_service& io_service,
               )
     :
     io_service_(io_service),
-    request_handler_(request_handler),
-    acceptor_(io_service_),
-    acceptor_localhost_(io_service_),
-    acceptor_bluetooth_(io_service_)
+    request_handler_(request_handler)
 {
     try {
         open_specified_socket(address, port);
@@ -102,24 +99,9 @@ void Server::open_specified_socket(const std::string& address, const std::string
                                  );
     }
 
-    ip::tcp::endpoint endpoint;
-
+    ip::tcp::endpoint endpoint = *endpoint_iter_begin;
     try {
-        endpoint = *endpoint_iter_begin;
-
-        // Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
-        acceptor_.open( endpoint.protocol() );
-        acceptor_.set_option( ip::tcp::acceptor::reuse_address(true) );
-        acceptor_.bind(endpoint);
-        acceptor_.listen();
-        new_connection_.reset( new ConnectionIpTcp(io_service_, request_handler_) );
-        acceptor_.async_accept( new_connection_->socket(),
-                                boost::bind(&Server::handle_accept,
-                                            this,
-                                            boost::ref(acceptor_),
-                                            boost::ref(new_connection_),
-                                            placeholders::error)
-                              );
+        start_accept_connections_on(endpoint);
     } catch(std::exception& e) { // this also handles boost::system::system_error exceptions from acceptor_ methods.
         throw std::runtime_error( MakeString() << "Error in "__FUNCTION__": Failed to start server on " << endpoint << " interface. Reason: " << e.what() );
     } catch(...) {
@@ -142,20 +124,32 @@ void Server::open_localhost_socket(const std::string& port)
     if ( endpoint_iter == ip::tcp::resolver::iterator() ) {
         throw std::exception("no endpoints were resolved");
     }
-    ip::tcp::endpoint endpoint(*endpoint_iter);
+ 
+    start_accept_connections_on(*endpoint_iter);
+}
+
+void Server::start_accept_connections_on(boost::asio::ip::tcp::endpoint endpoint)
+{
+    using namespace boost::asio;
+
+    // Acceptors used to listen for incoming connections over ip::tcp.
+    IpTcpConnectionAcceptor_ptr acceptor( new IpTcpConnectionAcceptor(io_service_) );
+
     // Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
-    acceptor_localhost_.open( endpoint.protocol() );
-    acceptor_localhost_.set_option( ip::tcp::acceptor::reuse_address(true) );
-    acceptor_localhost_.bind(endpoint);
-    acceptor_localhost_.listen();
-    new_connection_localhost_.reset( new ConnectionIpTcp(io_service_, request_handler_) );
-    acceptor_localhost_.async_accept( new_connection_localhost_->socket(),
-                                      boost::bind(&Server::handle_accept,
-                                                  this,
-                                                  boost::ref(acceptor_localhost_),
-                                                  boost::ref(new_connection_localhost_),
-                                                  placeholders::error)
-                                     );
+    acceptor->open( endpoint.protocol() );
+    acceptor->set_option( ip::tcp::acceptor::reuse_address(true) );
+    acceptor->bind(endpoint);
+    acceptor->listen();
+
+    // The next connection to be accepted.
+    ConnectionIpTcp_ptr next_connection( new ConnectionIpTcp(io_service_, request_handler_) );
+    acceptor->async_accept( next_connection->socket(),
+                            boost::bind(&Server::handle_accept,
+                                        this,
+                                        acceptor,
+                                        next_connection,
+                                        placeholders::error)
+                           );
 }
 
 void Server::open_bluetooth_socket()
@@ -164,46 +158,55 @@ void Server::open_bluetooth_socket()
     using namespace boost::asio::bluetooth;
 
     rfcomm::endpoint endpoint;
-    acceptor_bluetooth_.open( endpoint.protocol() );
-    acceptor_bluetooth_.set_option( rfcomm::acceptor::reuse_address(true) );
-    acceptor_bluetooth_.bind(endpoint);
-    acceptor_bluetooth_.listen();
-    new_connection_bluetooth_.reset( new ConnectionBluetoothRfcomm(io_service_, request_handler_) );
-    
-    acceptor_bluetooth_.async_accept( new_connection_bluetooth_->socket(),
-                                      boost::bind(&Server::handle_accept_bluetooth,
-                                                  this,
-                                                  boost::asio::placeholders::error)
-                                     );
 
-    register_bluetooth_service();
+        // Acceptors used to listen for incoming connections over bluetooth::rfcomm.
+    BluetoothConnectionAcceptor_ptr acceptor(new BluetoothConnectionAcceptor(io_service_));
+    acceptor->open( endpoint.protocol() );
+    acceptor->set_option( rfcomm::acceptor::reuse_address(true) );
+    acceptor->bind(endpoint);
+    acceptor->listen();
+    
+    ConnectionBluetoothRfcomm_ptr new_connection( new ConnectionBluetoothRfcomm(io_service_, request_handler_) );
+    acceptor->async_accept( new_connection->socket(),
+                            boost::bind(&Server::handle_accept_bluetooth,
+                                        this,
+                                        acceptor,
+                                        new_connection,
+                                        boost::asio::placeholders::error)
+                          );
+
+    register_bluetooth_service(acceptor);
 }
 
-void Server::handle_accept_bluetooth(const boost::system::error_code& e)
+void Server::handle_accept_bluetooth(BluetoothConnectionAcceptor_ptr acceptor,
+                                     ConnectionBluetoothRfcomm_ptr accepted_connection,
+                                     const boost::system::error_code& e)
 {
-    const boost::asio::bluetooth::rfcomm::socket::endpoint_type& endpoint = new_connection_bluetooth_->socket().remote_endpoint();
+    const boost::asio::bluetooth::rfcomm::socket::endpoint_type& endpoint = accepted_connection->socket().remote_endpoint();
     BOOST_LOG_SEV(logger(), info) << "Connection accepted from remote host " << endpoint;
 
     if (!e) {
-        new_connection_bluetooth_->start();
-        BOOST_LOG_SEV(logger(), info) << "Client connection started";
-        new_connection_bluetooth_.reset( new ConnectionBluetoothRfcomm(io_service_, request_handler_) );
-        acceptor_bluetooth_.async_accept( new_connection_bluetooth_->socket(),
-                                          boost::bind(&Server::handle_accept_bluetooth,
-                                                      this,
-                                                      boost::asio::placeholders::error)
-                                         );
-        BOOST_LOG_SEV(logger(), info) << "Continue to waiting client connection";
+        accepted_connection->start();
+        BOOST_LOG_SEV(logger(), debug) << "Client connection started";
+        ConnectionBluetoothRfcomm_ptr new_connection( new ConnectionBluetoothRfcomm(io_service_, request_handler_) );
+        acceptor->async_accept( new_connection->socket(),
+                                boost::bind(&Server::handle_accept_bluetooth,
+                                            this,
+                                            acceptor,
+                                            new_connection,
+                                            boost::asio::placeholders::error)
+                              );
+        BOOST_LOG_SEV(logger(), debug) << "Continue to waiting client connection";
     } else {
         BOOST_LOG_SEV(logger(), error) << "Error Server::handle_accept():" << e;
     }
 }
 
-void Server::register_bluetooth_service()
+void Server::register_bluetooth_service(BluetoothConnectionAcceptor_ptr acceptor)
 {
     using namespace boost::asio::bluetooth;
 
-    rfcomm::endpoint endpoint = acceptor_bluetooth_.local_endpoint();
+    rfcomm::endpoint endpoint = acceptor->local_endpoint();
     
     WSAQUERYSET service = {0};
     service.dwSize = sizeof(service);
@@ -231,25 +234,25 @@ void Server::register_bluetooth_service()
     }
 }
 
-void Server::handle_accept(boost::asio::ip::tcp::acceptor& acceptor,
-                           ConnectionIpTcp_ptr& connection,
+void Server::handle_accept(IpTcpConnectionAcceptor_ptr acceptor,
+                           ConnectionIpTcp_ptr accepted_connection,
                            const boost::system::error_code& e)
 {
-    const boost::asio::ip::tcp::socket::endpoint_type& endpoint = connection->socket().remote_endpoint();
+    const boost::asio::ip::tcp::socket::endpoint_type& endpoint = accepted_connection->socket().remote_endpoint();
     BOOST_LOG_SEV(logger(), info) << "Connection accepted from remote host " << endpoint;
 
     if (!e) {
-        connection->start();
-        BOOST_LOG_SEV(logger(), info) << "Client connection started";
-        connection.reset( new ConnectionIpTcp(io_service_, request_handler_) );
-        acceptor.async_accept( connection->socket(),
+        accepted_connection->start();
+        BOOST_LOG_SEV(logger(), debug) << "Client connection started";
+        ConnectionIpTcp_ptr new_connection( new ConnectionIpTcp(io_service_, request_handler_) );
+        acceptor->async_accept(new_connection->socket(),
                                boost::bind(&Server::handle_accept,
                                            this,
-                                           boost::ref(acceptor),
-                                           boost::ref(connection),
+                                           acceptor,
+                                           new_connection,
                                            boost::asio::placeholders::error)
                               );
-        BOOST_LOG_SEV(logger(), info) << "Continue to waiting client connection";
+        BOOST_LOG_SEV(logger(), debug) << "Continue to waiting client connection";
     } else {
         BOOST_LOG_SEV(logger(), error) << "Error Server::handle_accept():" << e;
     }
