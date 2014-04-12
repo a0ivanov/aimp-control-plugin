@@ -31,15 +31,15 @@ namespace Http
 using ControlPlugin::PluginLogger::LogManager;
 using namespace Utilities;
 
-Server::Server( boost::asio::io_service& io_service,
-                const std::string& address,
-                const std::string& port,
-                RequestHandler& request_handler
-              )
+Server::Server( boost::asio::io_service& io_service, RequestHandler& request_handler)
     :
     io_service_(io_service),
     request_handler_(request_handler)
 {
+    std::string address, port;
+
+    ///!!!throw std::runtime_error("not impl");
+
     try {
         open_specified_socket(address, port);
     } catch(std::exception& e) {

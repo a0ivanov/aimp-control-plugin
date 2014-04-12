@@ -426,8 +426,6 @@ HRESULT AIMPControlPlugin::initialize()
                                     );
         // create XMLRPC server.
         server_.reset(new Http::Server( *server_io_service_,
-                                        settings().http_server.ip_to_bind,
-                                        settings().http_server.port,
                                         *http_request_handler_
                                        )
                       );

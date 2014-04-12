@@ -12,11 +12,31 @@ namespace ControlPlugin { namespace PluginSettings {
 struct Settings
 {
     struct HttpServer {
-        std::string ip_to_bind; //!< Address of network interface to listen by server. Use "" to bind to all network interfaces. Example: "localhost", "192.168.0.1"
-        std::string port; //!< port to listen. String type was chosen since it make easy IPv6 support.
         std::wstring document_root; //!< Path to directory.
         std::set<std::string> init_cookies; //! Cookies which server sends to client on page first load.
         std::wstring realm; 
+
+        struct NetworkInterface {
+            std::string mac;
+            std::string ip;
+            std::string port;
+
+            NetworkInterface(std::string mac, std::string ip, std::string port) : mac(mac), ip(ip), port(port) {}
+
+            static NetworkInterface createAllInterfacesDescriptor(std::string port) {
+                return NetworkInterface("", "", port);
+            }
+
+            bool isAllInteracesDescriptor() const {
+                return mac.empty() && ip.empty();
+            }
+
+            bool lessThan(const NetworkInterface& rhs) const {
+                return std::tie(mac, ip, port) < std::tie(rhs.mac, rhs.ip, rhs.port);
+            }
+        };
+
+        std::set<NetworkInterface> interfaces;
     } http_server;
 
     struct Logger {
@@ -86,5 +106,10 @@ public:
         : PluginSettingsException(what_arg)
     {}
 };
+
+inline bool operator<(const Settings::HttpServer::NetworkInterface& lhs, const Settings::HttpServer::NetworkInterface& rhs)
+{
+    return lhs.lessThan(rhs);
+}
 
 } } // namespace ControlPlugin::PluginSettings

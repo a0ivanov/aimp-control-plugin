@@ -45,8 +45,8 @@ void Manager::setDefaultLoggerSettings()
 void Manager::setDefaultHttpServerSettings()
 {
     Settings::HttpServer& s = settings_.http_server;
-    s.ip_to_bind = "localhost";
-    s.port = "3333";
+    s.interfaces.clear();
+    s.interfaces.insert(Settings::HttpServer::NetworkInterface("", "localhost", "3333"));
     s.document_root = L"htdocs";
     s.realm = kDEFAULT_REALM;
 }
@@ -96,12 +96,51 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
     // child, it throws. Property tree iterator can be used in
     // the same way as standard container iterator. Category
     // is bidirectional_iterator.
-    BOOST_FOREACH( const auto& v, pt.get_child(L"settings.logging.modules") ) {
+    for ( const auto& v : pt.get_child(L"settings.logging.modules") ) {
         modules_to_log.insert( utf16_to_system_ansi_encoding( v.second.data() ) );
     }
 
-    std::string server_ip_to_bind = utf16_to_system_ansi_encoding( pt.get<std::wstring>(L"settings.httpserver.ip_to_bind") );
-    std::string server_port = utf16_to_system_ansi_encoding( pt.get<std::wstring>(L"settings.httpserver.port") );
+    std::set<Settings::HttpServer::NetworkInterface> interfaces;
+    {
+        auto loadInterfaceData = [&interfaces](const wptree& tree) {
+            std::string mac  = utf16_to_system_ansi_encoding( tree.get<std::wstring>(L"mac", L"") );
+            std::string ip   = utf16_to_system_ansi_encoding( tree.get<std::wstring>(L"ip", L"") );
+            std::string port = utf16_to_system_ansi_encoding( tree.get<std::wstring>(L"port", L"") );
+
+            Settings::HttpServer::NetworkInterface i(mac, ip, port);
+            if (!i.isAllInteracesDescriptor()) {
+                interfaces.insert(i);
+            } else {
+                // not in this section.
+            }
+        };
+
+        auto loadAllInterfacesData = [&interfaces](const wptree& tree) {
+            for ( const auto& v : tree.get_child(L"") ) {
+                if (v.first == L"port") {
+                    std::string port = utf16_to_system_ansi_encoding( v.second.data() );
+                    interfaces.insert(Settings::HttpServer::NetworkInterface::createAllInterfacesDescriptor(port));
+                }
+            }
+        };
+
+        for ( const auto& v : pt.get_child(L"settings.httpserver.interfaces") ) {
+            if (v.first == L"interface") {
+                loadInterfaceData(v.second);
+            }
+
+            if (v.first == L"all") {
+                loadAllInterfacesData(v.second);
+            }
+        }
+    }
+
+    if (interfaces.empty()) { // check deprecated values only if there was no other settings.
+        std::string ip = utf16_to_system_ansi_encoding( pt.get<std::wstring>(L"settings.httpserver.ip_to_bind") );
+        std::string port = utf16_to_system_ansi_encoding( pt.get<std::wstring>(L"settings.httpserver.port") );
+        Settings::HttpServer::NetworkInterface i("", ip, port);
+        interfaces.insert(i);
+    }
 
     std::wstring server_document_root = pt.get<std::wstring>(L"settings.httpserver.document_root");
     
@@ -109,14 +148,13 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
 
     std::set<std::string> init_cookies;
     try {
-        BOOST_FOREACH( const auto& v, pt.get_child(L"settings.httpserver.init_cookies") ) {
+        for ( const auto& v : pt.get_child(L"settings.httpserver.init_cookies") ) {
             init_cookies.insert( utf16_to_system_ansi_encoding( v.second.data() ) );
         }
     } catch (...) {
         // do nothing, it is optional settings.
         init_cookies.clear();
     }
-
 
     std::wstring tmp = pt.get<std::wstring>(L"settings.misc.enable_track_upload", L"false");
     std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
@@ -128,8 +166,7 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
     
     // all work has been done, save result.
     using std::swap;
-    settings.http_server.ip_to_bind.swap(server_ip_to_bind);
-    settings.http_server.port.swap(server_port);
+    settings.http_server.interfaces.swap(interfaces);
     settings.http_server.document_root.swap(server_document_root);
     settings.http_server.init_cookies.swap(init_cookies);
     settings.http_server.realm.swap(realm);
@@ -179,8 +216,21 @@ const wchar_t* severityToString(int level);
 void saveSettingsToPropertyTree(const Settings& settings, wptree& pt) // throws std::exception
 {
     using namespace StringEncoding;
-    pt.put( L"settings.httpserver.ip_to_bind", system_ansi_encoding_to_utf16(settings.http_server.ip_to_bind) );
-    pt.put( L"settings.httpserver.port", system_ansi_encoding_to_utf16(settings.http_server.port) );
+
+    for (const auto& i: settings.http_server.interfaces) {
+        wptree pt_i;
+        {
+            if (!i.mac.empty()) {
+                pt_i.put(L"mac", system_ansi_encoding_to_utf16(i.mac));
+            }
+            if (!i.ip.empty()) {
+                pt_i.put(L"ip", system_ansi_encoding_to_utf16(i.ip));
+            }
+            pt_i.put(L"port", system_ansi_encoding_to_utf16(i.port));
+        }
+        pt.add_child( L"settings.httpserver.interfaces.interface", pt_i); // add() method is used instead put() since put() add only first module for some reason.
+    }
+
     pt.put( L"settings.httpserver.document_root", settings.http_server.document_root );
     pt.put( L"settings.httpserver.realm", settings.http_server.realm );
 
@@ -190,7 +240,7 @@ void saveSettingsToPropertyTree(const Settings& settings, wptree& pt) // throws 
     // Put log severity in property tree
     pt.put( L"settings.logging.severity", severityToString(settings.logger.severity_level) );
 
-    BOOST_FOREACH(const std::string& name, settings.logger.modules_to_log) {
+    for (const std::string& name: settings.logger.modules_to_log) {
         pt.add( L"settings.logging.modules.module", system_ansi_encoding_to_utf16(name) ); // add() method is used instead put() since put() add only first module for some reason.
     }
 

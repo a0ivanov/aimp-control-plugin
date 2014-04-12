@@ -37,11 +37,7 @@ public:
     /*
         Construct the server to listen on the specified TCP address and port.
     */
-    Server(boost::asio::io_service& io_service,
-           const std::string& address,
-           const std::string& port,
-           RequestHandler& request_handler
-           ); // throws std::runtime_error.
+    Server(boost::asio::io_service& io_service, RequestHandler& request_handler); // throws std::runtime_error.
 
     ~Server();
 
