@@ -124,13 +124,17 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
             }
         };
 
+        bool all_already_exists = false; 
         for ( const auto& v : pt.get_child(L"settings.httpserver.interfaces") ) {
             if (v.first == L"interface") {
                 loadInterfaceData(v.second);
             }
 
             if (v.first == L"all") {
-                loadAllInterfacesData(v.second);
+                if (!all_already_exists) {
+                    loadAllInterfacesData(v.second);
+                    all_already_exists = true;
+                }
             }
         }
     }
@@ -228,7 +232,12 @@ void saveSettingsToPropertyTree(const Settings& settings, wptree& pt) // throws 
             }
             pt_i.put(L"port", system_ansi_encoding_to_utf16(i.port));
         }
-        pt.add_child( L"settings.httpserver.interfaces.interface", pt_i); // add() method is used instead put() since put() add only first module for some reason.
+
+        if (i.isAllInteracesDescriptor()) {
+            pt.add_child( L"settings.httpserver.interfaces.all", pt_i);
+        } else {
+            pt.add_child( L"settings.httpserver.interfaces.interface", pt_i);
+        }
     }
 
     pt.put( L"settings.httpserver.document_root", settings.http_server.document_root );

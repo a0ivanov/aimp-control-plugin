@@ -57,8 +57,6 @@ private:
 
     void start_accept_connections_on(boost::asio::ip::tcp::endpoint endpoint);
 
-    void open_localhost_socket(const std::string& port);
-
     void open_bluetooth_socket(); // throws std::runtime_error.
 
     void register_bluetooth_service(BluetoothConnectionAcceptor_ptr acceptor); // throws std::runtime_error.
