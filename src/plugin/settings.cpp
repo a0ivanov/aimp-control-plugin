@@ -100,6 +100,9 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
         modules_to_log.insert( utf16_to_system_ansi_encoding( v.second.data() ) );
     }
 
+    std::string all_interfaces_port;
+    all_interfaces_port = utf16_to_system_ansi_encoding( pt.get<std::wstring>(L"settings.httpserver.all_interfaces.<xmlattr>.port", L"") );
+
     std::set<Settings::HttpServer::NetworkInterface> interfaces;
     {
         auto loadInterfaceData = [&interfaces](const wptree& tree) {
@@ -108,33 +111,14 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
             std::string port = utf16_to_system_ansi_encoding( tree.get<std::wstring>(L"port", L"") );
 
             Settings::HttpServer::NetworkInterface i(mac, ip, port);
-            if (!i.isAllInteracesDescriptor()) {
+            if ((!i.ip.empty() || !i.mac.empty()) && !i.port.empty()) {
                 interfaces.insert(i);
-            } else {
-                // not in this section.
             }
         };
 
-        auto loadAllInterfacesData = [&interfaces](const wptree& tree) {
-            for ( const auto& v : tree.get_child(L"") ) {
-                if (v.first == L"port") {
-                    std::string port = utf16_to_system_ansi_encoding( v.second.data() );
-                    interfaces.insert(Settings::HttpServer::NetworkInterface::createAllInterfacesDescriptor(port));
-                }
-            }
-        };
-
-        bool all_already_exists = false; 
         for ( const auto& v : pt.get_child(L"settings.httpserver.interfaces") ) {
             if (v.first == L"interface") {
                 loadInterfaceData(v.second);
-            }
-
-            if (v.first == L"all") {
-                if (!all_already_exists) {
-                    loadAllInterfacesData(v.second);
-                    all_already_exists = true;
-                }
             }
         }
     }
@@ -170,6 +154,7 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
     
     // all work has been done, save result.
     using std::swap;
+    settings.http_server.all_interfaces.port.swap(all_interfaces_port);
     settings.http_server.interfaces.swap(interfaces);
     settings.http_server.document_root.swap(server_document_root);
     settings.http_server.init_cookies.swap(init_cookies);
@@ -221,6 +206,10 @@ void saveSettingsToPropertyTree(const Settings& settings, wptree& pt) // throws 
 {
     using namespace StringEncoding;
 
+    if (settings.http_server.all_interfaces.enabled()) {
+        pt.put(L"settings.httpserver.all_interfaces.<xmlattr>.port", system_ansi_encoding_to_utf16(settings.http_server.all_interfaces.port)); 
+    }
+
     for (const auto& i: settings.http_server.interfaces) {
         wptree pt_i;
         {
@@ -232,12 +221,7 @@ void saveSettingsToPropertyTree(const Settings& settings, wptree& pt) // throws 
             }
             pt_i.put(L"port", system_ansi_encoding_to_utf16(i.port));
         }
-
-        if (i.isAllInteracesDescriptor()) {
-            pt.add_child( L"settings.httpserver.interfaces.all", pt_i);
-        } else {
-            pt.add_child( L"settings.httpserver.interfaces.interface", pt_i);
-        }
+        pt.add_child( L"settings.httpserver.interfaces.interface", pt_i);
     }
 
     pt.put( L"settings.httpserver.document_root", settings.http_server.document_root );

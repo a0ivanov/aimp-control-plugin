@@ -49,14 +49,10 @@ struct Endpoint
 
     Endpoint(std::string host, std::string port) : host(host), port(port) {}
 
-    bool operator<(Endpoint rhs) {
+    bool operator<(const Endpoint& rhs) const {
         return std::tie(host, port) < std::tie(rhs.host, rhs.port);
     }
 };
-
-bool operator<(Endpoint lhs, Endpoint rhs) {
-    return lhs.operator<(rhs);
-}
 
 std::set<Endpoint> getEndpointsFromSettings();
 
@@ -269,11 +265,12 @@ std::set<NetworkInterface> getIPaddressesOfAdaptersSpecifiedByMAC(std::set<Netwo
 std::set<Endpoint> getEndpointsFromSettings()
 {
     // Extract IP addresses of specified MAC addresses.
-    const std::set<NetworkInterface>& interfaces = ControlPlugin::AIMPControlPlugin::settings().http_server.interfaces;
+    const auto& settings = ControlPlugin::AIMPControlPlugin::settings();
+    const std::set<NetworkInterface>& interfaces = settings.http_server.interfaces;
     std::set<NetworkInterface> interfaces_mac;
     std::copy_if(interfaces.begin(), interfaces.end(), std::inserter(interfaces_mac, interfaces_mac.end()),
                  [](const NetworkInterface& i) {
-                     return !i.mac.empty() && !i.isAllInteracesDescriptor();
+                     return !i.mac.empty();
                  }
                  );
     std::set<NetworkInterface> interfaces_ip_by_mac = getIPaddressesOfAdaptersSpecifiedByMAC(interfaces_mac);
@@ -281,7 +278,7 @@ std::set<Endpoint> getEndpointsFromSettings()
     std::set<NetworkInterface> interfaces_ip_from_settings;
     std::copy_if(interfaces.begin(), interfaces.end(), std::inserter(interfaces_ip_from_settings, interfaces_ip_from_settings.end()),
                  [](const NetworkInterface& i) {
-                     return i.mac.empty() && !i.ip.empty() && !i.isAllInteracesDescriptor();
+                     return i.mac.empty() && !i.ip.empty();
                  }
                  );
 
@@ -292,25 +289,19 @@ std::set<Endpoint> getEndpointsFromSettings()
                     std::inserter(interfaces_ip, interfaces_ip.end()));
 
     // check if all interfaces are requested in settings.
-    auto all_interfaces_descritor_it = std::find_if(interfaces.begin(), interfaces.end(),
-                                                    [](const NetworkInterface& i) {
-                                                        return i.isAllInteracesDescriptor();
-                                                    }
-                                                    );
-
     std::set<Endpoint> endpoints;
 
-    if (all_interfaces_descritor_it != interfaces.end()) {
+    if (settings.http_server.all_interfaces.enabled()) {
         // remove all ip interfaces which have the same port.
         for ( auto it = interfaces_ip.begin(); it != interfaces_ip.end(); ) {
-            if ( it->port == all_interfaces_descritor_it->port ) {
+            if ( it->port == settings.http_server.all_interfaces.port ) {
                 it = interfaces_ip.erase(it);
             } else {
                 ++it;
             }
         }
 
-        endpoints.emplace("", all_interfaces_descritor_it->port);
+        endpoints.emplace("", settings.http_server.all_interfaces.port);
     }
 
     for (auto i : interfaces_ip) {

@@ -16,6 +16,16 @@ struct Settings
         std::set<std::string> init_cookies; //! Cookies which server sends to client on page first load.
         std::wstring realm; 
 
+        struct AllNetworkInterfaces
+        {
+            std::string port;
+
+            bool enabled() const {
+                return !port.empty();
+            }
+        };
+        AllNetworkInterfaces all_interfaces;
+
         struct NetworkInterface {
             std::string mac;
             std::string ip;
@@ -23,15 +33,7 @@ struct Settings
 
             NetworkInterface(std::string mac, std::string ip, std::string port) : mac(mac), ip(ip), port(port) {}
 
-            static NetworkInterface createAllInterfacesDescriptor(std::string port) {
-                return NetworkInterface("", "", port);
-            }
-
-            bool isAllInteracesDescriptor() const {
-                return mac.empty() && ip.empty();
-            }
-
-            bool lessThan(const NetworkInterface& rhs) const {
+            bool operator<(const NetworkInterface& rhs) const {
                 return std::tie(mac, ip, port) < std::tie(rhs.mac, rhs.ip, rhs.port);
             }
         };
@@ -106,10 +108,5 @@ public:
         : PluginSettingsException(what_arg)
     {}
 };
-
-inline bool operator<(const Settings::HttpServer::NetworkInterface& lhs, const Settings::HttpServer::NetworkInterface& rhs)
-{
-    return lhs.lessThan(rhs);
-}
 
 } } // namespace ControlPlugin::PluginSettings
