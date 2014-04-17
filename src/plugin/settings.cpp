@@ -17,6 +17,7 @@ using namespace PluginLogger;
 using boost::property_tree::wptree;
 
 static std::wstring kDEFAULT_REALM = L"AIMP Control plugin";
+static std::wstring kDEFAULT_PORT = L"3333";
 
 Manager::Manager()
 {
@@ -46,7 +47,7 @@ void Manager::setDefaultHttpServerSettings()
 {
     Settings::HttpServer& s = settings_.http_server;
     s.interfaces.clear();
-    s.interfaces.insert(Settings::HttpServer::NetworkInterface("", "localhost", "3333"));
+    s.interfaces.insert(Settings::HttpServer::NetworkInterface("", "localhost", kDEFAULT_PORT));
     s.document_root = L"htdocs";
     s.realm = kDEFAULT_REALM;
 }
@@ -123,9 +124,9 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
         }
     }
 
-    if (interfaces.empty()) { // check deprecated values only if there was no other settings.
-        std::string ip = utf16_to_system_ansi_encoding( pt.get<std::wstring>(L"settings.httpserver.ip_to_bind") );
-        std::string port = utf16_to_system_ansi_encoding( pt.get<std::wstring>(L"settings.httpserver.port") );
+    if (interfaces.empty() && all_interfaces_port.empty()) { // check deprecated values only if there was no other settings.
+        std::string ip = utf16_to_system_ansi_encoding( pt.get<std::wstring>(L"settings.httpserver.ip_to_bind", "localhost") );
+        std::string port = utf16_to_system_ansi_encoding( pt.get<std::wstring>(L"settings.httpserver.port", kDEFAULT_PORT) );
         Settings::HttpServer::NetworkInterface i("", ip, port);
         interfaces.insert(i);
     }
