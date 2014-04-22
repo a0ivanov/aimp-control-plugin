@@ -487,13 +487,39 @@ HRESULT AIMPControlPlugin::Finalize()
 
 HRESULT AIMPControlPlugin::ShowSettingsDialog(HWND AParentWindow)
 {
-    std::wostringstream message_body;
-    message_body << L"AIMP Control plugin settings can be found in configuration file " << plugin_settings_filepath_;
-    MessageBox( AParentWindow,
-                message_body.str().c_str(),
-                L"Information about AIMP Control Plugin",
-                MB_ICONINFORMATION);
+    STARTUPINFO si = { 0 };
+    si.cb = sizeof(si);
+    PROCESS_INFORMATION pi = { 0 };
 
+    std::wstring settingsManagerWorkDir = L"Control Plugin";
+    std::wstring settingsManagerExecutable = L"Control Plugin\\SettingsManager.exe";
+    BOOL success = CreateProcess(   settingsManagerExecutable.c_str(), 
+                                    NULL,           // No command line
+                                    NULL,           // Process handle not inheritable
+                                    NULL,           // Thread handle not inheritable
+                                    FALSE,          // Set handle inheritance to FALSE
+                                    0,              // No creation flags
+                                    NULL,           // Use parent's environment block
+                                    settingsManagerWorkDir.c_str(),
+                                    &si,            // Pointer to STARTUPINFO structure
+                                    &pi             // Pointer to PROCESS_INFORMATION structure
+                                );
+    if (success) {
+        BOOST_LOG_SEV(logger(), debug) << "SettingsManager has been launched";
+    } else {
+        BOOST_LOG_SEV(logger(), error) << "SettingsManager launch failed. Error " << GetLastError();
+
+        char currentDir[MAX_PATH];
+        GetCurrentDirectoryA(MAX_PATH, currentDir);
+        BOOST_LOG_SEV(logger(), debug) << "currentDir: " << currentDir;
+
+        std::wostringstream message_body;
+        message_body << L"AIMP Control plugin settings can be found in configuration file " << plugin_settings_filepath_;
+        MessageBox( AParentWindow,
+                    message_body.str().c_str(),
+                    L"Information about AIMP Control Plugin",
+                    MB_ICONINFORMATION);
+    }
     return S_OK;
 }
 
