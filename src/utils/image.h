@@ -19,7 +19,7 @@ class AIMPCoverImage : public fipWinImage
 public:
     
     //! Creates image from HBITMAP. Bitmap handle will NOT be released.
-    explicit AIMPCoverImage(HBITMAP cover_bitmap_handle); // throws std::runtime_error
+    explicit AIMPCoverImage(HBITMAP cover_bitmap_handle, unsigned width = 0, unsigned height = 0); // throws std::runtime_error
 
     /*!
         \brief Saves image to std::vector<BYTE> container.

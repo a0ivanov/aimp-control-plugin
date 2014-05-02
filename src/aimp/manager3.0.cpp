@@ -1360,6 +1360,9 @@ void AIMPManager30::saveCoverToFile(TrackDescription track_desc, const std::wstr
     try {
         using namespace ImageUtils;
         std::auto_ptr<AIMPCoverImage> cover( getCoverImage(track_desc, cover_width, cover_height) );
+
+        
+
         cover->saveToFile(filename);
     } catch (std::exception& e) {
         const std::string& str = MakeString() << "Error occured while cover saving to file for " << track_desc << ". Reason: " << e.what();
@@ -1380,8 +1383,8 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMPManager30::getCoverImage(TrackDesc
 
     // get real bitmap size
     const SIZE cover_full_size = ImageUtils::getBitmapSize(cover_bitmap_handle);
+    SIZE cover_size = {0, 0};
     if (cover_full_size.cx != 0 && cover_full_size.cy != 0) {
-        SIZE cover_size;
         if (cover_width != 0 && cover_height != 0) {
             // specified size
             cover_size.cx = cover_width;
@@ -1405,7 +1408,7 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMPManager30::getCoverImage(TrackDesc
     }
 
     using namespace ImageUtils;
-    return std::auto_ptr<AIMPCoverImage>( new AIMPCoverImage(cover_bitmap_handle) ); // do not close handle of AIMP bitmap.
+    return std::auto_ptr<AIMPCoverImage>( new AIMPCoverImage(cover_bitmap_handle, cover_size.cx, cover_size.cy) ); // do not close handle of AIMP bitmap.
 }
 
 bool AIMPManager30::isCoverImageFileExist(TrackDescription track_desc, boost::filesystem::wpath* path) const // throw std::runtime_error

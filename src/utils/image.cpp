@@ -196,13 +196,25 @@ FREE_IMAGE_FORMAT cast<FREE_IMAGE_FORMAT, IMAGEFORMAT>(IMAGEFORMAT image_format)
     return freeimage_format;
 }
 
-AIMPCoverImage::AIMPCoverImage(HBITMAP cover_bitmap_handle) // throws std::runtime_error
+AIMPCoverImage::AIMPCoverImage(HBITMAP cover_bitmap_handle, unsigned width, unsigned height) // throws std::runtime_error
     :
     cover_bitmap_handle_(cover_bitmap_handle)
 {
     BOOL result = copyFromBitmap(cover_bitmap_handle);
     if (FALSE == result) {
         throw std::runtime_error("Error occured while create AIMPCoverImage from HBITMAP.");
+    }
+
+    if (width != 0 && height != 0) {
+        SIZE size = { width, height };
+        SIZE bitmap_size = getBitmapSize(cover_bitmap_handle_);
+        if (bitmap_size.cx != size.cx || bitmap_size.cy != size.cy) {
+            result = rescale(size.cx, size.cy, FREE_IMAGE_FILTER::FILTER_BICUBIC);
+            if (FALSE == result) {
+                using namespace Utilities;
+                throw std::runtime_error(MakeString() << "Error occured while rescaling image to (" << size.cx << ", " << size.cy << ").");
+            }
+        }
     }
 
     result = convertTo24Bits();
