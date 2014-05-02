@@ -1093,8 +1093,9 @@ void GetCover::Cache::cacheNew(TrackDescription track_desc, const fs::wpath& alb
         path_track_map_.insert( std::make_pair(album_cover_filename, track_desc) );
     }
 
-    assert(!entry.filenames);
-    entry.filenames = boost::make_shared<Entry::Filenames>();
+    if (!entry.filenames) {
+        entry.filenames = boost::make_shared<Entry::Filenames>();
+    }
     entry.filenames->push_back(cover_uri_generic); 
 }
 
