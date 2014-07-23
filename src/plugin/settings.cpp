@@ -128,7 +128,12 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
     if (interfaces.empty() && all_interfaces_port.empty()) { // check deprecated values only if there was no other settings.
         std::string ip = utf16_to_system_ansi_encoding( pt.get<std::wstring>(L"settings.httpserver.ip_to_bind", L"localhost") );
         std::string port = utf16_to_system_ansi_encoding( pt.get<std::wstring>(L"settings.httpserver.port", kDEFAULT_PORT) );
-        interfaces.emplace("", ip, port);
+
+        if (ip.empty()) { // support old behavior: empty ip means all interfaces.
+            all_interfaces_port = port;
+        } else {
+            interfaces.emplace("", ip, port);
+        }
     }
 
     std::wstring server_document_root = pt.get<std::wstring>(L"settings.httpserver.document_root");
