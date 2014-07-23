@@ -1197,7 +1197,7 @@ public:
 /*! 
     \brief Returns plugin capabilities.
     \return object which describes capabilities:
-         Example: \code "result":{"physical_track_deletion":false,"upload_track":true} \endcode
+         Example: \code {"result":{"physical_track_deletion":false,"scheduler":false,"upload_track":true}} \endcode
 
 */
 class PluginCapabilities : public AIMPRPCMethod
@@ -1299,7 +1299,6 @@ private:
     \brief Allows to schedule some action. Similar to scheduler of AIMP player.
 
     Please use PluginCapabilities to determine if such functionality is enabled by user.
-
     Without params returns current timer state(if timer exists) and list of supported actions.
 
     \param action - string, optional. Supported values:
@@ -1313,8 +1312,7 @@ private:
     
     \return object which describes:
         - success:<BR>
-            Example: \code {"result":{"current_timer":{"action":"stop_playback","expires":1406116760.0},"supported_actions":["stop_playback","machine_shutdown","mac
-hine_sleep","machine_hybernate"]}} \endcode
+            Example: \code {"result":{"current_timer":{"action":"stop_playback","expires":1406116760.0},"supported_actions":["stop_playback","machine_shutdown","machine_sleep","machine_hybernate"]}} \endcode
         - failure: object which describes error: {code, message}<BR>
             Error codes in addition to \link #Rpc::ERROR_CODES Common errors\endlink:
                 - ::SCHEDULER_DISABLED

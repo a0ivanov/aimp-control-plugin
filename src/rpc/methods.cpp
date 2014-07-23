@@ -1368,7 +1368,7 @@ ResponseType PluginCapabilities::execute(const Rpc::Value& /*root_request*/, Rpc
     Rpc::Value& result = root_response["result"];
     result["upload_track"] = ControlPlugin::AIMPControlPlugin::settings().misc.enable_track_upload;
     result["physical_track_deletion"] = ControlPlugin::AIMPControlPlugin::settings().misc.enable_physical_track_deletion;
-    result["power_management"] = ControlPlugin::AIMPControlPlugin::settings().misc.enable_sheduler;
+    result["scheduler"] = ControlPlugin::AIMPControlPlugin::settings().misc.enable_sheduler;
     return RESPONSE_IMMEDIATE;
 }
 
@@ -1485,24 +1485,26 @@ ResponseType Scheduler::execute(const Rpc::Value& root_request, Rpc::Value& root
     std::string action = !cancel_timer && params.isMember("action") ? static_cast<std::string>(params["action"]) : "";
     if (!action.empty()) {
         double expiration_time = params["expiration_time"]; // required here
-        timer_.reset(new Timer(action, io_service_));
-        timer_->expires_at(expiration_time);
+        std::unique_ptr<Timer> timer(new Timer(action, io_service_));
+        timer->expires_at(expiration_time);
 
         if (action == "stop_playback") {
-            timer_->timer_.async_wait( boost::bind( &Scheduler::onTimerStopPlayback, this, _1 ) );
+            timer->timer_.async_wait( boost::bind( &Scheduler::onTimerStopPlayback, this, _1 ) );
         } else if (action == "machine_shutdown") {
-            timer_->timer_.async_wait( boost::bind( &Scheduler::onTimerMachineShutdown, this, _1 ) );
+            timer->timer_.async_wait( boost::bind( &Scheduler::onTimerMachineShutdown, this, _1 ) );
         } else if (action == "machine_hybernate") {
             if (!PowerManagement::HybernationEnabled()) {
                 throw Rpc::Exception("Schedule action failed. Reason: hybernation is disabled on this machine.", SCHEDULER_UNSUPPORTED_ACTION);
             }
 
-            timer_->timer_.async_wait( boost::bind( &Scheduler::onTimerMachineHybernate, this, _1 ) );
+            timer->timer_.async_wait( boost::bind( &Scheduler::onTimerMachineHybernate, this, _1 ) );
         } else if (action == "machine_sleep") {
-            timer_->timer_.async_wait( boost::bind( &Scheduler::onTimerMachineSleep, this, _1 ) );
+            timer->timer_.async_wait( boost::bind( &Scheduler::onTimerMachineSleep, this, _1 ) );
         } else {
             throw Rpc::Exception("Schedule action failed. Reason: unsupported action.", SCHEDULER_UNSUPPORTED_ACTION);
         }
+
+        timer_.swap(timer);
     }
 
     Rpc::Value& result = root_response["result"];
