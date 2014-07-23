@@ -1,4 +1,4 @@
-// Copyright (c) 2013, Alexey Ivanov
+// Copyright (c) 2014, Alexey Ivanov
 
 #include "stdafx.h"
 #include "request_handler.h"

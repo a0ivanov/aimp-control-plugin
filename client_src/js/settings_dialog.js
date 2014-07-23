@@ -1,6 +1,6 @@
 /*
     Script contains settings dialog implementation for  AIMP Control plugin frontend.
-    Copyright (c) 2013, Alexey Ivanov
+    Copyright (c) 2014, Alexey Ivanov
 */
 
 // Initialize tab 'playlist view' and return function which saves data from this tab in cookies.

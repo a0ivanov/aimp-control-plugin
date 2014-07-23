@@ -1,4 +1,4 @@
-// Copyright (c) 2013, Alexey Ivanov
+// Copyright (c) 2014, Alexey Ivanov
 
 #ifndef JSONRPCFRONTEND_H
 #define JSONRPCFRONTEND_H

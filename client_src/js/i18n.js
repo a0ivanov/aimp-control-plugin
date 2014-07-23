@@ -1,6 +1,6 @@
 /*
     Script contains localization utilities.
-    Copyright (c) 2013, Alexey Ivanov
+    Copyright (c) 2014, Alexey Ivanov
 */
 
 // global assoc array to store all localized strings.

@@ -1,4 +1,4 @@
-// Copyright (c) 2013, Alexey Ivanov
+// Copyright (c) 2014, Alexey Ivanov
 
 #ifndef JSONRPC_RESPONSE_SERIALIZER_H
 #define JSONRPC_RESPONSE_SERIALIZER_H
