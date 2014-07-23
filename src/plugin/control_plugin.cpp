@@ -642,6 +642,18 @@ void AIMPControlPlugin::createRpcMethods()
     REGISTER_AIMP_RPC_METHOD(Version);
     REGISTER_AIMP_RPC_METHOD(PluginCapabilities);
     REGISTER_AIMP_RPC_METHOD(AddURLToPlaylist);
+
+    {
+    // pass io service
+    rpc_request_handler_->addMethod( std::auto_ptr<Rpc::Method>(
+                                                  new Scheduler(*aimp_manager_,
+                                                                *rpc_request_handler_,
+                                                                *server_io_service_
+                                                                )
+                                                                )
+                                    );
+    }
+
     // Emulator of Aimp WebCtl plugin.
     REGISTER_AIMP_RPC_METHOD(EmulationOfWebCtlPlugin);
 #undef REGISTER_AIMP_RPC_METHOD

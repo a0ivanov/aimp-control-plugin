@@ -13,6 +13,22 @@
         <realm>AIMP Control plugin</realm>
     </httpserver>
 
+    <misc>
+        <!-- It's recommended to use it with password protection access only. Use it carefully. There is no any validation of uploaded files: all files are passed to AIMP directly. 
+             There is risk of uploading dangerous files that can corrupt your system or steal your data.
+        -->
+        <enable_track_upload>false</enable_track_upload>
+        
+        <!-- It's recommended to use it with password protection access only. Use it carefully.
+             There is risk of removing all music data.
+        -->
+        <enable_physical_track_deletion>false</enable_physical_track_deletion>
+        
+        <!-- It's recommended to use it with password protection access only.
+        -->
+        <enable_sheduler>false</enable_sheduler>
+    </misc>
+    
     <logging>
         <!-- Directory where log files are stored. Base directory is directory where this settings file is located. -->
         <directory>./</directory>
@@ -30,16 +46,4 @@
             <module>rpc_server</module>
         </modules>
     </logging>
-
-    <misc>
-        <!-- Use it carefully. There is no any validation of uploaded files: all files are passed to AIMP directly. 
-             There is risk of uploading dangerous files that can corrupt your system or steal your data.
-        -->
-        <enable_track_upload>false</enable_track_upload>
-        
-        <!-- Use it carefully.
-             There is risk of removing all music data.
-        -->
-        <enable_physical_track_deletion>false</enable_physical_track_deletion>
-    </misc>
 </settings>

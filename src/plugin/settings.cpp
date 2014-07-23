@@ -152,6 +152,10 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
     tmp = pt.get<std::wstring>(L"settings.misc.enable_physical_track_deletion", L"false");
     std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
     bool enable_physical_track_deletion = tmp == L"true" || tmp == L"1";
+
+    tmp = pt.get<std::wstring>(L"settings.misc.enable_sheduler", L"false");
+    std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
+    bool enable_sheduler = tmp == L"true" || tmp == L"1";
     
     // all work has been done, save result.
     using std::swap;
@@ -167,6 +171,7 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
 
     settings.misc.enable_track_upload = enable_track_upload;
     settings.misc.enable_physical_track_deletion = enable_physical_track_deletion;
+    settings.misc.enable_sheduler = enable_sheduler;
 }
 
 void Manager::load(const boost::filesystem::wpath& filename)
@@ -228,6 +233,10 @@ void saveSettingsToPropertyTree(const Settings& settings, wptree& pt) // throws 
     pt.put( L"settings.httpserver.document_root", settings.http_server.document_root );
     pt.put( L"settings.httpserver.realm", settings.http_server.realm );
 
+    pt.put(L"settings.misc.enable_track_upload", settings.misc.enable_track_upload);
+    pt.put(L"settings.misc.enable_physical_track_deletion", settings.misc.enable_physical_track_deletion);
+    pt.put(L"settings.misc.enable_sheduler", settings.misc.enable_sheduler);
+
     // Put log directory in property tree
     pt.put(L"settings.logging.directory", settings.logger.directory);
 
@@ -237,9 +246,6 @@ void saveSettingsToPropertyTree(const Settings& settings, wptree& pt) // throws 
     for (const std::string& name: settings.logger.modules_to_log) {
         pt.add( L"settings.logging.modules.module", system_ansi_encoding_to_utf16(name) ); // add() method is used instead put() since put() add only first module for some reason.
     }
-
-    pt.put(L"settings.misc.enable_track_upload", settings.misc.enable_track_upload);
-    pt.put(L"settings.misc.enable_physical_track_deletion", settings.misc.enable_physical_track_deletion);
 }
 
 void Manager::save(const boost::filesystem::wpath& filename) const

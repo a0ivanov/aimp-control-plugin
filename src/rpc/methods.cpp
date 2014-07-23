@@ -17,6 +17,7 @@
 #include "utils/scope_guard.h"
 #include "utils/string_encoding.h"
 #include "utils/image.h"
+#include "utils/power_management.h"
 #include <fstream>
 #include <boost/range.hpp>
 #include <boost/bind.hpp>
@@ -1367,6 +1368,7 @@ ResponseType PluginCapabilities::execute(const Rpc::Value& /*root_request*/, Rpc
     Rpc::Value& result = root_response["result"];
     result["upload_track"] = ControlPlugin::AIMPControlPlugin::settings().misc.enable_track_upload;
     result["physical_track_deletion"] = ControlPlugin::AIMPControlPlugin::settings().misc.enable_physical_track_deletion;
+    result["power_management"] = ControlPlugin::AIMPControlPlugin::settings().misc.enable_sheduler;
     return RESPONSE_IMMEDIATE;
 }
 
@@ -1459,8 +1461,138 @@ void RemoveTrack::onTimerDeleteTrack(const fs::path& filename, RemoveTrack::Resp
     response_sender_descriptor.sender->sendResponseFault(response_sender_descriptor.root_request, "Removing track failed", REMOVE_TRACK_FAILED);
 }
 
-} // namespace AimpRpcMethods
+Scheduler::Scheduler(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request_handler, boost::asio::io_service& io_service)
+    : AIMPRPCMethod("Scheduler", aimp_manager, rpc_request_handler),
+      io_service_(io_service)
+{
+    const ControlPlugin::PluginSettings::Settings& settings = ControlPlugin::AIMPControlPlugin::settings();
+    enable_sheduler_ = settings.misc.enable_sheduler;
+}
 
+ResponseType Scheduler::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+{
+    if (!enable_sheduler_) {
+        throw Rpc::Exception("Scheduler is disabled", SCHEDULER_DISABLED);
+    }
+
+    const Rpc::Value& params = root_request["params"];
+
+    const bool cancel_timer = params.isMember("cancel");
+    if (cancel_timer) {
+        timer_.reset();
+    }
+
+    std::string action = !cancel_timer && params.isMember("action") ? static_cast<std::string>(params["action"]) : "";
+    if (!action.empty()) {
+        double expiration_time = params["expiration_time"]; // required here
+        timer_.reset(new Timer(action, io_service_));
+        timer_->expires_at(expiration_time);
+
+        if (action == "stop_playback") {
+            timer_->timer_.async_wait( boost::bind( &Scheduler::onTimerStopPlayback, this, _1 ) );
+        } else if (action == "machine_shutdown") {
+            timer_->timer_.async_wait( boost::bind( &Scheduler::onTimerMachineShutdown, this, _1 ) );
+        } else if (action == "machine_hybernate") {
+            if (!PowerManagement::HybernationEnabled()) {
+                throw Rpc::Exception("Schedule action failed. Reason: hybernation is disabled on this machine.", SCHEDULER_UNSUPPORTED_ACTION);
+            }
+
+            timer_->timer_.async_wait( boost::bind( &Scheduler::onTimerMachineHybernate, this, _1 ) );
+        } else if (action == "machine_sleep") {
+            timer_->timer_.async_wait( boost::bind( &Scheduler::onTimerMachineSleep, this, _1 ) );
+        } else {
+            throw Rpc::Exception("Schedule action failed. Reason: unsupported action.", SCHEDULER_UNSUPPORTED_ACTION);
+        }
+    }
+
+    Rpc::Value& result = root_response["result"];
+
+    Rpc::Value& supported_actions = result["supported_actions"];
+    supported_actions.setSize(3);
+    supported_actions[0] = "stop_playback";
+    // Assume that all machines are enable to sleep and shutdown. Check only hybernation ability.
+    supported_actions[1] = "machine_shutdown";
+    supported_actions[2] = "machine_sleep";
+    // Check if hybernation is allowed.
+    if (PowerManagement::HybernationEnabled()) {
+        supported_actions.setSize(supported_actions.size() + 1);
+        supported_actions[supported_actions.size() - 1] = "machine_hybernate";
+    }
+
+    // report current timer state.
+    if (timer_) {
+        Rpc::Value& current_timer = result["current_timer"];
+        current_timer["action"] = timer_->action();
+        current_timer["expires"] = timer_->expires_at();
+    }
+
+    return RESPONSE_IMMEDIATE;
+}
+
+void Scheduler::onTimerStopPlayback(const boost::system::error_code& e)
+{
+    if (!e) { // Timer expired normally.
+        aimp_manager_.stopPlayback();
+
+        timer_.reset();
+    } else if (e != boost::asio::error::operation_aborted) { // "operation_aborted" error code is sent when timer is cancelled.
+        BOOST_LOG_SEV(logger(), error) << "err:"__FUNCTION__" timer error:" << e;
+    }
+}
+
+void Scheduler::onTimerMachineShutdown(const boost::system::error_code& e)
+{
+    if (!e) { // Timer expired normally.
+        PowerManagement::SystemShutdown();
+
+        timer_.reset();
+    } else if (e != boost::asio::error::operation_aborted) { // "operation_aborted" error code is sent when timer is cancelled.
+        BOOST_LOG_SEV(logger(), error) << "err:"__FUNCTION__" timer error:" << e;
+    }
+}
+
+void Scheduler::onTimerMachineHybernate(const boost::system::error_code& e)
+{
+    if (!e) { // Timer expired normally.
+        PowerManagement::SystemHybernate();
+
+        timer_.reset();
+    } else if (e != boost::asio::error::operation_aborted) { // "operation_aborted" error code is sent when timer is cancelled.
+        BOOST_LOG_SEV(logger(), error) << "err:"__FUNCTION__" timer error:" << e;
+    }
+}
+
+void Scheduler::onTimerMachineSleep(const boost::system::error_code& e)
+{
+    if (!e) { // Timer expired normally.
+        PowerManagement::SystemSleep();
+
+        timer_.reset();
+    } else if (e != boost::asio::error::operation_aborted) { // "operation_aborted" error code is sent when timer is cancelled.
+        BOOST_LOG_SEV(logger(), error) << "err:"__FUNCTION__" timer error:" << e;
+    }
+}
+
+void Scheduler::Timer::expires_at(double unix_time)
+{
+    boost::posix_time::ptime time = boost::posix_time::from_time_t(static_cast<time_t>(unix_time));   
+    timer_.expires_at(time);
+}
+
+int64_t toPosix64(const boost::posix_time::ptime& pt)
+{
+  using namespace boost::posix_time;
+  static ptime epoch(boost::gregorian::date(1970, 1, 1));
+  time_duration diff(pt - epoch);
+  return (diff.ticks() / diff.ticks_per_second());
+}
+
+double Scheduler::Timer::expires_at() const
+{ 
+    return static_cast<double>( toPosix64(timer_.expires_at()) );
+}
+
+} // namespace AimpRpcMethods
 
 namespace AimpRpcMethods
 {

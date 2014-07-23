@@ -202,6 +202,9 @@
     <ClCompile Include="..\src\http_server\auth_manager.cpp">
       <Filter>src\http server</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\utils\power_management.cpp">
+      <Filter>src\utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\stdafx.h">
@@ -419,6 +422,9 @@
     </ClInclude>
     <ClInclude Include="..\src\http_server\auth_manager.h">
       <Filter>src\http server</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\utils\power_management.h">
+      <Filter>src\utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

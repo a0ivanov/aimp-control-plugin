@@ -70,7 +70,7 @@
       <DisableSpecificWarnings>4503;4714</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>Ws2_32.lib;FreeImagePlus.lib;DelayImp.lib;Version.lib;sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;FreeImagePlus.lib;DelayImp.lib;Version.lib;sqlite3.lib;PowrProf.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(BOOST_DIR)\stage\lib;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\dist;$(ProjectDir)\..\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ModuleDefinitionFile>..\src\control_plugin.def</ModuleDefinitionFile>
@@ -99,7 +99,7 @@
       <DisableSpecificWarnings>4503;4714</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>Ws2_32.lib;FreeImagePlus.lib;DelayImp.lib;Version.lib;sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;FreeImagePlus.lib;DelayImp.lib;Version.lib;sqlite3.lib;PowrProf.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(AIMP_PLUGINS_DIR)\$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>$(BOOST_DIR)\stage\lib;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\dist;$(ProjectDir)\..\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>..\src\control_plugin.def</ModuleDefinitionFile>
@@ -177,6 +177,7 @@
     <ClCompile Include="..\src\upload_track\upload_track_request_handler.cpp" />
     <ClCompile Include="..\src\utils\base64.cpp" />
     <ClCompile Include="..\src\utils\image.cpp" />
+    <ClCompile Include="..\src\utils\power_management.cpp" />
     <ClCompile Include="..\src\utils\string_encoding.cpp" />
     <ClCompile Include="..\src\utils\util.cpp" />
     <ClCompile Include="..\src\webctlrpc\webctlrpc_request_parser.cpp" />
@@ -247,6 +248,7 @@
     <ClInclude Include="..\src\utils\base64.h" />
     <ClInclude Include="..\src\utils\image.h" />
     <ClInclude Include="..\src\utils\iunknown_impl.h" />
+    <ClInclude Include="..\src\utils\power_management.h" />
     <ClInclude Include="..\src\utils\scope_guard.h" />
     <ClInclude Include="..\src\utils\sqlite_util.h" />
     <ClInclude Include="..\src\utils\string_encoding.h" />
