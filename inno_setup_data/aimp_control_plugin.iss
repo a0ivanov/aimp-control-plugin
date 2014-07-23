@@ -416,7 +416,7 @@ var
   ErrorCode: Integer;
   URL: String;
 begin
-  URL := 'http://www.a0ivanov.ru/donate_' + ExpandConstant('{language}') + '.html';
+  URL := 'http://www.a0ivanov.ru/aimp/donate_' + ExpandConstant('{language}') + '.html';
 
   if not ShellExec('', URL, '', '', SW_SHOW, ewNoWait, ErrorCode) then
   begin
