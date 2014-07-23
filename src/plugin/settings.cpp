@@ -158,9 +158,9 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
     std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
     bool enable_physical_track_deletion = tmp == L"true" || tmp == L"1";
 
-    tmp = pt.get<std::wstring>(L"settings.misc.enable_sheduler", L"false");
+    tmp = pt.get<std::wstring>(L"settings.misc.enable_scheduler", L"false");
     std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
-    bool enable_sheduler = tmp == L"true" || tmp == L"1";
+    bool enable_scheduler = tmp == L"true" || tmp == L"1";
     
     // all work has been done, save result.
     using std::swap;
@@ -176,7 +176,7 @@ void loadSettingsFromPropertyTree(Settings& settings, const wptree& pt) // throw
 
     settings.misc.enable_track_upload = enable_track_upload;
     settings.misc.enable_physical_track_deletion = enable_physical_track_deletion;
-    settings.misc.enable_sheduler = enable_sheduler;
+    settings.misc.enable_scheduler = enable_scheduler;
 }
 
 void Manager::load(const boost::filesystem::wpath& filename)
@@ -240,7 +240,7 @@ void saveSettingsToPropertyTree(const Settings& settings, wptree& pt) // throws 
 
     pt.put(L"settings.misc.enable_track_upload", settings.misc.enable_track_upload);
     pt.put(L"settings.misc.enable_physical_track_deletion", settings.misc.enable_physical_track_deletion);
-    pt.put(L"settings.misc.enable_sheduler", settings.misc.enable_sheduler);
+    pt.put(L"settings.misc.enable_scheduler", settings.misc.enable_scheduler);
 
     // Put log directory in property tree
     pt.put(L"settings.logging.directory", settings.logger.directory);

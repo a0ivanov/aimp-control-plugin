@@ -26,7 +26,7 @@
         
         <!-- It's recommended to use it with password protection access only.
         -->
-        <enable_sheduler>false</enable_sheduler>
+        <enable_scheduler>false</enable_scheduler>
     </misc>
     
     <logging>

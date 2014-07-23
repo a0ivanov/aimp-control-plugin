@@ -1338,7 +1338,7 @@ private:
     void onTimerMachineHybernate(const boost::system::error_code& e);
     void onTimerMachineSleep(const boost::system::error_code& e);
 
-    bool enable_sheduler_;
+    bool enable_scheduler_;
     boost::asio::io_service& io_service_;
 
     class Timer {

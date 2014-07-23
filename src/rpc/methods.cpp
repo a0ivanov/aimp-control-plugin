@@ -1368,7 +1368,7 @@ ResponseType PluginCapabilities::execute(const Rpc::Value& /*root_request*/, Rpc
     Rpc::Value& result = root_response["result"];
     result["upload_track"] = ControlPlugin::AIMPControlPlugin::settings().misc.enable_track_upload;
     result["physical_track_deletion"] = ControlPlugin::AIMPControlPlugin::settings().misc.enable_physical_track_deletion;
-    result["scheduler"] = ControlPlugin::AIMPControlPlugin::settings().misc.enable_sheduler;
+    result["scheduler"] = ControlPlugin::AIMPControlPlugin::settings().misc.enable_scheduler;
     return RESPONSE_IMMEDIATE;
 }
 
@@ -1466,12 +1466,12 @@ Scheduler::Scheduler(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request
       io_service_(io_service)
 {
     const ControlPlugin::PluginSettings::Settings& settings = ControlPlugin::AIMPControlPlugin::settings();
-    enable_sheduler_ = settings.misc.enable_sheduler;
+    enable_scheduler_ = settings.misc.enable_scheduler;
 }
 
 ResponseType Scheduler::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
-    if (!enable_sheduler_) {
+    if (!enable_scheduler_) {
         throw Rpc::Exception("Scheduler is disabled", SCHEDULER_DISABLED);
     }
 
