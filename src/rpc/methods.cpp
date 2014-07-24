@@ -1551,6 +1551,8 @@ void Scheduler::onTimerStopPlayback(const boost::system::error_code& e)
     if (!e) { // Timer expired normally.
         aimp_manager_.stopPlayback();
 
+        BOOST_LOG_SEV(logger(), info) << "playback has been stopped by timer. "__FUNCTION__;
+
         timer_.reset();
     } else if (e != boost::asio::error::operation_aborted) { // "operation_aborted" error code is sent when timer is cancelled.
         BOOST_LOG_SEV(logger(), error) << "err:"__FUNCTION__" timer error:" << e;
@@ -1560,7 +1562,9 @@ void Scheduler::onTimerStopPlayback(const boost::system::error_code& e)
 void Scheduler::onTimerMachineShutdown(const boost::system::error_code& e)
 {
     if (!e) { // Timer expired normally.
-        PowerManagement::SystemShutdown();
+        if (PowerManagement::SystemShutdown()) {
+            BOOST_LOG_SEV(logger(), info) << "Machine has been shut down by timer. "__FUNCTION__;
+        }
 
         timer_.reset();
     } else if (e != boost::asio::error::operation_aborted) { // "operation_aborted" error code is sent when timer is cancelled.
@@ -1571,7 +1575,9 @@ void Scheduler::onTimerMachineShutdown(const boost::system::error_code& e)
 void Scheduler::onTimerMachineHibernate(const boost::system::error_code& e)
 {
     if (!e) { // Timer expired normally.
-        PowerManagement::SystemHibernate();
+        if (PowerManagement::SystemHibernate()) {
+            BOOST_LOG_SEV(logger(), info) << "Machine has been hibernated by timer. "__FUNCTION__;
+        }
 
         timer_.reset();
     } else if (e != boost::asio::error::operation_aborted) { // "operation_aborted" error code is sent when timer is cancelled.
@@ -1582,7 +1588,9 @@ void Scheduler::onTimerMachineHibernate(const boost::system::error_code& e)
 void Scheduler::onTimerMachineSleep(const boost::system::error_code& e)
 {
     if (!e) { // Timer expired normally.
-        PowerManagement::SystemSleep();
+        if (PowerManagement::SystemSleep()) {
+            BOOST_LOG_SEV(logger(), info) << "Machine has been set to sleep mode by timer. "__FUNCTION__;
+        }
 
         timer_.reset();
     } else if (e != boost::asio::error::operation_aborted) { // "operation_aborted" error code is sent when timer is cancelled.
