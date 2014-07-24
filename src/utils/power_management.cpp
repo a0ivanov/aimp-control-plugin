@@ -12,16 +12,14 @@ ModuleLoggerType& logger()
 namespace PowerManagement
 {
 
-bool HybernationEnabled()
+bool HibernationEnabled()
 {
-    /*
-        #pragma warning (push, 4)
-        #pragma warning( disable : 4800 )
-            BOOST_LOG_SEV(logger(), debug) << "IsPwrHibernateAllowed(): " << (bool)IsPwrHibernateAllowed();
-            BOOST_LOG_SEV(logger(), debug) << "IsPwrShutdownAllowed(): " << (bool)IsPwrShutdownAllowed();
-            BOOST_LOG_SEV(logger(), debug) << "IsPwrSuspendAllowed(): " << (bool)IsPwrSuspendAllowed();
-        #pragma warning (pop)
-    */
+    #pragma warning (push, 4)
+    #pragma warning( disable : 4800 )
+    BOOST_LOG_SEV(logger(), debug) << "IsPwrHibernateAllowed(): " << (bool)IsPwrHibernateAllowed();
+    BOOST_LOG_SEV(logger(), debug) << "IsPwrShutdownAllowed(): " << (bool)IsPwrShutdownAllowed();
+    BOOST_LOG_SEV(logger(), debug) << "IsPwrSuspendAllowed(): " << (bool)IsPwrSuspendAllowed();
+    #pragma warning (pop)
 
     SYSTEM_POWER_CAPABILITIES systemPowerCapabilities = {0};
     if (!GetPwrCapabilities(&systemPowerCapabilities)) {
@@ -30,6 +28,11 @@ bool HybernationEnabled()
         BOOST_LOG_SEV(logger(), error) << msg;
         return false;
     }
+
+    #pragma warning (push, 4)
+    #pragma warning( disable : 4800 )
+    BOOST_LOG_SEV(logger(), debug) << "systemPowerCapabilities.Hiberboot: " << (bool)systemPowerCapabilities.Hiberboot;
+    #pragma warning (pop)
 
     return !!systemPowerCapabilities.Hiberboot;
 }
@@ -58,7 +61,7 @@ bool SystemShutdown()
     return true;
 }
 
-bool SystemSleep(bool hybernate)
+bool SystemSleep(bool hibernate)
 {
     if (!GetSeShutdownNamePrivelege()) {
         std::string msg = Utilities::MakeString() << __FUNCTION__": GetSeShutdownNamePrivelege() failed.";
@@ -66,20 +69,21 @@ bool SystemSleep(bool hybernate)
         return false;
     }
 
-    if (!SetSuspendState(hybernate,
-                         false,
+    const bool force = true;
+    if (!SetSuspendState(hibernate,
+                         force,
                          false)
         )
     {
         DWORD last_error = GetLastError();
-        std::string msg = Utilities::MakeString() << __FUNCTION__": SetSuspendState(" << hybernate << ", " << false << "," << false << ") failed. Reason: " << last_error;
+        std::string msg = Utilities::MakeString() << __FUNCTION__": SetSuspendState(" << hibernate << ", " << force << ", " << false << ") failed. Reason: " << last_error;
         BOOST_LOG_SEV(logger(), error) << msg;
         return false; 
     }
     return true;
 }
 
-bool SystemHybernate()
+bool SystemHibernate()
 {
     return SystemSleep(true);
 }

@@ -74,8 +74,8 @@ enum ERROR_CODES {
                    ADD_URL_TO_PLAYLIST_FAILED = 27, /*!< can't add url to playlist. Possible reason: playlist was not found. */
                    REMOVE_TRACK_FAILED = 28, /*!< can't remove track from playlist. Possible reason: track was not found. */
                    REMOVE_TRACK_PHYSICAL_DELETION_DISABLED = 29, /*!< can't remove track physically. Reason: user has disabled it in plugin settings. */
-                   SCHEDULER_DISABLED = 30, /*!< can't shutdown/hybernate machine or stop playback by timer. Reason: user has disabled it in plugin settings. */
-                   SCHEDULER_UNSUPPORTED_ACTION = 31 /*!< can't schedule specified action. Reason: machine does not support action(for ex, hybernation).*/
+                   SCHEDULER_DISABLED = 30, /*!< can't shutdown/hibernate machine or stop playback by timer. Reason: user has disabled it in plugin settings. */
+                   SCHEDULER_UNSUPPORTED_ACTION = 31 /*!< can't schedule specified action. Reason: machine does not support action(for ex, hibernation).*/
 };
 
 using namespace AIMPPlayer;
@@ -1304,7 +1304,7 @@ private:
     \param action - string, optional. Supported values:
         - machine_shutdown 
         - machine_sleep
-        - machine_hybernate. If supported by machine.
+        - machine_hibernate. If supported by machine.
         - stop_playback
 
     \param expiration_time - double, required if action param is specified. Unix epoch time in seconds, UTC.
@@ -1312,7 +1312,7 @@ private:
     
     \return object which describes:
         - success:<BR>
-            Example: \code {"result":{"current_timer":{"action":"stop_playback","expires":1406116760.0},"supported_actions":["stop_playback","machine_shutdown","machine_sleep","machine_hybernate"]}} \endcode
+            Example: \code {"result":{"current_timer":{"action":"stop_playback","expires":1406116760.0},"supported_actions":["stop_playback","machine_shutdown","machine_sleep","machine_hibernate"]}} \endcode
         - failure: object which describes error: {code, message}<BR>
             Error codes in addition to \link #Rpc::ERROR_CODES Common errors\endlink:
                 - ::SCHEDULER_DISABLED
@@ -1335,7 +1335,7 @@ private:
 
     void onTimerStopPlayback(const boost::system::error_code& e);
     void onTimerMachineShutdown(const boost::system::error_code& e);
-    void onTimerMachineHybernate(const boost::system::error_code& e);
+    void onTimerMachineHibernate(const boost::system::error_code& e);
     void onTimerMachineSleep(const boost::system::error_code& e);
 
     bool enable_scheduler_;

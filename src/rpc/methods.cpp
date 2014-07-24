@@ -1492,12 +1492,12 @@ ResponseType Scheduler::execute(const Rpc::Value& root_request, Rpc::Value& root
             timer->timer_.async_wait( boost::bind( &Scheduler::onTimerStopPlayback, this, _1 ) );
         } else if (action == "machine_shutdown") {
             timer->timer_.async_wait( boost::bind( &Scheduler::onTimerMachineShutdown, this, _1 ) );
-        } else if (action == "machine_hybernate") {
-            if (!PowerManagement::HybernationEnabled()) {
-                throw Rpc::Exception("Schedule action failed. Reason: hybernation is disabled on this machine.", SCHEDULER_UNSUPPORTED_ACTION);
+        } else if (action == "machine_hibernate") {
+            if (!PowerManagement::HibernationEnabled()) {
+                throw Rpc::Exception("Schedule action failed. Reason: hibernation is disabled on this machine.", SCHEDULER_UNSUPPORTED_ACTION);
             }
 
-            timer->timer_.async_wait( boost::bind( &Scheduler::onTimerMachineHybernate, this, _1 ) );
+            timer->timer_.async_wait( boost::bind( &Scheduler::onTimerMachineHibernate, this, _1 ) );
         } else if (action == "machine_sleep") {
             timer->timer_.async_wait( boost::bind( &Scheduler::onTimerMachineSleep, this, _1 ) );
         } else {
@@ -1512,13 +1512,13 @@ ResponseType Scheduler::execute(const Rpc::Value& root_request, Rpc::Value& root
     Rpc::Value& supported_actions = result["supported_actions"];
     supported_actions.setSize(3);
     supported_actions[0] = "stop_playback";
-    // Assume that all machines are enable to sleep and shutdown. Check only hybernation ability.
+    // Assume that all machines are enable to sleep and shutdown. Check only hibernation ability.
     supported_actions[1] = "machine_shutdown";
     supported_actions[2] = "machine_sleep";
-    // Check if hybernation is allowed.
-    if (PowerManagement::HybernationEnabled()) {
+    // Check if hibernation is allowed.
+    if (PowerManagement::HibernationEnabled()) {
         supported_actions.setSize(supported_actions.size() + 1);
-        supported_actions[supported_actions.size() - 1] = "machine_hybernate";
+        supported_actions[supported_actions.size() - 1] = "machine_hibernate";
     }
 
     // report current timer state.
@@ -1553,10 +1553,10 @@ void Scheduler::onTimerMachineShutdown(const boost::system::error_code& e)
     }
 }
 
-void Scheduler::onTimerMachineHybernate(const boost::system::error_code& e)
+void Scheduler::onTimerMachineHibernate(const boost::system::error_code& e)
 {
     if (!e) { // Timer expired normally.
-        PowerManagement::SystemHybernate();
+        PowerManagement::SystemHibernate();
 
         timer_.reset();
     } else if (e != boost::asio::error::operation_aborted) { // "operation_aborted" error code is sent when timer is cancelled.
