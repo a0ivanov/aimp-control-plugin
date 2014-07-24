@@ -1491,6 +1491,10 @@ ResponseType Scheduler::execute(const Rpc::Value& root_request, Rpc::Value& root
         if (action == "stop_playback") {
             timer->timer_.async_wait( boost::bind( &Scheduler::onTimerStopPlayback, this, _1 ) );
         } else if (action == "machine_shutdown") {
+            if (!PowerManagement::ShutdownEnabled()) {
+                throw Rpc::Exception("Schedule action failed. Reason: shutdown is disabled on this machine.", SCHEDULER_UNSUPPORTED_ACTION);
+            }
+
             timer->timer_.async_wait( boost::bind( &Scheduler::onTimerMachineShutdown, this, _1 ) );
         } else if (action == "machine_hibernate") {
             if (!PowerManagement::HibernationEnabled()) {
@@ -1499,6 +1503,10 @@ ResponseType Scheduler::execute(const Rpc::Value& root_request, Rpc::Value& root
 
             timer->timer_.async_wait( boost::bind( &Scheduler::onTimerMachineHibernate, this, _1 ) );
         } else if (action == "machine_sleep") {
+            if (!PowerManagement::SleepEnabled()) {
+                throw Rpc::Exception("Schedule action failed. Reason: sleep mode is disabled on this machine.", SCHEDULER_UNSUPPORTED_ACTION);
+            }
+
             timer->timer_.async_wait( boost::bind( &Scheduler::onTimerMachineSleep, this, _1 ) );
         } else {
             throw Rpc::Exception("Schedule action failed. Reason: unsupported action.", SCHEDULER_UNSUPPORTED_ACTION);
@@ -1510,12 +1518,19 @@ ResponseType Scheduler::execute(const Rpc::Value& root_request, Rpc::Value& root
     Rpc::Value& result = root_response["result"];
 
     Rpc::Value& supported_actions = result["supported_actions"];
-    supported_actions.setSize(3);
+    supported_actions.setSize(1);
     supported_actions[0] = "stop_playback";
-    // Assume that all machines are enable to sleep and shutdown. Check only hibernation ability.
-    supported_actions[1] = "machine_shutdown";
-    supported_actions[2] = "machine_sleep";
-    // Check if hibernation is allowed.
+
+    if (PowerManagement::ShutdownEnabled()) {
+        supported_actions.setSize(supported_actions.size() + 1);
+        supported_actions[supported_actions.size() - 1] = "machine_shutdown";
+    }
+
+    if (PowerManagement::SleepEnabled()) {
+        supported_actions.setSize(supported_actions.size() + 1);
+        supported_actions[supported_actions.size() - 1] = "machine_sleep";
+    }
+
     if (PowerManagement::HibernationEnabled()) {
         supported_actions.setSize(supported_actions.size() + 1);
         supported_actions[supported_actions.size() - 1] = "machine_hibernate";

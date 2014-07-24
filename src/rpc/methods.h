@@ -75,7 +75,7 @@ enum ERROR_CODES {
                    REMOVE_TRACK_FAILED = 28, /*!< can't remove track from playlist. Possible reason: track was not found. */
                    REMOVE_TRACK_PHYSICAL_DELETION_DISABLED = 29, /*!< can't remove track physically. Reason: user has disabled it in plugin settings. */
                    SCHEDULER_DISABLED = 30, /*!< can't shutdown/hibernate machine or stop playback by timer. Reason: user has disabled it in plugin settings. */
-                   SCHEDULER_UNSUPPORTED_ACTION = 31 /*!< can't schedule specified action. Reason: machine does not support action(for ex, hibernation).*/
+                   SCHEDULER_UNSUPPORTED_ACTION = 31 /*!< can't schedule specified action. Reason: machine does not support action. For example, hibernation/shutdown/sleep can be disabled. */
 };
 
 using namespace AIMPPlayer;

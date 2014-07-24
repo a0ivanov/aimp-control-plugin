@@ -37,6 +37,16 @@ bool HibernationEnabled()
     return !!systemPowerCapabilities.Hiberboot;
 }
 
+bool SleepEnabled()
+{
+    return !!IsPwrSuspendAllowed(); // do not sure how to perform it using SYSTEM_POWER_CAPABILITIES.
+}
+
+bool ShutdownEnabled()
+{
+    return !!IsPwrShutdownAllowed(); // do not sure how to perform it using SYSTEM_POWER_CAPABILITIES.
+}
+
 bool GetSeShutdownNamePrivelege();
 
 bool SystemShutdown()

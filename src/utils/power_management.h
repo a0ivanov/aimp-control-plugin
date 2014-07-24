@@ -4,6 +4,8 @@ namespace PowerManagement
 {
 
 bool HibernationEnabled();
+bool SleepEnabled();
+bool ShutdownEnabled();
 bool SystemShutdown();
 bool SystemSleep();
 bool SystemHibernate();
