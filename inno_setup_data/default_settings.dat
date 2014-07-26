@@ -1,16 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <settings>
     <httpserver>
-        <!-- Examples: "localhost", "192.168.0.1", ""(to bind to all network interfaces). -->
-        <ip_to_bind>localhost</ip_to_bind>
+        <!-- Uncomment following line to start plugin on all network interfaces. -->
+        <!-- <all_interfaces port="3333" /> -->
 
-        <port>3333</port>
-
+        <!-- Per interface tuning. -->
+        <interfaces>
+            <!-- Multiple 'interface' elements are supported. -->
+            <interface>
+                <!-- MAC address of network interface. It has priority to IP address. -->
+                <!--
+                <mac>11-22-33-AB-CD-EF</mac>
+                -->
+                
+                <!-- IP address of network interface. Not recommended because IP address is changing from time to time.
+                <ip>192.168.0.100</ip>
+                -->
+                
+                <!-- Has no effect if neither MAC, nor IP addresses are specified. -->
+                <port>3333</port>
+            </interface>
+        </interfaces>
+        
         <!-- Full path to browser scripts directory. -->
         <document_root>./htdocs</document_root>
         
         <!-- Digest authentication realm. This need to be synchronized entries with .htpasswd file. -->
         <realm>AIMP Control plugin</realm>
+        
+        <!-- Uncomment this if you want to change default language of web interface or set of fields in playlist table. Detailes are at http://code.google.com/p/aimp-control-plugin/wiki/SettingsDetails.
+        <init_cookies>   
+            <cookie>language=en</cookie>   
+            <cookie>view-entry-fields=title,artist,rating</cookie>   
+        </init_cookies>
+        -->
     </httpserver>
 
     <misc>
@@ -25,6 +48,7 @@
         <enable_physical_track_deletion>false</enable_physical_track_deletion>
         
         <!-- It's recommended to use it with password protection access only.
+            Anyone is able to turn off your machine if this enabled.
         -->
         <enable_scheduler>false</enable_scheduler>
     </misc>
