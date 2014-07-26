@@ -1313,7 +1313,7 @@ private:
     
     \return object which describes:
         - success:<BR>
-            Example: \code {"result":{"current_timer":{"action":"stop_playback","expires_at":1406116760.0},"supported_actions":["stop_playback","machine_shutdown","machine_sleep","machine_hibernate"]}} \endcode
+            Example: \code {"result":{"current_timer":{"action":"stop_playback","expires_at":1406116760.0,"expires_in":10.0},"supported_actions":["stop_playback","machine_shutdown","machine_sleep","machine_hibernate"]}} \endcode
         - failure: object which describes error: {code, message}<BR>
             Error codes in addition to \link #Rpc::ERROR_CODES Common errors\endlink:
                 - ::SCHEDULER_DISABLED
