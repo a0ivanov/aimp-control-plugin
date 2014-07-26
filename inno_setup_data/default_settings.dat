@@ -28,7 +28,7 @@
         <!-- Digest authentication realm. This need to be synchronized entries with .htpasswd file. -->
         <realm>AIMP Control plugin</realm>
         
-        <!-- Uncomment this if you want to change default language of web interface or set of fields in playlist table. Detailes are at http://code.google.com/p/aimp-control-plugin/wiki/SettingsDetails.
+        <!-- Uncomment this if you want to change default language of web interface or set of fields in playlist table. Details are at http://code.google.com/p/aimp-control-plugin/wiki/SettingsDetails.
         <init_cookies>   
             <cookie>language=en</cookie>   
             <cookie>view-entry-fields=title,artist,rating</cookie>   
