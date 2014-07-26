@@ -346,7 +346,7 @@ AimpVerionSelectionMsg3=Install plugin for
 
 PluginOptionsTitle=Additional functionality
 PluginOptionsDescription=Extra features that are disabled by default.
-PluginOptionsSubDescription=Following functionality can be potentially dangerous.
+PluginOptionsSubDescription=Following functionality can be potentially dangerous. It is recommended to turn on password protected access.
 
 OptionNetworkCheckBox=Allow connecting to plugin both from local network and from internet. Service will be available on all network interfaces.
 OptionUploadTracksCheckBox=Allow track uploading.
