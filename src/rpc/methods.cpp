@@ -1484,9 +1484,17 @@ ResponseType Scheduler::execute(const Rpc::Value& root_request, Rpc::Value& root
 
     std::string action = !cancel_timer && params.isMember("action") ? static_cast<std::string>(params["action"]) : "";
     if (!action.empty()) {
-        double expiration_time = params["expiration_time"]; // required here
         std::unique_ptr<Timer> timer(new Timer(action, io_service_));
-        timer->expires_at(expiration_time);
+
+        if (params.isMember("expiration_time") && !params.isMember("expiration_delay")) {
+            double expiration_time = params["expiration_time"];
+            timer->expires_at(expiration_time);
+        } else if (params.isMember("expiration_delay") && !params.isMember("expiration_time")) {
+            double expiration_delay = params["expiration_delay"];
+            timer->timer_.expires_from_now(boost::posix_time::seconds(static_cast<long>(expiration_delay)));            
+        } else {
+            throw Rpc::Exception("Schedule action failed. Reason: expiration_time or expiration_delay is required.", WRONG_ARGUMENT);
+        }
 
         if (action == "stop_playback") {
             timer->timer_.async_wait( boost::bind( &Scheduler::onTimerStopPlayback, this, _1 ) );
@@ -1540,7 +1548,8 @@ ResponseType Scheduler::execute(const Rpc::Value& root_request, Rpc::Value& root
     if (timer_) {
         Rpc::Value& current_timer = result["current_timer"];
         current_timer["action"] = timer_->action();
-        current_timer["expires"] = timer_->expires_at();
+        current_timer["expires_at"] = timer_->expires_at();
+        current_timer["expires_in"] = timer_->expires_in();
     }
 
     return RESPONSE_IMMEDIATE;
@@ -1598,6 +1607,14 @@ void Scheduler::onTimerMachineSleep(const boost::system::error_code& e)
     }
 }
 
+Scheduler::Timer::Timer(std::string action, boost::asio::io_service& io_service) 
+    :
+    action_(action),
+    timer_(io_service),
+    creation_time_utc_(boost::posix_time::second_clock::universal_time())
+{
+}
+
 void Scheduler::Timer::expires_at(double unix_time)
 {
     boost::posix_time::ptime time = boost::posix_time::from_time_t(static_cast<time_t>(unix_time));   
@@ -1615,6 +1632,12 @@ int64_t toPosix64(const boost::posix_time::ptime& pt)
 double Scheduler::Timer::expires_at() const
 { 
     return static_cast<double>( toPosix64(timer_.expires_at()) );
+}
+
+double Scheduler::Timer::expires_in() const
+{ 
+    boost::posix_time::time_duration diff(timer_.expires_at() - creation_time_utc_);
+    return static_cast<double>(diff.total_seconds());
 }
 
 } // namespace AimpRpcMethods

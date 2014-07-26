@@ -1307,12 +1307,13 @@ private:
         - machine_hibernate. If supported by machine.
         - stop_playback
 
-    \param expiration_time - double, required if action param is specified. Unix epoch time in seconds, UTC.
+    \param expiration_time - double, required if action param is specified. Mutually exclusive to expiration_delay. Unix epoch time in seconds, UTC.
+    \param expiration_delay - double, required if action param is specified. Mutually exclusive to expiration_time. Delay in seconds.
     \param cancel - any type, optional. Cancels current active timer. If specified all other params are ignored. Value is not used.
     
     \return object which describes:
         - success:<BR>
-            Example: \code {"result":{"current_timer":{"action":"stop_playback","expires":1406116760.0},"supported_actions":["stop_playback","machine_shutdown","machine_sleep","machine_hibernate"]}} \endcode
+            Example: \code {"result":{"current_timer":{"action":"stop_playback","expires_at":1406116760.0},"supported_actions":["stop_playback","machine_shutdown","machine_sleep","machine_hibernate"]}} \endcode
         - failure: object which describes error: {code, message}<BR>
             Error codes in addition to \link #Rpc::ERROR_CODES Common errors\endlink:
                 - ::SCHEDULER_DISABLED
@@ -1343,17 +1344,15 @@ private:
 
     class Timer {
         std::string action_;
-
+        boost::posix_time::ptime creation_time_utc_;
     public:
         boost::asio::deadline_timer timer_;
 
-        Timer(std::string action, boost::asio::io_service& io_service) 
-         : action_(action),
-           timer_(io_service)
-        {}
+        Timer(std::string action, boost::asio::io_service& io_service);
 
         void expires_at(double unix_time);
         double expires_at() const;
+        double expires_in() const;
 
         std::string action() { return action_; }
     };
