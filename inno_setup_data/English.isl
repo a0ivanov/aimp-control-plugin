@@ -351,6 +351,7 @@ PluginOptionsSubDescription=Following functionality can be potentially dangerous
 OptionNetworkCheckBox=Allow connecting to plugin both from local network and from internet. Service will be available on all network interfaces.
 OptionUploadTracksCheckBox=Allow track uploading.
 OptionPhysicalTrackDeletionCheckBox=Allow physical track deletion from disk.
+OptionSchedulerCheckBox=Enable scheduler.
 
 AimpApplicationTerminateQuery=It is necessary to close AIMP player for succeed plugin installation. Close now?
 

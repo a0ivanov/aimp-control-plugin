@@ -323,6 +323,7 @@ PluginOptionsSubDescription=Использование данных возможностей представляет потен
 OptionNetworkCheckBox=Разрешить подключение к плагину как из локальной сети, так и из интернета. Сервис плагина будет доступен на всех сетевых интерфейсах.
 OptionUploadTracksCheckBox=Разрешить загрузку треков в плеер.
 OptionPhysicalTrackDeletionCheckBox=Разрешить удаление треков с диска.
+OptionSchedulerCheckBox=Включить планировщик.
 
 AimpApplicationTerminateQuery=Для успешной установки необходимо закрыть AIMP. Закрыть сейчас?
 

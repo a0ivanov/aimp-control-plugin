@@ -72,6 +72,7 @@ var
   AllowNetworkAccess: Boolean;
   AllowFilesUpload: Boolean;
   AllowFilesDeletion: Boolean;
+  EnableScheduler: Boolean;
   SettingsFileDestination: String;
   Port: Integer;
 
@@ -111,6 +112,7 @@ begin
   PluginOptionsPage.Add(ExpandConstant('{cm:OptionNetworkCheckBox}'));
   PluginOptionsPage.Add(ExpandConstant('{cm:OptionUploadTracksCheckBox}'));
   PluginOptionsPage.Add(ExpandConstant('{cm:OptionPhysicalTrackDeletionCheckBox}'));
+  PluginOptionsPage.Add(ExpandConstant('{cm:OptionSchedulerCheckBox}'));
   
   AfterInstallPage := CreateOutputMsgMemoPage(wpInfoAfter,
    SetupMessage(msgWizardInfoAfter),
@@ -146,6 +148,7 @@ begin
      AllowNetworkAccess := PluginOptionsPage.Values[0];
      AllowFilesUpload := PluginOptionsPage.Values[1];
      AllowFilesDeletion := PluginOptionsPage.Values[2];
+     EnableScheduler := PluginOptionsPage.Values[3];
      AfterInstallPage.RichEditViewer.RTFText := GetInfoAfterMemoText();
      end
 end;
@@ -238,11 +241,16 @@ var
   XMLDoc : Variant;       // IXMLDOMDocument
   DocRootNodes : Variant; // IXMLDOMNodeList
   DocRootNode : Variant;  // IXMLDOMNode
+  HttpServerNode : Variant;  // IXMLDOMNode
+  AllInterfacesNode : Variant;  // IXMLDOMNode
+  MiscNode : Variant;  // IXMLDOMNode
+  Nodes : Variant;        // IXMLDOMNode
+  Node : Variant;        // IXMLDOMNode
 begin
   //MsgBox('Try to load the XML file: ' + Path, mbInformation, mb_Ok);
 
   { Load the XML File }
-  XMLDoc := CreateOleObject('MSXML2.DOMDocument');
+  XMLDoc := CreateOleObject('Msxml2.DOMDocument');
   XMLDoc.async := False;
   XMLDoc.resolveExternals := False;
   XMLDoc.setProperty('SelectionLanguage', 'XPath');
@@ -258,15 +266,70 @@ begin
   DocRootNode := DocRootNodes.item(0);
   DocRootNode.Text := GetBrowserScriptsDir('');
 
+  Nodes := XMLDoc.selectNodes('//httpserver/port');
+  if (Nodes.length > 0) then
+    Port := Nodes.item(0).Text;
+
+  HttpServerNode := XMLDoc.selectNodes('//httpserver').item(0);
   if (AllowNetworkAccess) then
-    XMLDoc.selectNodes('//httpserver/ip_to_bind').item(0).Text := '';
-
-  // No checking to allow rewriting of the existing values.
-  XMLDoc.selectNodes('//misc/enable_track_upload').item(0).Text := BooleanToString(AllowFilesUpload);     
-  XMLDoc.selectNodes('//misc/enable_physical_track_deletion').item(0).Text := BooleanToString(AllowFilesDeletion);
-
-  Port := XMLDoc.selectNodes('//httpserver/port').item(0).Text;
+    begin
+    Nodes := XMLDoc.selectNodes('//httpserver/ip_to_bind');
+    if (Nodes.length > 0) then
+       HttpServerNode.removeChild(Nodes.item(0));
+       
+    Nodes := XMLDoc.selectNodes('//httpserver/port');
+    if (Nodes.length > 0) then
+       HttpServerNode.removeChild(Nodes.item(0));
+    
+    Nodes := XMLDoc.selectNodes('//httpserver/all_interfaces');
+    if (Nodes.length > 0) then
+      begin
+      AllInterfacesNode := Nodes.item(0);
+      Port := AllInterfacesNode.getAttribute('port');
+      end
+    else
+      begin
+      AllInterfacesNode := XMLDoc.createElement('all_interfaces')
+      AllInterfacesNode.setAttribute('port', IntToStr(Port));
+      HttpServerNode.appendChild(AllInterfacesNode);
+      end;
+    end;
   
+  MiscNode := XMLDoc.selectNodes('//misc').item(0);
+  
+  Nodes := XMLDoc.selectNodes('//misc/enable_track_upload');
+  if (Nodes.length > 0) then
+    Node := Nodes.item(0)
+  else
+    begin
+    Node := XMLDoc.createElement('enable_track_upload');
+    MiscNode.appendChild(Node);
+    Node := XMLDoc.selectNodes('//misc/enable_track_upload').item(0);
+    end;
+  Node.Text := BooleanToString(AllowFilesDeletion);
+    
+  Nodes := XMLDoc.selectNodes('//misc/enable_physical_track_deletion');
+  if (Nodes.length > 0) then
+    Node := Nodes.item(0)
+  else
+    begin
+    Node := XMLDoc.createElement('enable_physical_track_deletion');
+    MiscNode.appendChild(Node);
+    Node := XMLDoc.selectNodes('//misc/enable_physical_track_deletion').item(0);
+    end;
+  Node.Text := BooleanToString(AllowFilesDeletion);
+      
+  Nodes := XMLDoc.selectNodes('//misc/enable_scheduler');
+  if (Nodes.length > 0) then
+    Node := Nodes.item(0)
+  else
+    begin
+    Node := XMLDoc.createElement('enable_scheduler');
+    MiscNode.appendChild(Node);
+    Node := XMLDoc.selectNodes('//misc/enable_scheduler').item(0);
+    end;
+  Node.Text := BooleanToString(EnableScheduler);
+    
   { Save the XML document }
   XMLDoc.Save(Path);
   //MsgBox('Saved the modified XML as ''' + Path + '''.', mbInformation, mb_Ok);
