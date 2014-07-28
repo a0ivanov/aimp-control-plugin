@@ -838,7 +838,7 @@ void AIMPManager30::setStatus(AIMPManager::STATUS status, AIMPManager::StatusVal
     case STATUS_EQ_SLDR17:
     case STATUS_EQ_SLDR18: {
         msg = AIMP_MSG_PROPERTY_EQUALIZER_BAND;
-        const int param1 = MAKELONG(status - STATUS_EQ_SLDR01, AIMP_MSG_PROPVALUE_SET);
+        const int param1 = MAKELONG(AIMP_MSG_PROPVALUE_SET, status - STATUS_EQ_SLDR01);
         float value = status_value / 100.f * 30.f - 15.f;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
@@ -1078,7 +1078,7 @@ AIMPManager30::StatusValue AIMPManager30::getStatus(AIMPManager30::STATUS status
     case STATUS_EQ_SLDR17:
     case STATUS_EQ_SLDR18: {
         msg = AIMP_MSG_PROPERTY_EQUALIZER_BAND;
-        const int param1 = MAKELONG(status - STATUS_EQ_SLDR01, AIMP_MSG_PROPVALUE_GET);
+        const int param1 = MAKELONG(AIMP_MSG_PROPVALUE_GET, status - STATUS_EQ_SLDR01);
         float value;
         r = aimp3_core_unit_->MessageSend(msg, param1, &value);
         if (S_OK == r) {
