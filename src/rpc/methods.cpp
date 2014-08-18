@@ -1610,8 +1610,7 @@ void Scheduler::onTimerMachineSleep(const boost::system::error_code& e)
 Scheduler::Timer::Timer(std::string action, boost::asio::io_service& io_service) 
     :
     action_(action),
-    timer_(io_service),
-    creation_time_utc_(boost::posix_time::second_clock::universal_time())
+    timer_(io_service)
 {
 }
 
@@ -1636,7 +1635,7 @@ double Scheduler::Timer::expires_at() const
 
 double Scheduler::Timer::expires_in() const
 { 
-    boost::posix_time::time_duration diff(timer_.expires_at() - creation_time_utc_);
+    boost::posix_time::time_duration diff(timer_.expires_at() - boost::posix_time::second_clock::universal_time());
     return static_cast<double>(diff.total_seconds());
 }
 

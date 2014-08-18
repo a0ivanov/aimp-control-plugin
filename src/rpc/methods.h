@@ -1344,7 +1344,6 @@ private:
 
     class Timer {
         std::string action_;
-        boost::posix_time::ptime creation_time_utc_;
     public:
         boost::asio::deadline_timer timer_;
 
