@@ -325,6 +325,12 @@ OptionUploadTracksCheckBox=Разрешить загрузку треков в плеер.
 OptionPhysicalTrackDeletionCheckBox=Разрешить удаление треков с диска.
 OptionSchedulerCheckBox=Включить планировщик.
 
+SettingsManagerInstallationTitle=Менеджер настроек
+SettingsManagerInstallationDescription=Требуется установка .Net Framework.
+SettingsManagerInstallationSubDescription=Для того, чтобы использовать Менеджер настроек, пожалуйста, скачайте и установите .Net Framework 4.0. 
+SettingsManagerInstallationMessage=Скачать установщик .Net 4.0 Framework: http://www.microsoft.com/ru-RU/download/details.aspx?id=17851
+
+
 AimpApplicationTerminateQuery=Для успешной установки необходимо закрыть AIMP. Закрыть сейчас?
 
 DonatePageTitle=Пожертвование

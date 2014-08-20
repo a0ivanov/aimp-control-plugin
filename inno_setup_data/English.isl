@@ -353,6 +353,11 @@ OptionUploadTracksCheckBox=Allow track uploading.
 OptionPhysicalTrackDeletionCheckBox=Allow physical track deletion from disk.
 OptionSchedulerCheckBox=Enable scheduler.
 
+SettingsManagerInstallationTitle=Settings manager requirements
+SettingsManagerInstallationDescription=Manual framework installation is required.
+SettingsManagerInstallationSubDescription=To be able to use Settings Manager please download and install .Net Framework 4.0 
+SettingsManagerInstallationMessage=Download .Net 4.0 Framework installer: http://www.microsoft.com/en-us/download/details.aspx?id=17851
+
 AimpApplicationTerminateQuery=It is necessary to close AIMP player for succeed plugin installation. Close now?
 
 DonatePageTitle=Donate
