@@ -329,7 +329,8 @@ SettingsManagerInstallationTitle=Менеджер настроек
 SettingsManagerInstallationDescription=Требуется установка .Net Framework.
 SettingsManagerInstallationSubDescription=Для того, чтобы использовать Менеджер настроек, пожалуйста, скачайте и установите .Net Framework 4.0. 
 SettingsManagerInstallationMessage=Скачать установщик .Net 4.0 Framework: http://www.microsoft.com/ru-RU/download/details.aspx?id=17851
-
+SettingsManager=Менеджер настроек
+SettingsManagerInfo=Рекомендуется защитить паролем доступ к плагину. Для этого удобно воспользоваться Менеджером настроек. Чтобы запустить его нажмите кнопку с шестеренкой в разделе Плагины в настройках AIMP.
 
 AimpApplicationTerminateQuery=Для успешной установки необходимо закрыть AIMP. Закрыть сейчас?
 

@@ -357,6 +357,8 @@ SettingsManagerInstallationTitle=Settings manager requirements
 SettingsManagerInstallationDescription=Manual framework installation is required.
 SettingsManagerInstallationSubDescription=To be able to use Settings Manager please download and install .Net Framework 4.0 
 SettingsManagerInstallationMessage=Download .Net 4.0 Framework installer: http://www.microsoft.com/en-us/download/details.aspx?id=17851
+SettingsManager=Settings Manager
+SettingsManagerInfo=It's recommended to protect network access to plugin by password. Use convenient Settings Manager. To launch it use gear button in Plugins section of Aimp settings.
 
 AimpApplicationTerminateQuery=It is necessary to close AIMP player for succeed plugin installation. Close now?
 

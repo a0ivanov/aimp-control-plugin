@@ -380,6 +380,7 @@ begin
   S := S + MemoDirInfo + NewLine;
   S := S + ExpandConstant('{cm:BrowserScriptsDirDestination}') + NewLine + Space + GetBrowserScriptsDir('') + NewLine;
   S := S + ExpandConstant('{cm:SettingsFileDestination}') + NewLine + Space + SettingsFileDestination + NewLine;
+  S := S + ExpandConstant('{cm:SettingsManager}') + ':' + NewLine + Space + GetSettingsManagerDir('') + '\SettingsManager.exe' + NewLine;
   Result := S;
 end;
 
@@ -572,6 +573,8 @@ begin
      end
    else
      Msg := ExpandConstant('{cm:InfoAfterPageMemoTextLocal}');
+     
+   Msg := Msg + #13#10 + #13#10 + ExpandConstant('{cm:SettingsManagerInfo}');
    Result := Msg;
 end;
 
