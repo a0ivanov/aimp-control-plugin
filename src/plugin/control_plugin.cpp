@@ -491,8 +491,8 @@ HRESULT AIMPControlPlugin::ShowSettingsDialog(HWND AParentWindow)
     si.cb = sizeof(si);
     PROCESS_INFORMATION pi = { 0 };
 
-    std::wstring settingsManagerWorkDir = L"Control Plugin";
-    std::wstring settingsManagerExecutable = L"Control Plugin\\SettingsManager.exe";
+    const std::wstring settingsManagerWorkDir = L"Control Plugin\\SettingsManager";
+    const std::wstring settingsManagerExecutable = L"Control Plugin\\SettingsManager\\SettingsManager.exe";
     BOOL success = CreateProcess(   settingsManagerExecutable.c_str(), 
                                     NULL,           // No command line
                                     NULL,           // Process handle not inheritable
