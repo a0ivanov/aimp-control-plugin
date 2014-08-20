@@ -31,6 +31,9 @@ call setup_environment.bat
              .\3rd_party\FreeImage\%FreeImage_VERSION%\Dist\FreeImage.dll || goto ERROR_HANDLER
     tools\7z a -t7z !FULLPATH_ZIP! ^
              .\3rd_party\FreeImage\%FreeImage_VERSION%\Wrapper\FreeImagePlus\dist\FreeImagePlus.dll || goto ERROR_HANDLER
+    :: add Settings Manager
+    tools\7z a -t7z !FULLPATH_ZIP! ^
+             .\%TEMP_BUILD_DIR%\SettingsManager || goto ERROR_HANDLER
 
 echo Archive created.
 exit /B
