@@ -17,7 +17,7 @@ call setup_environment.bat
              .\%CLIENT_SRC_RELEASE_DIR% || goto ERROR_HANDLER
     :: add plugin DLL
     tools\7z a -t7z !FULLPATH_ZIP! ^
-             .\%TEMP_BUILD_DIR%\aimp_control_plugin.dll || goto ERROR_HANDLER         
+             .\%TEMP_BUILD_DIR%\aimp_control.dll || goto ERROR_HANDLER         
     :: add default settings.dat
     copy /Y .\inno_setup_data\default_settings.dat .\%TEMP_BUILD_DIR%\settings.dat || goto ERROR_HANDLER 
     tools\7z a -t7z !FULLPATH_ZIP! ^

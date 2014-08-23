@@ -10,7 +10,7 @@ call setup_environment.bat
 :UPDATE_PLUGIN_DLL_ATTRIBUTES
     echo Updating plugin DLL attributes...
     set /p PROJECT_VERSION= < %PROJECT_VERSION_FILE% || set PROJECT_VERSION=unknown_version
-    call tools\plugin_dll_attributes_update.bat %TEMP_BUILD_DIR%\aimp_control_plugin.dll !PROJECT_VERSION! || goto ERROR_HANDLER
+    call tools\plugin_dll_attributes_update.bat %TEMP_BUILD_DIR%\aimp_control.dll !PROJECT_VERSION! || goto ERROR_HANDLER
 
 :SAVE_DEBUG_SYMBOLS
     call tools\save_debug_symbols.bat || goto ERROR_HANDLER

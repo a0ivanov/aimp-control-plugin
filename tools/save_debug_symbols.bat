@@ -16,7 +16,7 @@ set PATH_TO_BUILD_PDB=temp_build\Release\vs
                       /DieOnError || goto ERROR_HANDLER
 
     :: check that our PDB was updated with 
-    ::pdbstr -r -p:temp_build\Release\vs\aimp_control_plugin.pdb -s:srcsrv
+    ::pdbstr -r -p:temp_build\Release\vs\aimp_control.pdb -s:srcsrv
 
 :SAVE_BUILD_SYMBOLS_IN_SYMSTORE
     echo Saving build symbols in symbol store...
@@ -25,7 +25,7 @@ set PATH_TO_BUILD_PDB=temp_build\Release\vs
     symstore add /r /f %PATH_TO_BUILD_PDB%\*.pdb ^
              /s %SYMBOL_STORE% ^
              /v "Build %BUILD_VERSION%" ^
-             /t aimp_control_plugin || goto ERROR_HANDLER
+             /t aimp_control || goto ERROR_HANDLER
  
 exit /B
 

@@ -45,7 +45,7 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)..\temp_build\$(Configuration)\vs\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\temp_build\$(Configuration)\vs\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectName)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">aimp_control</TargetName>
     <SourcePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(VCInstallDir)crt\src;$(BOOST_DIR)\libs\log\src</SourcePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(VCInstallDir)include;$(WindowsSdkDir)include;$(WindowsSDK_IncludePath)</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(VCInstallDir)lib;$(WindowsSdkDir)lib;$(WindowsSDK_LibraryPath_x86)</LibraryPath>
@@ -54,6 +54,7 @@
     <IncludePath>$(VCInstallDir)include;$(WindowsSdkDir)include;$(WindowsSDK_IncludePath)</IncludePath>
     <LibraryPath>$(VCInstallDir)lib;$(WindowsSdkDir)lib;$(WindowsSDK_LibraryPath_x86)</LibraryPath>
     <SourcePath>$(VCInstallDir)crt\src;$(BOOST_DIR)\libs\log\src</SourcePath>
+    <TargetName>aimp_control</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PreBuildEvent>
@@ -194,6 +195,26 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\aimp\aimp2_sdk.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\aimp3_60_sdk.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiActions.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiAlbumArt.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiCore.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiDecoders.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiFileManager.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiInternet.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiMenu.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiMessages.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiMUI.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiObjects.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiOptions.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiPlayer.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiPlaylists.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiPlugin.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiRemote.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiScheduler.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiSkins.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiThreading.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiVisuals.h" />
     <ClInclude Include="..\src\aimp\aimp3_sdk\aimp3_sdk.h" />
     <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKAddons.h" />
     <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKCommon.h" />
@@ -208,6 +229,7 @@
     <ClInclude Include="..\src\aimp\manager2.6.h" />
     <ClInclude Include="..\src\aimp\manager3.0.h" />
     <ClInclude Include="..\src\aimp\manager3.1.h" />
+    <ClInclude Include="..\src\aimp\manager3.6.h" />
     <ClInclude Include="..\src\aimp\manager_impl_common.h" />
     <ClInclude Include="..\src\aimp\playlist.h" />
     <ClInclude Include="..\src\aimp\playlist_entry.h" />

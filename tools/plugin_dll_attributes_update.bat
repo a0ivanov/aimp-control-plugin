@@ -2,7 +2,7 @@
 :: Arguments:
 ::    <path to executable file>
 ::    <version>
-:: Example: plugin_dll_attributes_update.bat aimp_control_plugin.dll 1.0.0.1
+:: Example: plugin_dll_attributes_update.bat aimp_control.dll 1.0.0.1
 
 @echo off
 setlocal ENABLEDELAYEDEXPANSION

@@ -5,6 +5,7 @@
 #include "aimp/manager2.6.h"
 #include "aimp/manager3.0.h"
 #include "aimp/manager3.1.h"
+#include "aimp/manager3.6.h"
 #include "logger.h"
 #include "settings.h"
 #include "rpc/methods.h"
@@ -32,6 +33,7 @@ namespace ControlPlugin
 
 AIMP2ControlPlugin* plugin2_instance = nullptr;
 AIMP3ControlPlugin* plugin3_instance = nullptr;
+AIMP36ControlPlugin* plugin36_instance = nullptr;
 AIMPControlPlugin* plugin_instance = nullptr;
 
 } // namespace ControlPlugin
@@ -58,6 +60,17 @@ BOOL WINAPI AIMP_QueryAddon3(AIMP3SDK::IAIMPAddonPlugin** newAddon)
     plugin3_instance->AddRef();
     *newAddon = plugin3_instance;
     return TRUE;
+}
+
+HRESULT WINAPI AIMPPluginGetHeader(AIMP36SDK::IAIMPPlugin** Header)
+{
+    using ControlPlugin::plugin36_instance;
+    if (!plugin36_instance) {
+        plugin36_instance = new ControlPlugin::AIMP36ControlPlugin();
+    }
+    plugin36_instance->AddRef();
+    *Header = plugin36_instance;
+    return S_OK;
 }
 
 namespace {
@@ -333,6 +346,34 @@ HRESULT AIMPControlPlugin::Initialize(AIMP3SDK::IAIMPCoreUnit* ACoreUnit)
 {
     aimp3_core_unit_.reset(ACoreUnit);
     return initialize();
+}
+
+HRESULT AIMPControlPlugin::Initialize(AIMP36SDK::IAIMPCore* Core)
+{
+    aimp36_core_.reset(Core);
+    return initialize();
+}
+
+PWCHAR AIMPControlPlugin::InfoGet(int index)
+{
+    using namespace AIMP36SDK;
+
+    switch (index) {
+    case AIMP_PLUGIN_INFO_NAME:
+        return const_cast<const PWCHAR>( AIMPControlPlugin::kPLUGIN_SHORT_NAME.c_str() ); // const cast is safe here since AIMP does not try to modify these data.
+    case AIMP_PLUGIN_INFO_AUTHOR:
+        return const_cast<PWCHAR>( AIMPControlPlugin::kPLUGIN_AUTHOR.c_str() ); // const cast is safe here since AIMP does not try to modify these data.
+    case AIMP_PLUGIN_INFO_SHORT_DESCRIPTION:
+        return const_cast<PWCHAR>( AIMPControlPlugin::kPLUGIN_INFO.c_str() ); // const cast is safe here since AIMP does not try to modify these data.
+    case AIMP_PLUGIN_INFO_FULL_DESCRIPTION:
+        return L"Some AIMP_PLUGIN_INFO_FULL_DESCRIPTION";
+    }
+    return nullptr;
+}
+
+void AIMPControlPlugin::SystemNotification(int NotifyID, IUnknown* Data) {
+    ///!!! TODO implement.
+    BOOST_LOG_SEV(logger(), debug) << "SystemNotification(): NotifyID = " << NotifyID << ", Data = " << (void*)Data;
 }
 
 int getAIMPVersion(AIMP3SDK::IAIMPCoreUnit* aimp3_core_unit)

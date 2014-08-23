@@ -62,6 +62,9 @@
     <Filter Include="src\http server\mongoose">
       <UniqueIdentifier>{b31465f2-04be-4ff3-a620-577e16c32a88}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\aimp_manager\aimp_sdk\3.60">
+      <UniqueIdentifier>{d1a4288f-8cd8-4a9a-968b-5756aa0ce6af}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\stdafx.cpp">
@@ -425,6 +428,69 @@
     </ClInclude>
     <ClInclude Include="..\src\utils\power_management.h">
       <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\aimp3_60_sdk.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiActions.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiAlbumArt.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiCore.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiDecoders.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiFileManager.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiInternet.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiMenu.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiMessages.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiMUI.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiObjects.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiOptions.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiPlayer.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiPlaylists.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiPlugin.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiRemote.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiScheduler.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiSkins.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiThreading.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiVisuals.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\manager3.6.h">
+      <Filter>src\aimp_manager</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

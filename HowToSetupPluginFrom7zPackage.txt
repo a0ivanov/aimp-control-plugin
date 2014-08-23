@@ -1,6 +1,6 @@
 How to install plugin:
 
-1) Put aimp_control_plugin.dll in AIMP player's "Plugins" directory.
+1) Put aimp_control.dll in AIMP player's "Plugins" directory.
 2) Put 'htdocs' directory to path which is writeable for AIMP. Do not put it in Program Files dir.
     This is required for album cover support. If you do not need it put it in any folder.
 3) Create plugin settings.dat file.

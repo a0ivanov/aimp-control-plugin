@@ -4,6 +4,7 @@
 
 #include "aimp/aimp2_sdk.h"
 #include "aimp/aimp3_sdk/aimp3_sdk.h"
+#include "aimp/aimp3.60_sdk/aimp3_60_sdk.h"
 #include "settings.h"
 #include "logger.h"
 #include "utils/iunknown_impl.h"
@@ -35,10 +36,23 @@ public:
     ~AIMPControlPlugin();
 
     void Initialize(AIMP2SDK::IAIMP2Controller* AController);
+
+    // API 3.0
     HRESULT Initialize(AIMP3SDK::IAIMPCoreUnit* ACoreUnit);
     HRESULT Finalize();
     HRESULT ShowSettingsDialog(HWND AParentWindow);
     
+    // API 3.60 begin
+    HRESULT Initialize(AIMP36SDK::IAIMPCore* Core);
+    
+    PWCHAR InfoGet(int index);
+
+    DWORD InfoGetCategories() 
+        { return AIMP36SDK::AIMP_PLUGIN_CATEGORY_ADDONS; }
+
+    void SystemNotification(int notifyID, IUnknown* data);
+    // API 3.60 end
+
     // Objects returned by following functions are valid between Initialize and Finalize() methods calls.
     //! Returns global reference to plugin logger object.(Singleton pattern)
     static PluginLogger::LogManager& getLogManager();
@@ -139,6 +153,8 @@ private:
     */
     boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_core_unit_;
 
+    boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_core_;
+
     boost::shared_ptr<AIMPPlayer::AIMPManager> aimp_manager_; //!< AIMP player manager.
 
     boost::filesystem::wpath plugin_work_directory_; //!< path to plugin work directory. It is initialized in getPluginWorkDirectoryPathInAimpPluginsDirectory() function.
@@ -226,6 +242,35 @@ public:
         return plugin.ShowSettingsDialog(AParentWindow);
     }
     //@}
+
+private:
+
+    AIMPControlPlugin plugin;
+};
+
+
+class AIMP36ControlPlugin : public IUnknownInterfaceImpl<AIMP36SDK::IAIMPPlugin>
+{
+public:
+
+		// Information about the plugin
+        virtual PWCHAR WINAPI InfoGet(int Index) {
+            return plugin.InfoGet(Index);
+        }
+        virtual DWORD WINAPI InfoGetCategories() {
+            return plugin.InfoGetCategories();
+        }
+		// Initialization / Finalization
+        virtual HRESULT WINAPI Initialize(AIMP36SDK::IAIMPCore* Core) {
+            return plugin.Initialize(Core);
+        }
+		virtual HRESULT WINAPI Finalize() {
+            return plugin.Finalize();
+        }
+		// System Notifications
+        virtual void WINAPI SystemNotification(int NotifyID, IUnknown* Data) {
+            plugin.SystemNotification(NotifyID, Data);
+        }
 
 private:
 
