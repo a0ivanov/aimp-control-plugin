@@ -208,9 +208,70 @@ void AIMPManager36::playlistActivated(AIMP36SDK::IAIMPPlaylist* /*playlist*/)
     BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::playlistActivated"; ///!!! TODO: implement
 }
 
-void AIMPManager36::playlistAdded(AIMP36SDK::IAIMPPlaylist* /*playlist*/)
+template<>
+PlaylistID cast(IAIMPPlaylist* playlist)
 {
-    BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::playlistAdded"; ///!!! TODO: implement
+    return reinterpret_cast<PlaylistID>(playlist);
+}
+
+template<>
+IAIMPPlaylist* cast(PlaylistID id)
+{
+    return reinterpret_cast<IAIMPPlaylist*>(id);
+}
+
+void AIMPManager36::playlistAdded(IAIMPPlaylist* playlist)
+{
+    try {
+        BOOST_LOG_SEV(logger(), debug) << "onStorageAdded: id = " << cast<PlaylistID>(playlist);
+        int playlist_index = getPlaylistIndexByHandle(playlist);
+        playlist_index = playlist_index;
+        ///!!!loadPlaylist(playlist, playlist_index);
+        notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+    } catch (std::exception& e) {
+        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << cast<PlaylistID>(playlist) << ". Reason: " << e.what();
+    } catch (...) {
+        // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
+        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with handle " << cast<PlaylistID>(playlist);
+    }
+}
+
+int AIMPManager36::getPlaylistIndexByHandle(IAIMPPlaylist* playlist)
+{
+    for (int i = 0, count = aimpServicePlaylistManager_->GetLoadedPlaylistCount(); i != count; ++i) {
+        IAIMPPlaylist* current_playlist;
+        HRESULT r = aimpServicePlaylistManager_->GetLoadedPlaylist(i, &current_playlist);
+        if (S_OK != r) {
+            throw std::runtime_error(MakeString() << "GetLoadedPlaylist failure: " << r);
+        }
+        current_playlist->Release();
+        
+        if (playlist == current_playlist) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+void AIMPManager36::notifyAllExternalListeners(AIMPManager::EVENTS event) const
+{
+    for (const auto& listener_pair : external_listeners_) {
+        const EventsListener& listener = listener_pair.second;
+        listener(event);
+    }
+}
+
+AIMPManager::EventsListenerID AIMPManager36::registerListener(AIMPManager::EventsListener listener)
+{
+    external_listeners_[next_listener_id_] = listener;
+    assert(next_listener_id_ != UINT32_MAX);
+    return ++next_listener_id_; // get next unique listener ID using simple increment.
+}
+
+void AIMPManager36::unRegisterListener(AIMPManager::EventsListenerID listener_id)
+{
+    external_listeners_.erase(listener_id);
 }
 
 void AIMPManager36::playlistRemoved(AIMP36SDK::IAIMPPlaylist* /*playlist*/)
@@ -377,17 +438,6 @@ PlaylistID AIMPManager36::createPlaylist(const std::wstring& /*title*/)
 void AIMPManager36::removeTrack(TrackDescription /*track_desc*/, bool /*physically*/)
 {
 	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::removeTrack"; ///!!! TODO: implement
-}
-
-AIMPManager::EventsListenerID AIMPManager36::registerListener(EventsListener /*listener*/)
-{
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::registerListener"; ///!!! TODO: implement
-    return AIMPManager::EventsListenerID();
-}
-
-void AIMPManager36::unRegisterListener(EventsListenerID /*listener_id*/)
-{
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::unRegisterListener"; ///!!! TODO: implement
 }
 
 void AIMPManager36::onTick()

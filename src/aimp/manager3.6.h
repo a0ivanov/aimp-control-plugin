@@ -214,10 +214,27 @@ private:
     void initPlaylistDB();
     void shutdownPlaylistDB();
 
+    int getPlaylistIndexByHandle(AIMP36SDK::IAIMPPlaylist* playlist);
+
+    void notifyAllExternalListeners(EVENTS event) const;
+    // types for notifications of external event listeners.
+    typedef std::map<EventsListenerID, EventsListener> EventListeners;
+    EventListeners external_listeners_; //!< map of all subscribed listeners.
+    EventsListenerID next_listener_id_; //!< unique ID describes external listener.
+
     boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_core_;
     class AIMPExtensionPlaylistManagerListener;
     boost::intrusive_ptr<AIMPExtensionPlaylistManagerListener> aimpExtensionPlaylistManagerListener_;
     boost::intrusive_ptr<AIMP36SDK::IAIMPServicePlaylistManager> aimpServicePlaylistManager_;
 };
+
+//! general tempate for convinient casting. Provide specialization for your own types.
+template<typename To, typename From> To cast(From);
+
+template<>
+PlaylistID cast(AIMP36SDK::IAIMPPlaylist* playlist);
+
+template<>
+AIMP36SDK::IAIMPPlaylist* cast(PlaylistID id);
 
 } // namespace AIMPPlayer
