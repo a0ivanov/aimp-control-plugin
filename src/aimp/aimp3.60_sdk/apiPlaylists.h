@@ -230,8 +230,8 @@ class IAIMPServicePlaylistManager: public IUnknown
     	virtual HRESULT WINAPI GetPlayablePlaylist(IAIMPPlaylist **Playlist) = 0;
 
 		// Loaded Playlists
-		virtual HRESULT WINAPI GetLoadedPlaylist(int Index, IAIMPPlaylist* Playlist) = 0;
-		virtual HRESULT WINAPI GetLoadedPlaylistByName(IAIMPString* Name, IAIMPPlaylist* Playlist) = 0;
+		virtual HRESULT WINAPI GetLoadedPlaylist(int Index, IAIMPPlaylist** Playlist) = 0;
+		virtual HRESULT WINAPI GetLoadedPlaylistByName(IAIMPString* Name, IAIMPPlaylist** Playlist) = 0;
 		virtual int WINAPI GetLoadedPlaylistCount() = 0;
 };
 
