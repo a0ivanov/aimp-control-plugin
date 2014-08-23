@@ -213,8 +213,10 @@ private:
     void initializeAIMPObjects();
     void initPlaylistDB();
     void shutdownPlaylistDB();
-
+    
+    // Returns -1 if handle not found in playlists list.
     int getPlaylistIndexByHandle(AIMP36SDK::IAIMPPlaylist* playlist);
+    void loadPlaylist(AIMP36SDK::IAIMPPlaylist* playlist, int playlist_index);
 
     void notifyAllExternalListeners(EVENTS event) const;
     // types for notifications of external event listeners.
@@ -223,9 +225,10 @@ private:
     EventsListenerID next_listener_id_; //!< unique ID describes external listener.
 
     boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_core_;
-    class AIMPExtensionPlaylistManagerListener;
-    boost::intrusive_ptr<AIMPExtensionPlaylistManagerListener> aimpExtensionPlaylistManagerListener_;
-    boost::intrusive_ptr<AIMP36SDK::IAIMPServicePlaylistManager> aimpServicePlaylistManager_;
+    boost::intrusive_ptr<AIMP36SDK::IAIMPServicePlaylistManager> aimp_service_playlist_manager_;
+
+    typedef std::map<PlaylistID, PlaylistCRC32> PlaylistCRC32List;
+    mutable PlaylistCRC32List playlist_crc32_list_;
 };
 
 //! general tempate for convinient casting. Provide specialization for your own types.

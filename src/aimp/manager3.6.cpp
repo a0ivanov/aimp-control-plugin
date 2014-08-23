@@ -19,7 +19,7 @@ namespace AIMPPlayer
 using namespace Utilities;
 using namespace AIMP36SDK;
 
-class AIMPManager36::AIMPExtensionPlaylistManagerListener : public IUnknownInterfaceImpl<AIMP36SDK::IAIMPExtensionPlaylistManagerListener>
+class AIMPExtensionPlaylistManagerListener : public IUnknownInterfaceImpl<AIMP36SDK::IAIMPExtensionPlaylistManagerListener>
 {
 public:
     explicit AIMPExtensionPlaylistManagerListener(AIMPManager36* aimp36_manager)
@@ -69,10 +69,8 @@ AIMPManager36::AIMPManager36(boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_c
 
         initPlaylistDB();
 
-        
         // register listeners here
-        aimpExtensionPlaylistManagerListener_.reset( new AIMPExtensionPlaylistManagerListener(this) );
-        HRESULT r = aimp36_core->RegisterExtension(IID_IAIMPServicePlaylistManager, aimpExtensionPlaylistManagerListener_.get());
+        HRESULT r = aimp36_core->RegisterExtension(IID_IAIMPServicePlaylistManager, new AIMPExtensionPlaylistManagerListener(this));
         if (S_OK != r) {
             throw std::runtime_error("RegisterExtension(IID_IAIMPServicePlaylistManager) failed"); 
         }
@@ -83,6 +81,11 @@ AIMPManager36::AIMPManager36(boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_c
 
 AIMPManager36::~AIMPManager36()
 {
+    // It seems listeners will be released by AIMP before Finalize call.
+
+    aimp_service_playlist_manager_.reset();
+
+    shutdownPlaylistDB();
 }
 
 void AIMPManager36::initializeAIMPObjects()
@@ -95,7 +98,7 @@ void AIMPManager36::initializeAIMPObjects()
     {
         throw std::runtime_error("Creation object IAIMPServicePlaylistManager failed"); 
     }
-    aimpServicePlaylistManager_.reset(playlist_manager);
+    aimp_service_playlist_manager_.reset(playlist_manager);
     playlist_manager->Release();
 
     /*
@@ -226,7 +229,7 @@ void AIMPManager36::playlistAdded(IAIMPPlaylist* playlist)
         BOOST_LOG_SEV(logger(), debug) << "onStorageAdded: id = " << cast<PlaylistID>(playlist);
         int playlist_index = getPlaylistIndexByHandle(playlist);
         playlist_index = playlist_index;
-        ///!!!loadPlaylist(playlist, playlist_index);
+        loadPlaylist(playlist, playlist_index);
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     } catch (std::exception& e) {
         BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << cast<PlaylistID>(playlist) << ". Reason: " << e.what();
@@ -236,11 +239,89 @@ void AIMPManager36::playlistAdded(IAIMPPlaylist* playlist)
     }
 }
 
+void AIMPManager36::loadPlaylist(IAIMPPlaylist* /*playlist*/, int /*playlist_index*/)
+{
+    /* ///!!!
+    const PlaylistID playlist_id = cast<PlaylistID>(playlist);
+
+    { // handle crc32.
+    auto it = playlist_crc32_list_.find(playlist_id);
+    if (it == playlist_crc32_list_.end()) {
+        it = playlist_crc32_list_.insert(std::make_pair(playlist_id,
+                                                        PlaylistCRC32(playlist_id, playlists_db_)
+                                                        )
+                                         ).first;
+    }
+    it->second.reset_properties();
+    }
+
+    const char * const error_prefix = "Error occured while extracting playlist data: ";
+      
+    HRESULT r;
+    INT64 duration;
+    r = aimp3_playlist_manager_->StoragePropertyGetValue( handle, AIMP_PLAYLIST_STORAGE_PROPERTY_DURATION, &duration, sizeof(duration) );
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << error_prefix << "IAIMPAddonsPlaylistManager::StoragePropertyGetValue(AIMP_PLAYLIST_STORAGE_PROPERTY_DURATION) failed. Result " << r);
+    }
+
+    INT64 size;
+    r = aimp3_playlist_manager_->StoragePropertyGetValue( handle, AIMP_PLAYLIST_STORAGE_PROPERTY_SIZE, &size, sizeof(size) );
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << error_prefix << "IAIMPAddonsPlaylistManager::StoragePropertyGetValue(AIMP_PLAYLIST_STORAGE_PROPERTY_SIZE) failed. Result " << r);
+    }
+
+    const size_t name_length = 256;
+    WCHAR name[name_length + 1] = {0};
+    r = aimp3_playlist_manager_->StoragePropertyGetValue(handle, AIMP_PLAYLIST_STORAGE_PROPERTY_NAME, name, name_length);
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << error_prefix << "IAIMPAddonsPlaylistManager::StoragePropertyGetValue(AIMP_PLAYLIST_STORAGE_PROPERTY_NAME) failed. Result " << r);
+    }
+
+    const int entries_count = aimp3_playlist_manager_->StorageGetEntryCount(handle);
+
+    { // db code
+    sqlite3_stmt* stmt = createStmt(playlists_db_,
+                                    "REPLACE INTO Playlists VALUES (?,?,?,?,?,?,?)"
+                                    );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+#define bind(type, field_index, value)  rc_db = sqlite3_bind_##type(stmt, field_index, value); \
+                                        if (SQLITE_OK != rc_db) { \
+                                            const std::string msg = MakeString() << "Error sqlite3_bind_"#type << " " << rc_db; \
+                                            throw std::runtime_error(msg); \
+                                        }
+#define bindText(field_index, text, textLength) rc_db = sqlite3_bind_text16(stmt, field_index, text, textLength * sizeof(WCHAR), SQLITE_STATIC); \
+                                                if (SQLITE_OK != rc_db) { \
+                                                    const std::string msg = MakeString() << "sqlite3_bind_text16" << " " << rc_db; \
+                                                    throw std::runtime_error(msg); \
+                                                }
+
+    int rc_db;
+    bind(int,   1, playlist_id);
+    bind(int,   2, playlist_index);
+    bindText(   3, name, wcslen(name) );
+    bind(int,   4, entries_count);
+    bind(int64, 5, duration);
+    bind(int64, 6, size);
+    bind(int64, 7, kCRC32_UNINITIALIZED);
+#undef bind
+#undef bindText
+    rc_db = sqlite3_step(stmt);
+    if (SQLITE_DONE != rc_db) {
+        const std::string msg = MakeString() << "sqlite3_step() error "
+                                             << rc_db << ": " << sqlite3_errmsg(playlists_db_);
+        throw std::runtime_error(msg);
+    }
+    }
+
+    */
+}
+
 int AIMPManager36::getPlaylistIndexByHandle(IAIMPPlaylist* playlist)
 {
-    for (int i = 0, count = aimpServicePlaylistManager_->GetLoadedPlaylistCount(); i != count; ++i) {
+    for (int i = 0, count = aimp_service_playlist_manager_->GetLoadedPlaylistCount(); i != count; ++i) {
         IAIMPPlaylist* current_playlist;
-        HRESULT r = aimpServicePlaylistManager_->GetLoadedPlaylist(i, &current_playlist);
+        HRESULT r = aimp_service_playlist_manager_->GetLoadedPlaylist(i, &current_playlist);
         if (S_OK != r) {
             throw std::runtime_error(MakeString() << "GetLoadedPlaylist failure: " << r);
         }
