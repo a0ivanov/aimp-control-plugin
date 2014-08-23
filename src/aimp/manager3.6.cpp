@@ -27,7 +27,7 @@ public:
         aimp36_manager_(aimp36_manager)
     {}
 
-void WINAPI PlaylistActivated(IAIMPPlaylist* playlist) {
+    virtual void WINAPI PlaylistActivated(IAIMPPlaylist* playlist) {
         aimp36_manager_->playlistActivated(playlist);
     }
 	virtual void WINAPI PlaylistAdded(IAIMPPlaylist* playlist) {
@@ -35,6 +35,24 @@ void WINAPI PlaylistActivated(IAIMPPlaylist* playlist) {
     }
 	virtual void WINAPI PlaylistRemoved(IAIMPPlaylist* playlist) {
         aimp36_manager_->playlistRemoved(playlist);
+    }
+
+    virtual HRESULT WINAPI QueryInterface(REFIID riid, LPVOID* ppvObj) {
+        if (!ppvObj) {
+            return E_POINTER;
+        }
+
+        if (IID_IUnknown == riid) {
+            *ppvObj = this;
+            AddRef();
+            return S_OK;
+        } else if (AIMP36SDK::IID_IAIMPExtensionPlaylistManagerListener == riid) {
+            *ppvObj = this;
+            AddRef();
+            return S_OK;                
+        }
+
+        return E_NOINTERFACE;
     }
 
 private:
@@ -53,15 +71,11 @@ AIMPManager36::AIMPManager36(boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_c
 
         
         // register listeners here
-
         aimpExtensionPlaylistManagerListener_.reset( new AIMPExtensionPlaylistManagerListener(this) );
-
-        // do not addref our pointer since AIMP do this itself. aimpExtensionPlaylistManagerListener_->AddRef();
-        aimp36_core->RegisterExtension(IID_IAIMPExtensionPlaylistManagerListener, aimpExtensionPlaylistManagerListener_.get());
-
-        /*
-
-        */
+        HRESULT r = aimp36_core->RegisterExtension(IID_IAIMPServicePlaylistManager, aimpExtensionPlaylistManagerListener_.get());
+        if (S_OK != r) {
+            throw std::runtime_error("RegisterExtension(IID_IAIMPServicePlaylistManager) failed"); 
+        }
     } catch (std::runtime_error& e) {
         throw std::runtime_error( std::string("Error occured during AIMPManager36 initialization. Reason:") + e.what() );
     }
@@ -73,6 +87,17 @@ AIMPManager36::~AIMPManager36()
 
 void AIMPManager36::initializeAIMPObjects()
 {
+    IAIMPServicePlaylistManager* playlist_manager;
+    if (S_OK != aimp36_core_->QueryInterface(IID_IAIMPServicePlaylistManager,
+                                             reinterpret_cast<void**>(&playlist_manager)
+                                             ) 
+        )
+    {
+        throw std::runtime_error("Creation object IAIMPServicePlaylistManager failed"); 
+    }
+    aimpServicePlaylistManager_.reset(playlist_manager);
+    playlist_manager->Release();
+
     /*
     IAIMPAddonsPlayerManager* player_manager;
     if (S_OK != aimp3_core_unit_->QueryInterface(IID_IAIMPAddonsPlayerManager, 
@@ -84,17 +109,6 @@ void AIMPManager36::initializeAIMPObjects()
     }
     aimp3_player_manager_.reset(player_manager);
     player_manager->Release();
-
-    IAIMPAddonsPlaylistManager* playlist_manager;
-    if (S_OK != aimp3_core_unit_->QueryInterface(IID_IAIMPAddonsPlaylistManager30,
-                                                 reinterpret_cast<void**>(&playlist_manager)
-                                                 ) 
-        )
-    {
-        throw std::runtime_error("Creation object IAIMPAddonsPlaylistManager failed"); 
-    }
-    aimp3_playlist_manager_.reset(playlist_manager);
-    playlist_manager->Release();
 
     IAIMPAddonsCoverArtManager* coverart_manager;
     if (S_OK != aimp3_core_unit_->QueryInterface(IID_IAIMPAddonsCoverArtManager, 

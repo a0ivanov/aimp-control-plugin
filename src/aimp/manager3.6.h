@@ -217,6 +217,7 @@ private:
     boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_core_;
     class AIMPExtensionPlaylistManagerListener;
     boost::intrusive_ptr<AIMPExtensionPlaylistManagerListener> aimpExtensionPlaylistManagerListener_;
+    boost::intrusive_ptr<AIMP36SDK::IAIMPServicePlaylistManager> aimpServicePlaylistManager_;
 };
 
 } // namespace AIMPPlayer
