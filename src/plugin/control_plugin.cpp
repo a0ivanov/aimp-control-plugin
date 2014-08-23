@@ -371,9 +371,21 @@ PWCHAR AIMPControlPlugin::InfoGet(int index)
     return nullptr;
 }
 
-void AIMPControlPlugin::SystemNotification(int NotifyID, IUnknown* Data) {
+void AIMPControlPlugin::SystemNotification(int notifyID, IUnknown* data) {
     ///!!! TODO implement.
-    BOOST_LOG_SEV(logger(), debug) << "SystemNotification(): NotifyID = " << NotifyID << ", Data = " << (void*)Data;
+    using namespace AIMP36SDK;
+
+    switch (notifyID) {
+    case AIMP_SYSTEM_NOTIFICATION_SERVICE_ADDED:
+        BOOST_LOG_SEV(logger(), debug) << "SystemNotification(): NotifyID = AIMP_SYSTEM_NOTIFICATION_SERVICE_ADDED, Data = " << (void*)data;
+        break;
+    case AIMP_SYSTEM_NOTIFICATION_SERVICE_REMOVED:
+        BOOST_LOG_SEV(logger(), debug) << "SystemNotification(): NotifyID = AIMP_SYSTEM_NOTIFICATION_SERVICE_REMOVED, Data = " << (void*)data;
+        break;
+    default:
+        BOOST_LOG_SEV(logger(), error) << "SystemNotification(): unexpected NotifyID = " << notifyID << ", Data = " << (void*)data;
+        break;
+    }
 }
 
 int getAIMPVersion(AIMP3SDK::IAIMPCoreUnit* aimp3_core_unit)
@@ -402,6 +414,8 @@ boost::shared_ptr<AIMPPlayer::AIMPManager> AIMPControlPlugin::CreateAIMPManager(
         } else {
             result.reset( new AIMPPlayer::AIMPManager30(aimp3_core_unit_) );
         }
+    } else if (aimp36_core_) {
+        result.reset( new AIMPPlayer::AIMPManager36(aimp36_core_) );
     } else {
         assert(!"both AIMP2 and AIMP3 plugin addon objects do not exist.");
         throw std::runtime_error("both AIMP2 and AIMP3 plugin addon objects do not exist. "__FUNCTION__);

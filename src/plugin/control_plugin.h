@@ -248,8 +248,7 @@ private:
     AIMPControlPlugin plugin;
 };
 
-
-class AIMP36ControlPlugin : public IUnknownInterfaceImpl<AIMP36SDK::IAIMPPlugin>
+class AIMP36ControlPlugin : public IUnknownInterfaceImpl<AIMP36SDK::IAIMPPlugin>, public AIMP36SDK::IAIMPExternalSettingsDialog
 {
 public:
 
@@ -272,8 +271,38 @@ public:
             plugin.SystemNotification(NotifyID, Data);
         }
 
+        // AIMPExternalSettingsDialog interface
+        virtual void WINAPI Show(HWND ParentWindow) {
+            plugin.ShowSettingsDialog(ParentWindow);
+        }
+
+        virtual HRESULT WINAPI QueryInterface(REFIID riid, LPVOID* ppvObj) {
+            if (!ppvObj) {
+                return E_POINTER;
+            }
+
+            if (IID_IUnknown == riid) {
+                *ppvObj = this;
+                AddRef();
+                return S_OK;
+            } else if (AIMP36SDK::IID_IAIMPExternalSettingsDialog == riid) {
+                *ppvObj = static_cast<AIMP36SDK::IAIMPExternalSettingsDialog*>(this);
+                AddRef();
+                return S_OK;                
+            }
+
+            return E_NOINTERFACE;
+        }
+
+        virtual ULONG WINAPI AddRef(void)
+            { return Base::AddRef(); }
+
+        virtual ULONG WINAPI Release(void)
+            { return Base::Release(); }
+            
 private:
 
+    typedef IUnknownInterfaceImpl<AIMP36SDK::IAIMPPlugin> Base;
     AIMPControlPlugin plugin;
 };
 

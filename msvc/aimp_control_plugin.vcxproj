@@ -121,6 +121,7 @@
     <ClCompile Include="..\src\aimp\manager2.6.cpp" />
     <ClCompile Include="..\src\aimp\manager3.0.cpp" />
     <ClCompile Include="..\src\aimp\manager3.1.cpp" />
+    <ClCompile Include="..\src\aimp\manager3.6.cpp" />
     <ClCompile Include="..\src\aimp\playlist.cpp" />
     <ClCompile Include="..\src\aimp\playlist_entry.cpp" />
     <ClCompile Include="..\src\aimp\track_description.cpp" />

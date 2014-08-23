@@ -208,6 +208,9 @@
     <ClCompile Include="..\src\utils\power_management.cpp">
       <Filter>src\utils</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\aimp\manager3.6.cpp">
+      <Filter>src\aimp_manager</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\stdafx.h">
