@@ -92,7 +92,7 @@ class IAIMPStream: public IUnknown
 };
 
 /* IAIMPString */
-
+class IAIMPString;
 class IAIMPFileStream: public IAIMPStream
 {
 	public:
