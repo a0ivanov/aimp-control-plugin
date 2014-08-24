@@ -239,9 +239,8 @@ void AIMPManager36::playlistAdded(IAIMPPlaylist* playlist)
     }
 }
 
-void AIMPManager36::loadPlaylist(IAIMPPlaylist* /*playlist*/, int /*playlist_index*/)
+void AIMPManager36::loadPlaylist(IAIMPPlaylist* playlist, int playlist_index)
 {
-    /* ///!!!
     const PlaylistID playlist_id = cast<PlaylistID>(playlist);
 
     { // handle crc32.
@@ -256,28 +255,42 @@ void AIMPManager36::loadPlaylist(IAIMPPlaylist* /*playlist*/, int /*playlist_ind
     }
 
     const char * const error_prefix = "Error occured while extracting playlist data: ";
-      
-    HRESULT r;
+    
+    
+    IAIMPPropertyList* playlist_propertylist_tmp;
+    HRESULT r = playlist->QueryInterface(IID_IAIMPPropertyList,
+                                         reinterpret_cast<void**>(&playlist_propertylist_tmp));
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << error_prefix << "playlist->QueryInterface(IID_IAIMPPropertyList) failed. Result " << r);
+    }
+    boost::intrusive_ptr<IAIMPPropertyList> playlist_propertylist(playlist_propertylist_tmp, false);
+    playlist_propertylist_tmp = nullptr;
+
+
     INT64 duration;
-    r = aimp3_playlist_manager_->StoragePropertyGetValue( handle, AIMP_PLAYLIST_STORAGE_PROPERTY_DURATION, &duration, sizeof(duration) );
+    
+    r = playlist_propertylist->GetValueAsInt64(AIMP_PLAYLIST_PROPID_DURATION, &duration);
     if (S_OK != r) {
-        throw std::runtime_error(MakeString() << error_prefix << "IAIMPAddonsPlaylistManager::StoragePropertyGetValue(AIMP_PLAYLIST_STORAGE_PROPERTY_DURATION) failed. Result " << r);
+        throw std::runtime_error(MakeString() << error_prefix << "IAIMPPropertyList::GetValueAsInt64(AIMP_PLAYLIST_PROPID_DURATION) failed. Result " << r);
     }
 
-    INT64 size;
-    r = aimp3_playlist_manager_->StoragePropertyGetValue( handle, AIMP_PLAYLIST_STORAGE_PROPERTY_SIZE, &size, sizeof(size) );
+    INT64 size = 0; ///!!! it seems it does not supported in 3.60.
+    /*
+    r = playlist_propertylist->GetValueAsInt64(AIMP_PLAYLIST_PROPID_SIZE, &size);
     if (S_OK != r) {
-        throw std::runtime_error(MakeString() << error_prefix << "IAIMPAddonsPlaylistManager::StoragePropertyGetValue(AIMP_PLAYLIST_STORAGE_PROPERTY_SIZE) failed. Result " << r);
+        throw std::runtime_error(MakeString() << error_prefix << "IAIMPPropertyList::GetValueAsInt64(AIMP_PLAYLIST_PROPID_SIZE) failed. Result " << r);
     }
+    */
 
-    const size_t name_length = 256;
-    WCHAR name[name_length + 1] = {0};
-    r = aimp3_playlist_manager_->StoragePropertyGetValue(handle, AIMP_PLAYLIST_STORAGE_PROPERTY_NAME, name, name_length);
+    IAIMPString* name_tmp;
+    r = playlist_propertylist->GetValueAsObject(AIMP_PLAYLIST_PROPID_NAME, IID_IAIMPString, reinterpret_cast<void**>(&name_tmp));
     if (S_OK != r) {
         throw std::runtime_error(MakeString() << error_prefix << "IAIMPAddonsPlaylistManager::StoragePropertyGetValue(AIMP_PLAYLIST_STORAGE_PROPERTY_NAME) failed. Result " << r);
     }
+    boost::intrusive_ptr<IAIMPString> nameStr(name_tmp, false);
+    const WCHAR* name = nameStr->GetData();
 
-    const int entries_count = aimp3_playlist_manager_->StorageGetEntryCount(handle);
+    const int entries_count = playlist->GetItemCount();
 
     { // db code
     sqlite3_stmt* stmt = createStmt(playlists_db_,
@@ -299,7 +312,7 @@ void AIMPManager36::loadPlaylist(IAIMPPlaylist* /*playlist*/, int /*playlist_ind
     int rc_db;
     bind(int,   1, playlist_id);
     bind(int,   2, playlist_index);
-    bindText(   3, name, wcslen(name) );
+    bindText(   3, name, nameStr->GetLength());
     bind(int,   4, entries_count);
     bind(int64, 5, duration);
     bind(int64, 6, size);
@@ -313,8 +326,6 @@ void AIMPManager36::loadPlaylist(IAIMPPlaylist* /*playlist*/, int /*playlist_ind
         throw std::runtime_error(msg);
     }
     }
-
-    */
 }
 
 int AIMPManager36::getPlaylistIndexByHandle(IAIMPPlaylist* playlist)

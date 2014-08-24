@@ -204,6 +204,11 @@ public:
     virtual void playlistAdded(AIMP36SDK::IAIMPPlaylist* playlist);
 	virtual void playlistRemoved(AIMP36SDK::IAIMPPlaylist* playlist);
 
+    sqlite3* playlists_db()
+        { return playlists_db_; }
+    sqlite3* playlists_db() const
+        { return playlists_db_; }
+
 protected:
     
     sqlite3* playlists_db_;
