@@ -30,15 +30,15 @@ OutputBaseFilename=aimp_control_plugin-{#FileVerStr}-setup
 AppId={{F171581D-00CD-4E77-8982-B1B68FDCAAFA}
 AppPublisher=Alexey Ivanov
 AppCopyright=Copyright © 2014 Alexey Ivanov
-AppPublisherURL=http://code.google.com/p/aimp-control-plugin/
+AppPublisherURL=https://github.com/a0ivanov/aimp-control-plugin
 AppSupportURL=http://code.google.com/p/aimp-control-plugin/w/list
-AppUpdatesURL=http://code.google.com/p/aimp-control-plugin/downloads/list
+AppUpdatesURL=https://github.com/a0ivanov/aimp-control-plugin/releases/latest
 
 DefaultDirName={#AimpPluginsDirectoryName}
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=true
 OutputDir=temp_build\Release\distrib\
-SetupIconFile=inno_setup_data\icons\icon_aimp3_32x32.ico
+SetupIconFile=inno_setup_data\icons\aimp_control_settings_manager.ico
 Compression=lzma/ultra
 SolidCompression=true
 InternalCompressLevel=ultra
@@ -59,7 +59,7 @@ Source: "temp_build\Release\htdocs\*"; DestDir: "{code:GetBrowserScriptsDir}"; F
 Source: "inno_setup_data\default_settings.dat"; DestDir: "{code:GetPluginSettingsDir}"; DestName: "settings.dat"; Flags: onlyifdoesntexist; AfterInstall: AfterInstallSettingsFile( ExpandConstant('{code:GetPluginSettingsDir}\settings.dat') )
 Source: "3rd_party\FreeImage\{#FreeImage_VERSION}\Dist\FreeImage.dll"; DestDir: "{code:GetFreeImageDLLsDstDir}"; Flags: ignoreversion
 Source: "3rd_party\FreeImage\{#FreeImage_VERSION}\Wrapper\FreeImagePlus\dist\FreeImagePlus.dll"; DestDir: "{code:GetFreeImageDLLsDstDir}"; Flags: ignoreversion
-Source: "temp_build\Release\SettingsManager\*"; DestDir: "{code:GetSettingsManagerDir}"; Flags: ignoreversion
+Source: "temp_build\Release\SettingsManager\*"; DestDir: "{code:GetSettingsManagerDir}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 
 [Registry]
