@@ -203,6 +203,7 @@ public:
     virtual void playlistActivated(AIMP36SDK::IAIMPPlaylist* playlist);
     virtual void playlistAdded(AIMP36SDK::IAIMPPlaylist* playlist);
 	virtual void playlistRemoved(AIMP36SDK::IAIMPPlaylist* playlist);
+    virtual void playlistChanged(AIMP36SDK::IAIMPPlaylist* playlist, DWORD flags);
 
     sqlite3* playlists_db()
         { return playlists_db_; }
@@ -222,11 +223,13 @@ private:
     void deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id);
     void deletePlaylistFromPlaylistDB(PlaylistID playlist_id);
     void updatePlaylistCrcInDB(PlaylistID playlist_id, crc32_t crc32); // throws std::runtime_error
-    void subscribeForUpdates(AIMP36SDK::IAIMPPlaylist* playlist);
+    PlaylistCRC32& getPlaylistCRC32Object(PlaylistID playlist_id) const; // throws std::runtime_error
+    void subscribeForPlaylistUpdates(AIMP36SDK::IAIMPPlaylist* playlist);
 
     // Returns -1 if handle not found in playlists list.
     int getPlaylistIndexByHandle(AIMP36SDK::IAIMPPlaylist* playlist);
     void loadPlaylist(AIMP36SDK::IAIMPPlaylist* playlist, int playlist_index);
+    void loadEntries(AIMP36SDK::IAIMPPlaylist* playlist); // throws std::runtime_error
 
     void notifyAllExternalListeners(EVENTS event) const;
     // types for notifications of external event listeners.
@@ -252,5 +255,9 @@ PlaylistID cast(AIMP36SDK::IAIMPPlaylist* playlist);
 
 template<>
 AIMP36SDK::IAIMPPlaylist* cast(PlaylistID id);
+
+PlaylistEntryID castToPlaylistEntryID (AIMP36SDK::IAIMPPlaylistItem* item);
+
+AIMP36SDK::IAIMPPlaylistItem* castToPlaylistItem(PlaylistEntryID id);
 
 } // namespace AIMPPlayer

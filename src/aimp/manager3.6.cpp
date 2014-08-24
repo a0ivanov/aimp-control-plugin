@@ -31,6 +31,16 @@ IAIMPPlaylist* cast(PlaylistID id)
     return reinterpret_cast<IAIMPPlaylist*>(id);
 }
 
+PlaylistEntryID castToPlaylistEntryID (IAIMPPlaylistItem* item)
+{
+    return reinterpret_cast<PlaylistEntryID>(item);
+}
+
+IAIMPPlaylistItem* castToPlaylistItem(PlaylistEntryID id)
+{
+    return reinterpret_cast<IAIMPPlaylistItem*>(id);
+}
+
 class AIMPExtensionPlaylistManagerListener : public IUnknownInterfaceImpl<AIMP36SDK::IAIMPExtensionPlaylistManagerListener>
 {
 public:
@@ -93,7 +103,7 @@ AIMPManager36::AIMPManager36(boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_c
 
 AIMPManager36::~AIMPManager36()
 {
-    // It seems listeners will be released by AIMP before Finalize call.
+    // It seems listeners registered by RegisterExtension will be released by AIMP before Finalize call.
 
     aimp_service_playlist_manager_.reset();
 
@@ -233,7 +243,7 @@ void AIMPManager36::playlistAdded(IAIMPPlaylist* playlist)
         loadPlaylist(playlist, playlist_index);
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
 
-        subscribeForUpdates(playlist);
+        subscribeForPlaylistUpdates(playlist);
     } catch (std::exception& e) {
         BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << cast<PlaylistID>(playlist) << ". Reason: " << e.what();
     } catch (...) {
@@ -262,9 +272,91 @@ void AIMPManager36::playlistRemoved(AIMP36SDK::IAIMPPlaylist* playlist)
     }
 }
 
-void AIMPManager36::subscribeForUpdates(IAIMPPlaylist* /*playlist*/)
-{
+std::string playlist36NotifyFlagsToString(DWORD flags);
 
+void AIMPManager36::playlistChanged(AIMP36SDK::IAIMPPlaylist* playlist, DWORD flags)
+{
+    try {
+        
+        BOOST_LOG_SEV(logger(), debug) << "playlistChanged()...: id = " << cast<PlaylistID>(playlist) << ", flags = " << flags << ": " << playlist36NotifyFlagsToString(flags);
+
+        PlaylistID playlist_id = cast<PlaylistID>(playlist);
+        bool is_playlist_changed = false;
+        if (   (AIMP_PLAYLIST_NOTIFY_NAME       & flags) != 0 
+            || (AIMP_PLAYLIST_NOTIFY_FILEINFO   & flags) != 0
+            || (AIMP_PLAYLIST_NOTIFY_STATISTICS & flags) != 0 
+            )
+        {
+            BOOST_LOG_SEV(logger(), debug) << "updatePlaylist";
+            is_playlist_changed = true;
+        }
+
+        if (   (AIMP_PLAYLIST_NOTIFY_FILEINFO & flags) != 0  
+            || (AIMP_PLAYLIST_NOTIFY_CONTENT  & flags) != 0 
+            )
+        {
+            BOOST_LOG_SEV(logger(), debug) << "loadEntries";
+            loadEntries(playlist); 
+            is_playlist_changed = true;
+        }
+
+        if (is_playlist_changed) {
+            int playlist_index = getPlaylistIndexByHandle(playlist);
+            loadPlaylist(playlist, playlist_index);
+            updatePlaylistCrcInDB(playlist_id, getPlaylistCRC32(playlist_id));
+            notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+        }
+
+        BOOST_LOG_SEV(logger(), debug) << "...playlistChanged()";
+    } catch (std::exception& e) {
+        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with id " << cast<PlaylistID>(playlist) << ". Reason: " << e.what();
+    } catch (...) {
+        // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
+        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with id " << cast<PlaylistID>(playlist);
+    }
+}
+
+class AIMPPlaylistListener : public IUnknownInterfaceImpl<AIMP36SDK::IAIMPPlaylistListener>
+{
+public:
+    explicit AIMPPlaylistListener(boost::intrusive_ptr<IAIMPPlaylist> playlist, AIMPManager36* aimp36_manager)
+        : 
+        aimp36_manager_(aimp36_manager),
+        playlist_(playlist)
+    {}
+
+    virtual void WINAPI Activated() {}
+    virtual void WINAPI Changed(DWORD flags)
+        { aimp36_manager_->playlistChanged(playlist_.get(), flags); }
+    virtual void WINAPI Removed() {} // use playlistRemoved instead.
+
+    virtual HRESULT WINAPI QueryInterface(REFIID riid, LPVOID* ppvObj) {
+        if (!ppvObj) {
+            return E_POINTER;
+        }
+
+        if (IID_IUnknown == riid) {
+            *ppvObj = this;
+            AddRef();
+            return S_OK;
+        } else if (AIMP36SDK::IID_IAIMPPlaylistListener == riid) {
+            *ppvObj = this;
+            AddRef();
+            return S_OK;                
+        }
+
+        return E_NOINTERFACE;
+    }
+
+private:
+
+    boost::intrusive_ptr<IAIMPPlaylist> playlist_;
+    AIMPManager36* aimp36_manager_;
+};
+
+void AIMPManager36::subscribeForPlaylistUpdates(IAIMPPlaylist* playlist)
+{
+    playlist->ListenerAdd(new AIMPPlaylistListener(playlist, this)); ///!!! TODO: Call ListenerRemove somewhere.
 }
 
 namespace {
@@ -390,6 +482,134 @@ void AIMPManager36::loadPlaylist(IAIMPPlaylist* playlist, int playlist_index)
         throw std::runtime_error(msg);
     }
     }
+}
+
+void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
+{
+    PROFILE_EXECUTION_TIME(__FUNCTION__);
+
+    PlaylistID playlist_id = cast<PlaylistID>(playlist);
+
+    { // handle crc32.
+        try {
+            getPlaylistCRC32Object(playlist_id).reset_entries();
+        } catch (std::exception& e) {
+            throw std::runtime_error(MakeString() << "expected crc32 struct for playlist " << playlist_id << " not found in "__FUNCTION__". Reason: " << e.what());
+        }
+    }
+
+    const int entries_count = playlist->GetItemCount();
+
+    deletePlaylistEntriesFromPlaylistDB(playlist_id); // remove old entries before adding new ones.
+
+    sqlite3_stmt* stmt = createStmt(playlists_db_, "INSERT INTO PlaylistsEntries VALUES (?,?,?,?,?,?,"
+                                                                                        "?,?,?,?,?,"
+                                                                                        "?,?,?,?,?)"
+                                    );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    //BOOST_LOG_SEV(logger(), debug) << "The statement has "
+    //                               << sqlite3_bind_parameter_count(stmt)
+    //                               << " wildcards";
+
+#define bind(type, field_index, value)  rc_db = sqlite3_bind_##type(stmt, field_index, value); \
+                                        if (SQLITE_OK != rc_db) { \
+                                            const std::string msg = MakeString() << "Error sqlite3_bind_"#type << " " << rc_db; \
+                                            throw std::runtime_error(msg); \
+                                        }
+
+    int rc_db;
+    bind(int, 1, playlist_id);
+    
+    const char * const error_prefix = "Error occured while extracting playlist item data: ";
+
+    for (int item_index = 0; item_index < entries_count; ++item_index) {
+        IAIMPPlaylistItem* item_tmp;
+        HRESULT r = playlist->GetItem(item_index,
+                                      IID_IAIMPPlaylistItem,
+                                      reinterpret_cast<void**>(&item_tmp)
+                                      );
+        if (S_OK != r) {
+            throw std::runtime_error(MakeString() << error_prefix << "playlist->GetItem(IID_IAIMPPlaylistItem) failed. Result " << r);
+        }
+        boost::intrusive_ptr<IAIMPPlaylistItem> item(item_tmp, false);
+        item_tmp = nullptr;
+
+        /*
+const int AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT    = 1;
+const int AIMP_PLAYLISTITEM_PROPID_FILEINFO       = 2;
+const int AIMP_PLAYLISTITEM_PROPID_FILENAME       = 3;
+const int AIMP_PLAYLISTITEM_PROPID_GROUP          = 4;
+const int AIMP_PLAYLISTITEM_PROPID_INDEX          = 5;
+const int AIMP_PLAYLISTITEM_PROPID_MARK           = 6;
+const int AIMP_PLAYLISTITEM_PROPID_PLAYINGSWITCH  = 7;
+const int AIMP_PLAYLISTITEM_PROPID_PLAYLIST       = 8;
+const int AIMP_PLAYLISTITEM_PROPID_SELECTED       = 9;
+const int AIMP_PLAYLISTITEM_PROPID_PLAYBACKQUEUEINDEX = 10;
+        */
+
+        IAIMPPropertyList* playlist_item_propertylist_tmp;
+        r = item->QueryInterface(IID_IAIMPPropertyList,
+                                 reinterpret_cast<void**>(&playlist_item_propertylist_tmp)
+                                 );
+        if (S_OK != r) {
+            const std::string msg = MakeString() << "item->QueryInterface(IID_IAIMPPropertyList) error " 
+                                                 << r << " occured while getting entry info ¹" << item_index
+                                                 << " from playlist with ID = " << playlist_id;
+            throw std::runtime_error(msg);
+        }
+        boost::intrusive_ptr<IAIMPPropertyList> playlist_item_propertylist(playlist_item_propertylist_tmp, false);
+        playlist_item_propertylist_tmp = nullptr;
+
+        const int entry_id = castToPlaylistEntryID(item.get());
+
+        const int rating = 0; ///!!! TODO: find out how to extract rating in 3.6.
+
+
+#define bindText(field_index, info_field_name)  rc_db = sqlite3_bind_text16(stmt, field_index, info.##info_field_name##Buffer, info.##info_field_name##BufferSizeInChars * sizeof(WCHAR), SQLITE_STATIC); \
+                                                if (SQLITE_OK != rc_db) { \
+                                                    const std::string msg = MakeString() << "sqlite3_bind_text16 rc_db: " << rc_db; \
+                                                    throw std::runtime_error(msg); \
+                                                }
+
+        const int bitrate = 0;
+        const int channels = 0;
+        const int duration = 0;
+        const int64_t filesize = 0;
+        const int samplerate = 0;
+
+        { // special db code
+            // bind all values
+            
+            bind(int,    2, entry_id);
+            bind(int,    3, item_index);
+            /*
+            bindText(    4, Album);
+            bindText(    5, Artist);
+            bindText(    6, Date);
+            bindText(    7, FileName);
+            bindText(    8, Genre);
+            bindText(    9, Title);
+            */
+            bind(int,   10, bitrate);
+            bind(int,   11, channels);
+            bind(int,   12, duration);
+            bind(int64, 13, filesize);
+            bind(int,   14, rating);
+            bind(int,   15, samplerate);
+            bind(int64, 16, crc32(info));
+
+            rc_db = sqlite3_step(stmt);
+            if (SQLITE_DONE != rc_db) {
+                const std::string msg = MakeString() << "sqlite3_step() error "
+                                                     << rc_db << ": " << sqlite3_errmsg(playlists_db_);
+                throw std::runtime_error(msg);
+            }
+            sqlite3_reset(stmt);
+        }
+    }
+#undef bind
+#undef bindText
 }
 
 int AIMPManager36::getPlaylistIndexByHandle(IAIMPPlaylist* playlist)
@@ -523,10 +743,44 @@ TrackDescription AIMPManager36::getAbsoluteTrackDesc(TrackDescription /*track_de
     return TrackDescription(0,0);
 }
 
-crc32_t AIMPManager36::getPlaylistCRC32(PlaylistID /*playlist_id*/) const
+PlaylistCRC32& AIMPManager36::getPlaylistCRC32Object(PlaylistID playlist_id) const
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::getPlaylistCRC32"; ///!!! TODO: implement
-    return crc32_t();
+    auto it = playlist_crc32_list_.find(playlist_id);
+    if (it != playlist_crc32_list_.end()) {
+        return it->second;
+    }
+    throw std::runtime_error(MakeString() << "Playlist " << playlist_id << " was not found in "__FUNCTION__);
+}
+
+crc32_t AIMPManager36::getPlaylistCRC32(PlaylistID playlist_id) const
+{
+    return getPlaylistCRC32Object(playlist_id).crc32();
+}
+
+void AIMPManager36::updatePlaylistCrcInDB(PlaylistID playlist_id, crc32_t crc32)
+{
+    sqlite3_stmt* stmt = createStmt(playlists_db_,
+                                    "UPDATE Playlists SET crc32=? WHERE id=?"
+                                    );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+#define bind(type, field_index, value)  rc_db = sqlite3_bind_##type(stmt, field_index, value); \
+                                        if (SQLITE_OK != rc_db) { \
+                                            const std::string msg = MakeString() << "Error sqlite3_bind_"#type << " " << rc_db; \
+                                            throw std::runtime_error(msg); \
+                                        }
+
+    int rc_db;
+    bind(int64, 1, crc32);
+    bind(int,   2, playlist_id);
+    
+#undef bind
+    rc_db = sqlite3_step(stmt);
+    if (SQLITE_DONE != rc_db) {
+        const std::string msg = MakeString() << "sqlite3_step() error "
+                                             << rc_db << ": " << sqlite3_errmsg(playlists_db_);
+        throw std::runtime_error(msg);
+    }
 }
 
 AIMPManager::PLAYLIST_ENTRY_SOURCE_TYPE AIMPManager36::getTrackSourceType(TrackDescription /*track_desc*/) const
@@ -594,6 +848,42 @@ void AIMPManager36::removeTrack(TrackDescription /*track_desc*/, bool /*physical
 void AIMPManager36::onTick()
 {
     //BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::onTick"; ///!!! TODO: implement
+}
+
+std::string playlist36NotifyFlagsToString(DWORD flags)
+{
+#ifndef NDEBUG
+    const DWORD all_flags =   AIMP_PLAYLIST_NOTIFY_NAME     | AIMP_PLAYLIST_NOTIFY_SELECTION  | AIMP_PLAYLIST_NOTIFY_PLAYBACKCURSOR
+                            | AIMP_PLAYLIST_NOTIFY_READONLY | AIMP_PLAYLIST_NOTIFY_FOCUSINDEX | AIMP_PLAYLIST_NOTIFY_CONTENT
+                            | AIMP_PLAYLIST_NOTIFY_FILEINFO | AIMP_PLAYLIST_NOTIFY_STATISTICS | AIMP_PLAYLIST_NOTIFY_PLAYINGSWITCHS
+                            | AIMP_PLAYLIST_NOTIFY_PREIMAGE;
+    assert(flags <= all_flags);
+#endif
+
+    const DWORD flag_count = 10;
+    static const char * const strings[flag_count] = { "NAME",     "SELECTION",  "PLAYBACKCURSOR",
+                                                      "READONLY", "FOCUSINDEX", "CONTENT",
+                                                      "FILEINFO", "STATISTICS", "PLAYINGSWITCHS",
+                                                      "PREIMAGE"
+                                                     };
+    std::ostringstream os;
+    if (flags) {
+        for (DWORD f = flags, index = 0; f != 0; ++index, f >>= 1) {
+            if ( (f & 0x1) == 0x1 ) {
+                if ( os.tellp() != std::streampos(0) ) {
+                    os << '|';
+                }
+                if (index < flag_count) {
+                    os << strings[index];
+                } else {
+                    os << "out of range value";
+                }
+            }
+        }
+    } else {
+        os << "NONE";
+    }
+    return os.str();
 }
 
 } // namespace AIMPPlayer
