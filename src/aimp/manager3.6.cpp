@@ -19,6 +19,18 @@ namespace AIMPPlayer
 using namespace Utilities;
 using namespace AIMP36SDK;
 
+template<>
+PlaylistID cast(IAIMPPlaylist* playlist)
+{
+    return reinterpret_cast<PlaylistID>(playlist);
+}
+
+template<>
+IAIMPPlaylist* cast(PlaylistID id)
+{
+    return reinterpret_cast<IAIMPPlaylist*>(id);
+}
+
 class AIMPExtensionPlaylistManagerListener : public IUnknownInterfaceImpl<AIMP36SDK::IAIMPExtensionPlaylistManagerListener>
 {
 public:
@@ -208,19 +220,7 @@ void AIMPManager36::shutdownPlaylistDB()
 
 void AIMPManager36::playlistActivated(AIMP36SDK::IAIMPPlaylist* /*playlist*/)
 {
-    BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::playlistActivated"; ///!!! TODO: implement
-}
-
-template<>
-PlaylistID cast(IAIMPPlaylist* playlist)
-{
-    return reinterpret_cast<PlaylistID>(playlist);
-}
-
-template<>
-IAIMPPlaylist* cast(PlaylistID id)
-{
-    return reinterpret_cast<IAIMPPlaylist*>(id);
+    // do nothing, but if code will be added, it must not throw any exceptions, since this method called by AIMP.
 }
 
 void AIMPManager36::playlistAdded(IAIMPPlaylist* playlist)
@@ -228,7 +228,6 @@ void AIMPManager36::playlistAdded(IAIMPPlaylist* playlist)
     try {
         BOOST_LOG_SEV(logger(), debug) << "onStorageAdded: id = " << cast<PlaylistID>(playlist);
         int playlist_index = getPlaylistIndexByHandle(playlist);
-        playlist_index = playlist_index;
         loadPlaylist(playlist, playlist_index);
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     } catch (std::exception& e) {
@@ -237,6 +236,57 @@ void AIMPManager36::playlistAdded(IAIMPPlaylist* playlist)
         // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
         BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with handle " << cast<PlaylistID>(playlist);
     }
+}
+
+void AIMPManager36::playlistRemoved(AIMP36SDK::IAIMPPlaylist* playlist)
+{
+    try {
+        const int playlist_id = cast<PlaylistID>(playlist);
+        playlist_crc32_list_.erase(playlist_id);
+        deletePlaylistFromPlaylistDB(playlist_id);
+        notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+    } catch (std::exception& e) {
+        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with playlist_id " << cast<PlaylistID>(playlist) << ". Reason: " << e.what();
+    } catch (...) {
+        // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
+        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with playlist_id " << cast<PlaylistID>(playlist);
+    }
+}
+
+namespace {
+// On error it prints error reason to log only.
+void executeQuery(const std::string& query, sqlite3* db, const char* log_tag)
+{
+    char* errmsg = nullptr;
+    const int rc = sqlite3_exec(db,
+                                query.c_str(),
+                                nullptr, /* Callback function */
+                                nullptr, /* 1st argument to callback */
+                                &errmsg
+                                );
+    if (SQLITE_OK != rc) {
+        BOOST_LOG_SEV(logger(), error) << log_tag << " failed. Reason: sqlite3_exec() error "
+                                       << rc << ": " << errmsg 
+                                       << ". Query: " << query;
+        sqlite3_free(errmsg);
+    }
+}
+} // namespace
+
+void AIMPManager36::deletePlaylistFromPlaylistDB(PlaylistID playlist_id)
+{
+    deletePlaylistEntriesFromPlaylistDB(playlist_id);
+
+    const std::string query = MakeString() << "DELETE FROM Playlists WHERE id=" << playlist_id;
+
+    executeQuery(query, playlists_db_, __FUNCTION__);
+}
+
+void AIMPManager36::deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id)
+{
+    const std::string query = MakeString() << "DELETE FROM PlaylistsEntries WHERE playlist_id=" << playlist_id;
+
+    executeQuery(query, playlists_db_, __FUNCTION__);
 }
 
 void AIMPManager36::loadPlaylist(IAIMPPlaylist* playlist, int playlist_index)
@@ -364,11 +414,6 @@ AIMPManager::EventsListenerID AIMPManager36::registerListener(AIMPManager::Event
 void AIMPManager36::unRegisterListener(AIMPManager::EventsListenerID listener_id)
 {
     external_listeners_.erase(listener_id);
-}
-
-void AIMPManager36::playlistRemoved(AIMP36SDK::IAIMPPlaylist* /*playlist*/)
-{
-    BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::playlistRemoved"; ///!!! TODO: implement
 }
 
 void AIMPManager36::startPlayback()

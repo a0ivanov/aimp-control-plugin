@@ -216,9 +216,13 @@ protected:
 private:
     
     void initializeAIMPObjects();
+    
     void initPlaylistDB();
     void shutdownPlaylistDB();
-    
+    void deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id);
+    void deletePlaylistFromPlaylistDB(PlaylistID playlist_id);
+    void updatePlaylistCrcInDB(PlaylistID playlist_id, crc32_t crc32); // throws std::runtime_error
+
     // Returns -1 if handle not found in playlists list.
     int getPlaylistIndexByHandle(AIMP36SDK::IAIMPPlaylist* playlist);
     void loadPlaylist(AIMP36SDK::IAIMPPlaylist* playlist, int playlist_index);
