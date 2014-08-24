@@ -222,6 +222,7 @@ private:
     void deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id);
     void deletePlaylistFromPlaylistDB(PlaylistID playlist_id);
     void updatePlaylistCrcInDB(PlaylistID playlist_id, crc32_t crc32); // throws std::runtime_error
+    void subscribeForUpdates(AIMP36SDK::IAIMPPlaylist* playlist);
 
     // Returns -1 if handle not found in playlists list.
     int getPlaylistIndexByHandle(AIMP36SDK::IAIMPPlaylist* playlist);
@@ -235,6 +236,9 @@ private:
 
     boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_core_;
     boost::intrusive_ptr<AIMP36SDK::IAIMPServicePlaylistManager> aimp_service_playlist_manager_;
+
+    typedef std::vector<boost::intrusive_ptr<AIMP36SDK::IAIMPPlaylist>> Playlists;
+    Playlists playlists_;
 
     typedef std::map<PlaylistID, PlaylistCRC32> PlaylistCRC32List;
     mutable PlaylistCRC32List playlist_crc32_list_;

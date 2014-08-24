@@ -226,10 +226,14 @@ void AIMPManager36::playlistActivated(AIMP36SDK::IAIMPPlaylist* /*playlist*/)
 void AIMPManager36::playlistAdded(IAIMPPlaylist* playlist)
 {
     try {
-        BOOST_LOG_SEV(logger(), debug) << "onStorageAdded: id = " << cast<PlaylistID>(playlist);
+        BOOST_LOG_SEV(logger(), debug) << "playlistAdded: id = " << cast<PlaylistID>(playlist);
+        playlists_.emplace_back(playlist); // addref playlist to prevent pointer change in playlistRemoved.
+
         int playlist_index = getPlaylistIndexByHandle(playlist);
         loadPlaylist(playlist, playlist_index);
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+
+        subscribeForUpdates(playlist);
     } catch (std::exception& e) {
         BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << cast<PlaylistID>(playlist) << ". Reason: " << e.what();
     } catch (...) {
@@ -241,9 +245,14 @@ void AIMPManager36::playlistAdded(IAIMPPlaylist* playlist)
 void AIMPManager36::playlistRemoved(AIMP36SDK::IAIMPPlaylist* playlist)
 {
     try {
+        BOOST_LOG_SEV(logger(), debug) << "playlistRemoved: id = " << cast<PlaylistID>(playlist);
+
         const int playlist_id = cast<PlaylistID>(playlist);
         playlist_crc32_list_.erase(playlist_id);
         deletePlaylistFromPlaylistDB(playlist_id);
+        playlists_.erase(std::remove(playlists_.begin(), playlists_.end(), playlist),
+                         playlists_.end()
+                         );
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     } catch (std::exception& e) {
         BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with playlist_id " << cast<PlaylistID>(playlist) << ". Reason: " << e.what();
@@ -251,6 +260,11 @@ void AIMPManager36::playlistRemoved(AIMP36SDK::IAIMPPlaylist* playlist)
         // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
         BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with playlist_id " << cast<PlaylistID>(playlist);
     }
+}
+
+void AIMPManager36::subscribeForUpdates(IAIMPPlaylist* /*playlist*/)
+{
+
 }
 
 namespace {
@@ -324,7 +338,7 @@ void AIMPManager36::loadPlaylist(IAIMPPlaylist* playlist, int playlist_index)
         throw std::runtime_error(MakeString() << error_prefix << "IAIMPPropertyList::GetValueAsInt64(AIMP_PLAYLIST_PROPID_DURATION) failed. Result " << r);
     }
 
-    INT64 size = 0; ///!!! it seems it does not supported in 3.60.
+    INT64 size = 0; ///!!! it seems it is not supported in 3.60.
     /*
     r = playlist_propertylist->GetValueAsInt64(AIMP_PLAYLIST_PROPID_SIZE, &size);
     if (S_OK != r) {
