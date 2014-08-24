@@ -237,13 +237,11 @@ void AIMPManager36::playlistAdded(IAIMPPlaylist* playlist)
 {
     try {
         BOOST_LOG_SEV(logger(), debug) << "playlistAdded: id = " << cast<PlaylistID>(playlist);
-        playlists_.emplace_back(playlist); // addref playlist to prevent pointer change in playlistRemoved.
+        playlist_helpers_.emplace_back(playlist, this); // addref playlist to prevent pointer change in playlistRemoved. Also helper will autosubscribe for playlist updates.
 
         int playlist_index = getPlaylistIndexByHandle(playlist);
         loadPlaylist(playlist, playlist_index);
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
-
-        subscribeForPlaylistUpdates(playlist);
     } catch (std::exception& e) {
         BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << cast<PlaylistID>(playlist) << ". Reason: " << e.what();
     } catch (...) {
@@ -258,11 +256,12 @@ void AIMPManager36::playlistRemoved(AIMP36SDK::IAIMPPlaylist* playlist)
         BOOST_LOG_SEV(logger(), debug) << "playlistRemoved: id = " << cast<PlaylistID>(playlist);
 
         const int playlist_id = cast<PlaylistID>(playlist);
-        playlist_crc32_list_.erase(playlist_id);
         deletePlaylistFromPlaylistDB(playlist_id);
-        playlists_.erase(std::remove(playlists_.begin(), playlists_.end(), playlist),
-                         playlists_.end()
-                         );
+        playlist_helpers_.erase(std::remove_if(playlist_helpers_.begin(), playlist_helpers_.end(),
+                                               [playlist](const PlaylistHelper& h) { return h.playlist_.get() == playlist; }
+                                               ),
+                                playlist_helpers_.end()
+                                );
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     } catch (std::exception& e) {
         BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with playlist_id " << cast<PlaylistID>(playlist) << ". Reason: " << e.what();
@@ -316,7 +315,7 @@ void AIMPManager36::playlistChanged(AIMP36SDK::IAIMPPlaylist* playlist, DWORD fl
     }
 }
 
-class AIMPPlaylistListener : public IUnknownInterfaceImpl<AIMP36SDK::IAIMPPlaylistListener>
+class AIMPManager36::AIMPPlaylistListener : public IUnknownInterfaceImpl<AIMP36SDK::IAIMPPlaylistListener>
 {
 public:
     explicit AIMPPlaylistListener(boost::intrusive_ptr<IAIMPPlaylist> playlist, AIMPManager36* aimp36_manager)
@@ -354,11 +353,6 @@ private:
     AIMPManager36* aimp36_manager_;
 };
 
-void AIMPManager36::subscribeForPlaylistUpdates(IAIMPPlaylist* playlist)
-{
-    playlist->ListenerAdd(new AIMPPlaylistListener(playlist, this)); ///!!! TODO: Call ListenerRemove somewhere.
-}
-
 namespace {
 // On error it prints error reason to log only.
 void executeQuery(const std::string& query, sqlite3* db, const char* log_tag)
@@ -395,24 +389,27 @@ void AIMPManager36::deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id)
     executeQuery(query, playlists_db_, __FUNCTION__);
 }
 
+AIMPManager36::PlaylistHelper::PlaylistHelper(IAIMPPlaylist_ptr playlist, AIMPManager36* aimp36_manager)
+    : playlist_(playlist),
+      crc32_(cast<PlaylistID>(playlist.get()), aimp36_manager->playlists_db()),
+      listener_(new AIMPPlaylistListener(playlist.get(), aimp36_manager))
+{
+    playlist_->ListenerAdd(listener_.get());
+}
+
+AIMPManager36::PlaylistHelper::~PlaylistHelper()
+{
+    playlist_->ListenerRemove(listener_.get());
+}
+
 void AIMPManager36::loadPlaylist(IAIMPPlaylist* playlist, int playlist_index)
 {
     const PlaylistID playlist_id = cast<PlaylistID>(playlist);
 
-    { // handle crc32.
-    auto it = playlist_crc32_list_.find(playlist_id);
-    if (it == playlist_crc32_list_.end()) {
-        it = playlist_crc32_list_.insert(std::make_pair(playlist_id,
-                                                        PlaylistCRC32(playlist_id, playlists_db_)
-                                                        )
-                                         ).first;
-    }
-    it->second.reset_properties();
-    }
+    getPlaylistCRC32Object(playlist_id).reset_properties();
 
     const char * const error_prefix = "Error occured while extracting playlist data: ";
-    
-    
+
     IAIMPPropertyList* playlist_propertylist_tmp;
     HRESULT r = playlist->QueryInterface(IID_IAIMPPropertyList,
                                          reinterpret_cast<void**>(&playlist_propertylist_tmp));
@@ -745,9 +742,10 @@ TrackDescription AIMPManager36::getAbsoluteTrackDesc(TrackDescription /*track_de
 
 PlaylistCRC32& AIMPManager36::getPlaylistCRC32Object(PlaylistID playlist_id) const
 {
-    auto it = playlist_crc32_list_.find(playlist_id);
-    if (it != playlist_crc32_list_.end()) {
-        return it->second;
+    IAIMPPlaylist* playlist = cast<IAIMPPlaylist*>(playlist_id);
+    auto it = std::find_if(playlist_helpers_.begin(), playlist_helpers_.end(), [playlist](const PlaylistHelper& h) { return h.playlist_.get() == playlist; });
+    if (it != playlist_helpers_.end()) {
+        return it->crc32_;
     }
     throw std::runtime_error(MakeString() << "Playlist " << playlist_id << " was not found in "__FUNCTION__);
 }

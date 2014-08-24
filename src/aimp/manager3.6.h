@@ -224,7 +224,6 @@ private:
     void deletePlaylistFromPlaylistDB(PlaylistID playlist_id);
     void updatePlaylistCrcInDB(PlaylistID playlist_id, crc32_t crc32); // throws std::runtime_error
     PlaylistCRC32& getPlaylistCRC32Object(PlaylistID playlist_id) const; // throws std::runtime_error
-    void subscribeForPlaylistUpdates(AIMP36SDK::IAIMPPlaylist* playlist);
 
     // Returns -1 if handle not found in playlists list.
     int getPlaylistIndexByHandle(AIMP36SDK::IAIMPPlaylist* playlist);
@@ -240,11 +239,20 @@ private:
     boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_core_;
     boost::intrusive_ptr<AIMP36SDK::IAIMPServicePlaylistManager> aimp_service_playlist_manager_;
 
-    typedef std::vector<boost::intrusive_ptr<AIMP36SDK::IAIMPPlaylist>> Playlists;
-    Playlists playlists_;
+    typedef boost::intrusive_ptr<AIMP36SDK::IAIMPPlaylist> IAIMPPlaylist_ptr;
+    class AIMPPlaylistListener;
+    typedef boost::intrusive_ptr<AIMPPlaylistListener> AIMPPlaylistListener_ptr;
 
-    typedef std::map<PlaylistID, PlaylistCRC32> PlaylistCRC32List;
-    mutable PlaylistCRC32List playlist_crc32_list_;
+    struct PlaylistHelper {    
+        IAIMPPlaylist_ptr playlist_;
+        PlaylistCRC32 crc32_;
+        AIMPPlaylistListener_ptr listener_;
+
+        PlaylistHelper(IAIMPPlaylist_ptr playlist, AIMPManager36* aimp36_manager);
+        ~PlaylistHelper();
+    };
+    typedef std::vector<PlaylistHelper> PlaylistHelpers;
+    mutable PlaylistHelpers playlist_helpers_;
 };
 
 //! general tempate for convinient casting. Provide specialization for your own types.
