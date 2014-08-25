@@ -95,7 +95,7 @@ class IAIMPFileInfo: public IAIMPPropertyList
 {
 	public:
 		virtual HRESULT WINAPI Assign(IAIMPFileInfo *Source) = 0;
-		virtual HRESULT WINAPI Clone(IAIMPFileInfo *Info) = 0;
+		virtual HRESULT WINAPI Clone(IAIMPFileInfo **Info) = 0;
 };
 
 /* IAIMPVirtualFile */

@@ -63,9 +63,9 @@ class IAIMPServiceHTTPClient: public IUnknown
 {
 	public:
 		virtual HRESULT WINAPI Get(IAIMPString *URL, DWORD Flags, IAIMPStream *AnswerData,
-			IAIMPHTTPClientEvents *EventHandler, IAIMPConfig *Params, void *TaskID) = 0;
+			IAIMPHTTPClientEvents *EventHandler, IAIMPConfig *Params, void **TaskID) = 0;
 		virtual HRESULT WINAPI Post(IAIMPString *URL, DWORD Flags, IAIMPStream *AnswerData, IAIMPStream *PostData,
-			IAIMPHTTPClientEvents *EventHandler, IAIMPConfig *Params, void *TaskID) = 0;
+			IAIMPHTTPClientEvents *EventHandler, IAIMPConfig *Params, void **TaskID) = 0;
 		virtual HRESULT WINAPI Cancel(void *TaskID, DWORD Flags) = 0;
 };
 
