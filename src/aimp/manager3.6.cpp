@@ -419,21 +419,18 @@ void AIMPManager36::loadPlaylist(IAIMPPlaylist* playlist, int playlist_index)
     boost::intrusive_ptr<IAIMPPropertyList> playlist_propertylist(playlist_propertylist_tmp, false);
     playlist_propertylist_tmp = nullptr;
 
+    INT64 size = 0; ///!!! wait until it will be fixed in AIMP.
+    //r = playlist_propertylist->GetValueAsInt64(AIMP_PLAYLIST_PROPID_SIZE, &size);
+    //if (S_OK != r) {
+    //    throw std::runtime_error(MakeString() << error_prefix << "IAIMPPropertyList::GetValueAsInt64(AIMP_PLAYLIST_PROPID_SIZE) failed. Result " << r);
+    //}
 
-    INT64 duration;
-    
-    r = playlist_propertylist->GetValueAsInt64(AIMP_PLAYLIST_PROPID_DURATION, &duration);
+    double duration_tmp;
+    r = playlist_propertylist->GetValueAsFloat(AIMP_PLAYLIST_PROPID_DURATION, &duration_tmp);
     if (S_OK != r) {
-        throw std::runtime_error(MakeString() << error_prefix << "IAIMPPropertyList::GetValueAsInt64(AIMP_PLAYLIST_PROPID_DURATION) failed. Result " << r);
+        throw std::runtime_error(MakeString() << error_prefix << "IAIMPPropertyList::GetValueAsFloat(AIMP_PLAYLIST_PROPID_DURATION) failed. Result " << r);
     }
-
-    INT64 size = 0; ///!!! it seems it is not supported in 3.60.
-    /*
-    r = playlist_propertylist->GetValueAsInt64(AIMP_PLAYLIST_PROPID_SIZE, &size);
-    if (S_OK != r) {
-        throw std::runtime_error(MakeString() << error_prefix << "IAIMPPropertyList::GetValueAsInt64(AIMP_PLAYLIST_PROPID_SIZE) failed. Result " << r);
-    }
-    */
+    const INT64 duration = static_cast<INT64>(duration_tmp);
 
     IAIMPString* name_tmp;
     r = playlist_propertylist->GetValueAsObject(AIMP_PLAYLIST_PROPID_NAME, IID_IAIMPString, reinterpret_cast<void**>(&name_tmp));
@@ -545,18 +542,15 @@ const int AIMP_PLAYLISTITEM_PROPID_SELECTED       = 9;
 const int AIMP_PLAYLISTITEM_PROPID_PLAYBACKQUEUEINDEX = 10;
         */
 
-        IAIMPPropertyList* playlist_item_propertylist_tmp;
-        r = item->QueryInterface(IID_IAIMPPropertyList,
-                                 reinterpret_cast<void**>(&playlist_item_propertylist_tmp)
+        IAIMPFileInfo* file_info_tmp;
+        r = item->QueryInterface(IID_IAIMPFileInfo,
+                                 reinterpret_cast<void**>(&file_info_tmp)
                                  );
         if (S_OK != r) {
-            const std::string msg = MakeString() << "item->QueryInterface(IID_IAIMPPropertyList) error " 
-                                                 << r << " occured while getting entry info ¹" << item_index
-                                                 << " from playlist with ID = " << playlist_id;
-            throw std::runtime_error(msg);
+            // this is not file, try IAIMPVirtualFile then use PLAYLISTITEM fields if it fails. 
         }
-        boost::intrusive_ptr<IAIMPPropertyList> playlist_item_propertylist(playlist_item_propertylist_tmp, false);
-        playlist_item_propertylist_tmp = nullptr;
+        boost::intrusive_ptr<IAIMPPropertyList> file_info(file_info_tmp, false);
+        file_info_tmp = nullptr;
 
         const int entry_id = castToPlaylistEntryID(item.get());
 
