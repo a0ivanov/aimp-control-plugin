@@ -139,6 +139,13 @@ private:
     */
     boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_core_unit_;
 
+    boost::shared_ptr<AIMPPlayer::AIMPManager> aimp_manager_; //!< AIMP player manager.
+
+    boost::filesystem::wpath plugin_work_directory_; //!< path to plugin work directory. It is initialized in getPluginWorkDirectoryPathInAimpPluginsDirectory() function.
+                       
+    // plugin settings.
+    boost::filesystem::wpath plugin_settings_filepath_;
+
     boost::shared_ptr<Rpc::RequestHandler> rpc_request_handler_; //!< XML/Json RPC request handler. Used by Http::RequestHandler object.
     boost::shared_ptr<DownloadTrack::RequestHandler> download_track_request_handler_; //!< Download track request handler. Used by Http::RequestHandler object.
     boost::shared_ptr<UploadTrack::RequestHandler> upload_track_request_handler_; //!< Upload track request handler. Used by Http::RequestHandler object.
@@ -146,12 +153,6 @@ private:
     boost::shared_ptr<boost::asio::io_service> server_io_service_;
     boost::shared_ptr<Http::Server> server_; //!< Simple Http server.
 
-    boost::shared_ptr<AIMPPlayer::AIMPManager> aimp_manager_; //!< AIMP player manager.
-
-    boost::filesystem::wpath plugin_work_directory_; //!< path to plugin work directory. It is initialized in getPluginWorkDirectoryPathInAimpPluginsDirectory() function.
-                       
-    // plugin settings.
-    boost::filesystem::wpath plugin_settings_filepath_;
     static const std::wstring kPLUGIN_SETTINGS_FILENAME; //<! default plugin settings filename.
 
     PluginSettings::Manager settings_manager_; //< plugin settings manager. Load/save settings to file.
