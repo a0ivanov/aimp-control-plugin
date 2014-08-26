@@ -419,11 +419,11 @@ void AIMPManager36::loadPlaylist(IAIMPPlaylist* playlist, int playlist_index)
     boost::intrusive_ptr<IAIMPPropertyList> playlist_propertylist(playlist_propertylist_tmp, false);
     playlist_propertylist_tmp = nullptr;
 
-    INT64 size = 0; ///!!! wait until it will be fixed in AIMP.
-    //r = playlist_propertylist->GetValueAsInt64(AIMP_PLAYLIST_PROPID_SIZE, &size);
-    //if (S_OK != r) {
-    //    throw std::runtime_error(MakeString() << error_prefix << "IAIMPPropertyList::GetValueAsInt64(AIMP_PLAYLIST_PROPID_SIZE) failed. Result " << r);
-    //}
+    INT64 size = 0;
+    r = playlist_propertylist->GetValueAsInt64(AIMP_PLAYLIST_PROPID_SIZE, &size);
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << error_prefix << "IAIMPPropertyList::GetValueAsInt64(AIMP_PLAYLIST_PROPID_SIZE) failed. Result " << r);
+    }
 
     double duration_tmp;
     r = playlist_propertylist->GetValueAsFloat(AIMP_PLAYLIST_PROPID_DURATION, &duration_tmp);
