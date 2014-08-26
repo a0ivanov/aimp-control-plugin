@@ -78,36 +78,6 @@ class IAIMPObjectList: public IUnknown
 		virtual HRESULT WINAPI SetObject(int Index, IUnknown* Obj) = 0;
 };
 
-/* IAIMPStream */
-
-class IAIMPStream: public IUnknown
-{
-	public:
-		virtual INT64 WINAPI GetSize() = 0;
-		virtual HRESULT WINAPI SetSize(const INT64 Value) = 0;
-		virtual INT64 WINAPI GetPosition() = 0;
-		virtual HRESULT WINAPI Seek(const INT64 Offset, int Mode) = 0;
-		virtual int WINAPI Read(unsigned char* Buffer, unsigned int Count) = 0;
-		virtual HRESULT WINAPI Write(unsigned char* Buffer, unsigned int Count, unsigned int* Written) = 0;
-};
-
-/* IAIMPString */
-class IAIMPString;
-class IAIMPFileStream: public IAIMPStream
-{
-	public:
-		virtual HRESULT WINAPI GetClipping(INT64 *Offset, INT64 *Size) = 0;
-		virtual HRESULT WINAPI GetFileName(IAIMPString **S) = 0;
-};
-
-/* IAIMPMemoryStream */
-
-class IAIMPMemoryStream: public IAIMPStream
-{
-	public:
-		virtual void* WINAPI GetData() = 0;
-};
-
 /* IAIMPString */
 
 class IAIMPString: public IUnknown
@@ -142,6 +112,36 @@ class IAIMPString: public IUnknown
 			WCHAR *NewPatternChars, int NewPatternCharsCount, int Flags) = 0;
 
 		virtual HRESULT WINAPI SubString(int Index, int Count, IAIMPString **S) = 0;
+};
+
+/* IAIMPStream */
+
+class IAIMPStream: public IUnknown
+{
+	public:
+		virtual INT64 WINAPI GetSize() = 0;
+		virtual HRESULT WINAPI SetSize(const INT64 Value) = 0;
+		virtual INT64 WINAPI GetPosition() = 0;
+		virtual HRESULT WINAPI Seek(const INT64 Offset, int Mode) = 0;
+		virtual int WINAPI Read(unsigned char* Buffer, unsigned int Count) = 0;
+		virtual HRESULT WINAPI Write(unsigned char* Buffer, unsigned int Count, unsigned int* Written) = 0;
+};
+
+/* IAIMPFileStream */
+
+class IAIMPFileStream: public IAIMPStream
+{
+	public:
+		virtual HRESULT WINAPI GetClipping(INT64 *Offset, INT64 *Size) = 0;
+		virtual HRESULT WINAPI GetFileName(IAIMPString **S) = 0;
+};
+
+/* IAIMPMemoryStream */
+
+class IAIMPMemoryStream: public IAIMPStream
+{
+	public:
+		virtual void* WINAPI GetData() = 0;
 };
 
 /* IAIMPErrorInfo */
