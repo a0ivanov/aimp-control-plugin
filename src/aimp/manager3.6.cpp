@@ -6,6 +6,7 @@
 #include "utils/sqlite_util.h"
 #include "sqlite/sqlite.h"
 #include "utils/iunknown_impl.h"
+#include "utils/string_encoding.h"
 
 namespace {
 using namespace ControlPlugin::PluginLogger;
@@ -488,6 +489,11 @@ AIMPString_ptr getString(IAIMPPropertyList* property_list, const int property_id
 
     IAIMPString* value;
     result = property_list->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value));
+#ifndef NDEBUG
+    if (result == S_OK) {
+        BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << property_id << ") value: " << StringEncoding::utf16_to_utf8(value->GetData(), value->GetData() + value->GetLength());
+    }
+#endif
     return AIMPString_ptr(result == S_OK ? value : nullptr, false);
 }
 
@@ -501,6 +507,9 @@ AIMPString_ptr getString(IAIMPPropertyList* property_list, const int property_id
     if (S_OK != r) {
         throw std::runtime_error(MakeString() << error_prefix << ": getString(): property_list->GetValueAsObject(property id = " << property_id << ") failed. Result " << r);
     }
+#ifndef NDEBUG
+    BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << property_id << ") value: " << StringEncoding::utf16_to_utf8(value->GetData(), value->GetData() + value->GetLength());
+#endif
     return AIMPString_ptr(value, false);
 }
 
@@ -531,9 +540,9 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
                                     );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
-    //BOOST_LOG_SEV(logger(), debug) << "The statement has "
-    //                               << sqlite3_bind_parameter_count(stmt)
-    //                               << " wildcards";
+    BOOST_LOG_SEV(logger(), debug) << "The statement has "
+                                   << sqlite3_bind_parameter_count(stmt)
+                                   << " wildcards";
 
 #define bind(type, field_index, value)  rc_db = sqlite3_bind_##type(stmt, field_index, value); \
                                         if (SQLITE_OK != rc_db) { \
@@ -559,6 +568,7 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
         item_tmp = nullptr;
 
         AIMPString_ptr title;
+        AIMPString_ptr displaytext;
 
         IAIMPFileInfo* file_info_tmp;
         r = item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_FILEINFO, IID_IAIMPFileInfo,
@@ -582,7 +592,7 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
             } else {
                 // this is not virtual file and not usual file use PLAYLISTITEM fields
                             /*
-                    const int AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT    = 1;
+                    const int AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT    = 1; <- used when AIMP_FILEINFO_PROPID_TITLE is empty or does not exits.
                     const int AIMP_PLAYLISTITEM_PROPID_FILEINFO       = 2;
                     const int AIMP_PLAYLISTITEM_PROPID_FILENAME       = 3;
                     const int AIMP_PLAYLISTITEM_PROPID_GROUP          = 4;
@@ -594,52 +604,55 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
                     const int AIMP_PLAYLISTITEM_PROPID_PLAYBACKQUEUEINDEX = 10;
                             */
 
-                // DISPLAYTEXT property
-                IAIMPString* displaytext_tmp;
-                r = item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT, IID_IAIMPString, reinterpret_cast<void**>(&displaytext_tmp));
-                if (S_OK != r) {
-                    throw std::runtime_error(MakeString() << error_prefix << "item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT) failed. Result " << r);
-                }
-                boost::intrusive_ptr<IAIMPString> displaytext(displaytext_tmp, false);
             }
         }
 
         const int entry_id = castToPlaylistEntryID(item.get());
 
+#ifndef NDEBUG
+        BOOST_LOG_SEV(logger(), debug) << "index: " << item_index << ", entry_id: " << entry_id;
+#endif
+
+        // Title should not be empty.
+        if (!title || title->GetLength() == 0) {
+            title = getString(item.get(), AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT, error_prefix);
+        }
+
+        ///!!! TODO: implement
         const int rating = 0; ///!!! TODO: find out how to extract rating in 3.6.
-
-
-#define bindText(field_index, aimp_string)  debug_string_data = aimp_string->GetData(); \
-                                            rc_db = sqlite3_bind_text16(stmt, field_index, debug_string_data, aimp_string->GetLength() * sizeof(WCHAR), SQLITE_STATIC); \
-                                            if (SQLITE_OK != rc_db) { \
-                                                const std::string msg = MakeString() << "sqlite3_bind_text16 rc_db: " << rc_db; \
-                                                throw std::runtime_error(msg); \
-                                            }
-
         const int bitrate = 0;
         const int channels = 0;
         const int duration = 0;
         const int64_t filesize = 0;
         const int samplerate = 0;
+        AIMPString_ptr album(title);
+        AIMPString_ptr artist(title);
+        AIMPString_ptr date(title);
+        AIMPString_ptr fileName(title);
+        AIMPString_ptr genre(title);
 
-
-        const WCHAR* debug_string_data;
+        ///!!! end
 
         { // special db code
             // bind all values
-            
+        
+#define bindText(field_index, aimp_string)  rc_db = sqlite3_bind_text16(stmt, field_index, aimp_string->GetData(), aimp_string->GetLength() * sizeof(WCHAR), SQLITE_STATIC); \
+                                            if (SQLITE_OK != rc_db) { \
+                                                const std::string msg = MakeString() << "sqlite3_bind_text16 rc_db: " << rc_db; \
+                                                throw std::runtime_error(msg); \
+                                            }
+
             bind(int,    2, entry_id);
             bind(int,    3, item_index);
-            /* ///!!!
-            bindText(    4, Album);
-            bindText(    5, Artist);
-            bindText(    6, Date);
-            bindText(    7, FileName);
-            bindText(    8, Genre);
-            */
 
-            assert(title);
+            bindText(    4, album);
+            bindText(    5, artist);
+            bindText(    6, date);
+            bindText(    7, fileName);
+            bindText(    8, genre);
             bindText(    9, title);
+
+#undef bindText
 
             bind(int,   10, bitrate);
             bind(int,   11, channels);
@@ -659,7 +672,6 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
         }
     }
 #undef bind
-#undef bindText
 }
 
 int AIMPManager36::getPlaylistIndexByHandle(IAIMPPlaylist* playlist)
