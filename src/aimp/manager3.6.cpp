@@ -529,28 +529,54 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
         boost::intrusive_ptr<IAIMPPlaylistItem> item(item_tmp, false);
         item_tmp = nullptr;
 
-        /*
-const int AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT    = 1;
-const int AIMP_PLAYLISTITEM_PROPID_FILEINFO       = 2;
-const int AIMP_PLAYLISTITEM_PROPID_FILENAME       = 3;
-const int AIMP_PLAYLISTITEM_PROPID_GROUP          = 4;
-const int AIMP_PLAYLISTITEM_PROPID_INDEX          = 5;
-const int AIMP_PLAYLISTITEM_PROPID_MARK           = 6;
-const int AIMP_PLAYLISTITEM_PROPID_PLAYINGSWITCH  = 7;
-const int AIMP_PLAYLISTITEM_PROPID_PLAYLIST       = 8;
-const int AIMP_PLAYLISTITEM_PROPID_SELECTED       = 9;
-const int AIMP_PLAYLISTITEM_PROPID_PLAYBACKQUEUEINDEX = 10;
-        */
-
         IAIMPFileInfo* file_info_tmp;
-        r = item->QueryInterface(IID_IAIMPFileInfo,
-                                 reinterpret_cast<void**>(&file_info_tmp)
-                                 );
-        if (S_OK != r) {
-            // this is not file, try IAIMPVirtualFile then use PLAYLISTITEM fields if it fails. 
+        r = item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_FILEINFO, IID_IAIMPFileInfo,
+                                   reinterpret_cast<void**>(&file_info_tmp)
+                                   );
+        if (S_OK == r) {
+            boost::intrusive_ptr<IAIMPFileInfo> file_info(file_info_tmp, false);
+            file_info_tmp = nullptr;
+
+            // Title property
+            IAIMPString* title_tmp;
+            r = file_info->GetValueAsObject(AIMP_FILEINFO_PROPID_TITLE, IID_IAIMPString, reinterpret_cast<void**>(&title_tmp));
+            if (S_OK != r) {
+                throw std::runtime_error(MakeString() << error_prefix << "file_info->GetValueAsObject(AIMP_FILEINFO_PROPID_TITLE) failed. Result " << r);
+            }
+            boost::intrusive_ptr<IAIMPString> title(title_tmp, false);
+
+        } else {
+            IAIMPVirtualFile* virtual_file_info_tmp;
+            r = item->QueryInterface(IID_IAIMPVirtualFile,
+                                     reinterpret_cast<void**>(&virtual_file_info_tmp)
+                                     );
+            if (S_OK == r) {
+                boost::intrusive_ptr<IAIMPVirtualFile> file_info(virtual_file_info_tmp, false);
+                virtual_file_info_tmp = nullptr;
+            } else {
+                // this is not virtual file and not usual file use PLAYLISTITEM fields
+                            /*
+                    const int AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT    = 1;
+                    const int AIMP_PLAYLISTITEM_PROPID_FILEINFO       = 2;
+                    const int AIMP_PLAYLISTITEM_PROPID_FILENAME       = 3;
+                    const int AIMP_PLAYLISTITEM_PROPID_GROUP          = 4;
+                    const int AIMP_PLAYLISTITEM_PROPID_INDEX          = 5;
+                    const int AIMP_PLAYLISTITEM_PROPID_MARK           = 6;
+                    const int AIMP_PLAYLISTITEM_PROPID_PLAYINGSWITCH  = 7;
+                    const int AIMP_PLAYLISTITEM_PROPID_PLAYLIST       = 8;
+                    const int AIMP_PLAYLISTITEM_PROPID_SELECTED       = 9;
+                    const int AIMP_PLAYLISTITEM_PROPID_PLAYBACKQUEUEINDEX = 10;
+                            */
+
+                // DISPLAYTEXT property
+                IAIMPString* displaytext_tmp;
+                r = item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT, IID_IAIMPString, reinterpret_cast<void**>(&displaytext_tmp));
+                if (S_OK != r) {
+                    throw std::runtime_error(MakeString() << error_prefix << "item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT) failed. Result " << r);
+                }
+                boost::intrusive_ptr<IAIMPString> displaytext(displaytext_tmp, false);
+            }
         }
-        boost::intrusive_ptr<IAIMPPropertyList> file_info(file_info_tmp, false);
-        file_info_tmp = nullptr;
 
         const int entry_id = castToPlaylistEntryID(item.get());
 
