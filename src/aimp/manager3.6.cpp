@@ -478,8 +478,37 @@ void AIMPManager36::loadPlaylist(IAIMPPlaylist* playlist, int playlist_index)
     }
 }
 
+namespace Support {
+
+typedef boost::intrusive_ptr<IAIMPString> AIMPString_ptr;
+
+AIMPString_ptr getString(IAIMPPropertyList* property_list, const int property_id, HRESULT& result)
+{
+    assert(property_list);
+
+    IAIMPString* value;
+    result = property_list->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value));
+    return AIMPString_ptr(result == S_OK ? value : nullptr, false);
+}
+
+AIMPString_ptr getString(IAIMPPropertyList* property_list, const int property_id, const char* error_prefix)
+{
+    assert(property_list);
+    assert(error_prefix);
+
+    IAIMPString* value;
+    HRESULT r = property_list->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value));
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << error_prefix << ": getString(): property_list->GetValueAsObject(property id = " << property_id << ") failed. Result " << r);
+    }
+    return AIMPString_ptr(value, false);
+}
+
+} // namespace Support
+
 void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
 {
+    using namespace Support;
     PROFILE_EXECUTION_TIME(__FUNCTION__);
 
     PlaylistID playlist_id = cast<PlaylistID>(playlist);
@@ -529,6 +558,8 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
         boost::intrusive_ptr<IAIMPPlaylistItem> item(item_tmp, false);
         item_tmp = nullptr;
 
+        AIMPString_ptr title;
+
         IAIMPFileInfo* file_info_tmp;
         r = item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_FILEINFO, IID_IAIMPFileInfo,
                                    reinterpret_cast<void**>(&file_info_tmp)
@@ -538,12 +569,7 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
             file_info_tmp = nullptr;
 
             // Title property
-            IAIMPString* title_tmp;
-            r = file_info->GetValueAsObject(AIMP_FILEINFO_PROPID_TITLE, IID_IAIMPString, reinterpret_cast<void**>(&title_tmp));
-            if (S_OK != r) {
-                throw std::runtime_error(MakeString() << error_prefix << "file_info->GetValueAsObject(AIMP_FILEINFO_PROPID_TITLE) failed. Result " << r);
-            }
-            boost::intrusive_ptr<IAIMPString> title(title_tmp, false);
+            title = getString(file_info.get(), AIMP_FILEINFO_PROPID_TITLE, error_prefix);
 
         } else {
             IAIMPVirtualFile* virtual_file_info_tmp;
@@ -583,11 +609,12 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
         const int rating = 0; ///!!! TODO: find out how to extract rating in 3.6.
 
 
-#define bindText(field_index, info_field_name)  rc_db = sqlite3_bind_text16(stmt, field_index, info.##info_field_name##Buffer, info.##info_field_name##BufferSizeInChars * sizeof(WCHAR), SQLITE_STATIC); \
-                                                if (SQLITE_OK != rc_db) { \
-                                                    const std::string msg = MakeString() << "sqlite3_bind_text16 rc_db: " << rc_db; \
-                                                    throw std::runtime_error(msg); \
-                                                }
+#define bindText(field_index, aimp_string)  debug_string_data = aimp_string->GetData(); \
+                                            rc_db = sqlite3_bind_text16(stmt, field_index, debug_string_data, aimp_string->GetLength() * sizeof(WCHAR), SQLITE_STATIC); \
+                                            if (SQLITE_OK != rc_db) { \
+                                                const std::string msg = MakeString() << "sqlite3_bind_text16 rc_db: " << rc_db; \
+                                                throw std::runtime_error(msg); \
+                                            }
 
         const int bitrate = 0;
         const int channels = 0;
@@ -595,19 +622,25 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
         const int64_t filesize = 0;
         const int samplerate = 0;
 
+
+        const WCHAR* debug_string_data;
+
         { // special db code
             // bind all values
             
             bind(int,    2, entry_id);
             bind(int,    3, item_index);
-            /*
+            /* ///!!!
             bindText(    4, Album);
             bindText(    5, Artist);
             bindText(    6, Date);
             bindText(    7, FileName);
             bindText(    8, Genre);
-            bindText(    9, Title);
             */
+
+            assert(title);
+            bindText(    9, title);
+
             bind(int,   10, bitrate);
             bind(int,   11, channels);
             bind(int,   12, duration);
