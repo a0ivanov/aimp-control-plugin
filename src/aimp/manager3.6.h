@@ -229,6 +229,8 @@ private:
     int getPlaylistIndexByHandle(AIMP36SDK::IAIMPPlaylist* playlist);
     void loadPlaylist(AIMP36SDK::IAIMPPlaylist* playlist, int playlist_index);
     void loadEntries(AIMP36SDK::IAIMPPlaylist* playlist); // throws std::runtime_error
+    void releasePlaylistItems(PlaylistID playlist_id); // throws std::runtime_error
+    void releasePlaylistItems(); // throws std::runtime_error
 
     void notifyAllExternalListeners(EVENTS event) const;
     // types for notifications of external event listeners.

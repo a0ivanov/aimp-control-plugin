@@ -222,6 +222,8 @@ void AIMPManager36::initPlaylistDB()
 
 void AIMPManager36::shutdownPlaylistDB()
 {
+    releasePlaylistItems();
+
     const int rc = sqlite3_close(playlists_db_);
     if (SQLITE_OK != rc) {
         BOOST_LOG_SEV(logger(), error) << "sqlite3_close error: " << rc;
@@ -385,9 +387,51 @@ void AIMPManager36::deletePlaylistFromPlaylistDB(PlaylistID playlist_id)
 
 void AIMPManager36::deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id)
 {
+    releasePlaylistItems(playlist_id);
+
     const std::string query = MakeString() << "DELETE FROM PlaylistsEntries WHERE playlist_id=" << playlist_id;
 
     executeQuery(query, playlists_db_, __FUNCTION__);
+}
+
+void releasePlaylistItems(sqlite3* playlists_db, const std::string& query)
+{
+    sqlite3_stmt* stmt = createStmt( playlists_db, query.c_str() );
+    ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
+
+    for(;;) {
+		int rc_db = sqlite3_step(stmt);
+        if (SQLITE_ROW == rc_db) {
+            const int entry_id = sqlite3_column_int(stmt, 0);
+            if (IAIMPPlaylistItem* item = castToPlaylistItem(entry_id)) {
+                item->Release();
+            }
+        } else if (SQLITE_DONE == rc_db) {
+            break;
+        } else {
+            const std::string msg = MakeString() << "sqlite3_step() error "
+                                                 << rc_db << ": " << sqlite3_errmsg(playlists_db)
+                                                 << ". Query: " << query;
+            throw std::runtime_error(msg);
+		}
+    }
+}
+
+void AIMPManager36::releasePlaylistItems(PlaylistID playlist_id)
+{
+    // call Release() for all items.
+    const std::string& query = MakeString() << "SELECT entry_id FROM PlaylistsEntries "
+                                            << "WHERE playlist_id = " << playlist_id;
+
+    AIMPPlayer::releasePlaylistItems(playlists_db_, query);
+}
+
+void AIMPManager36::releasePlaylistItems()
+{
+    // call Release() for all items.
+    const std::string& query = MakeString() << "SELECT entry_id FROM PlaylistsEntries";
+
+    AIMPPlayer::releasePlaylistItems(playlists_db_, query);
 }
 
 AIMPManager36::PlaylistHelper::PlaylistHelper(IAIMPPlaylist_ptr playlist, AIMPManager36* aimp36_manager)
@@ -554,7 +598,7 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
     bind(int, 1, playlist_id);
     
     const char * const error_prefix = "Error occured while extracting playlist item data: ";
-
+    
     for (int item_index = 0; item_index < entries_count; ++item_index) {
         IAIMPPlaylistItem* item_tmp;
         HRESULT r = playlist->GetItem(item_index,
@@ -564,7 +608,7 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
         if (S_OK != r) {
             throw std::runtime_error(MakeString() << error_prefix << "playlist->GetItem(IID_IAIMPPlaylistItem) failed. Result " << r);
         }
-        boost::intrusive_ptr<IAIMPPlaylistItem> item(item_tmp, false);
+        boost::intrusive_ptr<IAIMPPlaylistItem> item(item_tmp, false); 
         item_tmp = nullptr;
 
         AIMPString_ptr title;
@@ -667,6 +711,8 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
                 const std::string msg = MakeString() << "sqlite3_step() error "
                                                      << rc_db << ": " << sqlite3_errmsg(playlists_db_);
                 throw std::runtime_error(msg);
+            } else {
+                item->AddRef(); // notice that we taking ownership till database will be dropped.
             }
             sqlite3_reset(stmt);
         }
