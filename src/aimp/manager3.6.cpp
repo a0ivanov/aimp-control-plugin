@@ -525,6 +525,76 @@ void AIMPManager36::loadPlaylist(IAIMPPlaylist* playlist, int playlist_index)
 
 namespace Support {
 
+const char* FileinfoPropIdToString(int id)
+{
+    switch (id)
+    {
+#define casePropIdToStr(ID) case ID: return ""#ID
+    casePropIdToStr(AIMP_FILEINFO_PROPID_CUSTOM);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_ALBUM);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_ALBUMART);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_ALBUMARTIST);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_ALBUMGAIN);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_ALBUMPEAK);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_ARTIST);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_BITRATE);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_BPM);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_CHANNELS);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_COMMENT);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_COMPOSER);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_COPYRIGHT);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_CUESHEET);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_DATE);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_DISKNUMBER);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_DISKTOTAL);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_DURATION);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_FILENAME);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_FILESIZE);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_GENRE);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_LYRICS);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_MARK);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_PUBLISHER);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_SAMPLERATE);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_TITLE);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_TRACKGAIN);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_TRACKNUMBER);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_TRACKPEAK);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_TRACKTOTAL);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_URL);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_STAT_ADDINGDATE);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_STAT_LASTPLAYDATE);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_STAT_MARK);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_STAT_PLAYCOUNT);
+    casePropIdToStr(AIMP_FILEINFO_PROPID_STAT_RATING);
+#undef casePropIdToStr
+    }
+    throw std::bad_cast( std::string(MakeString() << __FUNCTION__": can't convert id " << id << "to string"
+                                     ).c_str()
+                        );
+}
+
+const char* PlaylistItemToString(int id)
+{
+    switch (id)
+    {
+#define casePropIdToStr(ID) case ID: return ""#ID
+    casePropIdToStr(AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT);
+    casePropIdToStr(AIMP_PLAYLISTITEM_PROPID_FILEINFO);
+    casePropIdToStr(AIMP_PLAYLISTITEM_PROPID_FILENAME);
+    casePropIdToStr(AIMP_PLAYLISTITEM_PROPID_GROUP);
+    casePropIdToStr(AIMP_PLAYLISTITEM_PROPID_INDEX);
+    casePropIdToStr(AIMP_PLAYLISTITEM_PROPID_MARK);
+    casePropIdToStr(AIMP_PLAYLISTITEM_PROPID_PLAYINGSWITCH);
+    casePropIdToStr(AIMP_PLAYLISTITEM_PROPID_PLAYLIST);
+    casePropIdToStr(AIMP_PLAYLISTITEM_PROPID_SELECTED);
+    casePropIdToStr(AIMP_PLAYLISTITEM_PROPID_PLAYBACKQUEUEINDEX);
+#undef casePropIdToStr
+    }
+    throw std::bad_cast( std::string(MakeString() << __FUNCTION__": can't convert id " << id << "to string"
+                                     ).c_str()
+                        );
+}
+
 typedef boost::intrusive_ptr<IAIMPString> AIMPString_ptr;
 
 AIMPString_ptr getString(IAIMPPropertyList* property_list, const int property_id, HRESULT& result)
@@ -553,6 +623,66 @@ AIMPString_ptr getString(IAIMPPropertyList* property_list, const int property_id
     }
 #ifndef NDEBUG
     BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << property_id << ") value: " << StringEncoding::utf16_to_utf8(value->GetData(), value->GetData() + value->GetLength());
+#endif
+    return AIMPString_ptr(value, false);
+}
+
+AIMPString_ptr getString(IAIMPFileInfo* file_info, const int property_id, HRESULT& result)
+{
+    assert(file_info);
+
+    IAIMPString* value;
+    result = file_info->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value));
+#ifndef NDEBUG
+    if (result == S_OK) {
+        BOOST_LOG_SEV(logger(), debug) << "file_info->getString(" << FileinfoPropIdToString(property_id) << ") value: " << StringEncoding::utf16_to_utf8(value->GetData(), value->GetData() + value->GetLength());
+    }
+#endif
+    return AIMPString_ptr(result == S_OK ? value : nullptr, false);
+}
+
+AIMPString_ptr getString(IAIMPFileInfo* file_info, const int property_id, const char* error_prefix)
+{
+    assert(file_info);
+    assert(error_prefix);
+
+    IAIMPString* value;
+    HRESULT r = file_info->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value));
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << error_prefix << ": getString(): file_info->GetValueAsObject(" << FileinfoPropIdToString(property_id) << ") failed. Result " << r);
+    }
+#ifndef NDEBUG
+    BOOST_LOG_SEV(logger(), debug) << "getString(" << FileinfoPropIdToString(property_id) << ") value: " << StringEncoding::utf16_to_utf8(value->GetData(), value->GetData() + value->GetLength());
+#endif
+    return AIMPString_ptr(value, false);
+}
+
+AIMPString_ptr getString(IAIMPPlaylistItem* playlist_item, const int property_id, HRESULT& result)
+{
+    assert(playlist_item);
+
+    IAIMPString* value;
+    result = playlist_item->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value));
+#ifndef NDEBUG
+    if (result == S_OK) {
+        BOOST_LOG_SEV(logger(), debug) << "playlist_item->getString(" << PlaylistItemToString(property_id) << ") value: " << StringEncoding::utf16_to_utf8(value->GetData(), value->GetData() + value->GetLength());
+    }
+#endif
+    return AIMPString_ptr(result == S_OK ? value : nullptr, false);
+}
+
+AIMPString_ptr getString(IAIMPPlaylistItem* playlist_item, const int property_id, const char* error_prefix)
+{
+    assert(playlist_item);
+    assert(error_prefix);
+
+    IAIMPString* value;
+    HRESULT r = playlist_item->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value));
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << error_prefix << ": getString(): playlist_item->GetValueAsObject(" << PlaylistItemToString(property_id) << ") failed. Result " << r);
+    }
+#ifndef NDEBUG
+    BOOST_LOG_SEV(logger(), debug) << "getString(" << PlaylistItemToString(property_id) << ") value: " << StringEncoding::utf16_to_utf8(value->GetData(), value->GetData() + value->GetLength());
 #endif
     return AIMPString_ptr(value, false);
 }
