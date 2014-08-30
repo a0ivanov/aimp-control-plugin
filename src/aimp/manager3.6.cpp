@@ -125,18 +125,18 @@ void AIMPManager36::initializeAIMPObjects()
     aimp_service_playlist_manager_.reset(playlist_manager);
     playlist_manager->Release();
 
-    /*
-    IAIMPAddonsPlayerManager* player_manager;
-    if (S_OK != aimp3_core_unit_->QueryInterface(IID_IAIMPAddonsPlayerManager, 
-                                                 reinterpret_cast<void**>(&player_manager)
-                                                 ) 
+    IAIMPServicePlayer* aimp_service_player;
+    if (S_OK != aimp36_core_->QueryInterface(IID_IAIMPServicePlayer,
+                                             reinterpret_cast<void**>(&aimp_service_player)
+                                             ) 
         )
     {
-        throw std::runtime_error("Creation object IAIMPAddonsPlayerManager failed"); 
+        throw std::runtime_error("Creation object IAIMPServicePlayer failed"); 
     }
-    aimp3_player_manager_.reset(player_manager);
-    player_manager->Release();
+    aimp_service_player_.reset(aimp_service_player);
+    aimp_service_player->Release();
 
+    /*
     IAIMPAddonsCoverArtManager* coverart_manager;
     if (S_OK != aimp3_core_unit_->QueryInterface(IID_IAIMPAddonsCoverArtManager, 
                                                  reinterpret_cast<void**>(&coverart_manager)
@@ -982,38 +982,66 @@ void AIMPManager36::removeEntryFromPlayQueue(TrackDescription /*track_desc*/)
 
 PlaylistID AIMPManager36::getPlayingPlaylist() const
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::getPlayingPlaylist"; ///!!! TODO: implement
-    return PlaylistID();
+    IAIMPPlaylist* playlist_tmp;
+    HRESULT r = aimp_service_playlist_manager_->GetPlayablePlaylist(&playlist_tmp);
+    if (S_OK != r) {
+        std::runtime_error(MakeString() << __FUNCTION__": aimp_service_playlist_manager_->GetPlayablePlaylist() failed. Result: " << r);
+    }
+    if (playlist_tmp) {
+        playlist_tmp->Release();
+    } else {
+        // player is stopped at this time, return active playlist for compatibility with AIMPManager: AIMP2-AIMP3.5 returned active playlist in this case.
+        r = aimp_service_playlist_manager_->GetActivePlaylist(&playlist_tmp);
+        if (S_OK != r) {
+            std::runtime_error(MakeString() << __FUNCTION__": aimp_service_playlist_manager_->GetActivePlaylist() failed. Result: " << r);
+        }
+        assert(playlist_tmp);
+        playlist_tmp->Release();
+    }
+    return cast<PlaylistID>(playlist_tmp);
 }
 
 PlaylistEntryID AIMPManager36::getPlayingEntry() const
-{
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::getPlayingEntry"; ///!!! TODO: implement
-    return PlaylistEntryID();
+{    
+    IAIMPPlaylistItem* playlist_item_tmp;
+    HRESULT r = aimp_service_player_->GetPlaylistItem(&playlist_item_tmp);
+    if (S_OK != r) {
+        std::runtime_error(MakeString() << __FUNCTION__": aimp_service_player_->GetPlaylistItem() failed. Result: " << r);
+    }
+    if (playlist_item_tmp) {
+        playlist_item_tmp->Release();
+    } else {
+        assert(!"Playback stopped, so playable item is null");
+        playlist_item_tmp = nullptr;
+    }
+    return castToPlaylistEntryID(playlist_item_tmp);
 }
 
 TrackDescription AIMPManager36::getPlayingTrack() const
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::getPlayingTrack"; ///!!! TODO: implement
-    return TrackDescription(0,0);
+	return TrackDescription( getPlayingPlaylist(), getPlayingEntry() );
 }
 
-PlaylistID AIMPManager36::getAbsolutePlaylistID(PlaylistID /*id*/) const
+PlaylistID AIMPManager36::getAbsolutePlaylistID(PlaylistID id) const
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::getAbsolutePlaylistID"; ///!!! TODO: implement
-    return PlaylistID();
+    if (id == -1) { // treat ID -1 as playing playlist.
+        id = getPlayingPlaylist();
+    }
+    return id;
 }
 
-PlaylistEntryID AIMPManager36::getAbsoluteEntryID(PlaylistEntryID /*id*/) const
+PlaylistEntryID AIMPManager36::getAbsoluteEntryID(PlaylistEntryID id) const
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::getAbsoluteEntryID"; ///!!! TODO: implement
-    return PlaylistEntryID();
+    if (id == -1) { // treat ID -1 as playing entry.
+        id = getPlayingEntry();
+    }
+
+    return id;
 }
 
-TrackDescription AIMPManager36::getAbsoluteTrackDesc(TrackDescription /*track_desc*/) const
+TrackDescription AIMPManager36::getAbsoluteTrackDesc(TrackDescription track_desc) const
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::getAbsoluteTrackDesc"; ///!!! TODO: implement
-    return TrackDescription(0,0);
+    return TrackDescription( getAbsolutePlaylistID(track_desc.playlist_id), getAbsoluteEntryID(track_desc.track_id) );
 }
 
 PlaylistCRC32& AIMPManager36::getPlaylistCRC32Object(PlaylistID playlist_id) const

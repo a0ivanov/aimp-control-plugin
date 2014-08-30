@@ -211,6 +211,9 @@ public:
     sqlite3* playlists_db() const
         { return playlists_db_; }
 
+    // Returns nullptr if item does not exist.
+    AIMP36SDK::IAIMPPlaylistItem_ptr getPlaylistItem(PlaylistEntryID id);
+
 protected:
     
     sqlite3* playlists_db_;
@@ -231,9 +234,6 @@ private:
     void loadPlaylist(AIMP36SDK::IAIMPPlaylist* playlist, int playlist_index);
     void loadEntries(AIMP36SDK::IAIMPPlaylist* playlist); // throws std::runtime_error
 
-    // Returns nullptr if item does not exist.
-    AIMP36SDK::IAIMPPlaylistItem_ptr getPlaylistItem(PlaylistEntryID id);
-
     void notifyAllExternalListeners(EVENTS event) const;
     // types for notifications of external event listeners.
     typedef std::map<EventsListenerID, EventsListener> EventListeners;
@@ -242,6 +242,7 @@ private:
 
     boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_core_;
     boost::intrusive_ptr<AIMP36SDK::IAIMPServicePlaylistManager> aimp_service_playlist_manager_;
+    boost::intrusive_ptr<AIMP36SDK::IAIMPServicePlayer> aimp_service_player_;
 
     class AIMPPlaylistListener;
     typedef boost::intrusive_ptr<AIMPPlaylistListener> AIMPPlaylistListener_ptr;
