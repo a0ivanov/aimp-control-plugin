@@ -8,6 +8,7 @@
 #include "utils/iunknown_impl.h"
 #include "utils/string_encoding.h"
 #include "aimp3.60_sdk/Helpers/support.h"
+#include <boost/algorithm/string.hpp>
 
 namespace {
 using namespace ControlPlugin::PluginLogger;
@@ -952,8 +953,31 @@ void AIMPManager36::stopPlayback()
 
 std::string AIMPManager36::getAIMPVersion() const
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::getAIMPVersion"; ///!!! TODO: implement
-    return std::string();
+    IAIMPServiceVersionInfo* version_info_tmp;
+    HRESULT r = aimp36_core_->QueryInterface(IID_IAIMPServiceVersionInfo, reinterpret_cast<void**>(&version_info_tmp));
+    if (S_OK != r) {
+        BOOST_LOG_SEV(logger(), error) << "aimp36_core_->QueryInterface(IID_IAIMPServiceVersionInfo) falied. Result: " << r;
+        return "";
+    }
+    boost::intrusive_ptr<IAIMPServiceVersionInfo> version_info(version_info_tmp, false);
+
+    std::ostringstream os;
+
+    IAIMPString* info_tmp;
+    r = version_info->FormatInfo(&info_tmp);
+    if (S_OK == r) {
+        AIMPString_ptr info(info_tmp, false);
+        os << ' ' << StringEncoding::utf16_to_system_ansi_encoding_safe(info->GetData());
+    } else {
+        using namespace std;
+        const int version = version_info->GetVersionID();
+        os << version / 1000 << '.' << setfill('0') << setw(2) << (version % 1000) / 10 << '.' << version % 10
+           << " Build " << version_info->GetBuildNumber();   
+    }
+    
+    std::string result(os.str());
+    boost::algorithm::trim(result);
+    return result;
 }
 
 void AIMPManager36::pausePlayback()
@@ -1180,7 +1204,6 @@ void AIMPManager36::removeTrack(TrackDescription /*track_desc*/, bool /*physical
 
 void AIMPManager36::onTick()
 {
-    //BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::onTick"; ///!!! TODO: implement
 }
 
 std::string playlist36NotifyFlagsToString(DWORD flags)

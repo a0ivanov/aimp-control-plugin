@@ -44,6 +44,7 @@
 
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <boost/crc.hpp>
 
