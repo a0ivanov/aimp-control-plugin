@@ -243,6 +243,7 @@ void AIMPManager36::playlistAdded(IAIMPPlaylist* playlist)
 
         int playlist_index = getPlaylistIndexByHandle(playlist);
         loadPlaylist(playlist, playlist_index);
+        loadEntries(playlist);
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     } catch (std::exception& e) {
         BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << cast<PlaylistID>(playlist) << ". Reason: " << e.what();
