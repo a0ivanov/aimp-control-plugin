@@ -4,6 +4,7 @@
 
 #include "manager.h"
 #include "aimp3.60_sdk/aimp3_60_sdk.h"
+#include "aimp3.60_sdk/Helpers/typedefs.h"
 #include "utils/util.h"
 
 namespace AIMPPlayer

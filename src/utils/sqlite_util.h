@@ -19,7 +19,6 @@ inline sqlite3_stmt* createStmt(sqlite3* db, const std::string& query) // throws
                                  nullptr  // Pointer to unused portion of stmt
                                 );
     if (SQLITE_OK != rc_db) {
-        using namespace Utilities;
         const std::string msg = MakeString() << "sqlite3_prepare() error "
                                              << rc_db << ": " << sqlite3_errmsg(db)
                                              << ". Query: " << query;

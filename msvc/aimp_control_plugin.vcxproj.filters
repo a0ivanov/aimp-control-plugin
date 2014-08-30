@@ -501,6 +501,9 @@
     <ClInclude Include="..\src\aimp\aimp3.60_sdk\Helpers\typedefs.h">
       <Filter>src\aimp_manager\aimp_sdk\3.60\Helpers</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\Helpers\support.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60\Helpers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\control_plugin.def">

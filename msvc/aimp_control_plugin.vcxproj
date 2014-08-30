@@ -216,6 +216,7 @@
     <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiSkins.h" />
     <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiThreading.h" />
     <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiVisuals.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\Helpers\support.h" />
     <ClInclude Include="..\src\aimp\aimp3.60_sdk\Helpers\typedefs.h" />
     <ClInclude Include="..\src\aimp\aimp3_sdk\aimp3_sdk.h" />
     <ClInclude Include="..\src\aimp\aimp3_sdk\AIMPSDKAddons.h" />
