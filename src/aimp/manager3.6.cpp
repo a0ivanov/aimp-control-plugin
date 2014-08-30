@@ -505,99 +505,178 @@ void AIMPManager36::loadPlaylist(IAIMPPlaylist* playlist, int playlist_index)
 
 namespace Support {
 
-AIMPString_ptr getString(IAIMPPropertyList* property_list, const int property_id, HRESULT& result)
+HRESULT getString(IAIMPPropertyList* property_list, const int property_id, AIMPString_ptr* value)
 {
     assert(property_list);
+    assert(value);
 
-    IAIMPString* value;
-    result = property_list->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value));
+    IAIMPString* value_tmp;
+    HRESULT r = property_list->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value_tmp));
+    if (S_OK == r) {
+        AIMPString_ptr(value_tmp, false).swap(*value);
+
 #ifndef NDEBUG
-    if (result == S_OK) {
-        BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << property_id << ") value: " << StringEncoding::utf16_to_utf8(value->GetData(), value->GetData() + value->GetLength());
-    }
+        BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << property_id << ") value: " << StringEncoding::utf16_to_utf8(value_tmp->GetData(), value_tmp->GetData() + value_tmp->GetLength());
 #endif
-    return AIMPString_ptr(result == S_OK ? value : nullptr, false);
+    }
+    return r;
 }
 
 AIMPString_ptr getString(IAIMPPropertyList* property_list, const int property_id, const char* error_prefix)
 {
-    assert(property_list);
     assert(error_prefix);
-    using namespace AIMP36SDK::Support;
 
-    IAIMPString* value;
-    HRESULT r = property_list->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value));
+    AIMPString_ptr value;
+    HRESULT r = getString(property_list, property_id, &value);
     if (S_OK != r) {
         throw std::runtime_error(MakeString() << error_prefix << ": getString(): property_list->GetValueAsObject(property id = " << property_id << ") failed. Result " << r);
     }
-#ifndef NDEBUG
-    BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << property_id << ") value: " << StringEncoding::utf16_to_utf8(value->GetData(), value->GetData() + value->GetLength());
-#endif
-    return AIMPString_ptr(value, false);
+    return value;
 }
 
-AIMPString_ptr getString(IAIMPFileInfo* file_info, const int property_id, HRESULT& result)
+HRESULT getString(IAIMPFileInfo* file_info, const int property_id, AIMPString_ptr* value)
 {
     assert(file_info);
-    using namespace AIMP36SDK::Support;
+    assert(value);
 
-    IAIMPString* value;
-    result = file_info->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value));
+    IAIMPString* value_tmp;
+    HRESULT r = file_info->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value_tmp));
+    if (S_OK == r) {
+        AIMPString_ptr(value_tmp, false).swap(*value);
+
 #ifndef NDEBUG
-    if (result == S_OK) {
-        BOOST_LOG_SEV(logger(), debug) << "file_info->getString(" << FileinfoPropIdToString(property_id) << ") value: " << StringEncoding::utf16_to_utf8(value->GetData(), value->GetData() + value->GetLength());
-    }
+        BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << AIMP36SDK::Support::FileinfoPropIdToString(property_id) << ") value: " << StringEncoding::utf16_to_utf8(value_tmp->GetData(), value_tmp->GetData() + value_tmp->GetLength());
 #endif
-    return AIMPString_ptr(result == S_OK ? value : nullptr, false);
+    }
+    return r;
 }
 
 AIMPString_ptr getString(IAIMPFileInfo* file_info, const int property_id, const char* error_prefix)
 {
-    assert(file_info);
     assert(error_prefix);
-    using namespace AIMP36SDK::Support;
 
-    IAIMPString* value;
-    HRESULT r = file_info->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value));
+    AIMPString_ptr value;
+    HRESULT r = getString(file_info, property_id, &value);
     if (S_OK != r) {
-        throw std::runtime_error(MakeString() << error_prefix << ": getString(): file_info->GetValueAsObject(" << FileinfoPropIdToString(property_id) << ") failed. Result " << r);
+        throw std::runtime_error(MakeString() << error_prefix << ": getString(): file_info->GetValueAsObject(property id = " << AIMP36SDK::Support::FileinfoPropIdToString(property_id) << ") failed. Result " << r);
     }
-#ifndef NDEBUG
-    BOOST_LOG_SEV(logger(), debug) << "getString(" << FileinfoPropIdToString(property_id) << ") value: " << StringEncoding::utf16_to_utf8(value->GetData(), value->GetData() + value->GetLength());
-#endif
-    return AIMPString_ptr(value, false);
+    return value;
 }
 
-AIMPString_ptr getString(IAIMPPlaylistItem* playlist_item, const int property_id, HRESULT& result)
+HRESULT getString(IAIMPPlaylistItem* playlist_item, const int property_id, AIMPString_ptr* value)
 {
     assert(playlist_item);
-    using namespace AIMP36SDK::Support;
+    assert(value);
 
-    IAIMPString* value;
-    result = playlist_item->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value));
+    IAIMPString* value_tmp;
+    HRESULT r = playlist_item->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value_tmp));
+    if (S_OK == r) {
+        AIMPString_ptr(value_tmp, false).swap(*value);
+
 #ifndef NDEBUG
-    if (result == S_OK) {
-        BOOST_LOG_SEV(logger(), debug) << "playlist_item->getString(" << PlaylistItemToString(property_id) << ") value: " << StringEncoding::utf16_to_utf8(value->GetData(), value->GetData() + value->GetLength());
-    }
+        BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << AIMP36SDK::Support::PlaylistItemToString(property_id) << ") value: " << StringEncoding::utf16_to_utf8(value_tmp->GetData(), value_tmp->GetData() + value_tmp->GetLength());
 #endif
-    return AIMPString_ptr(result == S_OK ? value : nullptr, false);
+    }
+    return r;
 }
 
 AIMPString_ptr getString(IAIMPPlaylistItem* playlist_item, const int property_id, const char* error_prefix)
 {
-    assert(playlist_item);
     assert(error_prefix);
-    using namespace AIMP36SDK::Support;
 
-    IAIMPString* value;
-    HRESULT r = playlist_item->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value));
+    AIMPString_ptr value;
+    HRESULT r = getString(playlist_item, property_id, &value);
     if (S_OK != r) {
-        throw std::runtime_error(MakeString() << error_prefix << ": getString(): playlist_item->GetValueAsObject(" << PlaylistItemToString(property_id) << ") failed. Result " << r);
+        throw std::runtime_error(MakeString() << error_prefix << ": getString(): playlist_item->GetValueAsObject(property id = " << AIMP36SDK::Support::PlaylistItemToString(property_id) << ") failed. Result " << r);
     }
+    return value;
+}
+
+HRESULT getInt(IAIMPFileInfo* file_info, const int property_id, int* value)
+{
+    assert(file_info);
+    assert(value);
+
+    int value_tmp;
+    HRESULT r = file_info->GetValueAsInt32(property_id, &value_tmp);
+    if (S_OK == r) {
+        *value = value_tmp;
+
 #ifndef NDEBUG
-    BOOST_LOG_SEV(logger(), debug) << "getString(" << AIMP36SDK::Support::PlaylistItemToString(property_id) << ") value: " << StringEncoding::utf16_to_utf8(value->GetData(), value->GetData() + value->GetLength());
+        BOOST_LOG_SEV(logger(), debug) << "getInt(property_id = " << AIMP36SDK::Support::FileinfoPropIdToString(property_id) << ") value: " << *value;
 #endif
-    return AIMPString_ptr(value, false);
+    }
+    return r;
+}
+
+int getInt(IAIMPFileInfo* file_info, const int property_id, const char* error_prefix)
+{
+    assert(error_prefix);
+
+    int value;
+    HRESULT r = getInt(file_info, property_id, &value);
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << error_prefix << ": getInt(): file_info->GetValueAsInt32(property id = " << AIMP36SDK::Support::FileinfoPropIdToString(property_id) << ") failed. Result " << r);
+    }
+    return value;
+}
+
+HRESULT getInt64(IAIMPFileInfo* file_info, const int property_id, INT64* value)
+{
+    assert(file_info);
+    assert(value);
+
+    INT64 value_tmp;
+    HRESULT r = file_info->GetValueAsInt64(property_id, &value_tmp);
+    if (S_OK == r) {
+        *value = value_tmp;
+
+#ifndef NDEBUG
+        BOOST_LOG_SEV(logger(), debug) << "getInt64(property_id = " << AIMP36SDK::Support::FileinfoPropIdToString(property_id) << ") value: " << *value;
+#endif
+    }
+    return r;
+}
+
+INT64 getInt64(IAIMPFileInfo* file_info, const int property_id, const char* error_prefix)
+{
+    assert(error_prefix);
+
+    INT64 value;
+    HRESULT r = getInt64(file_info, property_id, &value);
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << error_prefix << ": getInt64(): file_info->GetValueAsInt64(property id = " << AIMP36SDK::Support::FileinfoPropIdToString(property_id) << ") failed. Result " << r);
+    }
+    return value;
+}
+
+HRESULT getDouble(IAIMPFileInfo* file_info, const int property_id, double* value)
+{
+    assert(file_info);
+    assert(value);
+
+    double value_tmp;
+    HRESULT r = file_info->GetValueAsFloat(property_id, &value_tmp);
+    if (S_OK == r) {
+        *value = value_tmp;
+
+#ifndef NDEBUG
+        BOOST_LOG_SEV(logger(), debug) << "getDouble(property_id = " << AIMP36SDK::Support::FileinfoPropIdToString(property_id) << ") value: " << *value;
+#endif
+    }
+    return r;
+}
+
+double getDouble(IAIMPFileInfo* file_info, const int property_id, const char* error_prefix)
+{
+    assert(error_prefix);
+
+    double value;
+    HRESULT r = getDouble(file_info, property_id, &value);
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << error_prefix << ": getDouble(): file_info->GetValueAsFloat(property id = " << AIMP36SDK::Support::FileinfoPropIdToString(property_id) << ") failed. Result " << r);
+    }
+    return value;
 }
 
 } // namespace Support
@@ -648,8 +727,19 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
         boost::intrusive_ptr<IAIMPPlaylistItem> item(item_tmp, false); 
         item_tmp = nullptr;
 
-        AIMPString_ptr title;
-        AIMPString_ptr displaytext;
+        AIMPString_ptr album,
+                       artist,
+                       date,
+                       fileName,
+                       genre,
+                       title;
+
+        int bitrate = 0,
+            channels = 0,
+            duration = 0,
+            rating = 0,
+            samplerate = 0;
+        int64_t filesize = 0;
 
         IAIMPFileInfo* file_info_tmp;
         r = item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_FILEINFO, IID_IAIMPFileInfo,
@@ -659,9 +749,24 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
             boost::intrusive_ptr<IAIMPFileInfo> file_info(file_info_tmp, false);
             file_info_tmp = nullptr;
 
-            // Title property
-            title = getString(file_info.get(), AIMP_FILEINFO_PROPID_TITLE, error_prefix);
+            album    = getString(file_info.get(), AIMP_FILEINFO_PROPID_ALBUM,    error_prefix);
+            artist   = getString(file_info.get(), AIMP_FILEINFO_PROPID_ARTIST,   error_prefix);
+            date     = getString(file_info.get(), AIMP_FILEINFO_PROPID_DATE,     error_prefix);
+            fileName = getString(file_info.get(), AIMP_FILEINFO_PROPID_FILENAME, error_prefix);
+            genre    = getString(file_info.get(), AIMP_FILEINFO_PROPID_GENRE,    error_prefix);
+            title    = getString(file_info.get(), AIMP_FILEINFO_PROPID_TITLE,    error_prefix);
+            if (!title || title->GetLength() == 0) {
+                title = getString(item.get(), AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT, error_prefix); // title should not be empty.
+            }
 
+            bitrate    = getInt(file_info.get(), AIMP_FILEINFO_PROPID_BITRATE,    error_prefix);
+            channels   = getInt(file_info.get(), AIMP_FILEINFO_PROPID_CHANNELS,   error_prefix);
+            samplerate = getInt(file_info.get(), AIMP_FILEINFO_PROPID_SAMPLERATE, error_prefix);
+
+            duration = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_DURATION, error_prefix));
+            rating   = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_MARK,     error_prefix));
+
+            filesize = getInt64(file_info.get(), AIMP_FILEINFO_PROPID_FILESIZE, error_prefix);
         } else {
             // This item is not of IAIMPFileInfo type.
             IAIMPVirtualFile* virtual_file_info_tmp;
@@ -696,25 +801,7 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
         BOOST_LOG_SEV(logger(), debug) << "index: " << item_index << ", entry_id: " << entry_id;
 #endif
 
-        // Title should not be empty.
-        if (!title || title->GetLength() == 0) {
-            title = getString(item.get(), AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT, error_prefix);
-        }
 
-        ///!!! TODO: implement
-        const int rating = 0; ///!!! TODO: find out how to extract rating in 3.6.
-        const int bitrate = 0;
-        const int channels = 0;
-        const int duration = 0;
-        const int64_t filesize = 0;
-        const int samplerate = 0;
-        AIMPString_ptr album(title);
-        AIMPString_ptr artist(title);
-        AIMPString_ptr date(title);
-        AIMPString_ptr fileName(title);
-        AIMPString_ptr genre(title);
-
-        ///!!! end
 
         { // special db code
             // bind all values
@@ -735,12 +822,13 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
             bind(int,    2, entry_id);
             bind(int,    3, item_index);
 
-            bindText(    4, album);
-            bindText(    5, artist);
-            bindText(    6, date);
-            bindText(    7, fileName);
-            bindText(    8, genre);
-            bindText(    9, title);
+            if (album)    { bindText(4, album); }
+            if (artist)   { bindText(5, artist); }
+            if (date)     { bindText(6, date); }
+            if (fileName) { bindText(7, fileName); }
+            if (genre)    { bindText(8, genre); }
+            if (title)    { bindText(9, title); }
+
 #undef bindText
             bind(int,   10, bitrate);
             bind(int,   11, channels);
