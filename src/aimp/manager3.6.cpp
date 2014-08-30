@@ -944,7 +944,10 @@ void AIMPManager36::startPlayback(TrackDescription track_desc)
 
 void AIMPManager36::stopPlayback()
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::stopPlayback"; ///!!! TODO: implement
+    HRESULT r = aimp_service_player_->Stop();
+    if (S_OK != r) {
+        throw std::runtime_error( MakeString() << __FUNCTION__": aimp_service_player_->Stop() failed. Result: " << r);
+    }
 }
 
 std::string AIMPManager36::getAIMPVersion() const
