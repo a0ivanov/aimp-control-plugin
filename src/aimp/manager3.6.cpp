@@ -620,6 +620,9 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
     const int entries_count = playlist->GetItemCount();
 
     deletePlaylistEntriesFromPlaylistDB(playlist_id); // remove old entries before adding new ones.
+    PlaylistItems& entry_ids = getPlaylistHelper(playlist).entry_ids_;
+    entry_ids.clear();
+    entry_ids.reserve(entries_count);
 
     sqlite3_stmt* stmt = createStmt(playlists_db_, "INSERT INTO PlaylistsEntries VALUES (?,?,?,?,?,?,"
                                                                                         "?,?,?,?,?,"
@@ -627,9 +630,9 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
                                     );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
-    BOOST_LOG_SEV(logger(), debug) << "The statement has "
-                                   << sqlite3_bind_parameter_count(stmt)
-                                   << " wildcards";
+    //BOOST_LOG_SEV(logger(), debug) << "The statement has "
+    //                               << sqlite3_bind_parameter_count(stmt)
+    //                               << " wildcards";
 
 #define bind(type, field_index, value)  rc_db = sqlite3_bind_##type(stmt, field_index, value); \
                                         if (SQLITE_OK != rc_db) { \
@@ -642,10 +645,6 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
     
     const char * const error_prefix = "Error occured while extracting playlist item data: ";
     
-    PlaylistItems& entry_ids = getPlaylistHelper(playlist).entry_ids_;
-    entry_ids.clear();
-    entry_ids.reserve(entries_count);
-
     for (int item_index = 0; item_index < entries_count; ++item_index) {
         IAIMPPlaylistItem* item_tmp;
         HRESULT r = playlist->GetItem(item_index,
