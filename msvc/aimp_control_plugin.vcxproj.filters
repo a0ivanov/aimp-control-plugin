@@ -65,6 +65,9 @@
     <Filter Include="src\aimp_manager\aimp_sdk\3.60">
       <UniqueIdentifier>{d1a4288f-8cd8-4a9a-968b-5756aa0ce6af}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\aimp_manager\aimp_sdk\3.60\Helpers">
+      <UniqueIdentifier>{d5016bd7-879f-4b83-8953-f383fa72c978}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\stdafx.cpp">
@@ -494,6 +497,9 @@
     </ClInclude>
     <ClInclude Include="..\src\aimp\manager3.6.h">
       <Filter>src\aimp_manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\Helpers\typedefs.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60\Helpers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

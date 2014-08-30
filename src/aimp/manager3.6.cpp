@@ -222,8 +222,6 @@ void AIMPManager36::initPlaylistDB()
 
 void AIMPManager36::shutdownPlaylistDB()
 {
-    releasePlaylistItems();
-
     const int rc = sqlite3_close(playlists_db_);
     if (SQLITE_OK != rc) {
         BOOST_LOG_SEV(logger(), error) << "sqlite3_close error: " << rc;
@@ -387,8 +385,6 @@ void AIMPManager36::deletePlaylistFromPlaylistDB(PlaylistID playlist_id)
 
 void AIMPManager36::deletePlaylistEntriesFromPlaylistDB(PlaylistID playlist_id)
 {
-    releasePlaylistItems(playlist_id);
-
     const std::string query = MakeString() << "DELETE FROM PlaylistsEntries WHERE playlist_id=" << playlist_id;
 
     executeQuery(query, playlists_db_, __FUNCTION__);
@@ -415,23 +411,6 @@ void releasePlaylistItems(sqlite3* playlists_db, const std::string& query)
             throw std::runtime_error(msg);
 		}
     }
-}
-
-void AIMPManager36::releasePlaylistItems(PlaylistID playlist_id)
-{
-    // call Release() for all items.
-    const std::string& query = MakeString() << "SELECT entry_id FROM PlaylistsEntries "
-                                            << "WHERE playlist_id = " << playlist_id;
-
-    AIMPPlayer::releasePlaylistItems(playlists_db_, query);
-}
-
-void AIMPManager36::releasePlaylistItems()
-{
-    // call Release() for all items.
-    const std::string& query = MakeString() << "SELECT entry_id FROM PlaylistsEntries";
-
-    AIMPPlayer::releasePlaylistItems(playlists_db_, query);
 }
 
 AIMPManager36::PlaylistHelper::PlaylistHelper(IAIMPPlaylist_ptr playlist, AIMPManager36* aimp36_manager)
@@ -729,6 +708,10 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
     
     const char * const error_prefix = "Error occured while extracting playlist item data: ";
     
+    PlaylistItems& entry_ids = getPlaylistHelper(playlist).entry_ids_;
+    entry_ids.clear();
+    entry_ids.reserve(entries_count);
+
     for (int item_index = 0; item_index < entries_count; ++item_index) {
         IAIMPPlaylistItem* item_tmp;
         HRESULT r = playlist->GetItem(item_index,
@@ -756,6 +739,7 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
             title = getString(file_info.get(), AIMP_FILEINFO_PROPID_TITLE, error_prefix);
 
         } else {
+            // This item is not of IAIMPFileInfo type.
             IAIMPVirtualFile* virtual_file_info_tmp;
             r = item->QueryInterface(IID_IAIMPVirtualFile,
                                      reinterpret_cast<void**>(&virtual_file_info_tmp)
@@ -764,7 +748,8 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
                 boost::intrusive_ptr<IAIMPVirtualFile> file_info(virtual_file_info_tmp, false);
                 virtual_file_info_tmp = nullptr;
             } else {
-                // this is not virtual file and not usual file use PLAYLISTITEM fields
+                // This item is not of IAIMPFileInfo/IAIMPVirtualFile types.
+                // Use PLAYLISTITEM fields
                             /*
                     const int AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT    = 1; <- used when AIMP_FILEINFO_PROPID_TITLE is empty or does not exits.
                     const int AIMP_PLAYLISTITEM_PROPID_FILEINFO       = 2;
@@ -842,12 +827,15 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
                                                      << rc_db << ": " << sqlite3_errmsg(playlists_db_);
                 throw std::runtime_error(msg);
             } else {
-                item->AddRef(); // notice that we taking ownership till database will be dropped.
+                entry_ids.push_back(item.get()); // notice that we taking ownership to access to items later.
             }
             sqlite3_reset(stmt);
         }
     }
 #undef bind
+
+    // sort entry ids to use binary search later
+    std::sort(entry_ids.begin(), entry_ids.end());
 }
 
 int AIMPManager36::getPlaylistIndexByHandle(IAIMPPlaylist* playlist)
@@ -866,6 +854,36 @@ int AIMPManager36::getPlaylistIndexByHandle(IAIMPPlaylist* playlist)
     }
 
     return -1;
+}
+
+AIMPManager36::PlaylistHelper& AIMPManager36::getPlaylistHelper(IAIMPPlaylist* playlist)
+{
+    assert(playlist);
+    for (auto& helper : playlist_helpers_) {
+        if (helper.playlist_.get() == playlist) {
+            return helper;
+        }
+    }
+
+    throw std::runtime_error(MakeString() << __FUNCTION__": playlist with id " << cast<PlaylistID>(playlist) << "is not found");
+}
+
+IAIMPPlaylistItem_ptr AIMPManager36::getPlaylistItem(PlaylistEntryID id)
+{
+    IAIMPPlaylistItem* to_search = castToPlaylistItem(id);
+    for (auto& helper : playlist_helpers_) {
+        const PlaylistItems& entry_ids = helper.entry_ids_;
+        const auto& end_it = entry_ids.end();
+        PlaylistItems::const_iterator it = std::lower_bound(entry_ids.begin(), end_it,
+                                                            to_search,
+                                                            [](const IAIMPPlaylistItem_ptr& element, IAIMPPlaylistItem* to_search) { return element.get() == to_search; }
+                                                            );
+        if (it != end_it) {
+            return *it;
+        }
+    }
+
+    return IAIMPPlaylistItem_ptr();
 }
 
 void AIMPManager36::notifyAllExternalListeners(AIMPManager::EVENTS event) const

@@ -229,8 +229,9 @@ private:
     int getPlaylistIndexByHandle(AIMP36SDK::IAIMPPlaylist* playlist);
     void loadPlaylist(AIMP36SDK::IAIMPPlaylist* playlist, int playlist_index);
     void loadEntries(AIMP36SDK::IAIMPPlaylist* playlist); // throws std::runtime_error
-    void releasePlaylistItems(PlaylistID playlist_id); // throws std::runtime_error
-    void releasePlaylistItems(); // throws std::runtime_error
+
+    // Returns nullptr if item does not exist.
+    AIMP36SDK::IAIMPPlaylistItem_ptr getPlaylistItem(PlaylistEntryID id);
 
     void notifyAllExternalListeners(EVENTS event) const;
     // types for notifications of external event listeners.
@@ -241,20 +242,22 @@ private:
     boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_core_;
     boost::intrusive_ptr<AIMP36SDK::IAIMPServicePlaylistManager> aimp_service_playlist_manager_;
 
-    typedef boost::intrusive_ptr<AIMP36SDK::IAIMPPlaylist> IAIMPPlaylist_ptr;
     class AIMPPlaylistListener;
     typedef boost::intrusive_ptr<AIMPPlaylistListener> AIMPPlaylistListener_ptr;
+    typedef std::vector<AIMP36SDK::IAIMPPlaylistItem_ptr> PlaylistItems;
 
     struct PlaylistHelper {    
-        IAIMPPlaylist_ptr playlist_;
+        AIMP36SDK::IAIMPPlaylist_ptr playlist_;
         PlaylistCRC32 crc32_;
         AIMPPlaylistListener_ptr listener_;
+        PlaylistItems entry_ids_; // used for validation of external playlist item ID.
 
-        PlaylistHelper(IAIMPPlaylist_ptr playlist, AIMPManager36* aimp36_manager);
+        PlaylistHelper(AIMP36SDK::IAIMPPlaylist_ptr playlist, AIMPManager36* aimp36_manager);
         ~PlaylistHelper();
     };
     typedef std::vector<PlaylistHelper> PlaylistHelpers;
     mutable PlaylistHelpers playlist_helpers_;
+    PlaylistHelper& getPlaylistHelper(AIMP36SDK::IAIMPPlaylist* playlist); // throws std::runtime_error
 };
 
 //! general tempate for convinient casting. Provide specialization for your own types.

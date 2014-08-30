@@ -12,4 +12,6 @@ namespace AIMP36SDK
 #include "apiObjects.h"
 #include "apiFileManager.h"
 
+#include "Helpers/typedefs.h"
+
 } // namespace AIMP3SDK 
