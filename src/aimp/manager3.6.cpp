@@ -958,17 +958,26 @@ std::string AIMPManager36::getAIMPVersion() const
 
 void AIMPManager36::pausePlayback()
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::pausePlayback"; ///!!! TODO: implement
+    HRESULT r = aimp_service_player_->Pause();
+    if (S_OK != r) {
+        throw std::runtime_error( MakeString() << __FUNCTION__": aimp_service_player_->Pause() failed. Result: " << r);
+    }
 }
 
 void AIMPManager36::playNextTrack()
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::playNextTrack"; ///!!! TODO: implement
+    HRESULT r = aimp_service_player_->GoToNext();
+    if (S_OK != r) {
+        throw std::runtime_error( MakeString() << __FUNCTION__": aimp_service_player_->GoToNext() failed. Result: " << r);
+    }
 }
 
 void AIMPManager36::playPreviousTrack()
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::playPreviousTrack"; ///!!! TODO: implement
+    HRESULT r = aimp_service_player_->GoToPrev();
+    if (S_OK != r) {
+        throw std::runtime_error( MakeString() << __FUNCTION__": aimp_service_player_->GoToPrev() failed. Result: " << r);
+    }
 }
 
 AIMPManager::StatusValue AIMPManager36::getStatus(STATUS /*status*/) const
