@@ -927,7 +927,21 @@ void AIMPManager36::unRegisterListener(AIMPManager::EventsListenerID listener_id
 
 void AIMPManager36::startPlayback()
 {
-	aimp_service_player_->Resume();
+    switch (getPlaybackState()) {
+    case PAUSED: {
+        HRESULT r = aimp_service_player_->Resume();
+        if (S_OK != r) {
+            throw std::runtime_error( MakeString() << __FUNCTION__": aimp_service_player_->Resume() failed. Result: " << r);
+        }
+        break;
+    }
+    case PLAYING:
+        // do nothing
+        break;
+    case STOPPED:
+        startPlayback(TrackDescription(-1, -1));
+        break;
+    }
 }
 
 void AIMPManager36::startPlayback(TrackDescription track_desc)
@@ -1148,8 +1162,26 @@ AIMPManager::PLAYLIST_ENTRY_SOURCE_TYPE AIMPManager36::getTrackSourceType(TrackD
 
 AIMPManager::PLAYBACK_STATE AIMPManager36::getPlaybackState() const
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::getPlaybackState"; ///!!! TODO: implement
-    return AIMPManager::STOPPED;
+    PLAYBACK_STATE state = STOPPED;
+    // map internal AIMP state to PLAYBACK_STATE.
+        // AParam1: 0 = Stopped; 1 = Paused; 2 = Playing
+    int internal_state = aimp_service_player_->GetState();
+    switch (internal_state) {
+    case 0:
+        state = STOPPED;
+        break;
+    case 1:
+        state = PAUSED;
+        break;
+    case 2:
+        state = PLAYING;
+        break;
+    default:
+        assert(!"aimp_service_player_->GetState() returned unknown value");
+        BOOST_LOG_SEV(logger(), error) << "aimp_service_player_->GetState() returned unknown value " << internal_state;
+    }
+
+    return state;
 }
 
 std::wstring AIMPManager36::getFormattedEntryTitle(TrackDescription /*track_desc*/, const std::string& /*format_string_utf8*/) const
