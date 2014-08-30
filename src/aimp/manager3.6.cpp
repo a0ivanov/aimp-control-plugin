@@ -633,15 +633,6 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
     //BOOST_LOG_SEV(logger(), debug) << "The statement has "
     //                               << sqlite3_bind_parameter_count(stmt)
     //                               << " wildcards";
-
-#define bind(type, field_index, value)  rc_db = sqlite3_bind_##type(stmt, field_index, value); \
-                                        if (SQLITE_OK != rc_db) { \
-                                            const std::string msg = MakeString() << "Error sqlite3_bind_"#type << " " << rc_db; \
-                                            throw std::runtime_error(msg); \
-                                        }
-
-    int rc_db;
-    bind(int, 1, playlist_id);
     
     const char * const error_prefix = "Error occured while extracting playlist item data: ";
     
@@ -728,12 +719,19 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
         { // special db code
             // bind all values
         
+#define bind(type, field_index, value)  rc_db = sqlite3_bind_##type(stmt, field_index, value); \
+                                        if (SQLITE_OK != rc_db) { \
+                                            const std::string msg = MakeString() << "Error sqlite3_bind_"#type << " " << rc_db; \
+                                            throw std::runtime_error(msg); \
+                                        }
+
 #define bindText(field_index, aimp_string)  rc_db = sqlite3_bind_text16(stmt, field_index, aimp_string->GetData(), aimp_string->GetLength() * sizeof(WCHAR), SQLITE_STATIC); \
                                             if (SQLITE_OK != rc_db) { \
                                                 const std::string msg = MakeString() << "sqlite3_bind_text16 rc_db: " << rc_db; \
                                                 throw std::runtime_error(msg); \
                                             }
-
+            int rc_db;
+            bind(int,    1, playlist_id);
             bind(int,    2, entry_id);
             bind(int,    3, item_index);
 
@@ -743,9 +741,7 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
             bindText(    7, fileName);
             bindText(    8, genre);
             bindText(    9, title);
-
 #undef bindText
-
             bind(int,   10, bitrate);
             bind(int,   11, channels);
             bind(int,   12, duration);
@@ -753,6 +749,7 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
             bind(int,   14, rating);
             bind(int,   15, samplerate);
             bind(int64, 16, crc32(info));
+#undef bind
 
             rc_db = sqlite3_step(stmt);
             if (SQLITE_DONE != rc_db) {
@@ -765,7 +762,6 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
             sqlite3_reset(stmt);
         }
     }
-#undef bind
 
     // sort entry ids to use binary search later
     std::sort(entry_ids.begin(), entry_ids.end());
