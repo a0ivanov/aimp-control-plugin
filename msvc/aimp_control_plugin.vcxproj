@@ -118,6 +118,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\aimp\aimp3.60_sdk\Helpers\AIMPString.cpp" />
     <ClCompile Include="..\src\aimp\manager2.6.cpp" />
     <ClCompile Include="..\src\aimp\manager3.0.cpp" />
     <ClCompile Include="..\src\aimp\manager3.1.cpp" />
@@ -216,6 +217,8 @@
     <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiSkins.h" />
     <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiThreading.h" />
     <ClInclude Include="..\src\aimp\aimp3.60_sdk\apiVisuals.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\Helpers\AIMPString.h" />
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\Helpers\IUnknownInterfaceImpl.h" />
     <ClInclude Include="..\src\aimp\aimp3.60_sdk\Helpers\support.h" />
     <ClInclude Include="..\src\aimp\aimp3.60_sdk\Helpers\typedefs.h" />
     <ClInclude Include="..\src\aimp\aimp3_sdk\aimp3_sdk.h" />

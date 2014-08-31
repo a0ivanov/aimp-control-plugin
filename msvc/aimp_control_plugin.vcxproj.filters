@@ -214,6 +214,9 @@
     <ClCompile Include="..\src\aimp\manager3.6.cpp">
       <Filter>src\aimp_manager</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\aimp\aimp3.60_sdk\Helpers\AIMPString.cpp">
+      <Filter>src\aimp_manager\aimp_sdk\3.60\Helpers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\stdafx.h">
@@ -502,6 +505,12 @@
       <Filter>src\aimp_manager\aimp_sdk\3.60\Helpers</Filter>
     </ClInclude>
     <ClInclude Include="..\src\aimp\aimp3.60_sdk\Helpers\support.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60\Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\Helpers\AIMPString.h">
+      <Filter>src\aimp_manager\aimp_sdk\3.60\Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\aimp3.60_sdk\Helpers\IUnknownInterfaceImpl.h">
       <Filter>src\aimp_manager\aimp_sdk\3.60\Helpers</Filter>
     </ClInclude>
   </ItemGroup>
