@@ -117,6 +117,13 @@ AIMPManager36::AIMPManager36(boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_c
         if (S_OK != r) {
             throw std::runtime_error("RegisterExtension(IID_IAIMPServicePlaylistManager) failed"); 
         }
+
+        aimp_message_hook_.reset(new AIMPMessageHook(this));
+        r = aimp_service_message_dispatcher_->Hook(aimp_message_hook_.get());
+        if (S_OK != r) {
+            throw std::runtime_error(MakeString() << "aimp_service_message_dispatcher_->Hook() failed. Result " << r); 
+        }
+        
     } catch (std::runtime_error& e) {
         throw std::runtime_error( std::string("Error occured during AIMPManager36 initialization. Reason:") + e.what() );
     }
@@ -126,7 +133,12 @@ AIMPManager36::~AIMPManager36()
 {
     // It seems listeners registered by RegisterExtension will be released by AIMP before Finalize call.
     
-    aimp_service_message_dispatcher_.reset();
+    if (aimp_service_message_dispatcher_) {
+        aimp_service_message_dispatcher_->Unhook(aimp_message_hook_.get());
+        aimp_message_hook_.reset();
+        aimp_service_message_dispatcher_.reset();    
+    }
+
     aimp_service_player_.reset();
     aimp_playlist_queue_.reset();
     aimp_service_playlist_manager_.reset();
