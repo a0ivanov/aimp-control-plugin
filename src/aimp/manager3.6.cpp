@@ -1645,8 +1645,6 @@ void AIMPManager36::setStatus(AIMPManager::STATUS status, AIMPManager::StatusVal
 void AIMPManager36::reloadQueuedEntries() // throws std::runtime_error
 {
     // PROFILE_EXECUTION_TIME(__FUNCTION__);
-/* ///!!! Impement after final implementation of loadEntries.
-
     deleteQueuedEntriesFromPlaylistDB(); // remove old entries before adding new ones.
 
     sqlite3_stmt* stmt = createStmt(playlists_db_, "INSERT INTO QueuedEntries VALUES (?,?,?,?,?,"
@@ -1655,82 +1653,116 @@ void AIMPManager36::reloadQueuedEntries() // throws std::runtime_error
                                     );
     ON_BLOCK_EXIT(&sqlite3_finalize, stmt);
 
-    AIMP3Util::FileInfoHelper file_info_helper; // used for get entries from AIMP conveniently.
+    const char * const error_prefix = "Error occured while extracting playlist queue item data: ";
 
-    const int entries_count = aimp3_playlist_queue_->QueueEntryGetCount();
-    for (int entry_index = 0; entry_index < entries_count; ++entry_index) {
-        HPLSENTRY entry_handle;
-        HRESULT r = aimp3_playlist_queue_->QueueEntryGet(entry_index, &entry_handle);
-
+    const int entries_count = aimp_playlist_queue_->GetItemCount();
+    for (int item_index = 0; item_index < entries_count; ++item_index) {
+        IAIMPPlaylistItem* item_tmp;
+        HRESULT r = aimp_playlist_queue_->GetItem(item_index,
+                                                  IID_IAIMPPlaylistItem,
+                                                  reinterpret_cast<void**>(&item_tmp)
+                                                  );
         if (S_OK != r) {
-            const std::string msg = MakeString() << "IAIMPAddonsPlaylistQueue::QueueEntryGet() error " 
-                                                 << r << " occured while getting entry info ¹" << entry_index;
-            throw std::runtime_error(msg);
+            throw std::runtime_error(MakeString() << error_prefix << "aimp_playlist_queue_->GetItem(IID_IAIMPPlaylistItem) failed. Result " << r);
+        }
+        boost::intrusive_ptr<IAIMPPlaylistItem> item(item_tmp, false); 
+        item_tmp = nullptr;
+
+        AIMPString_ptr album,
+                       artist,
+                       date,
+                       fileName,
+                       genre,
+                       title;
+
+        int bitrate = 0,
+            channels = 0,
+            duration = 0,
+            rating = 0,
+            samplerate = 0;
+        int64_t filesize = 0;
+
+        IAIMPFileInfo* file_info_tmp;
+        r = item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_FILEINFO, IID_IAIMPFileInfo,
+                                   reinterpret_cast<void**>(&file_info_tmp)
+                                   );
+        if (S_OK != r) {
+            throw std::runtime_error(MakeString() << error_prefix << "item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_FILEINFO) failed. Result " << r);
+        }
+        boost::intrusive_ptr<IAIMPFileInfo> file_info(file_info_tmp, false);
+        file_info_tmp = nullptr;
+        using namespace Support;
+
+        album    = getString(file_info.get(), AIMP_FILEINFO_PROPID_ALBUM,    error_prefix);
+        artist   = getString(file_info.get(), AIMP_FILEINFO_PROPID_ARTIST,   error_prefix);
+        date     = getString(file_info.get(), AIMP_FILEINFO_PROPID_DATE,     error_prefix);
+        fileName = getString(file_info.get(), AIMP_FILEINFO_PROPID_FILENAME, error_prefix);
+        genre    = getString(file_info.get(), AIMP_FILEINFO_PROPID_GENRE,    error_prefix);
+        title    = getString(file_info.get(), AIMP_FILEINFO_PROPID_TITLE,    error_prefix);
+        if (!title || title->GetLength() == 0) {
+            title = getString(item.get(), AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT, error_prefix); // title should not be empty.
         }
 
-        r = aimp3_playlist_manager_->EntryPropertyGetValue( entry_handle, AIMP_PLAYLIST_ENTRY_PROPERTY_INFO,
-                                                            &file_info_helper.getEmptyFileInfo(), sizeof(file_info_helper.getEmptyFileInfo())
-                                                            );
+        bitrate    = getInt(file_info.get(), AIMP_FILEINFO_PROPID_BITRATE,    error_prefix);
+        channels   = getInt(file_info.get(), AIMP_FILEINFO_PROPID_CHANNELS,   error_prefix);
+        samplerate = getInt(file_info.get(), AIMP_FILEINFO_PROPID_SAMPLERATE, error_prefix);
 
-        if (S_OK != r) {
-            const std::string msg = MakeString() << "IAIMPAddonsPlaylistManager::EntryPropertyGetValue() error " 
-                                                 << r << " occured while getting entry info ¹" << entry_index;
-            throw std::runtime_error(msg);
-        }
+        duration = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_DURATION, error_prefix));
+        rating   = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_MARK,     error_prefix));
 
-        { // get rating manually, since AIMP3 does not fill TAIMPFileInfo::Rating value.
-            int rating = 0;
-            r = aimp3_playlist_manager_->EntryPropertyGetValue( entry_handle, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_MARK, &rating, sizeof(rating) );    
-            if (S_OK != r) {
-                rating =  0;
-            }
+        filesize = getInt64(file_info.get(), AIMP_FILEINFO_PROPID_FILESIZE, error_prefix);
 
-            // special db code
-            {
+
+        const int entry_id = castToPlaylistEntryID(item.get());
+
+#ifndef NDEBUG
+        BOOST_LOG_SEV(logger(), debug) << "index: " << item_index << ", entry_id: " << entry_id;
+#endif
+
+        { // special db code
 #define bind(type, field_index, value)  rc_db = sqlite3_bind_##type(stmt, field_index, value); \
                                         if (SQLITE_OK != rc_db) { \
                                             const std::string msg = MakeString() << "Error sqlite3_bind_"#type << " " << rc_db; \
                                             throw std::runtime_error(msg); \
                                         }
-#define bindText(field_index, info_field_name)  rc_db = sqlite3_bind_text16(stmt, field_index, info.##info_field_name##Buffer, info.##info_field_name##BufferSizeInChars * sizeof(WCHAR), SQLITE_STATIC); \
-                                                if (SQLITE_OK != rc_db) { \
-                                                    const std::string msg = MakeString() << "sqlite3_bind_text16" << " " << rc_db; \
-                                                    throw std::runtime_error(msg); \
-                                                }
-                int rc_db;
-                TrackDescription track_desc = getTrackDescOfQueuedEntry(entry_handle);
-                bind(int,    1, track_desc.playlist_id);
-                // bind all values
-                const AIMP3SDK::TAIMPFileInfo& info = file_info_helper.getFileInfoWithCorrectStringLengthsAndNonEmptyTitle();
-                bind(int,    2, track_desc.track_id);
-                bind(int,    3, entry_index);
-                bindText(    4, Album);
-                bindText(    5, Artist);
-                bindText(    6, Date);
-                bindText(    7, FileName);
-                bindText(    8, Genre);
-                bindText(    9, Title);
-                bind(int,   10, info.BitRate);
-                bind(int,   11, info.Channels);
-                bind(int,   12, info.Duration);
-                bind(int64, 13, info.FileSize);
-                bind(int,   14, rating);
-                bind(int,   15, info.SampleRate);
-                
 
-                rc_db = sqlite3_step(stmt);
-                if (SQLITE_DONE != rc_db) {
-                    const std::string msg = MakeString() << "sqlite3_step() error "
-                                                         << rc_db << ": " << sqlite3_errmsg(playlists_db_);
-                    throw std::runtime_error(msg);
-                }
-                sqlite3_reset(stmt);
-#undef bind
+#define bindText(field_index, aimp_string)  rc_db = sqlite3_bind_text16(stmt, field_index, aimp_string->GetData(), aimp_string->GetLength() * sizeof(WCHAR), SQLITE_STATIC); \
+                                            if (SQLITE_OK != rc_db) { \
+                                                const std::string msg = MakeString() << "sqlite3_bind_text16 rc_db: " << rc_db; \
+                                                throw std::runtime_error(msg); \
+                                            }
+            int rc_db;
+
+            TrackDescription track_desc = getTrackDescOfQueuedEntry(item.get());
+            bind(int,    1, track_desc.playlist_id);
+            bind(int,    2, track_desc.track_id);
+            bind(int,    3, item_index);
+
+            if (album)    { bindText(4, album); }
+            if (artist)   { bindText(5, artist); }
+            if (date)     { bindText(6, date); }
+            if (fileName) { bindText(7, fileName); }
+            if (genre)    { bindText(8, genre); }
+            if (title)    { bindText(9, title); }
+
 #undef bindText
+            bind(int,   10, bitrate);
+            bind(int,   11, channels);
+            bind(int,   12, duration);
+            bind(int64, 13, filesize);
+            bind(int,   14, rating);
+            bind(int,   15, samplerate);
+#undef bind
+
+            rc_db = sqlite3_step(stmt);
+            if (SQLITE_DONE != rc_db) {
+                const std::string msg = MakeString() << "sqlite3_step() error "
+                                                     << rc_db << ": " << sqlite3_errmsg(playlists_db_);
+                throw std::runtime_error(msg);
             }
+            sqlite3_reset(stmt);
         }
     }
-*/
 }
 
 TrackDescription AIMPManager36::getTrackDescOfQueuedEntry(AIMP36SDK::IAIMPPlaylistItem* item) const // throws std::runtime_error
