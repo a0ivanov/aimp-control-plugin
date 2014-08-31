@@ -190,14 +190,14 @@ class IAIMPPlaylistQueue: public IUnknown
 {
 	public:
 		// Adding
-		virtual void WINAPI Add(IAIMPPlaylistItem* Item, BOOL InsertAtBeginning) = 0;
-		virtual void WINAPI AddList(IAIMPObjectList* ItemList, BOOL InsertAtBeginning) = 0;
+		virtual HRESULT WINAPI Add(IAIMPPlaylistItem* Item, BOOL InsertAtBeginning) = 0;
+		virtual HRESULT WINAPI AddList(IAIMPObjectList* ItemList, BOOL InsertAtBeginning) = 0;
 		// Deleting
-		virtual void WINAPI Delete(IAIMPPlaylistItem* Item) = 0;
-		virtual void WINAPI Delete2(IAIMPPlaylist* Playlist) = 0;
+		virtual HRESULT WINAPI Delete(IAIMPPlaylistItem* Item) = 0;
+		virtual HRESULT WINAPI Delete2(IAIMPPlaylist* Playlist) = 0;
 		// Reorder
-		virtual void WINAPI Move(IAIMPPlaylistItem* Item, int TargetIndex) = 0;
-		virtual void WINAPI Move2(int ItemIndex, int TargetIndex) = 0;
+		virtual HRESULT WINAPI Move(IAIMPPlaylistItem* Item, int TargetIndex) = 0;
+		virtual HRESULT WINAPI Move2(int ItemIndex, int TargetIndex) = 0;
 		// Items
 		virtual HRESULT WINAPI GetItem(int Index, REFIID IID, void **Obj) = 0;
 		virtual int WINAPI GetItemCount() = 0;
