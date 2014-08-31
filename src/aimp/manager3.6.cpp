@@ -263,6 +263,35 @@ void AIMPManager36::initPlaylistDB()
     THROW_IF_NOT_OK_WITH_MSG( rc, MakeString() << "Playlist table creation failure. Reason: sqlite3_exec(create table) error "
                                                << rc << ": " << errmsg );
     }
+
+    { // create table for content of entries queue.
+    char* errmsg = nullptr;
+    ON_BLOCK_EXIT(&sqlite3_free, errmsg);
+    rc = sqlite3_exec(playlists_db_,
+                      "CREATE TABLE QueuedEntries (  playlist_id    INTEGER,"
+                                                    "entry_id       INTEGER,"
+                                                    "queue_index    INTEGER,"
+                                                    "album          VARCHAR(128),"
+                                                    "artist         VARCHAR(128),"
+                                                    "date           VARCHAR(16),"
+                                                    "filename       VARCHAR(260),"
+                                                    "genre          VARCHAR(32),"
+                                                    "title          VARCHAR(260),"
+                                                    "bitrate        INTEGER,"
+                                                    "channels_count INTEGER,"
+                                                    "duration       INTEGER,"
+                                                    "filesize       BIGINT,"
+                                                    "rating         TINYINT,"
+                                                    "samplerate     INTEGER"
+                                                  ")",
+                      nullptr, /* Callback function */
+                      nullptr, /* 1st argument to callback */
+                      &errmsg
+                      );
+    THROW_IF_NOT_OK_WITH_MSG( rc, MakeString() << "Queue content table creation failure. Reason: sqlite3_exec(create table) error "
+                                               << rc << ": " << errmsg );
+    }
+
 #undef THROW_IF_NOT_OK_WITH_MSG
 }
 
@@ -551,7 +580,7 @@ void AIMPManager36::loadPlaylist(IAIMPPlaylist* playlist, int playlist_index)
 
 namespace Support {
 
-HRESULT getString(IAIMPPropertyList* property_list, const int property_id, AIMPString_ptr* value)
+HRESULT getString(IAIMPPropertyList* property_list, const int property_id, IAIMPString_ptr* value)
 {
     assert(property_list);
     assert(value);
@@ -559,7 +588,7 @@ HRESULT getString(IAIMPPropertyList* property_list, const int property_id, AIMPS
     IAIMPString* value_tmp;
     HRESULT r = property_list->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value_tmp));
     if (S_OK == r) {
-        AIMPString_ptr(value_tmp, false).swap(*value);
+        IAIMPString_ptr(value_tmp, false).swap(*value);
 
 #ifndef NDEBUG
         BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << property_id << ") value: " << StringEncoding::utf16_to_utf8(value_tmp->GetData(), value_tmp->GetData() + value_tmp->GetLength());
@@ -568,11 +597,11 @@ HRESULT getString(IAIMPPropertyList* property_list, const int property_id, AIMPS
     return r;
 }
 
-AIMPString_ptr getString(IAIMPPropertyList* property_list, const int property_id, const char* error_prefix)
+IAIMPString_ptr getString(IAIMPPropertyList* property_list, const int property_id, const char* error_prefix)
 {
     assert(error_prefix);
 
-    AIMPString_ptr value;
+    IAIMPString_ptr value;
     HRESULT r = getString(property_list, property_id, &value);
     if (S_OK != r) {
         throw std::runtime_error(MakeString() << error_prefix << ": getString(): property_list->GetValueAsObject(property id = " << property_id << ") failed. Result " << r);
@@ -580,7 +609,7 @@ AIMPString_ptr getString(IAIMPPropertyList* property_list, const int property_id
     return value;
 }
 
-HRESULT getString(IAIMPFileInfo* file_info, const int property_id, AIMPString_ptr* value)
+HRESULT getString(IAIMPFileInfo* file_info, const int property_id, IAIMPString_ptr* value)
 {
     assert(file_info);
     assert(value);
@@ -588,7 +617,7 @@ HRESULT getString(IAIMPFileInfo* file_info, const int property_id, AIMPString_pt
     IAIMPString* value_tmp;
     HRESULT r = file_info->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value_tmp));
     if (S_OK == r) {
-        AIMPString_ptr(value_tmp, false).swap(*value);
+        IAIMPString_ptr(value_tmp, false).swap(*value);
 
 #ifndef NDEBUG
         BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << AIMP36SDK::Support::FileinfoPropIdToString(property_id) << ") value: " << StringEncoding::utf16_to_utf8(value_tmp->GetData(), value_tmp->GetData() + value_tmp->GetLength());
@@ -597,11 +626,11 @@ HRESULT getString(IAIMPFileInfo* file_info, const int property_id, AIMPString_pt
     return r;
 }
 
-AIMPString_ptr getString(IAIMPFileInfo* file_info, const int property_id, const char* error_prefix)
+IAIMPString_ptr getString(IAIMPFileInfo* file_info, const int property_id, const char* error_prefix)
 {
     assert(error_prefix);
 
-    AIMPString_ptr value;
+    IAIMPString_ptr value;
     HRESULT r = getString(file_info, property_id, &value);
     if (S_OK != r) {
         throw std::runtime_error(MakeString() << error_prefix << ": getString(): file_info->GetValueAsObject(property id = " << AIMP36SDK::Support::FileinfoPropIdToString(property_id) << ") failed. Result " << r);
@@ -609,7 +638,7 @@ AIMPString_ptr getString(IAIMPFileInfo* file_info, const int property_id, const 
     return value;
 }
 
-HRESULT getString(IAIMPPlaylistItem* playlist_item, const int property_id, AIMPString_ptr* value)
+HRESULT getString(IAIMPPlaylistItem* playlist_item, const int property_id, IAIMPString_ptr* value)
 {
     assert(playlist_item);
     assert(value);
@@ -617,7 +646,7 @@ HRESULT getString(IAIMPPlaylistItem* playlist_item, const int property_id, AIMPS
     IAIMPString* value_tmp;
     HRESULT r = playlist_item->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value_tmp));
     if (S_OK == r) {
-        AIMPString_ptr(value_tmp, false).swap(*value);
+        IAIMPString_ptr(value_tmp, false).swap(*value);
 
 #ifndef NDEBUG
         BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << AIMP36SDK::Support::PlaylistItemToString(property_id) << ") value: " << StringEncoding::utf16_to_utf8(value_tmp->GetData(), value_tmp->GetData() + value_tmp->GetLength());
@@ -626,11 +655,11 @@ HRESULT getString(IAIMPPlaylistItem* playlist_item, const int property_id, AIMPS
     return r;
 }
 
-AIMPString_ptr getString(IAIMPPlaylistItem* playlist_item, const int property_id, const char* error_prefix)
+IAIMPString_ptr getString(IAIMPPlaylistItem* playlist_item, const int property_id, const char* error_prefix)
 {
     assert(error_prefix);
 
-    AIMPString_ptr value;
+    IAIMPString_ptr value;
     HRESULT r = getString(playlist_item, property_id, &value);
     if (S_OK != r) {
         throw std::runtime_error(MakeString() << error_prefix << ": getString(): playlist_item->GetValueAsObject(property id = " << AIMP36SDK::Support::PlaylistItemToString(property_id) << ") failed. Result " << r);
@@ -773,7 +802,7 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
         boost::intrusive_ptr<IAIMPPlaylistItem> item(item_tmp, false); 
         item_tmp = nullptr;
 
-        AIMPString_ptr album,
+        IAIMPString_ptr album,
                        artist,
                        date,
                        fileName,
@@ -1030,7 +1059,7 @@ std::string AIMPManager36::getAIMPVersion() const
     IAIMPString* info_tmp;
     r = version_info->FormatInfo(&info_tmp);
     if (S_OK == r) {
-        AIMPString_ptr info(info_tmp, false);
+        IAIMPString_ptr info(info_tmp, false);
         os << ' ' << StringEncoding::utf16_to_system_ansi_encoding_safe(info->GetData());
     } else {
         using namespace std;
@@ -1642,7 +1671,7 @@ void AIMPManager36::setStatus(AIMPManager::STATUS status, AIMPManager::StatusVal
     throw std::runtime_error( os.str() );
 }
 
-void AIMPManager36::reloadQueuedEntries() // throws std::runtime_error
+void AIMPManager36::reloadQueuedEntries()
 {
     // PROFILE_EXECUTION_TIME(__FUNCTION__);
     deleteQueuedEntriesFromPlaylistDB(); // remove old entries before adding new ones.
@@ -1668,7 +1697,7 @@ void AIMPManager36::reloadQueuedEntries() // throws std::runtime_error
         boost::intrusive_ptr<IAIMPPlaylistItem> item(item_tmp, false); 
         item_tmp = nullptr;
 
-        AIMPString_ptr album,
+        IAIMPString_ptr album,
                        artist,
                        date,
                        fileName,
@@ -1763,6 +1792,12 @@ void AIMPManager36::reloadQueuedEntries() // throws std::runtime_error
             sqlite3_reset(stmt);
         }
     }
+}
+
+void AIMPManager36::deleteQueuedEntriesFromPlaylistDB()
+{
+    const std::string query("DELETE FROM QueuedEntries");
+    executeQuery(query, playlists_db_, __FUNCTION__);
 }
 
 TrackDescription AIMPManager36::getTrackDescOfQueuedEntry(AIMP36SDK::IAIMPPlaylistItem* item) const // throws std::runtime_error
@@ -2043,10 +2078,26 @@ std::wstring AIMPManager36::getFormattedEntryTitle(TrackDescription track_desc, 
     }
 }
 
-std::wstring AIMPManager36::getEntryFilename(TrackDescription /*track_desc*/) const
+std::wstring AIMPManager36::getEntryFilename(TrackDescription track_desc) const
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::getEntryFilename"; ///!!! TODO: implement
-    return std::wstring();
+    TrackDescription absolute_track_desc(getAbsoluteTrackDesc(track_desc));
+    if (IAIMPPlaylistItem_ptr item = getPlaylistItem(absolute_track_desc.track_id)) {
+
+        IAIMPFileInfo* file_info_tmp;
+        HRESULT r = item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_FILEINFO, IID_IAIMPFileInfo,
+                                           reinterpret_cast<void**>(&file_info_tmp)
+                                           );
+        if (S_OK != r) {
+            throw std::runtime_error( MakeString() << __FUNCTION__": item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_FILEINFO) failed for track " << track_desc << ". Result: " << r);
+        }
+        boost::intrusive_ptr<IAIMPFileInfo> file_info(file_info_tmp, false);
+
+        using namespace Support;
+        IAIMPString_ptr file_name = getString(file_info.get(), AIMP_FILEINFO_PROPID_FILENAME, __FUNCTION__" error: ");
+        return std::wstring(file_name->GetData(), file_name->GetLength());
+    } else {
+        throw std::runtime_error( MakeString() << __FUNCTION__": invalid track" << track_desc);
+    }
 }
 
 bool AIMPManager36::isCoverImageFileExist(TrackDescription /*track_desc*/, boost::filesystem::wpath* /*path*/) const
