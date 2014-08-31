@@ -2111,10 +2111,9 @@ void AIMPManager36::saveCoverToFile(TrackDescription /*track_desc*/, const std::
 	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::saveCoverToFile"; ///!!! TODO: implement
 }
 
-int AIMPManager36::trackRating(TrackDescription /*track_desc*/) const
+int AIMPManager36::trackRating(TrackDescription track_desc) const
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::trackRating"; ///!!! TODO: implement
-    return 0;
+	return getEntryField<DWORD>(playlists_db_, "rating", getAbsoluteEntryID(track_desc.track_id));
 }
 
 void AIMPManager36::addFileToPlaylist(const boost::filesystem::wpath& /*path*/, PlaylistID /*playlist_id*/)
