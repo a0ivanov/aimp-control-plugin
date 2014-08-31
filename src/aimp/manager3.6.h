@@ -72,6 +72,22 @@ public:
     */
     virtual void removeEntryFromPlayQueue(TrackDescription track_desc); // throws std::runtime_error
 
+    /*!
+        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
+    */
+    virtual void reloadQueuedEntries(); // throws std::runtime_error
+
+    /*!
+        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
+        Track should be already queued.
+    */
+    virtual void moveQueueEntry(TrackDescription track_desc, int new_queue_index); // throws std::runtime_error
+
+    /*!
+        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
+    */
+    virtual void moveQueueEntry(int old_queue_index, int new_queue_index); // throws std::runtime_error
+
     //! \return current playing playlist. Can return 0 on from AIMP3 build 3.00.985 if there player is stopped.
     virtual PlaylistID getPlayingPlaylist() const;
 
@@ -236,6 +252,9 @@ private:
     void loadPlaylist(AIMP36SDK::IAIMPPlaylist* playlist, int playlist_index);
     void loadEntries(AIMP36SDK::IAIMPPlaylist* playlist); // throws std::runtime_error
 
+    TrackDescription getTrackDescOfQueuedEntry(AIMP36SDK::IAIMPPlaylistItem* item) const; // throws std::runtime_error;
+    void deleteQueuedEntriesFromPlaylistDB();
+
     void notifyAllExternalListeners(EVENTS event) const;
     // types for notifications of external event listeners.
     typedef std::map<EventsListenerID, EventsListener> EventListeners;
@@ -244,6 +263,8 @@ private:
 
     boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_core_;
     boost::intrusive_ptr<AIMP36SDK::IAIMPServicePlaylistManager> aimp_service_playlist_manager_;
+    boost::intrusive_ptr<AIMP36SDK::IAIMPPlaylistQueue> aimp_playlist_queue_;
+    
     boost::intrusive_ptr<AIMP36SDK::IAIMPServicePlayer> aimp_service_player_;
     boost::intrusive_ptr<AIMP36SDK::IAIMPServiceMessageDispatcher> aimp_service_message_dispatcher_;
 
