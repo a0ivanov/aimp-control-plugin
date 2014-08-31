@@ -228,6 +228,7 @@ public:
         { return playlists_db_; }
 
     // Returns nullptr if item does not exist.
+    AIMP36SDK::IAIMPPlaylistItem_ptr getPlaylistItem(PlaylistEntryID id) const;
     AIMP36SDK::IAIMPPlaylistItem_ptr getPlaylistItem(PlaylistEntryID id);
 
     void onAimpCoreMessage(DWORD AMessage, int AParam1, void* AParam2, HRESULT* AResult);

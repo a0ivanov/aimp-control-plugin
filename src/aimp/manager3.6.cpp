@@ -8,9 +8,9 @@
 #include "utils/iunknown_impl.h"
 #include "utils/string_encoding.h"
 #include "aimp3.60_sdk/Helpers/support.h"
+#include "aimp3.60_sdk/Helpers/AIMPString.h"
 #include "manager_impl_common.h"
 #include <boost/algorithm/string.hpp>
-
 namespace {
 using namespace ControlPlugin::PluginLogger;
 ModuleLoggerType& logger()
@@ -45,7 +45,7 @@ IAIMPPlaylistItem* castToPlaylistItem(PlaylistEntryID id)
     return reinterpret_cast<IAIMPPlaylistItem*>(id);
 }
 
-class AIMPExtensionPlaylistManagerListener : public IUnknownInterfaceImpl<AIMP36SDK::IAIMPExtensionPlaylistManagerListener>
+class AIMPExtensionPlaylistManagerListener : public AIMP36SDK::IUnknownInterfaceImpl<AIMP36SDK::IAIMPExtensionPlaylistManagerListener>
 {
 public:
     explicit AIMPExtensionPlaylistManagerListener(AIMPManager36* aimp36_manager)
@@ -86,7 +86,7 @@ private:
     AIMPManager36* aimp36_manager_;
 };
 
-class AIMPMessageHook : public IUnknownInterfaceImpl<IAIMPMessageHook>
+class AIMPMessageHook : public AIMP36SDK::IUnknownInterfaceImpl<IAIMPMessageHook>
 {
 public:
     explicit AIMPMessageHook(AIMPManager36* aimp36_manager)
@@ -363,7 +363,7 @@ void AIMPManager36::playlistChanged(AIMP36SDK::IAIMPPlaylist* playlist, DWORD fl
     }
 }
 
-class AIMPManager36::AIMPPlaylistListener : public IUnknownInterfaceImpl<AIMP36SDK::IAIMPPlaylistListener>
+class AIMPManager36::AIMPPlaylistListener : public AIMP36SDK::IUnknownInterfaceImpl<AIMP36SDK::IAIMPPlaylistListener>
 {
 public:
     explicit AIMPPlaylistListener(boost::intrusive_ptr<IAIMPPlaylist> playlist, AIMPManager36* aimp36_manager)
@@ -815,13 +815,13 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
             filesize = getInt64(file_info.get(), AIMP_FILEINFO_PROPID_FILESIZE, error_prefix);
         } else {
             // This item is not of IAIMPFileInfo type.
-            IAIMPVirtualFile* virtual_file_info_tmp;
+            IAIMPVirtualFile* virtual_file_tmp;
             r = item->QueryInterface(IID_IAIMPVirtualFile,
-                                     reinterpret_cast<void**>(&virtual_file_info_tmp)
+                                     reinterpret_cast<void**>(&virtual_file_tmp)
                                      );
             if (S_OK == r) {
-                boost::intrusive_ptr<IAIMPVirtualFile> file_info(virtual_file_info_tmp, false);
-                virtual_file_info_tmp = nullptr;
+                boost::intrusive_ptr<IAIMPVirtualFile> virtual_file(virtual_file_tmp, false);
+                virtual_file_tmp = nullptr;
             } else {
                 // This item is not of IAIMPFileInfo/IAIMPVirtualFile types.
                 // Use PLAYLISTITEM fields
@@ -931,22 +931,28 @@ AIMPManager36::PlaylistHelper& AIMPManager36::getPlaylistHelper(IAIMPPlaylist* p
     throw std::runtime_error(MakeString() << __FUNCTION__": playlist with id " << cast<PlaylistID>(playlist) << "is not found");
 }
 
-IAIMPPlaylistItem_ptr AIMPManager36::getPlaylistItem(PlaylistEntryID id)
+IAIMPPlaylistItem_ptr AIMPManager36::getPlaylistItem(PlaylistEntryID id) const
 {
     IAIMPPlaylistItem* to_search = castToPlaylistItem(id);
     for (auto& helper : playlist_helpers_) {
         const PlaylistItems& entry_ids = helper.entry_ids_;
+        const auto& begin_it = entry_ids.begin();
         const auto& end_it = entry_ids.end();
-        PlaylistItems::const_iterator it = std::lower_bound(entry_ids.begin(), end_it,
+        PlaylistItems::const_iterator it = std::lower_bound(begin_it, end_it,
                                                             to_search,
-                                                            [](const IAIMPPlaylistItem_ptr& element, IAIMPPlaylistItem* to_search) { return element.get() == to_search; }
+                                                            [](const IAIMPPlaylistItem_ptr& element, IAIMPPlaylistItem* to_search) { return element.get() < to_search; }
                                                             );
-        if (it != end_it) {
+        if (it != end_it && !(to_search < (*begin_it).get())) {
             return *it;
         }
     }
 
     return IAIMPPlaylistItem_ptr();
+}
+
+AIMP36SDK::IAIMPPlaylistItem_ptr AIMPManager36::getPlaylistItem(PlaylistEntryID id)
+{
+    return (const_cast<const AIMPManager36*>(this)->getPlaylistItem(id));
 }
 
 void AIMPManager36::notifyAllExternalListeners(AIMPManager::EVENTS event) const
@@ -1921,10 +1927,10 @@ void AIMPManager36::updatePlaylistCrcInDB(PlaylistID playlist_id, crc32_t crc32)
     }
 }
 
-AIMPManager::PLAYLIST_ENTRY_SOURCE_TYPE AIMPManager36::getTrackSourceType(TrackDescription /*track_desc*/) const
+AIMPManager::PLAYLIST_ENTRY_SOURCE_TYPE AIMPManager36::getTrackSourceType(TrackDescription track_desc) const
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::getTrackSourceType"; ///!!! TODO: implement
-    return AIMPManager::SOURCE_TYPE_FILE;
+    const DWORD duration = getEntryField<DWORD>(playlists_db_, "duration", track_desc.track_id);
+    return duration == 0 ? SOURCE_TYPE_RADIO : SOURCE_TYPE_FILE; // very shallow determination. Duration can be 0 on usual track if AIMP has no loaded track info yet.
 }
 
 AIMPManager::PLAYBACK_STATE AIMPManager36::getPlaybackState() const
@@ -1951,10 +1957,58 @@ AIMPManager::PLAYBACK_STATE AIMPManager36::getPlaybackState() const
     return state;
 }
 
-std::wstring AIMPManager36::getFormattedEntryTitle(TrackDescription /*track_desc*/, const std::string& /*format_string_utf8*/) const
+std::wstring AIMPManager36::getFormattedEntryTitle(TrackDescription track_desc, const std::string& format_string_utf8) const
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::getFormattedEntryTitle"; ///!!! TODO: implement
-    return std::wstring();
+    TrackDescription absolute_track_desc(getAbsoluteTrackDesc(track_desc));
+    if (IAIMPPlaylistItem_ptr item = getPlaylistItem(absolute_track_desc.track_id)) {
+        std::wstring wformat_string( StringEncoding::utf8_to_utf16(format_string_utf8) );
+
+        { // use AIMP3 format specifiers.
+        using namespace Utilities;
+        // Aimp3 uses %R instead %a as Artist.
+        replaceAll(L"%a", 2,
+                   L"%R", 2,
+                   &wformat_string);
+        }
+
+        IAIMPFileInfo* file_info_tmp;
+        HRESULT r = item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_FILEINFO, IID_IAIMPFileInfo,
+                                           reinterpret_cast<void**>(&file_info_tmp)
+                                           );
+        if (S_OK != r) {
+              throw std::runtime_error(MakeString() << __FUNCTION__": item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_FILEINFO) for track " << absolute_track_desc << " failed. Result " << r);  
+        }
+        boost::intrusive_ptr<IAIMPFileInfo> file_info(file_info_tmp, false);
+        file_info_tmp = nullptr;        
+
+        IAIMPServiceFileInfoFormatter* formatter_tmp;
+        r = aimp36_core_->QueryInterface(IID_IAIMPServiceFileInfoFormatter,
+                                         reinterpret_cast<void**>(&formatter_tmp)
+                                         );
+        if (S_OK != r) {
+              throw std::runtime_error(MakeString() << __FUNCTION__": aimp36_core_->QueryInterface(IID_IAIMPServiceFileInfoFormatter) for track " << absolute_track_desc << " failed. Result " << r);  
+        }
+        boost::intrusive_ptr<IAIMPServiceFileInfoFormatter> formatter(formatter_tmp, false);
+        formatter_tmp = nullptr;   
+    
+        // HRESULT WINAPI Format(IAIMPString *Template, IAIMPFileInfo *FileInfo, int Reserved, IUnknown *AdditionalInfo, IAIMPString **FormattedResult) = 0;
+        AIMPString template_string(&wformat_string, false);
+        template_string.AddRef(); // prevent destruction by AIMP.
+        IAIMPString* formatted_string_tmp;
+        r = formatter->Format(&template_string,
+                              file_info.get(),
+                              0,
+                              nullptr,
+                              &formatted_string_tmp
+                              );
+        if (S_OK != r) {
+            throw std::runtime_error(MakeString() << __FUNCTION__": formatter->Format() failed. Result: " << r << ". format_string_utf8: " << format_string_utf8);
+        }
+        boost::intrusive_ptr<IAIMPString> formatted_string(formatted_string_tmp, false);
+        return std::wstring(formatted_string->GetData(), formatted_string->GetLength());    
+    } else {
+        throw std::runtime_error( MakeString() << __FUNCTION__": invalid track" << track_desc);
+    }
 }
 
 std::wstring AIMPManager36::getEntryFilename(TrackDescription /*track_desc*/) const
