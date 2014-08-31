@@ -214,6 +214,8 @@ public:
     // Returns nullptr if item does not exist.
     AIMP36SDK::IAIMPPlaylistItem_ptr getPlaylistItem(PlaylistEntryID id);
 
+    void onAimpCoreMessage(DWORD AMessage, int AParam1, void* AParam2, HRESULT* AResult);
+
 protected:
     
     sqlite3* playlists_db_;
@@ -243,6 +245,7 @@ private:
     boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_core_;
     boost::intrusive_ptr<AIMP36SDK::IAIMPServicePlaylistManager> aimp_service_playlist_manager_;
     boost::intrusive_ptr<AIMP36SDK::IAIMPServicePlayer> aimp_service_player_;
+    boost::intrusive_ptr<AIMP36SDK::IAIMPServiceMessageDispatcher> aimp_service_message_dispatcher_;
 
     class AIMPPlaylistListener;
     typedef boost::intrusive_ptr<AIMPPlaylistListener> AIMPPlaylistListener_ptr;

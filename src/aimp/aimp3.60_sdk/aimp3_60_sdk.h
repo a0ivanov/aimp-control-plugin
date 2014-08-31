@@ -11,5 +11,6 @@ namespace AIMP36SDK
 #include "apiPlaylists.h"
 #include "apiObjects.h"
 #include "apiFileManager.h"
+#include "apiMessages.h"
 
 } // namespace AIMP3SDK 

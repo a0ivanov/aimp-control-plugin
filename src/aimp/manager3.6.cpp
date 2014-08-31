@@ -8,6 +8,7 @@
 #include "utils/iunknown_impl.h"
 #include "utils/string_encoding.h"
 #include "aimp3.60_sdk/Helpers/support.h"
+#include "manager_impl_common.h"
 #include <boost/algorithm/string.hpp>
 
 namespace {
@@ -85,6 +86,23 @@ private:
     AIMPManager36* aimp36_manager_;
 };
 
+class AIMPMessageHook : public IUnknownInterfaceImpl<IAIMPMessageHook>
+{
+public:
+    explicit AIMPMessageHook(AIMPManager36* aimp36_manager)
+        : 
+        aimp36_manager_(aimp36_manager)
+    {}
+
+    virtual void WINAPI CoreMessage(DWORD AMessage, int AParam1, void *AParam2, HRESULT *AResult) {
+        aimp36_manager_->onAimpCoreMessage(AMessage, AParam1, AParam2, AResult);
+    }
+
+private:
+
+    AIMPManager36* aimp36_manager_;
+};
+
 AIMPManager36::AIMPManager36(boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_core)
     :   playlists_db_(nullptr),
         aimp36_core_(aimp36_core)
@@ -137,9 +155,20 @@ void AIMPManager36::initializeAIMPObjects()
     aimp_service_player_.reset(aimp_service_player);
     aimp_service_player->Release();
 
+    IAIMPServiceMessageDispatcher* aimp_service_message_dispatcher;
+    if (S_OK != aimp36_core_->QueryInterface(IID_IAIMPServiceMessageDispatcher,
+                                             reinterpret_cast<void**>(&aimp_service_message_dispatcher)
+                                             ) 
+        )
+    {
+        throw std::runtime_error("Creation object IAIMPServiceMessageDispatcher failed"); 
+    }
+    aimp_service_message_dispatcher_.reset(aimp_service_message_dispatcher);
+    aimp_service_message_dispatcher->Release();
+
     /*
     IAIMPAddonsCoverArtManager* coverart_manager;
-    if (S_OK != aimp3_core_unit_->QueryInterface(IID_IAIMPAddonsCoverArtManager, 
+    if (S_OK != aimp_service_message_dispatcher_->QueryInterface(IID_IAIMPAddonsCoverArtManager, 
                                                  reinterpret_cast<void**>(&coverart_manager)
                                                  ) 
         )
@@ -1018,15 +1047,578 @@ void AIMPManager36::playPreviousTrack()
     }
 }
 
-AIMPManager::StatusValue AIMPManager36::getStatus(STATUS /*status*/) const
+void AIMPManager36::onAimpCoreMessage(DWORD AMessage, int AParam1, void* /*AParam2*/, HRESULT* AResult)
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::getStatus"; ///!!! TODO: implement
-    return 0;
+    assert(AResult);
+    /*
+        ///!!! do not know when to notify about these events.
+        EVENT_INFO_UPDATE,
+        EVENT_EFFECT_CHANGED,
+    */
+    switch (AMessage) {
+    case AIMP_MSG_EVENT_PLAYER_STATE:
+        notifyAllExternalListeners(EVENT_PLAYER_STATE);
+        break;
+    case AIMP_MSG_EVENT_PLAYER_UPDATE_POSITION:
+        //notifyAllExternalListeners(EVENT_PLAY_FILE);
+        break;
+    case AIMP_MSG_EVENT_STREAM_START:
+        notifyAllExternalListeners(EVENT_TRACK_PROGRESS_CHANGED_DIRECTLY);
+        break;
+    case AIMP_MSG_CMD_QUIT:
+        notifyAllExternalListeners(EVENT_AIMP_QUIT);
+        break;
+    case AIMP_MSG_EVENT_PROPERTY_VALUE: {
+        const int property_id = AParam1;
+        switch (property_id) {
+        case AIMP_MSG_PROPERTY_VOLUME:
+            notifyAllExternalListeners(EVENT_VOLUME);
+            break;
+        case AIMP_MSG_PROPERTY_MUTE:
+            notifyAllExternalListeners(EVENT_MUTE);
+            break;
+        case AIMP_MSG_PROPERTY_SHUFFLE:
+            notifyAllExternalListeners(EVENT_SHUFFLE);
+            break;
+        case AIMP_MSG_PROPERTY_REPEAT:
+            notifyAllExternalListeners(EVENT_REPEAT);
+            break;
+        case AIMP_MSG_PROPERTY_EQUALIZER:
+        case AIMP_MSG_PROPERTY_EQUALIZER_BAND:
+            notifyAllExternalListeners(EVENT_EQ_CHANGED);
+            break;
+        case AIMP_MSG_PROPERTY_PLAYER_POSITION:
+            notifyAllExternalListeners(EVENT_TRACK_POS_CHANGED);
+            break;
+        case AIMP_MSG_PROPERTY_RADIOCAP:
+            notifyAllExternalListeners(EVENT_RADIO_CAPTURE);
+            break;
+        default:
+            notifyAllExternalListeners(EVENT_STATUS_CHANGE);
+            break;
+        }
+        break;
+    }
+    default:
+        AMessage = AMessage;
+        break;
+    }
+    *AResult = E_NOTIMPL;
 }
 
-void AIMPManager36::setStatus(STATUS /*status*/, StatusValue /*value*/)
+namespace
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::setStatus"; ///!!! TODO: implement
+
+///!!! TODO check it? For some reason IAIMPCoreUnit::MessageSend() returns -1 instead 1 for BOOL.
+AIMPManager::StatusValue patchBool(BOOL value)
+{
+    return value ? 1 : 0;
+}
+
+} // namespace
+
+AIMPManager::StatusValue AIMPManager36::getStatus(AIMPManager::STATUS status) const
+{
+    DWORD msg = 0;
+    const int param1 = AIMP_MSG_PROPVALUE_GET;
+    HRESULT r = S_OK;
+    switch (status) {
+    case STATUS_VOLUME: {
+        msg = AIMP_MSG_PROPERTY_VOLUME;
+        float value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return static_cast<StatusValue>(value * 100.f);
+        }
+        break;
+    }
+    case STATUS_BALANCE: {
+        msg = AIMP_MSG_PROPERTY_BALANCE;
+        float value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return static_cast<StatusValue>((value + 1.f)*50.f);
+        }
+        break;
+    }
+    case STATUS_SPEED: {
+        msg = AIMP_MSG_PROPERTY_SPEED;
+        float value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return static_cast<StatusValue>((value - 0.5f) * 100.f);
+        }
+        break;
+    }
+    case STATUS_Player: {
+        msg = AIMP_MSG_PROPERTY_PLAYER_STATE;
+        int value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            switch (value) {
+            case 0: return STOPPED;
+            case 1: return PAUSED;
+            case 2: return PLAYING;
+            }
+        }
+        break;
+    }
+    case STATUS_MUTE: {
+        msg = AIMP_MSG_PROPERTY_MUTE;
+        BOOL value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return patchBool(value);
+        }
+        break;
+    }
+    case STATUS_REVERB: {
+        msg = AIMP_MSG_PROPERTY_REVERB;
+        float value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return static_cast<StatusValue>(value * 100.f);
+        }
+        break;
+    }
+    case STATUS_ECHO: {
+        msg = AIMP_MSG_PROPERTY_ECHO;
+        float value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return static_cast<StatusValue>(value * 100.f);
+        }
+        break;
+    }
+    case STATUS_CHORUS: {
+        msg = AIMP_MSG_PROPERTY_CHORUS;
+        float value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return static_cast<StatusValue>(value * 100.f);
+        }
+        break;
+    }
+    case STATUS_Flanger: {
+        msg = AIMP_MSG_PROPERTY_FLANGER;
+        float value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return static_cast<StatusValue>(value * 100.f);
+        }
+        break;
+    }
+    case STATUS_EQ_STS: {
+        msg = AIMP_MSG_PROPERTY_EQUALIZER;
+        BOOL value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return patchBool(value);
+        }
+        break;
+    }
+    case STATUS_EQ_SLDR01:
+    case STATUS_EQ_SLDR02:
+    case STATUS_EQ_SLDR03:
+    case STATUS_EQ_SLDR04:
+    case STATUS_EQ_SLDR05:
+    case STATUS_EQ_SLDR06:
+    case STATUS_EQ_SLDR07:
+    case STATUS_EQ_SLDR08:
+    case STATUS_EQ_SLDR09:
+    case STATUS_EQ_SLDR10:
+    case STATUS_EQ_SLDR11:
+    case STATUS_EQ_SLDR12:
+    case STATUS_EQ_SLDR13:
+    case STATUS_EQ_SLDR14:
+    case STATUS_EQ_SLDR15:
+    case STATUS_EQ_SLDR16:
+    case STATUS_EQ_SLDR17:
+    case STATUS_EQ_SLDR18: {
+        msg = AIMP_MSG_PROPERTY_EQUALIZER_BAND;
+        const int param1 = MAKELONG(AIMP_MSG_PROPVALUE_GET, status - STATUS_EQ_SLDR01);
+        float value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return static_cast<StatusValue>((value + 15.f) / 30.f * 100.f);
+        }
+        break;
+    }
+    case STATUS_REPEAT: {
+        msg = AIMP_MSG_PROPERTY_REPEAT;
+        BOOL value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return patchBool(value);
+        }
+        break;
+    }
+    case STATUS_STAY_ON_TOP: {
+        msg = AIMP_MSG_PROPERTY_STAYONTOP;
+        BOOL value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return patchBool(value);
+        }
+        break;                         
+    }
+    case STATUS_POS: {
+        msg = AIMP_MSG_PROPERTY_PLAYER_POSITION;
+        float value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return static_cast<StatusValue>(value);
+        }
+        break;
+    }
+    case STATUS_LENGTH: {
+        msg = AIMP_MSG_PROPERTY_PLAYER_DURATION;
+        float value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return static_cast<StatusValue>(value);
+        }
+        break;
+    }
+    case STATUS_ACTION_ON_END_OF_PLAYLIST: {
+        msg = AIMP_MSG_PROPERTY_ACTION_ON_END_OF_PLAYLIST;
+        int value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            enum { JUMP_TO_THE_NEXT_PLAYLIST,
+                   REPEAT_PLAYLIST,
+                   DO_NOTHING };
+            
+            return value;
+        }
+        break;
+    }
+    case STATUS_REPEAT_SINGLE_FILE_PLAYLISTS: {
+        msg = AIMP_MSG_PROPERTY_REPEAT_SINGLE_FILE_PLAYLISTS;
+        BOOL value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return patchBool(value);
+        }
+        break;
+    }
+    //STATUS_MODE,
+    case STATUS_KBPS:
+    case STATUS_KHZ: {
+        const char* field = status == STATUS_KBPS ? "bitrate" : "samplerate";
+        return getEntryField<DWORD>(playlists_db_, field, getPlayingEntry());
+        }
+        break;
+    //STATUS_STREAM_TYPE,
+    case STATUS_REVERSETIME:
+    case STATUS_SHUFFLE:
+    case STATUS_RADIO_CAPTURE: {
+        switch (status) {
+        case STATUS_REVERSETIME:   msg = AIMP_MSG_PROPERTY_REVERSETIME; break;
+        case STATUS_SHUFFLE:       msg = AIMP_MSG_PROPERTY_SHUFFLE;     break;
+        case STATUS_RADIO_CAPTURE: msg = AIMP_MSG_PROPERTY_RADIOCAP;    break;
+        default:
+            assert(!"unknown status");
+            break;
+        }
+        BOOL value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return patchBool(value);
+        }
+        break;
+    }
+    case STATUS_MAIN_HWND:
+    case STATUS_TC_HWND:
+    case STATUS_APP_HWND:
+    case STATUS_PL_HWND:
+    case STATUS_EQ_HWND: {
+        msg = AIMP_MSG_PROPERTY_HWND;
+        int param1 = 0;
+        switch (status) {
+        case STATUS_MAIN_HWND: param1 = AIMP_MPH_MAINFORM; break;
+        case STATUS_APP_HWND:  param1 = AIMP_MPH_APPLICATION; break;
+        case STATUS_TC_HWND:   param1 = AIMP_MPH_TRAYCONTROL; break;
+        case STATUS_PL_HWND:   param1 = AIMP_MPH_PLAYLISTFORM; break;
+        case STATUS_EQ_HWND:   param1 = AIMP_MPH_EQUALIZERFORM; break;
+        default:
+            assert(!"unknown status");
+            break;
+        }
+        HWND value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return reinterpret_cast<StatusValue>(value);
+        }
+        break;
+    }
+    case STATUS_TRAY: {
+        msg = AIMP_MSG_PROPERTY_MINIMIZED_TO_TRAY;
+        BOOL value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return patchBool(value);
+        }
+        break;
+    }
+    default:
+        break;
+    }
+
+    std::ostringstream os;
+    os << "Failed to get status " << status << ". Reason: ";
+    if (r != S_OK) {
+        os << "IAIMPCoreUnit::MessageSend(" << msg << ", " << param1 << ") returned " << r << ".";
+    } else {
+        os << "status is not supported.";
+    }
+    throw std::runtime_error( os.str() );
+}
+
+
+void AIMPManager36::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValue status_value)
+{
+    //try {
+    //    if ( FALSE == aimp2_controller_->AIMP_Status_Set(cast<AIMP2SDK_STATUS>(status), value) ) {
+    //        throw std::runtime_error(MakeString() << "Error occured while setting status " << asString(status) << " to value " << value);
+    //    }
+    //} catch (std::bad_cast& e) {
+    //    throw std::runtime_error( e.what() );
+    //}
+
+    //notifyAboutInternalEventOnStatusChange(status);
+
+    DWORD msg = 0;
+    const int param1 = AIMP_MSG_PROPVALUE_SET;
+    HRESULT r = S_OK;
+    switch (status) {
+    case STATUS_VOLUME: {
+        msg = AIMP_MSG_PROPERTY_VOLUME;
+        float value = status_value / 100.f;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_BALANCE: {
+        msg = AIMP_MSG_PROPERTY_BALANCE;
+        float value = status_value / 50.f - 1.f;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_SPEED: {
+        msg = AIMP_MSG_PROPERTY_SPEED;
+        float value = status_value / 100.f + 0.5f;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_Player: {
+        msg = AIMP_MSG_PROPERTY_PLAYER_STATE;
+        int value = 0;
+        switch (status_value) {
+        case STOPPED: value = 0; break;
+        case PAUSED:  value = 1; break;
+        case PLAYING: value = 2; break;
+        default:
+            throw std::runtime_error( MakeString() << "Failed to set status: STATUS_Player. Reason: failed to convert status value " << status_value << " to AIMP3 value.");
+        }
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_MUTE: {
+        msg = AIMP_MSG_PROPERTY_MUTE;
+        BOOL value = status_value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_REVERB: {
+        msg = AIMP_MSG_PROPERTY_REVERB;
+        float value = status_value / 100.f;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_ECHO: {
+        msg = AIMP_MSG_PROPERTY_ECHO;
+        float value = status_value / 100.f;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_CHORUS: {
+        msg = AIMP_MSG_PROPERTY_CHORUS;
+        float value = status_value / 100.f;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_Flanger: {
+        msg = AIMP_MSG_PROPERTY_FLANGER;
+        float value = status_value / 100.f;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_EQ_STS: {
+        msg = AIMP_MSG_PROPERTY_EQUALIZER;
+        BOOL value = status_value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_EQ_SLDR01:
+    case STATUS_EQ_SLDR02:
+    case STATUS_EQ_SLDR03:
+    case STATUS_EQ_SLDR04:
+    case STATUS_EQ_SLDR05:
+    case STATUS_EQ_SLDR06:
+    case STATUS_EQ_SLDR07:
+    case STATUS_EQ_SLDR08:
+    case STATUS_EQ_SLDR09:
+    case STATUS_EQ_SLDR10:
+    case STATUS_EQ_SLDR11:
+    case STATUS_EQ_SLDR12:
+    case STATUS_EQ_SLDR13:
+    case STATUS_EQ_SLDR14:
+    case STATUS_EQ_SLDR15:
+    case STATUS_EQ_SLDR16:
+    case STATUS_EQ_SLDR17:
+    case STATUS_EQ_SLDR18: {
+        msg = AIMP_MSG_PROPERTY_EQUALIZER_BAND;
+        const int param1 = MAKELONG(AIMP_MSG_PROPVALUE_SET, status - STATUS_EQ_SLDR01);
+        float value = status_value / 100.f * 30.f - 15.f;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_REPEAT: {
+        msg = AIMP_MSG_PROPERTY_REPEAT;
+        BOOL value = status_value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_STAY_ON_TOP: {
+        msg = AIMP_MSG_PROPERTY_STAYONTOP;
+        BOOL value = status_value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;                         
+    }
+    case STATUS_POS: {
+        msg = AIMP_MSG_PROPERTY_PLAYER_POSITION;
+        float value = static_cast<float>(status_value);
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            notifyAllExternalListeners(EVENT_TRACK_PROGRESS_CHANGED_DIRECTLY);
+            return;
+        }
+        break;
+    }
+    case STATUS_LENGTH:
+    case STATUS_KBPS:
+    case STATUS_KHZ: {
+        throw std::runtime_error( MakeString() << "Failed to set read-only status: " << asString(status) );
+    }
+    case STATUS_ACTION_ON_END_OF_PLAYLIST: {
+        msg = AIMP_MSG_PROPERTY_ACTION_ON_END_OF_PLAYLIST;
+        int value = status_value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            enum { JUMP_TO_THE_NEXT_PLAYLIST,
+                   REPEAT_PLAYLIST,
+                   DO_NOTHING };
+            return;
+        }
+        break;
+    }
+    case STATUS_REPEAT_SINGLE_FILE_PLAYLISTS: {
+        msg = AIMP_MSG_PROPERTY_REPEAT_SINGLE_FILE_PLAYLISTS;
+        BOOL value = status_value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    //STATUS_MODE,
+    //STATUS_STREAM_TYPE,
+    case STATUS_REVERSETIME:
+    case STATUS_SHUFFLE:
+    case STATUS_RADIO_CAPTURE: {
+        switch (status) {
+        case STATUS_REVERSETIME:   msg = AIMP_MSG_PROPERTY_REVERSETIME; break;
+        case STATUS_SHUFFLE:       msg = AIMP_MSG_PROPERTY_SHUFFLE;     break;
+        case STATUS_RADIO_CAPTURE: msg = AIMP_MSG_PROPERTY_RADIOCAP;    break;
+        default:
+            assert(!"unknown status");
+            break;
+        }
+        BOOL value = status_value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_MAIN_HWND:
+    case STATUS_TC_HWND:
+    case STATUS_APP_HWND:
+    case STATUS_PL_HWND:
+    case STATUS_EQ_HWND: {
+        throw std::runtime_error( MakeString() << "Failed to set read-only status: STATUS_LENGTH");
+        break;
+    }
+    case STATUS_TRAY: {
+        msg = AIMP_MSG_PROPERTY_MINIMIZED_TO_TRAY;
+        BOOL value = status_value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    default:
+        break;
+    }
+
+    std::ostringstream os;
+    os << "Failed to set status " << status << ". Reason: ";
+    if (r != S_OK) {
+        os << "IAIMPCoreUnit::MessageSend(" << msg << ", " << param1 << ") returned " << r << ".";
+    } else {
+        os << "status is not supported.";
+    }
+    throw std::runtime_error( os.str() );
 }
 
 void AIMPManager36::enqueueEntryForPlay(TrackDescription /*track_desc*/, bool /*insert_at_queue_beginning*/)
