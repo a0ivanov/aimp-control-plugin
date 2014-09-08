@@ -5,6 +5,6 @@ call setup_environment.bat > nul
 set BOOST_DIR=c:\libraries\boost\boost_1_52_0
 set FREEIMAGELIB_DIR=c:\libraries\FreeImage\%FreeImage_VERSION%
 ::set AIMP_PLUGINS_DIR=%ProgramFiles%\AIMP3\Plugins
-set AIMP_PLUGINS_DIR=c:\AIMP\AIMP3.60.1421_beta1\Plugins
+set AIMP_PLUGINS_DIR=c:\AIMP\AIMP3.60.1422_beta2\Plugins
 set AIMP_CONTROL_SUBPATH=\aimp_control
 ::for API 3.55- it should be set AIMP_CONTROL_SUBPATH=\
