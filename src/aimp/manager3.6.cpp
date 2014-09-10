@@ -133,12 +133,12 @@ AIMPManager36::~AIMPManager36()
 {
     // It seems listeners registered by RegisterExtension will be released by AIMP before Finalize call.
     
+    aimp_service_album_art_.reset();
     if (aimp_service_message_dispatcher_) {
         aimp_service_message_dispatcher_->Unhook(aimp_message_hook_.get());
         aimp_message_hook_.reset();
         aimp_service_message_dispatcher_.reset();    
     }
-
     aimp_service_player_.reset();
     aimp_playlist_queue_.reset();
     aimp_service_playlist_manager_.reset();
@@ -150,61 +150,54 @@ AIMPManager36::~AIMPManager36()
 void AIMPManager36::initializeAIMPObjects()
 {
     IAIMPServicePlaylistManager* playlist_manager;
-    if (S_OK != aimp36_core_->QueryInterface(IID_IAIMPServicePlaylistManager,
+    HRESULT r = aimp36_core_->QueryInterface(IID_IAIMPServicePlaylistManager,
                                              reinterpret_cast<void**>(&playlist_manager)
-                                             ) 
-        )
-    {
-        throw std::runtime_error("Creation object IAIMPServicePlaylistManager failed"); 
+                                             );
+    if (S_OK !=  r) {
+        throw std::runtime_error(MakeString() << "aimp36_core_->QueryInterface(IID_IAIMPServicePlaylistManager) failed. Result: " << r); 
     }
     aimp_service_playlist_manager_.reset(playlist_manager);
     playlist_manager->Release();
 
     IAIMPPlaylistQueue* aimp_playlist_queue;
-    if (S_OK != aimp_service_playlist_manager_->QueryInterface(IID_IAIMPPlaylistQueue,
-                                                               reinterpret_cast<void**>(&aimp_playlist_queue)
-                                                               ) 
-        )
-    {
-        throw std::runtime_error("Creation object IAIMPPlaylistQueue failed"); 
+    r = aimp_service_playlist_manager_->QueryInterface(IID_IAIMPPlaylistQueue,
+                                                       reinterpret_cast<void**>(&aimp_playlist_queue)
+                                                       ); 
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << "aimp_service_playlist_manager_->QueryInterface(IID_IAIMPPlaylistQueue) failed. Result: " << r); 
     }
     aimp_playlist_queue_.reset(aimp_playlist_queue);
     aimp_playlist_queue->Release();
 
     IAIMPServicePlayer* aimp_service_player;
-    if (S_OK != aimp36_core_->QueryInterface(IID_IAIMPServicePlayer,
-                                             reinterpret_cast<void**>(&aimp_service_player)
-                                             ) 
-        )
-    {
-        throw std::runtime_error("Creation object IAIMPServicePlayer failed"); 
+    r = aimp36_core_->QueryInterface(IID_IAIMPServicePlayer,
+                                     reinterpret_cast<void**>(&aimp_service_player)
+                                     ); 
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << "aimp36_core_->QueryInterface(IID_IAIMPServicePlayer) failed. Result: " << r); 
     }
     aimp_service_player_.reset(aimp_service_player);
     aimp_service_player->Release();
 
     IAIMPServiceMessageDispatcher* aimp_service_message_dispatcher;
-    if (S_OK != aimp36_core_->QueryInterface(IID_IAIMPServiceMessageDispatcher,
-                                             reinterpret_cast<void**>(&aimp_service_message_dispatcher)
-                                             ) 
-        )
-    {
-        throw std::runtime_error("Creation object IAIMPServiceMessageDispatcher failed"); 
+    r = aimp36_core_->QueryInterface(IID_IAIMPServiceMessageDispatcher,
+                                     reinterpret_cast<void**>(&aimp_service_message_dispatcher)
+                                     ); 
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << "aimp36_core_->QueryInterface(IID_IAIMPServiceMessageDispatcher) failed. Result: " << r); 
     }
     aimp_service_message_dispatcher_.reset(aimp_service_message_dispatcher);
     aimp_service_message_dispatcher->Release();
 
-    /*
-    IAIMPAddonsCoverArtManager* coverart_manager;
-    if (S_OK != aimp_service_message_dispatcher_->QueryInterface(IID_IAIMPAddonsCoverArtManager, 
-                                                 reinterpret_cast<void**>(&coverart_manager)
-                                                 ) 
-        )
-    {
-        throw std::runtime_error("Creation object IAIMPAddonsCoverArtManager failed"); 
+    IAIMPServiceAlbumArt* aimp_service_album_art;
+    r = aimp36_core_->QueryInterface(IID_IAIMPServiceAlbumArt,
+                                     reinterpret_cast<void**>(&aimp_service_album_art)
+                                     ); 
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << "aimp36_core_->QueryInterface(IID_IAIMPServiceAlbumArt) failed. Result: " << r); 
     }
-    aimp3_coverart_manager_.reset(coverart_manager);
-    coverart_manager->Release();
-    */
+    aimp_service_album_art_.reset(aimp_service_album_art);
+    aimp_service_album_art->Release();
 }
 
 void AIMPManager36::initPlaylistDB()
@@ -2112,10 +2105,91 @@ std::wstring AIMPManager36::getEntryFilename(TrackDescription track_desc) const
     }
 }
 
-bool AIMPManager36::isCoverImageFileExist(TrackDescription /*track_desc*/, boost::filesystem::wpath* /*path*/) const
+struct AlbumArtRequest
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::isCoverImageFileExist"; ///!!! TODO: implement
-    return false;
+    struct in {
+        const AIMPManager36* aimp_manager36_;
+    } in_;
+    
+    struct out {
+        IAIMPString_ptr cover_filename_;
+    } out_;
+};
+
+void CALLBACK OnAlbumArtReceive(IAIMPImage* image, IAIMPImageContainer* image_container, void* user_data)
+{
+    BOOST_LOG_SEV(logger(), debug) << "OnAlbumArtReceive()...";
+    assert(user_data);
+    AlbumArtRequest* request = reinterpret_cast<AlbumArtRequest*>(user_data);
+
+    if (image) {
+        IAIMPString* filename;
+        HRESULT r = image_container->QueryInterface(IID_IAIMPString, reinterpret_cast<void**>(&filename));
+        if (S_OK == r) {
+            // album cover file exists.
+            request->out_.cover_filename_.reset(filename);
+            filename->Release();
+        } else {
+            // do nothing.
+        }
+
+        BOOST_LOG_SEV(logger(), debug) << "image: not null";
+    } else {
+        BOOST_LOG_SEV(logger(), debug) << "image: null";   
+    }
+
+    if (image_container) {
+        IAIMPString* filename;
+        HRESULT r = image_container->QueryInterface(IID_IAIMPString, reinterpret_cast<void**>(&filename));
+        if (S_OK == r) {
+            // album cover file exists.
+            request->out_.cover_filename_.reset(filename);
+            filename->Release();
+        } else {
+            // do nothing.
+        }
+
+        BOOST_LOG_SEV(logger(), debug) << "image_container: data " << image_container->GetData() << ", size: " << image_container->GetDataSize();   
+    } else {
+        BOOST_LOG_SEV(logger(), debug) << "image_container: null";   
+    }
+
+    BOOST_LOG_SEV(logger(), debug) << "...OnAlbumArtReceive()";
+}
+
+bool AIMPManager36::isCoverImageFileExist(TrackDescription track_desc, boost::filesystem::wpath* path) const
+{
+    TrackDescription absolute_track_desc(getAbsoluteTrackDesc(track_desc));
+    if (IAIMPPlaylistItem_ptr item = getPlaylistItem(absolute_track_desc.track_id)) {
+        IAIMPFileInfo* file_info_tmp;
+        HRESULT r = item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_FILEINFO, IID_IAIMPFileInfo,
+                                           reinterpret_cast<void**>(&file_info_tmp)
+                                           );
+        if (S_OK != r) {
+            throw std::runtime_error( MakeString() << __FUNCTION__": item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_FILEINFO) failed for track " << track_desc << ". Result: " << r);
+        }
+        boost::intrusive_ptr<IAIMPFileInfo> file_info(file_info_tmp, false);
+
+        const DWORD flags =   AIMP_SERVICE_ALBUMART_FLAGS_WAITFOR ///!!! reconsider
+                            | AIMP_SERVICE_ALBUMART_FLAGS_IGNORECACHE; ///!!! reconsider
+        void* task_id;
+        
+        AlbumArtRequest request;
+        request.in_.aimp_manager36_ = this;
+
+        r = aimp_service_album_art_->Get2(file_info.get(), flags, OnAlbumArtReceive, reinterpret_cast<void*>(&request), &task_id);
+
+        boost::system::error_code ignored_ec;
+        const bool exists = request.out_.cover_filename_ && fs::exists(request.out_.cover_filename_->GetData(), ignored_ec);
+    
+        if (exists && path) {
+            *path = boost::filesystem::wpath(request.out_.cover_filename_->GetData());
+        }
+    
+        return exists;
+    } else {
+        throw std::runtime_error( MakeString() << __FUNCTION__": invalid track " << track_desc);
+    }
 }
 
 void AIMPManager36::saveCoverToFile(TrackDescription /*track_desc*/, const std::wstring& /*filename*/, int /*cover_width*/, int /*cover_height*/ ) const

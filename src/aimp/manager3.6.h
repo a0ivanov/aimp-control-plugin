@@ -269,6 +269,7 @@ private:
     boost::intrusive_ptr<AIMP36SDK::IAIMPServicePlayer> aimp_service_player_;
     boost::intrusive_ptr<AIMP36SDK::IAIMPServiceMessageDispatcher> aimp_service_message_dispatcher_;
     boost::intrusive_ptr<AIMP36SDK::IAIMPMessageHook> aimp_message_hook_;
+    boost::intrusive_ptr<AIMP36SDK::IAIMPServiceAlbumArt> aimp_service_album_art_;
 
     class AIMPPlaylistListener;
     typedef boost::intrusive_ptr<AIMPPlaylistListener> AIMPPlaylistListener_ptr;
