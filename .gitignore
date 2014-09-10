@@ -3,3 +3,4 @@ msvc/aimp_control_plugin.opensdf
 msvc/aimp_control_plugin.sdf
 msvc/aimp_control_plugin.v11.suo
 msvc/ipch
+client_src/album_covers_cache
