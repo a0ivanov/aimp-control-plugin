@@ -173,6 +173,8 @@ public:
     */
     virtual bool isCoverImageFileExist(TrackDescription track_desc, boost::filesystem::wpath* path = nullptr) const; // throw std::runtime_error
 
+    bool getCoverImageContainter(TrackDescription track_desc, boost::intrusive_ptr<AIMP36SDK::IAIMPImageContainer>* container = nullptr, boost::intrusive_ptr<AIMP36SDK::IAIMPImage>* image = nullptr); // throw std::runtime_error
+
     /*!
         \brief Saves album cover for track to file in format determined by filename extention.
                Size is determined by cover_width and cover_height arguments. Pass zeros to get full size cover.

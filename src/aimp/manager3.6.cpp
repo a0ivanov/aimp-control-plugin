@@ -2113,6 +2113,8 @@ struct AlbumArtRequest
     
     struct out {
         IAIMPString_ptr cover_filename_;
+        boost::intrusive_ptr<IAIMPImageContainer> image_container_;
+        boost::intrusive_ptr<IAIMPImage> image_;
     } out_;
 };
 
@@ -2123,6 +2125,8 @@ void CALLBACK OnAlbumArtReceive(IAIMPImage* image, IAIMPImageContainer* image_co
     AlbumArtRequest* request = reinterpret_cast<AlbumArtRequest*>(user_data);
 
     if (image) {
+        request->out_.image_.reset(image);
+
         IAIMPString* filename;
         HRESULT r = image_container->QueryInterface(IID_IAIMPString, reinterpret_cast<void**>(&filename));
         if (S_OK == r) {
@@ -2139,6 +2143,8 @@ void CALLBACK OnAlbumArtReceive(IAIMPImage* image, IAIMPImageContainer* image_co
     }
 
     if (image_container) {
+        request->out_.image_container_.reset(image_container);
+
         IAIMPString* filename;
         HRESULT r = image_container->QueryInterface(IID_IAIMPString, reinterpret_cast<void**>(&filename));
         if (S_OK == r) {
@@ -2170,8 +2176,9 @@ bool AIMPManager36::isCoverImageFileExist(TrackDescription track_desc, boost::fi
         }
         boost::intrusive_ptr<IAIMPFileInfo> file_info(file_info_tmp, false);
 
+        // Use flag 
         const DWORD flags =   AIMP_SERVICE_ALBUMART_FLAGS_WAITFOR ///!!! reconsider
-                            | AIMP_SERVICE_ALBUMART_FLAGS_IGNORECACHE; ///!!! reconsider
+                            | AIMP_SERVICE_ALBUMART_FLAGS_IGNORECACHE; // to get file name if file of album cover exists.
         void* task_id;
         
         AlbumArtRequest request;
@@ -2190,6 +2197,43 @@ bool AIMPManager36::isCoverImageFileExist(TrackDescription track_desc, boost::fi
     } else {
         throw std::runtime_error( MakeString() << __FUNCTION__": invalid track " << track_desc);
     }
+}
+
+bool AIMPManager36::getCoverImageContainter(TrackDescription track_desc, boost::intrusive_ptr<AIMP36SDK::IAIMPImageContainer>* container, boost::intrusive_ptr<AIMP36SDK::IAIMPImage>* image)
+{
+    TrackDescription absolute_track_desc(getAbsoluteTrackDesc(track_desc));
+    if (IAIMPPlaylistItem_ptr item = getPlaylistItem(absolute_track_desc.track_id)) {
+        IAIMPFileInfo* file_info_tmp;
+        HRESULT r = item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_FILEINFO, IID_IAIMPFileInfo,
+                                           reinterpret_cast<void**>(&file_info_tmp)
+                                           );
+        if (S_OK != r) {
+            throw std::runtime_error( MakeString() << __FUNCTION__": item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_FILEINFO) failed for track " << track_desc << ". Result: " << r);
+        }
+        boost::intrusive_ptr<IAIMPFileInfo> file_info(file_info_tmp, false);
+
+        // Use flag AIMP_SERVICE_ALBUMART_FLAGS_IGNORECACHE to get file name if file of album cover exists.
+        const DWORD flags = AIMP_SERVICE_ALBUMART_FLAGS_WAITFOR; ///!!! reconsider
+                            
+        void* task_id;
+        
+        AlbumArtRequest request;
+        request.in_.aimp_manager36_ = this;
+
+        r = aimp_service_album_art_->Get2(file_info.get(), flags, OnAlbumArtReceive, reinterpret_cast<void*>(&request), &task_id);
+        if (S_OK == r) {
+            if (container) {
+                *container = request.out_.image_container_;
+            }
+            if (image) {
+                *image = request.out_.image_;
+            }
+            return true;
+        }
+    } else {
+        throw std::runtime_error( MakeString() << __FUNCTION__": invalid track " << track_desc);
+    }
+    return false;
 }
 
 void AIMPManager36::saveCoverToFile(TrackDescription /*track_desc*/, const std::wstring& /*filename*/, int /*cover_width*/, int /*cover_height*/ ) const

@@ -973,18 +973,23 @@ private:
             operator bool() { return entry != nullptr; }
         };
 
-        void cacheNew(TrackDescription track_desc, const boost::filesystem::wpath& album_cover_filename, const std::wstring& cover_uri_generic);
-        void cacheBasedOnPreviousResult(TrackDescription track_desc, GetCover::Cache::SearchResult search_result);
+        void cacheNew(TrackDescription track_desc, const boost::filesystem::wpath& album_cover_filename, const std::wstring& cover_uri_generic, const int* cover_hash = nullptr);
+        void cacheBasedOnPreviousResult(TrackDescription track_desc, GetCover::Cache::SearchResult search_result, const int* cover_hash = nullptr);
 
         SearchResult isCoverCachedForCurrentTrack(TrackDescription track_desc, std::size_t width, std::size_t height) const;
         
         SearchResult isCoverCachedForAnotherTrack(const boost::filesystem::wpath& cover_path, std::size_t width, std::size_t height) const;
 
+        SearchResult isCoverCachedForAnotherTrack(int hash, std::size_t width, std::size_t height) const;
+
     private:
         SearchResult findInEntryBySize(const Entry& info, std::size_t width, std::size_t height) const;
 
-        typedef std::map<TrackDescription, Entry> EntryMap;
-        EntryMap entries_;
+        typedef std::map<TrackDescription, Entry> TrackDescEntryMap;
+        TrackDescEntryMap track_desc_entry_map_;
+        typedef std::map<int, Entry> CoverHashEntryMap;
+        CoverHashEntryMap cover_hash_entry_map_;
+
 
         typedef std::map<boost::filesystem::wpath, TrackDescription> PathTrackMap;
         PathTrackMap path_track_map_;

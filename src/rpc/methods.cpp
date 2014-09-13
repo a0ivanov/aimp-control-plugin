@@ -968,6 +968,21 @@ ResponseType GetPlaylistEntryInfo::execute(const Rpc::Value& root_request, Rpc::
     throw Rpc::Exception("Getting info about track failed. Reason: track not found.", TRACK_NOT_FOUND);
 }
 
+const wchar_t* getExtensionByFormatId(int format_id)
+{
+    using namespace AIMP36SDK;
+    switch (format_id) {
+    case AIMP_IMAGE_FORMAT_BMP: return L".bmp";
+    case AIMP_IMAGE_FORMAT_GIF: return L".gif";
+    case AIMP_IMAGE_FORMAT_JPG: return L".jpg";
+    case AIMP_IMAGE_FORMAT_PNG: return L".png";
+    case AIMP_IMAGE_FORMAT_UNKNOWN: return L"";
+    }
+
+    assert(!"unsupported format id");
+    return L".unsupported";
+}
+
 ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
     const Rpc::Value& params = root_request["params"];
@@ -992,17 +1007,46 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
         cover_width = cover_height = 0; // by default request full size cover.
     }
 
-    Cache::SearchResult cache_search_result = cache_.isCoverCachedForCurrentTrack(track_desc, cover_width, cover_height);
+    Cache::SearchResult cache_search_result;
     fs::wpath album_cover_filename;
+
+    AIMPPlayer::AIMPManager36* aimp36_manager = dynamic_cast<AIMPPlayer::AIMPManager36*>(&aimp_manager_);
+    boost::intrusive_ptr<AIMP36SDK::IAIMPImageContainer> container;
+    boost::intrusive_ptr<AIMP36SDK::IAIMPImage> image;
+    boost::intrusive_ptr<AIMP36SDK::IAIMPHashCode> cover_hash;
+
+    cache_search_result = cache_.isCoverCachedForCurrentTrack(track_desc, cover_width, cover_height);
     if (!cache_search_result) {
-        if (aimp_manager_.isCoverImageFileExist(track_desc, &album_cover_filename)) {
-            cache_search_result = cache_.isCoverCachedForAnotherTrack(album_cover_filename, cover_width, cover_height);
-            if (cache_search_result) {
-                cache_.cacheBasedOnPreviousResult(track_desc, cache_search_result);    
+        if (!aimp36_manager) {
+            if (aimp_manager_.isCoverImageFileExist(track_desc, &album_cover_filename)) {
+                cache_search_result = cache_.isCoverCachedForAnotherTrack(album_cover_filename, cover_width, cover_height);
+                if (cache_search_result) {
+                    cache_.cacheBasedOnPreviousResult(track_desc, cache_search_result);    
+                }
+            }
+        } else {
+            // aimp 36: use cover hash to find out image in cache.
+            if (aimp36_manager->getCoverImageContainter(track_desc, &container, &image)) {
+                if (container) {
+                    AIMP36SDK::IAIMPHashCode* hash_code;
+                    HRESULT r = container->QueryInterface(AIMP36SDK::IID_IAIMPHashCode,
+                                                          reinterpret_cast<void**>(&hash_code)
+                                                          );
+                    if (S_OK == r) {
+                        cover_hash.reset(hash_code);
+                        hash_code->Release();
+
+                        const int cover_hash_code = cover_hash->GetHashCode();
+                        cache_search_result = cache_.isCoverCachedForAnotherTrack(cover_hash_code, cover_width, cover_height);
+                        if (cache_search_result) {
+                            cache_.cacheBasedOnPreviousResult(track_desc, cache_search_result, &cover_hash_code);    
+                        }
+                    }
+                }
             }
         }
     }
-    
+
     if (cache_search_result) {
         // picture already exists.
         try {
@@ -1033,19 +1077,52 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
 
             fs::copy_file(album_cover_filename, temp_unique_filename);
         } else {
-            if (!free_image_dll_is_available_) {
-                Rpc::Exception e("Getting cover failed. Reason: FreeImage DLLs are not available.", ALBUM_COVER_LOAD_FAILED);
-                BOOST_LOG_SEV(logger(), error) << "Getting cover failed in "__FUNCTION__ << ". Reason: " << e.message();
-                throw e;
+            if (container) {
+                // Save file via image container to original format.
+                SIZE s;
+                int format_id;
+                HRESULT r = container->GetInfo(&s, &format_id);
+                if (S_OK != r) {
+                    throw std::runtime_error(Utilities::MakeString() << "container->GetInfo() failed. Result: " << r);
+                }
+
+                const wchar_t* extension = getExtensionByFormatId(format_id);
+                cover_uri.replace_extension           (extension);
+                temp_unique_filename.replace_extension(extension);
+                if (!container->GetData()) {
+                    throw std::runtime_error(Utilities::MakeString() << "container->GetData() is null");
+                }
+
+                std::ofstream file(temp_unique_filename.native(), std::ios_base::out | std::ios_base::binary);
+                if ( file.good() ) {
+                    file.write(reinterpret_cast<const char*>(container->GetData()), container->GetDataSize());
+                    if (!file.good()) {
+                        throw std::runtime_error(Utilities::MakeString() << "Failed to write to cover file : file.rdstate: " << file.rdstate());
+                    }
+                    file.close();
+                } else {
+                    throw std::runtime_error(Utilities::MakeString() << "Failed to open file for cover writing: file.rdstate: " << file.rdstate());
+                }
+            } else if (image) {
+                // container does not exist, but we have image.
+                ///!!! Maybe it is the case for aimp_manager_.saveCoverToFile().
+                assert(!"not implemented yet");
+                BOOST_LOG_SEV(logger(), error) << __FUNCTION__": case does not implemented";
+            } else {
+                if (!free_image_dll_is_available_) {
+                    Rpc::Exception e("Getting cover failed. Reason: FreeImage DLLs are not available.", ALBUM_COVER_LOAD_FAILED);
+                    BOOST_LOG_SEV(logger(), error) << "Getting cover failed in "__FUNCTION__ << ". Reason: " << e.message();
+                    throw e;
+                }
+                aimp_manager_.saveCoverToFile(track_desc, temp_unique_filename.native(), cover_width, cover_height);
             }
-            aimp_manager_.saveCoverToFile(track_desc, temp_unique_filename.native(), cover_width, cover_height);
         }
 
         const std::wstring& cover_uri_generic = cover_uri.generic_wstring();
         root_response["result"]["album_cover_uri"] = StringEncoding::utf16_to_utf8(cover_uri_generic);
 
-        cache_.cacheNew(track_desc, album_cover_filename, cover_uri_generic);
-
+        const int cover_hash_code = cover_hash ? cover_hash->GetHashCode() : 0;
+        cache_.cacheNew(track_desc, album_cover_filename, cover_uri_generic, cover_hash ? &cover_hash_code : nullptr);
     } catch (fs::filesystem_error& e) {
         BOOST_LOG_SEV(logger(), error) << "Getting cover failed in "__FUNCTION__ << ". Reason: " << e.what();
         throw Rpc::Exception("Getting cover failed. Reason: bad temporary directory for store covers.", ALBUM_COVER_LOAD_FAILED);
@@ -1087,9 +1164,9 @@ void remove_read_only_attribute(const fs::wpath& path)
     }
 }
 
-void GetCover::Cache::cacheNew(TrackDescription track_desc, const fs::wpath& album_cover_filename, const std::wstring& cover_uri_generic)
+void GetCover::Cache::cacheNew(TrackDescription track_desc, const fs::wpath& album_cover_filename, const std::wstring& cover_uri_generic, const int* cover_hash)
 {
-    Entry& entry = entries_[track_desc];
+    Entry& entry = track_desc_entry_map_[track_desc];
     if (!album_cover_filename.empty()) {
         path_track_map_.insert( std::make_pair(album_cover_filename, track_desc) );
     }
@@ -1098,19 +1175,29 @@ void GetCover::Cache::cacheNew(TrackDescription track_desc, const fs::wpath& alb
         entry.filenames = boost::make_shared<Entry::Filenames>();
     }
     entry.filenames->push_back(cover_uri_generic); 
+
+    // AIMP 36 specifics
+    if (cover_hash) {
+        cover_hash_entry_map_[*cover_hash] = entry;
+    }
 }
 
-void GetCover::Cache::cacheBasedOnPreviousResult(TrackDescription track_desc, GetCover::Cache::SearchResult search_result)
+void GetCover::Cache::cacheBasedOnPreviousResult(TrackDescription track_desc, GetCover::Cache::SearchResult search_result, const int* cover_hash)
 {
-    Entry& entry = entries_[track_desc];
+    Entry& entry = track_desc_entry_map_[track_desc];
     entry.filenames = search_result.entry->filenames;
+
+    // AIMP 36 specifics
+    if (cover_hash) {
+        cover_hash_entry_map_[*cover_hash] = entry; ///??? 
+    }
 }
 
 GetCover::Cache::SearchResult GetCover::Cache::isCoverCachedForCurrentTrack(TrackDescription track_desc, std::size_t width, std::size_t height) const
 {
     // search in map current file covers of different sizes.
-    const auto entry_it = entries_.find(track_desc);
-    if (entries_.end() != entry_it) {
+    const auto entry_it = track_desc_entry_map_.find(track_desc);
+    if (track_desc_entry_map_.end() != entry_it) {
         if ( Cache::SearchResult r = findInEntryBySize(entry_it->second, width, height) ) {
             return r;
         }
@@ -1127,6 +1214,18 @@ GetCover::Cache::SearchResult GetCover::Cache::isCoverCachedForAnotherTrack(cons
     auto track_it = path_track_map_.find(cover_path);
     if (path_track_map_.end() != track_it) {
         return isCoverCachedForCurrentTrack(track_it->second, width, height);
+    } 
+
+    return Cache::SearchResult();
+}
+
+GetCover::Cache::SearchResult GetCover::Cache::isCoverCachedForAnotherTrack(int hash, std::size_t width, std::size_t height) const
+{
+    auto it = cover_hash_entry_map_.find(hash);
+    if (cover_hash_entry_map_.end() != it) {
+        if ( Cache::SearchResult r = findInEntryBySize(it->second, width, height) ) {
+            return r;
+        }
     } 
 
     return Cache::SearchResult();
