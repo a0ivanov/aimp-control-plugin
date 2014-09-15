@@ -196,18 +196,39 @@ FREE_IMAGE_FORMAT cast<FREE_IMAGE_FORMAT, IMAGEFORMAT>(IMAGEFORMAT image_format)
     return freeimage_format;
 }
 
-AIMPCoverImage::AIMPCoverImage(HBITMAP cover_bitmap_handle, unsigned width, unsigned height) // throws std::runtime_error
-    :
-    cover_bitmap_handle_(cover_bitmap_handle)
+struct GDIDeleter : boost::noncopyable
 {
+    GDIDeleter(HGDIOBJ obj, bool need_delete = true)
+        : obj_(obj), need_delete_(need_delete)
+    {}
+
+    ~GDIDeleter()
+    {
+        if (need_delete_) {
+            DeleteObject(obj_);
+        }
+    }
+
+    HGDIOBJ obj_;
+    bool need_delete_;
+
+private:
+    GDIDeleter();
+};
+
+AIMPCoverImage::AIMPCoverImage(HBITMAP cover_bitmap_handle, bool release_bitmap, unsigned width, unsigned height) // throws std::runtime_error
+{
+    GDIDeleter deleter(cover_bitmap_handle, release_bitmap);
+
     BOOL result = copyFromBitmap(cover_bitmap_handle);
+
     if (FALSE == result) {
         throw std::runtime_error("Error occured while create AIMPCoverImage from HBITMAP.");
     }
 
     if (width != 0 && height != 0) {
         SIZE size = { width, height };
-        SIZE bitmap_size = getBitmapSize(cover_bitmap_handle_);
+        SIZE bitmap_size = getBitmapSize(cover_bitmap_handle);
         if (bitmap_size.cx != size.cx || bitmap_size.cy != size.cy) {
             result = rescale(size.cx, size.cy, FREE_IMAGE_FILTER::FILTER_BICUBIC);
             if (FALSE == result) {

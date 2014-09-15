@@ -18,8 +18,8 @@ class AIMPCoverImage : public fipWinImage
 {
 public:
     
-    //! Creates image from HBITMAP. Bitmap handle will NOT be released.
-    explicit AIMPCoverImage(HBITMAP cover_bitmap_handle, unsigned width = 0, unsigned height = 0); // throws std::runtime_error
+    //! Creates image from HBITMAP. Bitmap handle lifetime is controlled by release_bitmap argument.
+    explicit AIMPCoverImage(HBITMAP cover_bitmap_handle, bool release_bitmap = false, unsigned width = 0, unsigned height = 0); // throws std::runtime_error
 
     /*!
         \brief Saves image to std::vector<BYTE> container.
@@ -35,10 +35,6 @@ public:
         \throw std::runtime_error if saving fails.
     */
     void saveToFile(const std::wstring& file_name) const; // throws std::runtime_error
-
-private:
-
-    HBITMAP cover_bitmap_handle_;
 };
 
 /*!
