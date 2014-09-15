@@ -647,7 +647,7 @@ public:
     virtual HBITMAP WINAPI GetCoverArtForFile(PWCHAR AFile, const SIZE *ADisplaySize);
     // Draw CoverArt of playing file, Return - cover art drawing successfuly
     // CoverArt will be proportional stretched to R value
-    virtual HRESULT WINAPI CurrentCoverArtDraw(HDC DC, const RECT *R);
+    virtual HRESULT WINAPI CurrentCoverArtDraw(HDC DC, const RECT R);
     // Return <> S_OK, CoverArt is empty or file are not playing
     virtual HRESULT WINAPI CurrentCoverArtGetSize(SIZE *ASize);
     // W, H - destination display sizes, function will correct sizes for proportional drawing

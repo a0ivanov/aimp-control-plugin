@@ -187,7 +187,7 @@ class IAIMPServiceFileInfoFormatter: public IUnknown
 class IAIMPServiceFileInfoFormatterUtils: public IUnknown
 {
 	public:
-		virtual HRESULT WINAPI ShowMacrosLegend(RECT *ScreenTarget, int Reserved, IUnknown *EventsHandler) = 0;
+		virtual HRESULT WINAPI ShowMacrosLegend(RECT ScreenTarget, int Reserved, IUnknown *EventsHandler) = 0;
 };
 
 /* IAIMPServiceFileStreaming */

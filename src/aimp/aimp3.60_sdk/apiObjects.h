@@ -176,7 +176,7 @@ class IAIMPImage: public IUnknown
 		virtual int WINAPI GetFormatID() = 0;
 		virtual HRESULT WINAPI GetSize(SIZE *size) = 0;
 		virtual HRESULT Clone(IAIMPImage **Image) = 0;
-		virtual HRESULT WINAPI Draw(HDC DC, RECT *R, DWORD Flags, IUnknown *Attrs) = 0;
+		virtual HRESULT WINAPI Draw(HDC DC, RECT R, DWORD Flags, IUnknown *Attrs) = 0;
 		virtual HRESULT WINAPI Resize(int Width, int Height) = 0;
 };
 
