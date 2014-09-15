@@ -1408,7 +1408,8 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMPManager30::getCoverImage(TrackDesc
     }
 
     using namespace ImageUtils;
-    return std::auto_ptr<AIMPCoverImage>( new AIMPCoverImage(cover_bitmap_handle, cover_size.cx, cover_size.cy) ); // do not close handle of AIMP bitmap.
+    const bool need_destroy_bitmap = false;
+    return std::auto_ptr<AIMPCoverImage>( new AIMPCoverImage(cover_bitmap_handle, need_destroy_bitmap, cover_size.cx, cover_size.cy) );
 }
 
 bool AIMPManager30::isCoverImageFileExist(TrackDescription track_desc, boost::filesystem::wpath* path) const // throw std::runtime_error

@@ -1238,7 +1238,8 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMPManager26::getCoverImage(TrackDesc
     }
 
     using namespace ImageUtils;
-    return std::auto_ptr<AIMPCoverImage>( new AIMPCoverImage(cover_bitmap_handle) ); // do not close handle of AIMP bitmap.
+    const bool need_destroy_bitmap = false;
+    return std::auto_ptr<AIMPCoverImage>( new AIMPCoverImage(cover_bitmap_handle, need_destroy_bitmap) );
 }
 
 void getEntryField_(sqlite3* db, const char* field, TrackDescription track_desc, std::function<void(sqlite3_stmt*)> row_callback)
