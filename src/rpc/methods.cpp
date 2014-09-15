@@ -1077,7 +1077,10 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
 
             fs::copy_file(album_cover_filename, temp_unique_filename);
         } else {
-            if (container) {
+            if (   container
+                && (cover_width == 0 && cover_height == 0) // use direct copy only if no scaling is requested.
+                )
+            {
                 // Save file via image container to original format.
                 SIZE s;
                 int format_id;
@@ -1103,11 +1106,6 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
                 } else {
                     throw std::runtime_error(Utilities::MakeString() << "Failed to open file for cover writing: file.rdstate: " << file.rdstate());
                 }
-            } else if (image) {
-                // container does not exist, but we have image.
-                ///!!! Maybe it is the case for aimp_manager_.saveCoverToFile().
-                assert(!"not implemented yet");
-                BOOST_LOG_SEV(logger(), error) << __FUNCTION__": case does not implemented";
             } else {
                 if (!free_image_dll_is_available_) {
                     Rpc::Exception e("Getting cover failed. Reason: FreeImage DLLs are not available.", ALBUM_COVER_LOAD_FAILED);
@@ -1122,7 +1120,13 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
         root_response["result"]["album_cover_uri"] = StringEncoding::utf16_to_utf8(cover_uri_generic);
 
         const int cover_hash_code = cover_hash ? cover_hash->GetHashCode() : 0;
-        cache_.cacheNew(track_desc, album_cover_filename, cover_uri_generic, cover_hash ? &cover_hash_code : nullptr);
+        const int* cover_hash_ptr = nullptr;
+        if (cover_width == 0 && cover_height == 0) {
+            cover_hash_ptr = &cover_hash_code;
+        } else {
+            ///!!! TODO: think about saving width and height with hash. 
+        }
+        cache_.cacheNew(track_desc, album_cover_filename, cover_uri_generic, cover_hash_ptr);
     } catch (fs::filesystem_error& e) {
         BOOST_LOG_SEV(logger(), error) << "Getting cover failed in "__FUNCTION__ << ". Reason: " << e.what();
         throw Rpc::Exception("Getting cover failed. Reason: bad temporary directory for store covers.", ALBUM_COVER_LOAD_FAILED);

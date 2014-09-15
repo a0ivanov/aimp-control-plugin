@@ -7,14 +7,22 @@
 #include "sqlite/sqlite.h"
 #include "utils/iunknown_impl.h"
 #include "utils/string_encoding.h"
+#include "utils/image.h"
 #include "aimp3.60_sdk/Helpers/support.h"
 #include "aimp3.60_sdk/Helpers/AIMPString.h"
 #include "manager_impl_common.h"
 #include <boost/algorithm/string.hpp>
+
 namespace {
 using namespace ControlPlugin::PluginLogger;
 ModuleLoggerType& logger()
     { return getLogManager().getModuleLogger<AIMPPlayer::AIMPManager>(); }
+}
+
+std::ostream& operator<<(std::ostream& os, const RECT& r)
+{
+    os << '[' << r.left << r.top << r.right << r.bottom << ']';
+    return os;
 }
 
 namespace AIMPPlayer
@@ -1746,10 +1754,8 @@ void AIMPManager36::reloadQueuedEntries()
 
         filesize = getInt64(file_info.get(), AIMP_FILEINFO_PROPID_FILESIZE, error_prefix);
 
-
-        const int entry_id = castToPlaylistEntryID(item.get());
-
 #ifndef NDEBUG
+        const int entry_id = castToPlaylistEntryID(item.get());
         BOOST_LOG_SEV(logger(), debug) << "index: " << item_index << ", entry_id: " << entry_id;
 #endif
 
@@ -2199,7 +2205,7 @@ bool AIMPManager36::isCoverImageFileExist(TrackDescription track_desc, boost::fi
     }
 }
 
-bool AIMPManager36::getCoverImageContainter(TrackDescription track_desc, boost::intrusive_ptr<AIMP36SDK::IAIMPImageContainer>* container, boost::intrusive_ptr<AIMP36SDK::IAIMPImage>* image)
+bool AIMPManager36::getCoverImageContainter(TrackDescription track_desc, boost::intrusive_ptr<AIMP36SDK::IAIMPImageContainer>* container, boost::intrusive_ptr<AIMP36SDK::IAIMPImage>* image) const
 {
     TrackDescription absolute_track_desc(getAbsoluteTrackDesc(track_desc));
     if (IAIMPPlaylistItem_ptr item = getPlaylistItem(absolute_track_desc.track_id)) {
@@ -2236,9 +2242,100 @@ bool AIMPManager36::getCoverImageContainter(TrackDescription track_desc, boost::
     return false;
 }
 
-void AIMPManager36::saveCoverToFile(TrackDescription /*track_desc*/, const std::wstring& /*filename*/, int /*cover_width*/, int /*cover_height*/ ) const
+std::auto_ptr<ImageUtils::AIMPCoverImage> AIMPManager36::getCoverImage(boost::intrusive_ptr<AIMP36SDK::IAIMPImage> image, int cover_width, int cover_height) const
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::saveCoverToFile"; ///!!! TODO: implement
+    if (cover_width < 0 || cover_height < 0) {
+        throw std::invalid_argument(MakeString() << "Error in "__FUNCTION__ << ". Negative cover size.");
+    }
+
+    HBITMAP cover_bitmap_handle = nullptr;
+
+    // get real bitmap size
+    SIZE cover_full_size;
+    HRESULT r = image->GetSize(&cover_full_size);
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << __FUNCTION__": image->GetSize(&cover_full_size) failed. Result " << r);
+    }
+
+    SIZE cover_size = {0, 0};
+    if (cover_full_size.cx != 0 && cover_full_size.cy != 0) {
+        if (cover_width != 0 && cover_height != 0) {
+            // specified size
+            cover_size.cx = cover_width;
+            cover_size.cy = cover_height;
+        } else if (cover_width == 0 && cover_height == 0) {
+            // original size
+            cover_size.cx = cover_full_size.cx;
+            cover_size.cy = cover_full_size.cy;
+        } else if (cover_height == 0) {
+            // specified width, proportional height
+            cover_size.cx = cover_width;
+            cover_size.cy = LONG( float(cover_full_size.cy) * float(cover_width) / float(cover_full_size.cx) );
+        } else if (cover_width == 0) {
+            // specified height, proportional width
+            cover_size.cx = LONG( float(cover_full_size.cx) * float(cover_height) / float(cover_full_size.cy) );
+            cover_size.cy = cover_height;
+        }
+        
+        HDC defaultDC = GetDC(nullptr);
+	    cover_bitmap_handle = CreateCompatibleBitmap(defaultDC, cover_size.cx, cover_size.cy);
+		assert(cover_bitmap_handle);
+		HDC dc = CreateCompatibleDC(defaultDC);
+		assert(dc);
+
+        ReleaseDC(nullptr, defaultDC);
+
+        HGDIOBJ oldBitmap =	SelectObject(dc, cover_bitmap_handle);
+        RECT rect = { 0, 0, cover_size.cx, cover_size.cy };
+        const DWORD flags = AIMP_IMAGE_DRAW_QUALITY_DEFAULT | AIMP_IMAGE_DRAW_STRETCHMODE_STRETCH;
+        IUnknown* attrs = nullptr;
+        r = image->Draw(dc, rect, flags, attrs);
+
+        SelectObject(dc, oldBitmap);
+        DeleteDC(dc);
+
+        if (S_OK != r) {
+            const std::string& str = MakeString() << __FUNCTION__": image->Draw(dc, &rect= " << rect << ", flags = " << flags << ", attrs) failed. Result " << r << ", E_INVALIDARG = " << E_INVALIDARG;
+            BOOST_LOG_SEV(logger(), error) << str;
+            throw std::runtime_error(str);
+        }
+    } else {
+        throw std::runtime_error(MakeString() << __FUNCTION__": image->GetSize(&cover_full_size) returned (0, 0)");
+    }
+
+    using namespace ImageUtils;
+    const bool need_destroy_bitmap = true;
+    return std::auto_ptr<AIMPCoverImage>( new AIMPCoverImage(cover_bitmap_handle, need_destroy_bitmap, cover_size.cx, cover_size.cy) );
+}
+
+void AIMPManager36::saveCoverToFile(TrackDescription track_desc, const std::wstring& filename, int cover_width, int cover_height) const
+{
+    boost::intrusive_ptr<IAIMPImageContainer> container;
+    boost::intrusive_ptr<IAIMPImage> image;
+    ///!!!boost::intrusive_ptr<AIMP36SDK::IAIMPHashCode> cover_hash;
+    if (!getCoverImageContainter(track_desc, &container, &image)) {
+        return; // there is no cover available.
+    }
+
+    if (!image) {
+        AIMP36SDK::IAIMPImage* image_tmp;
+        HRESULT r = container->CreateImage(&image_tmp);
+        if (S_OK != r) {
+            throw std::runtime_error(MakeString() << __FUNCTION__": container->CreateImage() failed. Result: " << r);
+        }
+        image.reset(image_tmp);
+        image_tmp->Release();
+    }
+    
+    try {
+        using namespace ImageUtils;
+        std::auto_ptr<AIMPCoverImage> cover( getCoverImage(image, cover_width, cover_height) );
+        cover->saveToFile(filename);
+    } catch (std::exception& e) {
+        const std::string& str = MakeString() << "Error occured while cover saving to file for " << track_desc << ". Reason: " << e.what();
+        BOOST_LOG_SEV(logger(), error) << str;
+        throw std::runtime_error(str);
+    }
 }
 
 int AIMPManager36::trackRating(TrackDescription track_desc) const

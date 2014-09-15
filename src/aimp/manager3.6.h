@@ -173,7 +173,7 @@ public:
     */
     virtual bool isCoverImageFileExist(TrackDescription track_desc, boost::filesystem::wpath* path = nullptr) const; // throw std::runtime_error
 
-    bool getCoverImageContainter(TrackDescription track_desc, boost::intrusive_ptr<AIMP36SDK::IAIMPImageContainer>* container = nullptr, boost::intrusive_ptr<AIMP36SDK::IAIMPImage>* image = nullptr); // throw std::runtime_error
+    bool getCoverImageContainter(TrackDescription track_desc, boost::intrusive_ptr<AIMP36SDK::IAIMPImageContainer>* container = nullptr, boost::intrusive_ptr<AIMP36SDK::IAIMPImage>* image = nullptr) const; // throw std::runtime_error
 
     /*!
         \brief Saves album cover for track to file in format determined by filename extention.
@@ -254,6 +254,8 @@ private:
     int getPlaylistIndexByHandle(AIMP36SDK::IAIMPPlaylist* playlist);
     void loadPlaylist(AIMP36SDK::IAIMPPlaylist* playlist, int playlist_index);
     void loadEntries(AIMP36SDK::IAIMPPlaylist* playlist); // throws std::runtime_error
+
+    std::auto_ptr<ImageUtils::AIMPCoverImage> getCoverImage(boost::intrusive_ptr<AIMP36SDK::IAIMPImage> image, int cover_width, int cover_height) const;
 
     TrackDescription getTrackDescOfQueuedEntry(AIMP36SDK::IAIMPPlaylistItem* item) const; // throws std::runtime_error;
     void deleteQueuedEntriesFromPlaylistDB();
