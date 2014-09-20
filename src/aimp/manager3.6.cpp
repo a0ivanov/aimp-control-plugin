@@ -2286,7 +2286,7 @@ std::auto_ptr<ImageUtils::AIMPCoverImage> AIMPManager36::getCoverImage(boost::in
         ReleaseDC(nullptr, defaultDC);
 
         HGDIOBJ oldBitmap =	SelectObject(dc, cover_bitmap_handle);
-        RECT rect = { 0, 0, cover_size.cx, cover_size.cy };
+        const RECT rect = { 0, 0, cover_size.cx, cover_size.cy };
         const DWORD flags = AIMP_IMAGE_DRAW_QUALITY_DEFAULT | AIMP_IMAGE_DRAW_STRETCHMODE_STRETCH;
         IUnknown* attrs = nullptr;
         r = image->Draw(dc, rect, flags, attrs);
