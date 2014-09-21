@@ -1498,6 +1498,8 @@ ResponseType Scheduler::execute(const Rpc::Value& root_request, Rpc::Value& root
 
         if (action == "stop_playback") {
             timer->timer_.async_wait( boost::bind( &Scheduler::onTimerStopPlayback, this, _1 ) );
+        } else if (action == "pause_playback") {
+            timer->timer_.async_wait( boost::bind( &Scheduler::onTimerPausePlayback, this, _1 ) );
         } else if (action == "machine_shutdown") {
             if (!PowerManagement::ShutdownEnabled()) {
                 throw Rpc::Exception("Schedule action failed. Reason: shutdown is disabled on this machine.", SCHEDULER_UNSUPPORTED_ACTION);
@@ -1526,8 +1528,9 @@ ResponseType Scheduler::execute(const Rpc::Value& root_request, Rpc::Value& root
     Rpc::Value& result = root_response["result"];
 
     Rpc::Value& supported_actions = result["supported_actions"];
-    supported_actions.setSize(1);
+    supported_actions.setSize(2);
     supported_actions[0] = "stop_playback";
+    supported_actions[1] = "pause_playback";
 
     if (PowerManagement::ShutdownEnabled()) {
         supported_actions.setSize(supported_actions.size() + 1);
@@ -1561,6 +1564,23 @@ void Scheduler::onTimerStopPlayback(const boost::system::error_code& e)
         aimp_manager_.stopPlayback();
 
         BOOST_LOG_SEV(logger(), info) << "playback has been stopped by timer. "__FUNCTION__;
+
+        timer_.reset();
+    } else if (e != boost::asio::error::operation_aborted) { // "operation_aborted" error code is sent when timer is cancelled.
+        BOOST_LOG_SEV(logger(), error) << "err:"__FUNCTION__" timer error:" << e;
+    }
+}
+
+void Scheduler::onTimerPausePlayback(const boost::system::error_code& e)
+{
+    if (!e) { // Timer expired normally.
+
+        if (aimp_manager_.getPlaybackState() == AIMPManager::PLAYBACK_STATE::PLAYING) {
+            aimp_manager_.pausePlayback();
+            BOOST_LOG_SEV(logger(), info) << "playback has been paused by timer. "__FUNCTION__;
+        } else {
+            BOOST_LOG_SEV(logger(), info) << "Pausing playback by timer has been skipped because of player state " << aimp_manager_.getPlaybackState() << " in "__FUNCTION__;
+        }
 
         timer_.reset();
     } else if (e != boost::asio::error::operation_aborted) { // "operation_aborted" error code is sent when timer is cancelled.

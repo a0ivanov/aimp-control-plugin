@@ -1306,6 +1306,7 @@ private:
         - machine_sleep
         - machine_hibernate. If supported by machine.
         - stop_playback
+        - pause_playback
 
     \param expiration_time - double, required if action param is specified. Mutually exclusive to expiration_delay. Unix epoch time in seconds, UTC.
     \param expiration_delay - double, required if action param is specified. Mutually exclusive to expiration_time. Delay in seconds.
@@ -1313,7 +1314,7 @@ private:
     
     \return object which describes:
         - success:<BR>
-            Example: \code {"result":{"current_timer":{"action":"stop_playback","expires_at":1406116760.0,"expires_in":10.0},"supported_actions":["stop_playback","machine_shutdown","machine_sleep","machine_hibernate"]}} \endcode
+            Example: \code {"result":{"current_timer":{"action":"stop_playback","expires_at":1406116760.0,"expires_in":10.0},"supported_actions":["stop_playback","pause_playback","machine_shutdown","machine_sleep","machine_hibernate"]}} \endcode
         - failure: object which describes error: {code, message}<BR>
             Error codes in addition to \link #Rpc::ERROR_CODES Common errors\endlink:
                 - ::SCHEDULER_DISABLED
@@ -1335,6 +1336,7 @@ public:
 private:
 
     void onTimerStopPlayback(const boost::system::error_code& e);
+    void onTimerPausePlayback(const boost::system::error_code& e);
     void onTimerMachineShutdown(const boost::system::error_code& e);
     void onTimerMachineHibernate(const boost::system::error_code& e);
     void onTimerMachineSleep(const boost::system::error_code& e);
