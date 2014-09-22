@@ -233,6 +233,9 @@ public:
     AIMP36SDK::IAIMPPlaylistItem_ptr getPlaylistItem(PlaylistEntryID id) const;
     AIMP36SDK::IAIMPPlaylistItem_ptr getPlaylistItem(PlaylistEntryID id);
 
+    AIMP36SDK::IAIMPPlaylist_ptr getPlaylist(PlaylistID id) const;
+    AIMP36SDK::IAIMPPlaylist_ptr getPlaylist(PlaylistID id);
+
     void onAimpCoreMessage(DWORD AMessage, int AParam1, void* AParam2, HRESULT* AResult);
 
 protected:

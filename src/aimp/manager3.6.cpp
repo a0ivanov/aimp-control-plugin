@@ -970,7 +970,7 @@ AIMPManager36::PlaylistHelper& AIMPManager36::getPlaylistHelper(IAIMPPlaylist* p
         }
     }
 
-    throw std::runtime_error(MakeString() << __FUNCTION__": playlist with id " << cast<PlaylistID>(playlist) << "is not found");
+    throw std::runtime_error(MakeString() << __FUNCTION__": playlist with id " << cast<PlaylistID>(playlist) << " is not found");
 }
 
 IAIMPPlaylistItem_ptr AIMPManager36::getPlaylistItem(PlaylistEntryID id) const
@@ -995,6 +995,24 @@ IAIMPPlaylistItem_ptr AIMPManager36::getPlaylistItem(PlaylistEntryID id) const
 AIMP36SDK::IAIMPPlaylistItem_ptr AIMPManager36::getPlaylistItem(PlaylistEntryID id)
 {
     return (const_cast<const AIMPManager36*>(this)->getPlaylistItem(id));
+}
+
+IAIMPPlaylist_ptr AIMPManager36::getPlaylist(PlaylistID id) const
+{
+    IAIMPPlaylist* to_search = cast<IAIMPPlaylist*>(id);
+    for (auto& helper : playlist_helpers_) {
+        IAIMPPlaylist_ptr playlist = helper.playlist_;
+        if (playlist.get() == to_search) {
+            return playlist;
+        }
+    }
+
+    return IAIMPPlaylist_ptr();
+}
+
+AIMP36SDK::IAIMPPlaylist_ptr AIMPManager36::getPlaylist(PlaylistID id)
+{
+    return (const_cast<const AIMPManager36*>(this)->getPlaylist(id));
 }
 
 void AIMPManager36::notifyAllExternalListeners(AIMPManager::EVENTS event) const
@@ -2070,7 +2088,7 @@ std::wstring AIMPManager36::getFormattedEntryTitle(TrackDescription track_desc, 
         formatter_tmp = nullptr;   
     
         // HRESULT WINAPI Format(IAIMPString *Template, IAIMPFileInfo *FileInfo, int Reserved, IUnknown *AdditionalInfo, IAIMPString **FormattedResult) = 0;
-        AIMPString template_string(&wformat_string, false);
+        AIMPString template_string(&wformat_string, true);
         template_string.AddRef(); // prevent destruction by AIMP.
         IAIMPString* formatted_string_tmp;
         r = formatter->Format(&template_string,
@@ -2312,7 +2330,7 @@ void AIMPManager36::saveCoverToFile(TrackDescription track_desc, const std::wstr
 {
     boost::intrusive_ptr<IAIMPImageContainer> container;
     boost::intrusive_ptr<IAIMPImage> image;
-    ///!!!boost::intrusive_ptr<AIMP36SDK::IAIMPHashCode> cover_hash;
+
     if (!getCoverImageContainter(track_desc, &container, &image)) {
         return; // there is no cover available.
     }
@@ -2343,14 +2361,28 @@ int AIMPManager36::trackRating(TrackDescription track_desc) const
 	return getEntryField<DWORD>(playlists_db_, "rating", getAbsoluteEntryID(track_desc.track_id));
 }
 
-void AIMPManager36::addFileToPlaylist(const boost::filesystem::wpath& /*path*/, PlaylistID /*playlist_id*/)
+void AIMPManager36::addFileToPlaylist(const boost::filesystem::wpath& path, PlaylistID playlist_id)
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::addFileToPlaylist"; ///!!! TODO: implement
+    if (IAIMPPlaylist_ptr playlist = getPlaylist(getAbsolutePlaylistID(playlist_id))) {
+        const std::wstring& path_native = path.native();
+        AIMPString path_string(const_cast<std::wstring*>(&path_native), true); // rely on fact that AIMP will not change this string.
+        path_string.AddRef(); // prevent destruction by AIMP.
+        const DWORD flags = 0;
+        const int insertion_place = -1; // -1 means 'to the end', -2 - "to random position", [0..item count) - "at index".
+        HRESULT r = playlist->Add(&path_string, flags, insertion_place);
+        if (S_OK != r) {
+            throw std::runtime_error(MakeString() << "playlist->Add(path_string = " << StringEncoding::utf16_to_utf8(path_native) << ", flags = " << flags << ") failed. Result " << r);
+        }
+    } else {
+        throw std::runtime_error( MakeString() << __FUNCTION__": invalid playlist id " << playlist_id);
+    }
 }
     
-void AIMPManager36::addURLToPlaylist(const std::string& /*url*/, PlaylistID /*playlist_id*/)
+void AIMPManager36::addURLToPlaylist(const std::string& url, PlaylistID playlist_id)
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::addURLToPlaylist"; ///!!! TODO: implement
+    boost::filesystem::wpath path(StringEncoding::utf8_to_utf16(url));
+
+    addFileToPlaylist(path, playlist_id);
 }
 
 PlaylistID AIMPManager36::createPlaylist(const std::wstring& /*title*/)
