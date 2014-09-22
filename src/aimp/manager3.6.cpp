@@ -2385,10 +2385,20 @@ void AIMPManager36::addURLToPlaylist(const std::string& url, PlaylistID playlist
     addFileToPlaylist(path, playlist_id);
 }
 
-PlaylistID AIMPManager36::createPlaylist(const std::wstring& /*title*/)
+PlaylistID AIMPManager36::createPlaylist(const std::wstring& title)
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::createPlaylist"; ///!!! TODO: implement
-    return PlaylistID();
+    assert(!"Implement me properly. See comments at the end.");
+    AIMPString playlist_title(const_cast<std::wstring*>(&title), true); // rely on fact that AIMP will not change this string.
+    playlist_title.AddRef(); // prevent destruction by AIMP.
+    IAIMPPlaylist* playlist;
+    const bool activate = false;
+    HRESULT r = aimp_service_playlist_manager_->CreatePlaylist(&playlist_title, activate, &playlist);
+    if (S_OK != r) {
+        throw std::runtime_error( MakeString() << __FUNCTION__": aimp_service_playlist_manager_->CreatePlaylist(title " << StringEncoding::utf16_to_utf8(title) << ") failed. Result " << r);
+    }
+
+    playlist->AddRef(); ///!!! TODO: ensure that playlist was addrefed by in playlist list and remove this test code.
+    return cast<PlaylistID>(playlist);
 }
 
 void AIMPManager36::removeTrack(TrackDescription /*track_desc*/, bool /*physically*/)
