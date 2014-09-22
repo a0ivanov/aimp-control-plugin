@@ -2368,7 +2368,7 @@ void AIMPManager36::addFileToPlaylist(const boost::filesystem::wpath& path, Play
         AIMPString path_string(const_cast<std::wstring*>(&path_native), true); // rely on fact that AIMP will not change this string.
         path_string.AddRef(); // prevent destruction by AIMP.
         const DWORD flags = 0;
-        const int insertion_place = -1; // -1 means 'to the end', -2 - "to random position", [0..item count) - "at index".
+        const int insertion_place = -1; // -1 means 'insert at the end', -2 - "insert at random position", [0..item count) - "insert at index".
         HRESULT r = playlist->Add(&path_string, flags, insertion_place);
         if (S_OK != r) {
             throw std::runtime_error(MakeString() << "playlist->Add(path_string = " << StringEncoding::utf16_to_utf8(path_native) << ", flags = " << flags << ") failed. Result " << r);
