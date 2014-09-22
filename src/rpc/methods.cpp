@@ -1076,56 +1076,50 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
             temp_unique_filename.replace_extension(album_cover_filename.extension());
 
             fs::copy_file(album_cover_filename, temp_unique_filename);
-        } else {
-            if (   container
-                && (cover_width == 0 && cover_height == 0) // use direct copy only if no scaling is requested.
-                )
-            {
-                // Save file via image container to original format.
-                SIZE s;
-                int format_id;
-                HRESULT r = container->GetInfo(&s, &format_id);
-                if (S_OK != r) {
-                    throw std::runtime_error(Utilities::MakeString() << "container->GetInfo() failed. Result: " << r);
-                }
-
-                const wchar_t* extension = getExtensionByFormatId(format_id);
-                cover_uri.replace_extension           (extension);
-                temp_unique_filename.replace_extension(extension);
-                if (!container->GetData()) {
-                    throw std::runtime_error(Utilities::MakeString() << "container->GetData() is null");
-                }
-
-                std::ofstream file(temp_unique_filename.native(), std::ios_base::out | std::ios_base::binary);
-                if ( file.good() ) {
-                    file.write(reinterpret_cast<const char*>(container->GetData()), container->GetDataSize());
-                    if (!file.good()) {
-                        throw std::runtime_error(Utilities::MakeString() << "Failed to write to cover file : file.rdstate: " << file.rdstate());
-                    }
-                    file.close();
-                } else {
-                    throw std::runtime_error(Utilities::MakeString() << "Failed to open file for cover writing: file.rdstate: " << file.rdstate());
-                }
-            } else {
-                if (!free_image_dll_is_available_) {
-                    Rpc::Exception e("Getting cover failed. Reason: FreeImage DLLs are not available.", ALBUM_COVER_LOAD_FAILED);
-                    BOOST_LOG_SEV(logger(), error) << "Getting cover failed in "__FUNCTION__ << ". Reason: " << e.message();
-                    throw e;
-                }
-                aimp_manager_.saveCoverToFile(track_desc, temp_unique_filename.native(), cover_width, cover_height);
+        } else if (   (cover_width == 0 && cover_height == 0) // use direct copy only if no scaling is requested.
+                   && container
+                   )
+        {
+            // Save file via image container to original format.
+            SIZE s;
+            int format_id;
+            HRESULT r = container->GetInfo(&s, &format_id);
+            if (S_OK != r) {
+                throw std::runtime_error(Utilities::MakeString() << "container->GetInfo() failed. Result: " << r);
             }
+
+            const wchar_t* extension = getExtensionByFormatId(format_id);
+            cover_uri.replace_extension           (extension);
+            temp_unique_filename.replace_extension(extension);
+            if (!container->GetData()) {
+                throw std::runtime_error(Utilities::MakeString() << "container->GetData() is null");
+            }
+
+            std::ofstream file(temp_unique_filename.native(), std::ios_base::out | std::ios_base::binary);
+            if ( file.good() ) {
+                file.write(reinterpret_cast<const char*>(container->GetData()), container->GetDataSize());
+                if (!file.good()) {
+                    throw std::runtime_error(Utilities::MakeString() << "Failed to write to cover file : file.rdstate: " << file.rdstate());
+                }
+                file.close();
+            } else {
+                throw std::runtime_error(Utilities::MakeString() << "Failed to open file for cover writing: file.rdstate: " << file.rdstate());
+            }
+        } else {
+            if (!free_image_dll_is_available_) {
+                Rpc::Exception e("Getting cover failed. Reason: FreeImage DLLs are not available.", ALBUM_COVER_LOAD_FAILED);
+                BOOST_LOG_SEV(logger(), error) << "Getting cover failed in "__FUNCTION__ << ". Reason: " << e.message();
+                throw e;
+            }
+
+            aimp_manager_.saveCoverToFile(track_desc, temp_unique_filename.native(), cover_width, cover_height);
         }
 
         const std::wstring& cover_uri_generic = cover_uri.generic_wstring();
         root_response["result"]["album_cover_uri"] = StringEncoding::utf16_to_utf8(cover_uri_generic);
 
         const int cover_hash_code = cover_hash ? cover_hash->GetHashCode() : 0;
-        const int* cover_hash_ptr = nullptr;
-        if (cover_width == 0 && cover_height == 0) {
-            cover_hash_ptr = &cover_hash_code;
-        } else {
-            ///!!! TODO: think about saving width and height with hash. 
-        }
+        const int* cover_hash_ptr = cover_hash ? &cover_hash_code : nullptr;
         cache_.cacheNew(track_desc, album_cover_filename, cover_uri_generic, cover_hash_ptr);
     } catch (fs::filesystem_error& e) {
         BOOST_LOG_SEV(logger(), error) << "Getting cover failed in "__FUNCTION__ << ". Reason: " << e.what();
@@ -1180,7 +1174,7 @@ void GetCover::Cache::cacheNew(TrackDescription track_desc, const fs::wpath& alb
     }
     entry.filenames->push_back(cover_uri_generic); 
 
-    // AIMP 36 specifics
+    // AIMP 3.6 specific
     if (cover_hash) {
         cover_hash_entry_map_[*cover_hash] = entry;
     }
@@ -1191,9 +1185,9 @@ void GetCover::Cache::cacheBasedOnPreviousResult(TrackDescription track_desc, Ge
     Entry& entry = track_desc_entry_map_[track_desc];
     entry.filenames = search_result.entry->filenames;
 
-    // AIMP 36 specifics
+    // AIMP 3.6 specific
     if (cover_hash) {
-        cover_hash_entry_map_[*cover_hash] = entry; ///??? 
+        cover_hash_entry_map_[*cover_hash] = entry;
     }
 }
 
