@@ -2401,9 +2401,38 @@ PlaylistID AIMPManager36::createPlaylist(const std::wstring& title)
     return cast<PlaylistID>(playlist);
 }
 
-void AIMPManager36::removeTrack(TrackDescription /*track_desc*/, bool /*physically*/)
+void AIMPManager36::removeTrack(TrackDescription track_desc, bool physically)
 {
-	BOOST_LOG_SEV(logger(), debug) << "AIMPManager36::removeTrack"; ///!!! TODO: implement
+    TrackDescription absolute_track_desc(getAbsoluteTrackDesc(track_desc));
+    if (IAIMPPlaylist_ptr playlist = getPlaylist(getAbsolutePlaylistID(absolute_track_desc.playlist_id))) {
+        if (IAIMPPlaylistItem_ptr item = getPlaylistItem(absolute_track_desc.track_id)) {
+            fs::path filename_to_delete;
+            if (physically) {
+                filename_to_delete = getEntryFilename(track_desc);
+            }
+
+            HRESULT r = playlist->Delete(item.get());
+            if (S_OK != r) {
+                throw std::runtime_error(MakeString() << "playlist->Delete() failed. Result " << r);
+            }
+
+            if (!filename_to_delete.empty()) {
+                if (fs::exists(filename_to_delete)) {
+                    boost::system::error_code ec;
+                    fs::remove(filename_to_delete, ec);
+                    if (ec) {
+                        const std::string& msg = MakeString() << "boost::filesystem::remove() failed. Result " << ec << ". Filename: " << StringEncoding::utf16_to_utf8(filename_to_delete.native());
+                        BOOST_LOG_SEV(logger(), error) << __FUNCTION__" error: " << msg;
+                        throw std::runtime_error(msg);
+                    }
+                }
+            }
+        } else {
+            throw std::runtime_error( MakeString() << __FUNCTION__": invalid playlist item id " << track_desc.playlist_id);
+        }
+    } else {
+        throw std::runtime_error( MakeString() << __FUNCTION__": invalid playlist id " << track_desc.playlist_id);
+    }
 }
 
 void AIMPManager36::onTick()
