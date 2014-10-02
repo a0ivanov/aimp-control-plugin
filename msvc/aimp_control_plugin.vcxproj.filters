@@ -513,6 +513,12 @@
     <ClInclude Include="..\src\aimp\aimp3.60_sdk\Helpers\IUnknownInterfaceImpl.h">
       <Filter>src\aimp_manager\aimp_sdk\3.60\Helpers</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\aimp\playlist_queue.h">
+      <Filter>src\aimp_manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aimp\playlist_entry_rating.h">
+      <Filter>src\aimp_manager</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\control_plugin.def">

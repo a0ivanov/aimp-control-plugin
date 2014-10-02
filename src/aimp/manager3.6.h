@@ -6,6 +6,8 @@
 #include "aimp3.60_sdk/aimp3_60_sdk.h"
 #include "aimp3.60_sdk/Helpers/typedefs.h"
 #include "utils/util.h"
+#include "playlist_queue.h"
+#include "playlist_entry_rating.h"
 
 namespace AIMPPlayer
 {
@@ -13,7 +15,9 @@ namespace AIMPPlayer
 /*!
     \brief Extends AIMPManager with new functionality introduced in AIMP 3.60.
 */
-class AIMPManager36 : public AIMPManager
+class AIMPManager36 : public AIMPManager,
+                      public IPlaylistQueueManager,
+                      public IPlaylistEntryRatingManager
 {
 public:
 
@@ -72,21 +76,13 @@ public:
     */
     virtual void removeEntryFromPlayQueue(TrackDescription track_desc); // throws std::runtime_error
 
-    /*!
-        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
-    */
+    // IPlaylistQueueManager methods begin
     virtual void reloadQueuedEntries(); // throws std::runtime_error
 
-    /*!
-        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
-        Track should be already queued.
-    */
     virtual void moveQueueEntry(TrackDescription track_desc, int new_queue_index); // throws std::runtime_error
 
-    /*!
-        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
-    */
     virtual void moveQueueEntry(int old_queue_index, int new_queue_index); // throws std::runtime_error
+    // IPlaylistQueueManager methods end
 
     //! \return current playing playlist. Can return 0 on from AIMP3 build 3.00.985 if there player is stopped.
     virtual PlaylistID getPlayingPlaylist() const;
@@ -218,6 +214,8 @@ public:
 
     virtual void onTick();
 
+    // IPlaylistEntryRatingManager method.
+    virtual void trackRating(TrackDescription track_desc, int rating); // throw std::runtime_error
 
     virtual void playlistActivated(AIMP36SDK::IAIMPPlaylist* playlist);
     virtual void playlistAdded(AIMP36SDK::IAIMPPlaylist* playlist);

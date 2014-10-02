@@ -41,7 +41,7 @@ using namespace Rpc;
 
 TrackDescription AIMPRPCMethod::getTrackDesc(const Rpc::Value& params) const // throws Rpc::Exception
 {
-    const bool require_playlist_id = dynamic_cast<AIMPManager30*>(&aimp_manager_) == nullptr;
+    const bool require_playlist_id = dynamic_cast<AIMPManager26*>(&aimp_manager_) != nullptr;
     const PlaylistID playlist_id = require_playlist_id ? params["playlist_id"]
                                                        : params.isMember("playlist_id") ? params["playlist_id"]
                                                                                         : kPlaylistIdNotUsed;
@@ -276,15 +276,15 @@ ResponseType EnqueueTrack::execute(const Rpc::Value& root_request, Rpc::Value& r
 
 ResponseType QueueTrackMove::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
-    if ( AIMPPlayer::AIMPManager31* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager31*>(&aimp_manager_) ) {
+    if ( AIMPPlayer::IPlaylistQueueManager* playlist_queue_manager = dynamic_cast<AIMPPlayer::IPlaylistQueueManager*>(&aimp_manager_) ) {
         const Rpc::Value& params = root_request["params"];
 
         try {
             if (params.isMember("old_queue_index")) {
-                aimp3_manager->moveQueueEntry(params["old_queue_index"], params["new_queue_index"]);
+                playlist_queue_manager->moveQueueEntry(params["old_queue_index"], params["new_queue_index"]);
             } else {
                 const TrackDescription track_desc(getTrackDesc(params));
-                aimp3_manager->moveQueueEntry(track_desc, params["new_queue_index"]);
+                playlist_queue_manager->moveQueueEntry(track_desc, params["new_queue_index"]);
             }            
             root_response["result"] = emptyResult();
         } catch (std::runtime_error&) {
@@ -887,9 +887,8 @@ GetQueuedEntries::GetQueuedEntries(AIMPManager& aimp_manager,
 
 Rpc::ResponseType GetQueuedEntries::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
-    if ( AIMPPlayer::AIMPManager31* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager31*>(&aimp_manager_) ) {
-        using namespace AIMP3SDK;
-        aimp3_manager->reloadQueuedEntries();
+    if ( AIMPPlayer::IPlaylistQueueManager* playlist_queue_manager = dynamic_cast<AIMPPlayer::IPlaylistQueueManager*>(&aimp_manager_) ) {
+        playlist_queue_manager->reloadQueuedEntries();
         getplaylistentries_method_.activateQueuedEntriesMode();
         return getplaylistentries_method_.execute(root_request, root_response);
     }
@@ -1414,10 +1413,10 @@ ResponseType SetTrackRating::execute(const Rpc::Value& root_request, Rpc::Value&
     const TrackDescription track_desc(getTrackDesc(params));
     const int rating( Utilities::limit_value<int>(params["rating"], 0, 5) ); // set rating range [0, 5]
 
-    AIMPManager30* aimp3_manager = dynamic_cast<AIMPManager30*>(&aimp_manager_);
-    if (aimp3_manager) {
+    IPlaylistEntryRatingManager* rating_manager = dynamic_cast<IPlaylistEntryRatingManager*>(&aimp_manager_);
+    if (rating_manager) {
         try {
-            aimp3_manager->trackRating(track_desc, rating);
+            rating_manager->trackRating(track_desc, rating);
         } catch (std::exception& e) {
             BOOST_LOG_SEV(logger(), error) << "Error saving rating in "__FUNCTION__". Reason: " << e.what();
             throw Rpc::Exception("Error saving rating.", RATING_SET_FAILED);

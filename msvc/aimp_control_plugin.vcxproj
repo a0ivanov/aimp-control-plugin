@@ -239,6 +239,8 @@
     <ClInclude Include="..\src\aimp\manager_impl_common.h" />
     <ClInclude Include="..\src\aimp\playlist.h" />
     <ClInclude Include="..\src\aimp\playlist_entry.h" />
+    <ClInclude Include="..\src\aimp\playlist_entry_rating.h" />
+    <ClInclude Include="..\src\aimp\playlist_queue.h" />
     <ClInclude Include="..\src\aimp\track_description.h" />
     <ClInclude Include="..\src\config.h" />
     <ClInclude Include="..\src\download_track\request_handler.h" />

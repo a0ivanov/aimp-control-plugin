@@ -2361,6 +2361,20 @@ int AIMPManager36::trackRating(TrackDescription track_desc) const
 	return getEntryField<DWORD>(playlists_db_, "rating", getAbsoluteEntryID(track_desc.track_id));
 }
 
+void AIMPManager36::trackRating(TrackDescription track_desc, int rating)
+{
+    TrackDescription absolute_track_desc(getAbsoluteTrackDesc(track_desc));
+    if (IAIMPPlaylistItem_ptr item = getPlaylistItem(absolute_track_desc.track_id)) {
+        HRESULT r = item->SetValueAsFloat(AIMP36SDK::AIMP_PLAYLISTITEM_PROPID_MARK, (double)rating);
+        if (S_OK != r) {
+            throw std::runtime_error( MakeString() << __FUNCTION__": SetValueAsFloat(AIMP36SDK::AIMP_PLAYLISTITEM_PROPID_MARK) failed. Result " << r);
+        }
+    } else {
+        throw std::runtime_error( MakeString() << __FUNCTION__": invalid track " << track_desc);
+    }
+    // Note: at this point entry does not exist any more, since SetValueAsFloat forces calling of onStorageChanged() so, entries are reloaded.
+}
+
 void AIMPManager36::addFileToPlaylist(const boost::filesystem::wpath& path, PlaylistID playlist_id)
 {
     if (IAIMPPlaylist_ptr playlist = getPlaylist(getAbsolutePlaylistID(playlist_id))) {

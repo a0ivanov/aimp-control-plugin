@@ -3,6 +3,7 @@
 #pragma once
 
 #include "manager3.0.h"
+#include "playlist_queue.h"
 
 namespace AIMPPlayer
 {
@@ -10,7 +11,7 @@ namespace AIMPPlayer
 /*!
     \brief Extends AIMP3Manager30 with new functionality introduced in AIMP 3.1.
 */
-class AIMPManager31 : public AIMPManager30
+class AIMPManager31 : public AIMPManager30, public IPlaylistQueueManager
 {
 public:
 
@@ -25,21 +26,13 @@ public:
 
     virtual void removeEntryFromPlayQueue(TrackDescription track_desc); // throws std::runtime_error
 
-    /*!
-        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
-    */
-    void reloadQueuedEntries(); // throws std::runtime_error
+    // IPlaylistQueueManager methods begin
+    virtual void reloadQueuedEntries(); // throws std::runtime_error
 
-    /*!
-        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
-        Track should be already queued.
-    */
-    void moveQueueEntry(TrackDescription track_desc, int new_queue_index); // throws std::runtime_error
+    virtual void moveQueueEntry(TrackDescription track_desc, int new_queue_index); // throws std::runtime_error
 
-    /*!
-        Check availability with isPlaylistQueueSupported() method. Supported since AIMP 3.1.
-    */
-    void moveQueueEntry(int old_queue_index, int new_queue_index); // throws std::runtime_error
+    virtual void moveQueueEntry(int old_queue_index, int new_queue_index); // throws std::runtime_error
+    // IPlaylistQueueManager methods end
 
 private:
 
