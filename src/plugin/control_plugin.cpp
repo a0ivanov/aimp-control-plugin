@@ -375,7 +375,8 @@ PWCHAR AIMPControlPlugin::InfoGet(int index)
     case AIMP_PLUGIN_INFO_SHORT_DESCRIPTION:
         return const_cast<PWCHAR>( AIMPControlPlugin::kPLUGIN_INFO.c_str() ); // const cast is safe here since AIMP does not try to modify these data.
     case AIMP_PLUGIN_INFO_FULL_DESCRIPTION:
-        return L"Some AIMP_PLUGIN_INFO_FULL_DESCRIPTION";
+        // no full description.
+        break;
     }
     return nullptr;
 }
