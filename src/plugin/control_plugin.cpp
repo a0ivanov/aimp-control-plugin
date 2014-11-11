@@ -138,10 +138,8 @@ std::wstring AIMPControlPlugin::getAimpPath(int path_id) const
 
         IAIMP2Extended* extended = nullptr;
         if ( aimp2_controller_->AIMP_QueryObject(IAIMP2ExtendedID, &extended) ) {
-            boost::intrusive_ptr<IAIMP2Extended> aimp_extended(extended);
-            extended->Release();
-            extended = nullptr;
-
+            boost::intrusive_ptr<IAIMP2Extended> aimp_extended(extended, false);
+            
             const int buffer_length = aimp_extended->AIMP_GetPath(path_id, buffer, MAX_PATH);
 
             if (0 < buffer_length && buffer_length <= MAX_PATH) {
@@ -165,27 +163,38 @@ std::wstring AIMPControlPlugin::getAimpPath(int path_id) const
                                                      ) 
             )
         {
-            boost::intrusive_ptr<IAIMPAddonsPlayerManager> player_manager(manager);
-            manager->Release();
-            manager = nullptr;
+            boost::intrusive_ptr<IAIMPAddonsPlayerManager> player_manager(manager, false);
 
             if ( S_OK == player_manager->ConfigGetPath(path_id, buffer, MAX_PATH) ) {
                 return buffer;
             }
         }
     }
+
+    if (aimp36_core_) {
+        AIMP36SDK::IAIMPString* path_tmp;
+        if (S_OK == aimp36_core_->GetPath(path_id, &path_tmp)) {
+            AIMP36SDK::IAIMPString_ptr path(path_tmp, false);
+            return std::wstring(path->GetData(), path->GetData() + path->GetLength());
+        }
+    }
+
     return L"";
 }
 
 std::wstring AIMPControlPlugin::getAimpProfilePath()
 {
-    const int profile_path_id = aimp2_controller_ ? AIMP2SDK::AIMP_CFG_DATA : AIMP3SDK::AIMP_CFG_PATH_PROFILE;
+    const int profile_path_id = aimp2_controller_ ? AIMP2SDK::AIMP_CFG_DATA
+                                                  : aimp36_core_ ? AIMP36SDK::AIMP_CORE_PATH_PROFILE
+                                                                 : AIMP3SDK::AIMP_CFG_PATH_PROFILE;
     return getAimpPath(profile_path_id);
 }
 
 std::wstring AIMPControlPlugin::getAimpPluginsPath() const
 {
-    const int plugins_path_id = aimp2_controller_ ? AIMP2SDK::AIMP_CFG_PLUGINS : AIMP3SDK::AIMP_CFG_PATH_PLUGINS;
+    const int plugins_path_id = aimp2_controller_ ? AIMP2SDK::AIMP_CFG_PLUGINS
+                                                  : aimp36_core_ ? AIMP36SDK::AIMP_CORE_PATH_PLUGINS
+                                                                 : AIMP3SDK::AIMP_CFG_PATH_PLUGINS;
     return getAimpPath(plugins_path_id);
 }
 
@@ -530,6 +539,8 @@ HRESULT AIMPControlPlugin::Finalize()
 
     aimp2_controller_.reset();
     aimp3_core_unit_.reset();
+    aimp36_core_.reset();
+
 
     server_io_service_.reset();
 
