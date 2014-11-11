@@ -200,7 +200,7 @@ std::wstring AIMPControlPlugin::getAimpPluginsPath() const
 
 boost::filesystem::wpath AIMPControlPlugin::getPluginDirectoryPath(const boost::filesystem::wpath& base_directory) const
 {   
-    return base_directory / kPLUGIN_SHORT_NAME;
+    return base_directory / (aimp36_core_ ? L"aimp_control" : kPLUGIN_SHORT_NAME);
 }
 
 boost::filesystem::wpath AIMPControlPlugin::getSettingsFilePath(const boost::filesystem::wpath& base_directory) const
