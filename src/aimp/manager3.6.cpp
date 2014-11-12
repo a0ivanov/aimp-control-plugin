@@ -1190,7 +1190,7 @@ void AIMPManager36::onAimpCoreMessage(DWORD AMessage, int AParam1, void* /*APara
 namespace
 {
 
-///!!! TODO check it? For some reason IAIMPCoreUnit::MessageSend() returns -1 instead 1 for BOOL.
+// For some reason IAIMPCoreUnit::MessageSend() returns -1 instead 1 for BOOL.
 AIMPManager::StatusValue patchBool(BOOL value)
 {
     return value ? 1 : 0;
