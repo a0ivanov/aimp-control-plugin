@@ -21,7 +21,7 @@ AIMPString::AIMPString(std::wstring::value_type* raw_string, std::wstring::size_
 
 AIMPString::AIMPString(const AIMPString& rhs)
     :
-    string_(rhs.weak_ref_ ? rhs.string_: new std::wstring(*rhs.string_)),
+    string_(rhs.weak_ref_ ? rhs.string_ : new std::wstring(*rhs.string_)),
     weak_ref_(rhs.weak_ref_)
 {
 }
@@ -140,7 +140,7 @@ HRESULT WINAPI AIMPString::Compare2(WCHAR* /*Chars*/, int /*CharsCount*/, int* /
 
 HRESULT WINAPI AIMPString::Delete(int index, int count)
 {
-    if (count >= 0 && 0 <= index && static_cast<std::wstring::size_type>(index + count) <= string_->length()) {
+    if (count >= 0 && index >= 0 && static_cast<std::wstring::size_type>(index + count) <= string_->length()) {
         string_->erase(index, count);
         return S_OK;
     }

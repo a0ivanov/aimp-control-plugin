@@ -14,7 +14,7 @@ public:
 
     AIMPString(std::wstring* string, bool weak_ref);
     AIMPString(std::wstring::value_type* raw_string, std::wstring::size_type count);
-    AIMPString(const AIMPString&);
+
     virtual ~AIMPString();
 
     virtual HRESULT WINAPI QueryInterface(REFIID riid, LPVOID* ppvObj);
@@ -50,7 +50,8 @@ public:
 	virtual HRESULT WINAPI SubString(int Index, int Count, IAIMPString **S);
 
 private:
-
+    AIMPString(const AIMPString&);
+    AIMPString& operator=(const AIMPString&);
     std::wstring* string_;
     bool weak_ref_;
 };
