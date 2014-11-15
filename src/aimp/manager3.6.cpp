@@ -2453,6 +2453,30 @@ void AIMPManager36::onTick()
 {
 }
 
+void AIMPManager36::lockPlaylist(PlaylistID playlist_id) // throws std::runtime_error
+{
+    if (IAIMPPlaylist_ptr playlist = getPlaylist(getAbsolutePlaylistID(playlist_id))) {
+        HRESULT r = playlist->BeginUpdate();
+        if (S_OK != r) {
+            throw std::runtime_error(MakeString() << "IAIMPPlaylist::BeginUpdate() failed. Result " << r);
+        }
+    } else {
+        throw std::runtime_error( MakeString() << __FUNCTION__": invalid playlist id " << playlist_id);
+    }
+}
+
+void AIMPManager36::unlockPlaylist(PlaylistID playlist_id) // throws std::runtime_error
+{
+    if (IAIMPPlaylist_ptr playlist = getPlaylist(getAbsolutePlaylistID(playlist_id))) {
+        HRESULT r = playlist->EndUpdate();
+        if (S_OK != r) {
+            throw std::runtime_error(MakeString() << "IAIMPPlaylist::EndUpdate() failed. Result " << r);
+        }
+    } else {
+        throw std::runtime_error( MakeString() << __FUNCTION__": invalid playlist id " << playlist_id);
+    }
+}
+
 std::string playlist36NotifyFlagsToString(DWORD flags)
 {
 #ifndef NDEBUG

@@ -8,6 +8,7 @@
 #include "utils/util.h"
 #include "playlist_queue.h"
 #include "playlist_entry_rating.h"
+#include "playlist_update_manager.h"
 
 namespace AIMPPlayer
 {
@@ -17,7 +18,8 @@ namespace AIMPPlayer
 */
 class AIMPManager36 : public AIMPManager,
                       public IPlaylistQueueManager,
-                      public IPlaylistEntryRatingManager
+                      public IPlaylistEntryRatingManager,
+                      public IPlaylistUpdateManager
 {
 public:
 
@@ -221,6 +223,10 @@ public:
     virtual void playlistAdded(AIMP36SDK::IAIMPPlaylist* playlist);
 	virtual void playlistRemoved(AIMP36SDK::IAIMPPlaylist* playlist);
     virtual void playlistChanged(AIMP36SDK::IAIMPPlaylist* playlist, DWORD flags);
+
+    // IPlaylistUpdateManager methods.
+    virtual void lockPlaylist(PlaylistID playlist_id); // throws std::runtime_error
+    virtual void unlockPlaylist(PlaylistID playlist_id); // throws std::runtime_error
 
     sqlite3* playlists_db()
         { return playlists_db_; }

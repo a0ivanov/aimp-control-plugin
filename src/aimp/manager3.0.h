@@ -6,6 +6,7 @@
 #include "aimp3_sdk/aimp3_sdk.h"
 #include "utils/util.h"
 #include "playlist_entry_rating.h"
+#include "playlist_update_manager.h"
 
 struct sqlite3;
 
@@ -26,7 +27,10 @@ namespace AIMPPlayer
 /*!
     \brief Provides interaction with AIMP3 player.
 */
-class AIMPManager30 : public AIMPManager, public IPlaylistEntryRatingManager
+class AIMPManager30 : public AIMPManager,
+                      public IPlaylistEntryRatingManager,
+                      public IPlaylistUpdateManager
+
 {
 public:
 
@@ -106,6 +110,7 @@ public:
     // IPlaylistEntryRatingManager method.
     virtual void trackRating(TrackDescription track_desc, int rating); // throw std::runtime_error
 
+    // IPlaylistUpdateManager methods.
     virtual void lockPlaylist(PlaylistID playlist_id); // throws std::runtime_error
     virtual void unlockPlaylist(PlaylistID playlist_id); // throws std::runtime_error
 
