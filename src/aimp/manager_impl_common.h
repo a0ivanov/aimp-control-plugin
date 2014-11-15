@@ -110,7 +110,7 @@ inline sqlite3* getPlaylistsDB(const AIMPPlayer::AIMPManager& aimp_manager) {
         return mgr2->playlists_db();
     } else {
         using namespace Utilities;
-        const std::string msg = MakeString() << __FUNCTION__ ": invalid AIMPManager object. AIMPManager30 and AIMPManager26 are only supported.";
+        const std::string msg = MakeString() << __FUNCTION__ ": invalid AIMPManager object. AIMPManager36, AIMPManager30 and AIMPManager26 are only supported.";
         throw std::runtime_error(msg);
     }
 }
