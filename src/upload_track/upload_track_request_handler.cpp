@@ -4,6 +4,7 @@
 #include "request_handler.h"
 #include "../aimp/manager.h"
 #include "../aimp/playlist_update_manager.h"
+#include "../aimp/player_supported_formats_getter.h"
 #include "../aimp/manager_impl_common.h"
 #include "../http_server/reply.h"
 #include "../http_server/request.h"
@@ -94,8 +95,9 @@ bool fileTypeSupported(const std::wstring& ext_to_check, AIMPPlayer::AIMPManager
     if (exts.empty()) {
     #pragma warning (push, 3)
         std::wstring exts_str;
-        if (AIMPManager30* aimp3_manager = dynamic_cast<AIMPManager30*>(&aimp_manager)) {
-            exts_str = aimp3_manager->supportedTrackExtentions();
+
+        if (IPlayerSupportedFormatsGetter* supported_formats_getter = dynamic_cast<IPlayerSupportedFormatsGetter*>(&aimp_manager)) {
+            exts_str = supported_formats_getter->supportedTrackExtentions();
         } else {
             exts_str = L"*.aiff;*.aif;*.mp3;*.mp2;*.mp1;*.ogg;*.oga;*.wav;*.umx;*.mod;*.mo3;*.it;*.s3m;*.mtm;*.xm;*.aac;*.m4a;*.m4b;*.mp4;*.ac3;*.ape;*.mac;*.flac;*.fla;*.midi;*.mid;*.rmi;*.kar;*.mpc;*.mp+;*.mpp;*.opus;*.spx;*.tta;*.wma;*.wv;*.ofr;*.ofs;*.tak;*.cda;"; // got from aimp3.
         }

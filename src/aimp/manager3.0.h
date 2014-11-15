@@ -7,6 +7,7 @@
 #include "utils/util.h"
 #include "playlist_entry_rating.h"
 #include "playlist_update_manager.h"
+#include "player_supported_formats_getter.h"
 
 struct sqlite3;
 
@@ -29,7 +30,8 @@ namespace AIMPPlayer
 */
 class AIMPManager30 : public AIMPManager,
                       public IPlaylistEntryRatingManager,
-                      public IPlaylistUpdateManager
+                      public IPlaylistUpdateManager,
+                      public IPlayerSupportedFormatsGetter
 
 {
 public:
@@ -114,6 +116,7 @@ public:
     virtual void lockPlaylist(PlaylistID playlist_id); // throws std::runtime_error
     virtual void unlockPlaylist(PlaylistID playlist_id); // throws std::runtime_error
 
+    // IPlayerSupportedFormatsGetter method.
     virtual std::wstring supportedTrackExtentions(); // throws std::runtime_error
 
     sqlite3* playlists_db()

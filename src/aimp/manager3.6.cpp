@@ -2477,6 +2477,27 @@ void AIMPManager36::unlockPlaylist(PlaylistID playlist_id) // throws std::runtim
     }
 }
 
+std::wstring AIMPManager36::supportedTrackExtentions() // throws std::runtime_error
+{
+    IAIMPServiceFileFormats* service_file_formats_tmp;
+    HRESULT r = aimp36_core_->QueryInterface(IID_IAIMPServiceFileFormats,
+                                             reinterpret_cast<void**>(&service_file_formats_tmp)
+                                             );
+    if (S_OK !=  r) {
+        throw std::runtime_error(MakeString() << "aimp36_core_->QueryInterface(IID_IAIMPServiceFileFormats) failed. Result: " << r); 
+    }
+    boost::intrusive_ptr<IAIMPServiceFileFormats> service_file_formats(service_file_formats_tmp, false);
+
+    IAIMPString* exts_tmp;
+    r = service_file_formats->GetFormats(AIMP36SDK::AIMP_SERVICE_FILEFORMATS_CATEGORY_AUDIO, &exts_tmp);
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << "IAIMPAddonsPlayerManager::SupportsExts() failed. Result " << r);
+    }
+
+    IAIMPString_ptr exts(exts_tmp, false);
+    return std::wstring(exts->GetData(), exts->GetData() + exts->GetLength());
+}
+
 std::string playlist36NotifyFlagsToString(DWORD flags)
 {
 #ifndef NDEBUG
