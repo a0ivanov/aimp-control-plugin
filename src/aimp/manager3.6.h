@@ -11,6 +11,10 @@
 #include "playlist_update_manager.h"
 #include "player_supported_formats_getter.h"
 
+namespace AimpRpcMethods {
+    class EmulationOfWebCtlPlugin;
+}
+
 namespace AIMPPlayer
 {
 
@@ -303,6 +307,9 @@ private:
     typedef std::vector<PlaylistHelper> PlaylistHelpers;
     mutable PlaylistHelpers playlist_helpers_;
     PlaylistHelper& getPlaylistHelper(AIMP36SDK::IAIMPPlaylist* playlist); // throws std::runtime_error
+
+    // These class were made friend only for easy emulate web ctl plugin behavior. Remove when possible.
+    friend class AimpRpcMethods::EmulationOfWebCtlPlugin;
 };
 
 //! general tempate for convinient casting. Provide specialization for your own types.

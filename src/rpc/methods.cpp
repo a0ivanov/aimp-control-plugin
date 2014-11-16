@@ -1834,9 +1834,9 @@ std::string urldecode(const std::string& url_src)
 
 void EmulationOfWebCtlPlugin::getPlaylistList(std::ostringstream& out)
 {
-    if ( AIMPPlayer::AIMPManager26* aimp2_manager = dynamic_cast<AIMPPlayer::AIMPManager26*>(&aimp_manager_) ) {
-        out << "[";
+    out << "[";
 
+    if ( AIMPPlayer::AIMPManager26* aimp2_manager = dynamic_cast<AIMPPlayer::AIMPManager26*>(&aimp_manager_) ) {
         boost::intrusive_ptr<AIMP2SDK::IAIMP2PlaylistManager2> aimp_playlist_manager(aimp2_manager->aimp2_playlist_manager_);
         const unsigned int playlist_name_length = 256;
         std::wstring playlist_name;
@@ -1858,10 +1858,8 @@ void EmulationOfWebCtlPlugin::getPlaylistList(std::ostringstream& out)
             }
             out << "{\"id\":" << playlist_id << ",\"duration\":" << duration << ",\"size\":" << size << ",\"name\":\"" << StringEncoding::utf16_to_utf8(playlist_name) << "\"}";
         }
-        out << "]";
     } else if ( AIMPPlayer::AIMPManager30* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager30*>(&aimp_manager_) ) {
         using namespace AIMP3SDK;
-        out << "[";
 
         boost::intrusive_ptr<AIMP3SDK::IAIMPAddonsPlaylistManager> aimp_playlist_manager(aimp3_manager->aimp3_playlist_manager_);
         const unsigned int playlist_name_length = 256;
@@ -1884,8 +1882,63 @@ void EmulationOfWebCtlPlugin::getPlaylistList(std::ostringstream& out)
             }
             out << "{\"id\":" << cast<PlaylistID>(playlist_handle) << ",\"duration\":" << duration << ",\"size\":" << size << ",\"name\":\"" << StringEncoding::utf16_to_utf8(playlist_name) << "\"}";
         }
-        out << "]";
+    } else if ( AIMPPlayer::AIMPManager36* aimp36_manager = dynamic_cast<AIMPPlayer::AIMPManager36*>(&aimp_manager_) ) {
+        using namespace AIMP36SDK;
+        using namespace Utilities;
+
+        boost::intrusive_ptr<AIMP36SDK::IAIMPServicePlaylistManager> aimp_service_playlist_manager(aimp36_manager->aimp_service_playlist_manager_);
+    
+        std::wstring playlist_name;
+        for (int i = 0, count = aimp_service_playlist_manager->GetLoadedPlaylistCount(); i != count; ++i) {
+            IAIMPPlaylist* playlist_tmp;
+            HRESULT r = aimp_service_playlist_manager->GetLoadedPlaylist(i, &playlist_tmp);
+            if (S_OK != r) {
+                throw std::runtime_error(MakeString() << "IAIMPServicePlaylistManager::GetLoadedPlaylist failed. Result " << r);
+            }
+            boost::intrusive_ptr<IAIMPPlaylist> playlist(playlist_tmp, false);
+
+            IAIMPPropertyList* playlist_propertylist_tmp;
+            r = playlist->QueryInterface(IID_IAIMPPropertyList,
+                                         reinterpret_cast<void**>(&playlist_propertylist_tmp));
+            if (S_OK != r) {
+                throw std::runtime_error(MakeString() << "playlist->QueryInterface(IID_IAIMPPropertyList) failed. Result " << r);
+            }
+            boost::intrusive_ptr<IAIMPPropertyList> playlist_propertylist(playlist_propertylist_tmp, false);
+            playlist_propertylist_tmp = nullptr;
+
+            INT64 size = 0;
+            r = playlist_propertylist->GetValueAsInt64(AIMP_PLAYLIST_PROPID_SIZE, &size);
+            if (S_OK != r) {
+                throw std::runtime_error(MakeString() << "IAIMPPropertyList::GetValueAsInt64(AIMP_PLAYLIST_PROPID_SIZE) failed. Result " << r);
+            }
+
+            double duration_tmp;
+            r = playlist_propertylist->GetValueAsFloat(AIMP_PLAYLIST_PROPID_DURATION, &duration_tmp);
+            if (S_OK != r) {
+                throw std::runtime_error(MakeString() << "IAIMPPropertyList::GetValueAsFloat(AIMP_PLAYLIST_PROPID_DURATION) failed. Result " << r);
+            }
+            const INT64 duration = static_cast<INT64>(duration_tmp);
+
+            IAIMPString* name_tmp;
+            r = playlist_propertylist->GetValueAsObject(AIMP_PLAYLIST_PROPID_NAME, IID_IAIMPString, reinterpret_cast<void**>(&name_tmp));
+            if (S_OK != r) {
+                throw std::runtime_error(MakeString() << "IAIMPAddonsPlaylistManager::StoragePropertyGetValue(AIMP_PLAYLIST_STORAGE_PROPERTY_NAME) failed. Result " << r);
+            }
+            boost::intrusive_ptr<IAIMPString> nameStr(name_tmp, false);
+            playlist_name.assign(nameStr->GetData(), nameStr->GetData() + nameStr->GetLength());
+
+            using namespace Utilities;
+            replaceAll(L"\"", 1,
+                       L"\\\"", 2,
+                       &playlist_name);
+            if (i != 0) {
+                out << ',';
+            }
+            out << "{\"id\":" << cast<PlaylistID>(playlist.get()) << ",\"duration\":" << duration << ",\"size\":" << size << ",\"name\":\"" << StringEncoding::utf16_to_utf8(playlist_name) << "\"}";
+        }
     }
+
+    out << "]";
 }
 
 void EmulationOfWebCtlPlugin::getPlaylistSongs(int playlist_id, bool ignore_cache, bool return_crc, int offset, int size, std::ostringstream& out)
