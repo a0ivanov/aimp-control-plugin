@@ -1941,6 +1941,29 @@ void EmulationOfWebCtlPlugin::getPlaylistList(std::ostringstream& out)
     out << "]";
 }
 
+namespace Support {
+
+using namespace AIMP36SDK;
+
+HRESULT getString(IAIMPPropertyList* property_list, const int property_id, IAIMPString_ptr* value)
+{
+    assert(property_list);
+    assert(value);
+
+    IAIMPString* value_tmp;
+    HRESULT r = property_list->GetValueAsObject(property_id, IID_IAIMPString, reinterpret_cast<void**>(&value_tmp));
+    if (S_OK == r) {
+        IAIMPString_ptr(value_tmp, false).swap(*value);
+
+#ifndef NDEBUG
+        BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << property_id << ") value: " << StringEncoding::utf16_to_utf8(value_tmp->GetData(), value_tmp->GetData() + value_tmp->GetLength());
+#endif
+    }
+    return r;
+}
+
+}
+
 void EmulationOfWebCtlPlugin::getPlaylistSongs(int playlist_id, bool ignore_cache, bool return_crc, int offset, int size, std::ostringstream& out)
 {
     typedef std::string PlaylistCacheKey;
@@ -1987,6 +2010,7 @@ void EmulationOfWebCtlPlugin::getPlaylistSongs(int playlist_id, bool ignore_cach
 
     AIMPPlayer::AIMPManager26* aimp2_manager = dynamic_cast<AIMPPlayer::AIMPManager26*>(&aimp_manager_);
     AIMPPlayer::AIMPManager30* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager30*>(&aimp_manager_);
+    AIMPPlayer::AIMPManager36* aimp36_manager = dynamic_cast<AIMPPlayer::AIMPManager36*>(&aimp_manager_);
 
     const AIMP3SDK::HPLS playlist_handle = reinterpret_cast<AIMP3SDK::HPLS>(playlist_id);
 
@@ -1995,6 +2019,8 @@ void EmulationOfWebCtlPlugin::getPlaylistSongs(int playlist_id, bool ignore_cach
         fileCount = aimp2_manager->aimp2_playlist_manager_->AIMP_PLS_GetFilesCount(playlist_id);
     } else if (aimp3_manager) {
         fileCount = aimp3_manager->aimp3_playlist_manager_->StorageGetEntryCount(playlist_handle);
+    } else if (aimp36_manager) {
+        fileCount = aimp36_manager->getPlaylist(playlist_id)->GetItemCount();
     }
 
     if (size == 0) {
@@ -2055,6 +2081,47 @@ void EmulationOfWebCtlPlugin::getPlaylistSongs(int playlist_id, bool ignore_cach
                     out << ',';
                 }
                 out << "{\"name\":\"" << StringEncoding::utf16_to_utf8(entry_title) << "\",\"length\":" << info.Duration << "}";
+            }
+        } else if (aimp36_manager) {
+            using namespace AIMP36SDK;
+            using namespace Utilities;
+
+            IAIMPPlaylist_ptr playlist = aimp36_manager->getPlaylist(playlist_id);
+
+            for (int i = offset; (i < fileCount) && (i < offset + size); ++i) {
+                IAIMPPlaylistItem* item_tmp;
+                HRESULT r = playlist->GetItem(i,
+                                              IID_IAIMPPlaylistItem,
+                                              reinterpret_cast<void**>(&item_tmp)
+                                              );
+                if (S_OK != r) {
+                    throw std::runtime_error(MakeString() << "playlist->GetItem(IID_IAIMPPlaylistItem) failed. Result " << r);
+                }
+                IAIMPPlaylistItem_ptr item(item_tmp, false); 
+                item_tmp = nullptr;
+
+                IAIMPString_ptr display_text;
+                r = Support::getString(item.get(), AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT, &display_text);
+                if (S_OK != r) {
+                    throw std::runtime_error(MakeString() << "get prop(AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT) failed. Result " << r);
+                }
+
+                double duration_tmp;
+                r = item->GetValueAsFloat(AIMP_PLAYLIST_PROPID_DURATION, &duration_tmp);
+                if (S_OK != r) {
+                    throw std::runtime_error(MakeString() << "IAIMPPlaylistItem::GetValueAsFloat(AIMP_PLAYLIST_PROPID_DURATION) failed. Result " << r);
+                }
+                const INT64 duration = static_cast<INT64>(duration_tmp);
+
+                entry_title.assign( display_text->GetData(), display_text->GetData() + display_text->GetLength() );
+                using namespace Utilities;
+                replaceAll(L"\"", 1,
+                           L"\\\"", 2,
+                           &entry_title);
+                if (i != 0) {
+                    out << ',';
+                }
+                out << "{\"name\":\"" << StringEncoding::utf16_to_utf8(entry_title) << "\",\"length\":" << duration << "}";
             }
         }
         out << "]";
