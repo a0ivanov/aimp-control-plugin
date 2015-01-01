@@ -1,7 +1,7 @@
 /************************************************/
 /*                                              */
 /*          AIMP Programming Interface          */
-/*               v3.60 build 1400               */
+/*               v3.60 build 1455               */
 /*                                              */
 /*                Artem Izmaylov                */
 /*                (C) 2006-2014                 */
@@ -34,6 +34,7 @@ const int AIMP_MENUITEM_PROPID_EVENT_ONSHOW = 7;
 const int AIMP_MENUITEM_PROPID_GLYPH        = 10;
 const int AIMP_MENUITEM_PROPID_PARENT       = 11;
 const int AIMP_MENUITEM_PROPID_VISIBLE      = 12;
+const int AIMP_MENUITEM_PROPID_CHECKED		= 13;
 
 // Styles for the AIMP_MENUITEM_PROPID_STYLE property
 const int AIMP_MENUITEM_STYLE_NORMAL   = 0;
@@ -62,7 +63,8 @@ const int AIMP_MENUID_PLAYER_EQ_LIB                     = 41;
 
 class IAIMPMenuItem: public IAIMPPropertyList
 {
-	// nothing
+	public:
+		virtual HRESULT WINAPI DeleteChildren() = 0;
 };
 
 /* IAIMPServiceMenuManager */
@@ -70,8 +72,8 @@ class IAIMPMenuItem: public IAIMPPropertyList
 class IAIMPServiceMenuManager: public IUnknown
 {
 	public:
-		virtual HRESULT WINAPI Find(IAIMPString *ID, IAIMPMenuItem **MenuItem) = 0;
-		virtual HRESULT WINAPI FindBuiltIn(int ID, IAIMPMenuItem **MenuItem) = 0;
+		virtual HRESULT WINAPI GetBuiltIn(int ID, IAIMPMenuItem **MenuItem) = 0;
+		virtual HRESULT WINAPI GetByID(IAIMPString *ID, IAIMPMenuItem **MenuItem) = 0;
 };
 
 #endif // !apiMenuH

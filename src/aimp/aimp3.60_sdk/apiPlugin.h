@@ -1,7 +1,7 @@
 /************************************************/
 /*                                              */
 /*          AIMP Programming Interface          */
-/*               v3.60 build 1400               */
+/*               v3.60 build 1455               */
 /*                                              */
 /*                Artem Izmaylov                */
 /*                (C) 2006-2014                 */
@@ -33,6 +33,8 @@ const int  AIMP_PLUGIN_INFO_FULL_DESCRIPTION  = 0x3;
 // IAIMPPlugin.SystemNotification
 const int  AIMP_SYSTEM_NOTIFICATION_SERVICE_ADDED   = 0x1;
 const int  AIMP_SYSTEM_NOTIFICATION_SERVICE_REMOVED = 0x2;
+const int  AIMP_SYSTEM_NOTIFICATION_EXTENSION_REMOVED = 0x3;
+
 
 static const GUID IID_IAIMPExternalSettingsDialog = {0x41494D50, 0x4578, 0x7472, 0x6E, 0x4F, 0x70, 0x74, 0x44, 0x6C, 0x67, 0x00};
 

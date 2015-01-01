@@ -1,7 +1,7 @@
 /************************************************/
 /*                                              */
 /*          AIMP Programming Interface          */
-/*               v3.60 build 1400               */
+/*               v3.60 build 1455               */
 /*                                              */
 /*                Artem Izmaylov                */
 /*                (C) 2006-2014                 */
@@ -38,8 +38,11 @@ const int AIMP_SERVICE_CONSET_CONNECTIONTYPE_PROXY          = 1;
 const int AIMP_SERVICE_CONSET_CONNECTIONTYPE_SYSTEMDEFAULTS = 2;
 
 // Flags for HTTPClient
-const int AIMP_SERVICE_HTTPCLIENT_FLAGS_WAITFOR = 1;
-const int AIMP_SERVICE_HTTPCLIENT_FLAGS_UTF8    = 2;
+const int AIMP_SERVICE_HTTPCLIENT_FLAGS_WAITFOR         = 1;
+const int AIMP_SERVICE_HTTPCLIENT_FLAGS_UTF8            = 2;
+const int AIMP_SERVICE_HTTPCLIENT_FLAGS_PRIORITY_NORMAL = 0;
+const int AIMP_SERVICE_HTTPCLIENT_FLAGS_PRIORITY_LOW    = 4;
+const int AIMP_SERVICE_HTTPCLIENT_FLAGS_PRIORITY_HIGH   = 8;
 
 /* IAIMPHTTPClientEvents */
 

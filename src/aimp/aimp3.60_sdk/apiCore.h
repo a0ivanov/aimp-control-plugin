@@ -1,7 +1,7 @@
 /************************************************/
 /*                                              */
 /*          AIMP Programming Interface          */
-/*               v3.60 build 1400               */
+/*               v3.60 build 1455               */
 /*                                              */
 /*                Artem Izmaylov                */
 /*                (C) 2006-2014                 */
@@ -65,6 +65,7 @@ class IAIMPCore: public IUnknown
 		// Registration
 		virtual HRESULT WINAPI RegisterExtension(REFIID ServiceIID, IUnknown *Extension) = 0;
 		virtual HRESULT WINAPI RegisterService(IUnknown *Service) = 0;	
+		virtual HRESULT WINAPI UnregisterExtension(IUnknown *Extension) = 0;	
 };
 
 /* IAIMPServiceAttrObjects */

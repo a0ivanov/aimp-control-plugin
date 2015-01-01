@@ -1,7 +1,7 @@
 /************************************************/
 /*                                              */
 /*          AIMP Programming Interface          */
-/*               v3.60 build 1400               */
+/*               v3.60 build 1455               */
 /*                                              */
 /*                Artem Izmaylov                */
 /*                (C) 2006-2014                 */
@@ -52,6 +52,7 @@ const int AIMP_PLAYLISTQUEUE_PROPID_SUSPENDED = 1;
 const int AIMP_PLAYLIST_PROPID_NAME                     = 1;
 const int AIMP_PLAYLIST_PROPID_READONLY                 = 2;
 const int AIMP_PLAYLIST_PROPID_FOCUSED_OBJECT           = 3;
+const int AIMP_PLAYLIST_PROPID_ID                       = 4;
 const int AIMP_PLAYLIST_PROPID_GROUPPING                = 10;
 const int AIMP_PLAYLIST_PROPID_GROUPPING_OVERRIDEN      = 11;
 const int AIMP_PLAYLIST_PROPID_GROUPPING_TEMPLATE       = 12;
@@ -233,6 +234,7 @@ class IAIMPServicePlaylistManager: public IUnknown
 		virtual HRESULT WINAPI GetLoadedPlaylist(int Index, IAIMPPlaylist** Playlist) = 0;
 		virtual HRESULT WINAPI GetLoadedPlaylistByName(IAIMPString* Name, IAIMPPlaylist** Playlist) = 0;
 		virtual int WINAPI GetLoadedPlaylistCount() = 0;
+		virtual HRESULT WINAPI GetLoadedPlaylistByID(IAIMPString* ID, IAIMPPlaylist** Playlist) = 0;
 };
 
 #endif // !apiPlaylistsH

@@ -1,7 +1,7 @@
 /************************************************/
 /*                                              */
 /*          AIMP Programming Interface          */
-/*               v3.60 build 1400               */
+/*               v3.60 build 1455               */
 /*                                              */
 /*                Artem Izmaylov                */
 /*                (C) 2006-2014                 */
@@ -20,7 +20,7 @@
 #include "apiCore.h"
 
 static const GUID IID_IAIMPSkinInfo = {0x41494D50, 0x536B, 0x696E, 0x49, 0x6E, 0x66, 0x6F, 0x00, 0x00, 0x00, 0x00};
-static const GUID IID_IAIMPServiceSkinsManager = {0x504D4941, 0x7253, 0x5376, 0x6B, 0x69, 0x6E, 0x73, 0x4D, 0x6E, 0x67, 0x72};
+static const GUID IID_IAIMPServiceSkinsManager = {0x41494D50, 0x5372, 0x7653, 0x6B, 0x69, 0x6E, 0x73, 0x4D, 0x6E, 0x67, 0x72};
 
 // SkinInfo Properties
 const int AIMP_SKININFO_PROPID_NAME         = 1;

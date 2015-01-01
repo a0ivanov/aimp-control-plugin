@@ -1,7 +1,7 @@
 /************************************************/
 /*                                              */
 /*          AIMP Programming Interface          */
-/*               v3.60 build 1400               */
+/*               v3.60 build 1455               */
 /*                                              */
 /*                Artem Izmaylov                */
 /*                (C) 2006-2014                 */
@@ -35,11 +35,11 @@ const int AIMP_MSG_CMD_STATE_GET = AIMP_MSG_CMD_BASE + 1;
 // AParam2: unused
 const int AIMP_MSG_CMD_QFI_PLAYBACK_TRACK = AIMP_MSG_CMD_BASE + 2;
 
-// Show custom text in display of RunningString element
+// Show custom text in display of RunningLine or Text elements
 // AParam1: 0 - Hide text automaticly after 2 seconds
-//          1 - Text will be hidden manually (put NULL to AParam2 to hide previous text)
+//          1 - Text will be hidden manually (put nil to AParam2 to hide previous text)
 // AParam2: Pointer to WideChar array
-const int AIMP_MSG_CMD_RUNSTR_SHOW_TEXT = AIMP_MSG_CMD_BASE + 3;
+const int AIMP_MSG_CMD_SHOW_NOTIFICATION = AIMP_MSG_CMD_BASE + 3;
 
 const int AIMP_MSG_CMD_TOGGLE_PARTREPEAT = AIMP_MSG_CMD_BASE + 5;
 

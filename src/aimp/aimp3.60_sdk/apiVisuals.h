@@ -1,7 +1,7 @@
 /************************************************/
 /*                                              */
 /*          AIMP Programming Interface          */
-/*               v3.60 build 1400               */
+/*               v3.60 build 1455               */
 /*                                              */
 /*                Artem Izmaylov                */
 /*                (C) 2006-2014                 */
@@ -35,8 +35,8 @@ const int AIMP_VISUAL_FLAGS_NOT_SUSPEND	     = 4;
 const int AIMP_VISUAL_SPECTRUM_MAX = 256;
 const int AIMP_VISUAL_WAVEFORM_MAX = 512;
 
-typedef unsigned char  TAIMPVisualDataSpectrum[AIMP_VISUAL_SPECTRUM_MAX];
-typedef   signed short TAIMPVisualDataWaveform[AIMP_VISUAL_WAVEFORM_MAX];
+typedef float TAIMPVisualDataSpectrum[AIMP_VISUAL_SPECTRUM_MAX];
+typedef float TAIMPVisualDataWaveform[AIMP_VISUAL_WAVEFORM_MAX];
 
 #pragma pack(push, 1)
 struct TAIMPVisualData
