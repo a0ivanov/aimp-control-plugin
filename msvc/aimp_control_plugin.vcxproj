@@ -45,7 +45,7 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)..\temp_build\$(Configuration)\vs\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\temp_build\$(Configuration)\vs\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">aimp_control</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Control Plugin</TargetName>
     <SourcePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(VCInstallDir)crt\src;$(BOOST_DIR)\libs\log\src</SourcePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(VCInstallDir)include;$(WindowsSdkDir)include;$(WindowsSDK_IncludePath)</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(VCInstallDir)lib;$(WindowsSdkDir)lib;$(WindowsSDK_LibraryPath_x86)</LibraryPath>
@@ -54,7 +54,7 @@
     <IncludePath>$(VCInstallDir)include;$(WindowsSdkDir)include;$(WindowsSDK_IncludePath)</IncludePath>
     <LibraryPath>$(VCInstallDir)lib;$(WindowsSdkDir)lib;$(WindowsSDK_LibraryPath_x86)</LibraryPath>
     <SourcePath>$(VCInstallDir)crt\src;$(BOOST_DIR)\libs\log\src</SourcePath>
-    <TargetName>aimp_control</TargetName>
+    <TargetName>Control Plugin</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PreBuildEvent>

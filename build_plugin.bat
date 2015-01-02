@@ -34,6 +34,7 @@ setlocal ENABLEDELAYEDEXPANSION
     call setup_vs_project_variables.bat
     :: variable AIMP_PLUGINS_DIR is used in Visual Studio project. This is the easiest way to make msbuild to put plugin DLL into temp build directory.
     set AIMP_PLUGINS_DIR=..\%TEMP_BUILD_DIR%
+    set AIMP_CONTROL_SUBPATH=\
     msbuild msvc\aimp_control_plugin.sln /maxcpucount ^
                                          /property:Configuration=%CONFIG_NAME%;IntDir=%VS_TEMP_DIR%;OutDir=%VS_TEMP_DIR% || goto ERROR_HANDLER
 

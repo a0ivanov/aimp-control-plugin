@@ -1,4 +1,4 @@
-LIBRARY aimp_control
+LIBRARY "Control Plugin"
 
 EXPORTS
 	AIMP_QueryAddonEx
