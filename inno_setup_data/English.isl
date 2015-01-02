@@ -367,6 +367,6 @@ DonatePageTitle2=Support development
 DonateMsg=Please consider donation to support development.
 DonateButton=Donate
 
-InfoAfterPageMemoTextLocal=By default plugin starts local HTTP server at localhost, port 3333.%nTest link: http://localhost:3333/index.htm%nHTTP server's address can be changed in plugin's configuration file.
+InfoAfterPageMemoTextLocal=By default plugin starts local HTTP server.%nTest link: http://localhost:3333/index.htm%nHTTP server's interface and port can be changed in plugin's configuration file or by Settings Manager.
 InfoAfterPageMemoTextRemoteBegin=The plugin will be available at the following URLs
 InfoAfterPageMemoTextRemoteEnd=This can be changed in plugin's configuration file.

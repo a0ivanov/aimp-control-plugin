@@ -330,7 +330,7 @@ SettingsManagerInstallationDescription=Требуется установка .Net Framework.
 SettingsManagerInstallationSubDescription=Для того, чтобы использовать Менеджер настроек, пожалуйста, скачайте и установите .Net Framework 4.0. 
 SettingsManagerInstallationMessage=Скачать установщик .Net 4.0 Framework: http://www.microsoft.com/ru-RU/download/details.aspx?id=17851
 SettingsManager=Менеджер настроек
-SettingsManagerInfo=Рекомендуется защитить паролем доступ к плагину. Для этого удобно воспользоваться Менеджером настроек. Чтобы запустить его нажмите кнопку с шестеренкой в разделе Плагины в настройках AIMP.
+SettingsManagerInfo=Рекомендуется защитить паролем доступ к плагину. Для этого удобно воспользоваться менеджером настроек. Чтобы запустить его, нажмите кнопку с шестеренкой в разделе Плагины в настройках AIMP.
 
 AimpApplicationTerminateQuery=Для успешной установки необходимо закрыть AIMP. Закрыть сейчас?
 
@@ -339,6 +339,6 @@ DonatePageTitle2=Поддержать разработку
 DonateMsg=Пожалуйста, подумайте о пожертвовании, чтобы поддержать разработку.
 DonateButton=Поддержать
 
-InfoAfterPageMemoTextLocal=По умолчанию плагин запускает локальный HTTP сервер localhost, порт 3333.%nПроверочная ссылка: http://localhost:3333/index.htm%nАдрес HTTP сервера может быть изменен в файле конфигурации плагина.
+InfoAfterPageMemoTextLocal=По умолчанию плагин запускает локальный HTTP сервер.%nПроверочная ссылка: http://localhost:3333/index.htm%nИнтерфейс и порт HTTP сервера могут быть изменены в файле конфигурации плагина или с помощью менеджера настроек.
 InfoAfterPageMemoTextRemoteBegin=Плагин будет доступен по следующим ссылкам
 InfoAfterPageMemoTextRemoteEnd=Это может быть изменено в файле конфигурации плагина.
