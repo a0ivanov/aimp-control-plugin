@@ -1,6 +1,6 @@
 #define SourceDir "..\"
 #define AppName "AIMP Control Plugin"
-#define SrcApp "temp_build\Release\aimp_control_plugin.dll"
+#define SrcApp "temp_build\Release\Control Plugin.dll"
 ; use absolute path as GetFileVersion() argument since there is problem with relative path when we execute this script from command line.
 #define FileVerStr GetFileVersion(SourcePath + "\" + SourceDir + SrcApp)
 #define StripBuild(VerStr) Copy(VerStr, 1, RPos(".", VerStr)-1)
@@ -54,14 +54,13 @@ Name: ru; MessagesFile: inno_setup_data\Russian.isl; LicenseFile: Lisense-Russia
 Name: cs; MessagesFile: inno_setup_data\Czech.isl;   LicenseFile: Lisense-English.txt;
 
 [Files]
-Source: "{#SrcApp}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SrcApp}"; DestDir: "{code:GetPluginDllDestinationDir}"; DestName: "{#PluginWorkDirectoryName}.dll"; Flags: ignoreversion
 Source: "temp_build\Release\htdocs\*"; DestDir: "{code:GetBrowserScriptsDir}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 Source: "inno_setup_data\default_settings.dat"; DestDir: "{code:GetPluginSettingsDir}"; DestName: "settings.dat"; Flags: onlyifdoesntexist; AfterInstall: AfterInstallSettingsFile( ExpandConstant('{code:GetPluginSettingsDir}\settings.dat') )
 Source: "3rd_party\FreeImage\{#FreeImage_VERSION}\Dist\FreeImage.dll"; DestDir: "{code:GetFreeImageDLLsDstDir}"; Flags: ignoreversion
 Source: "3rd_party\FreeImage\{#FreeImage_VERSION}\Wrapper\FreeImagePlus\dist\FreeImagePlus.dll"; DestDir: "{code:GetFreeImageDLLsDstDir}"; Flags: ignoreversion
 Source: "temp_build\Release\SettingsManager\*"; DestDir: "{code:GetSettingsManagerDir}"; Flags: ignoreversion recursesubdirs createallsubdirs
-
 
 [Registry]
 ; etc.
@@ -247,6 +246,28 @@ begin
   else
     Result := 'Plugins';
   }
+end;
+
+function GetAimp3VersionCode(): Integer;
+var
+    version: Longint;
+    aimpIniFilePath: String;
+begin
+   aimpIniFilePath := ExpandConstant('{app}\..\AIMP3.ini');
+   version := GetIniInt('System', 'Version', 0, 0, 555555, aimpIniFilePath);
+   Log('Aimp version is: ' + IntToStr(version));
+   
+   Result := version;
+end;
+
+function GetPluginDllDestinationDir(Param: String): String;
+var aimpVersionCode: Integer;
+begin
+    aimpVersionCode := GetAimp3VersionCode();
+    if aimpVersionCode >= 3600 then
+        Result := ExpandConstant('{app}\{#PluginWorkDirectoryName}')
+    else
+        Result := ExpandConstant('{app}');
 end;
 
 function GetAimpPlayerAppDirName(Param: String): String;
