@@ -1,18 +1,25 @@
 How to install plugin:
 
-1) Put aimp_control.dll in AIMP player's "Plugins" directory.
-2) Put 'htdocs' directory to path which is writeable for AIMP. Do not put it in Program Files dir.
-    This is required for album cover support. If you do not need it put it in any folder.
-3) Create plugin settings.dat file.
-    There are two ways to do that:
-        2.1) Just launch AIMP and exit, plugin will save default settings file in plugin folder("Control Plugin") in AIMP Plugins directory.
-             "<installed AIMP path>\Plugins\Control Plugin\settings.dat"
-        2.2) Copy settings.dat from 7z package to "<installed AIMP path>\Plugins\Control Plugin" directory.
+1) Put "Control Plugin.dll" 
+    for AIMP 3.6+: to AIMP player's "Plugins\Control Plugin" directory.
+    for AIMP 3.5 and older: to AIMP player's "Plugins" directory.
+2) Put 'htdocs' directory to path which is writeable for AIMP. Do not put it to Program Files dir.
+    This is required for album cover support. If you don't need it put it to any folder.
+3) Optional: put SettingsManager directory near to "Control Plugin.dll".
+    Launch it to tune all aspects of plugin work. It will save settings.dat file.
+4) Skip if you use SettingManager.
+    Create plugin settings.dat file.
+        There are several ways to do this:
+            4.1) Just launch AIMP and exit, plugin will save default settings file in plugin folder("Control Plugin") in AIMP Plugins directory.
+                 "<installed AIMP path>\Plugins\Control Plugin\settings.dat"
+            4.2) Copy settings.dat from 7z package to "<installed AIMP path>\Plugins\Control Plugin" directory.
 
-4) In settings.dat set following values:
-    httpserver.document_root - set full path to htdocs directory.
-    httpserver.ip_to_bind - set address of network interface where plugin server will work.
-    
+    In settings.dat set following values:
+        httpserver.document_root - set full path to htdocs directory.
+        httpserver.interfaces - set list of network interfaces where plugin server will work.
+        To use all available interfaces uncomment element:
+            <all_interfaces port="3333" />
+        
 5) Optional, album cover support 
     Copy following files to "<installed AIMP path>\Plugins\Control Plugin" directory:
         FreeImage.dll
