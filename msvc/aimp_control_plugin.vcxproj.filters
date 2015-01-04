@@ -32,9 +32,6 @@
     <Filter Include="src\rpc_server\json\json_cpp">
       <UniqueIdentifier>{8785a5b5-f2f9-41db-9d39-be945889a6cc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\rpc_server\webctl">
-      <UniqueIdentifier>{5b0d084a-e2be-41bd-9ddf-ae2a519e9dab}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\aimp_manager\aimp_sdk">
       <UniqueIdentifier>{47199064-0f6f-40a1-b64f-9de6761bc512}</UniqueIdentifier>
     </Filter>
@@ -67,6 +64,12 @@
     </Filter>
     <Filter Include="src\aimp_manager\aimp_sdk\3.60\Helpers">
       <UniqueIdentifier>{d5016bd7-879f-4b83-8953-f383fa72c978}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\rpc_server\compatibility">
+      <UniqueIdentifier>{7e2e8577-2ed4-4b07-b8d2-f27edba252db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\rpc_server\compatibility\webctl">
+      <UniqueIdentifier>{5b0d084a-e2be-41bd-9ddf-ae2a519e9dab}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -158,10 +161,10 @@
       <Filter>src\rpc_server\json</Filter>
     </ClCompile>
     <ClCompile Include="..\src\webctlrpc\webctlrpc_request_parser.cpp">
-      <Filter>src\rpc_server\webctl</Filter>
+      <Filter>src\rpc_server\compatibility\webctl</Filter>
     </ClCompile>
     <ClCompile Include="..\src\webctlrpc\webctlrpc_response_serializer.cpp">
-      <Filter>src\rpc_server\webctl</Filter>
+      <Filter>src\rpc_server\compatibility\webctl</Filter>
     </ClCompile>
     <ClCompile Include="..\src\aimp\playlist_entry.cpp">
       <Filter>src\aimp_manager</Filter>
@@ -216,6 +219,9 @@
     </ClCompile>
     <ClCompile Include="..\src\aimp\aimp3.60_sdk\Helpers\AIMPString.cpp">
       <Filter>src\aimp_manager\aimp_sdk\3.60\Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\rpc\compatibility\webctrl_plugin.cpp">
+      <Filter>src\rpc_server\compatibility</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -343,13 +349,13 @@
       <Filter>src\rpc_server\json</Filter>
     </ClInclude>
     <ClInclude Include="..\src\webctlrpc\frontend.h">
-      <Filter>src\rpc_server\webctl</Filter>
+      <Filter>src\rpc_server\compatibility\webctl</Filter>
     </ClInclude>
     <ClInclude Include="..\src\webctlrpc\request_parser.h">
-      <Filter>src\rpc_server\webctl</Filter>
+      <Filter>src\rpc_server\compatibility\webctl</Filter>
     </ClInclude>
     <ClInclude Include="..\src\webctlrpc\response_serializer.h">
-      <Filter>src\rpc_server\webctl</Filter>
+      <Filter>src\rpc_server\compatibility\webctl</Filter>
     </ClInclude>
     <ClInclude Include="..\src\aimp\aimp3_sdk\aimp3_sdk.h">
       <Filter>src\aimp_manager\aimp_sdk\3</Filter>
@@ -518,6 +524,9 @@
     </ClInclude>
     <ClInclude Include="..\src\aimp\playlist_entry_rating.h">
       <Filter>src\aimp_manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\rpc\compatibility\webctrl_plugin.h">
+      <Filter>src\rpc_server\compatibility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

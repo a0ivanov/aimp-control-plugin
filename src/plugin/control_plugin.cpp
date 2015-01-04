@@ -9,6 +9,7 @@
 #include "logger.h"
 #include "settings.h"
 #include "rpc/methods.h"
+#include "rpc/compatibility/webctrl_plugin.h"
 #include "rpc/frontend.h"
 #include "rpc/request_handler.h"
 #include "xmlrpc/frontend.h"

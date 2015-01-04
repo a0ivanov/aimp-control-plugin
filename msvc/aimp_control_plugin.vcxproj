@@ -162,6 +162,7 @@
     <ClCompile Include="..\src\plugin\control_plugin.cpp" />
     <ClCompile Include="..\src\plugin\logger.cpp" />
     <ClCompile Include="..\src\plugin\settings.cpp" />
+    <ClCompile Include="..\src\rpc\compatibility\webctrl_plugin.cpp" />
     <ClCompile Include="..\src\rpc\methods.cpp" />
     <ClCompile Include="..\src\rpc\rpc_request_handler.cpp" />
     <ClCompile Include="..\src\rpc\rpc_value.cpp" />
@@ -267,6 +268,7 @@
     <ClInclude Include="..\src\plugin\control_plugin.h" />
     <ClInclude Include="..\src\plugin\logger.h" />
     <ClInclude Include="..\src\plugin\settings.h" />
+    <ClInclude Include="..\src\rpc\compatibility\webctrl_plugin.h" />
     <ClInclude Include="..\src\rpc\exception.h" />
     <ClInclude Include="..\src\rpc\frontend.h" />
     <ClInclude Include="..\src\rpc\method.h" />
