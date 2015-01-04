@@ -660,8 +660,32 @@ Rpc::ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_reques
             break;
         case set_song_play:
             {
-            const TrackDescription track_desc(params["playlist"], params["song"]);
-            aimp_manager_.startPlayback(track_desc);
+            const int playlist_id = params["playlist"],
+                      track_index = params["song"];
+            if (aimp2_manager) {
+                const TrackDescription track_desc(playlist_id, track_index);
+                aimp_manager_.startPlayback(track_desc);
+            } else if (aimp3_manager) {
+                using namespace AIMP3SDK;
+                HPLSENTRY entry_handle = aimp3_manager->aimp3_playlist_manager_->StorageGetEntry(reinterpret_cast<AIMP3SDK::HPLS>(playlist_id),
+                                                                                                 track_index
+                                                                                                 );
+                aimp3_manager->aimp3_player_manager_->PlayEntry(entry_handle);
+            } else if (aimp36_manager) {
+                using namespace AIMP36SDK;
+                if (IAIMPPlaylist_ptr playlist = aimp36_manager->getPlaylist(playlist_id)) {
+                    IAIMPPlaylistItem* item_tmp;
+                    HRESULT r = playlist->GetItem(track_index,
+                                                  IID_IAIMPPlaylistItem,
+                                                  reinterpret_cast<void**>(&item_tmp)
+                                                  );
+                    if (S_OK == r) {
+                        IAIMPPlaylistItem_ptr item(item_tmp, false);
+                        aimp36_manager->aimp_service_player_->Play2(item.get());
+                    }
+                }
+            }
+
             }
             break;
         case set_song_position:
