@@ -7,6 +7,7 @@
 #include "aimp/manager3.0.h"
 #include "aimp/manager2.6.h"
 #include "aimp/manager_impl_common.h"
+#include "aimp/aimp3.60_sdk/Helpers/AIMPString.h"
 #include "plugin/logger.h"
 #include "plugin/control_plugin.h"
 #include "plugin/settings.h"
@@ -2020,7 +2021,9 @@ void EmulationOfWebCtlPlugin::getPlaylistSongs(int playlist_id, bool ignore_cach
     } else if (aimp3_manager) {
         fileCount = aimp3_manager->aimp3_playlist_manager_->StorageGetEntryCount(playlist_handle);
     } else if (aimp36_manager) {
-        fileCount = aimp36_manager->getPlaylist(playlist_id)->GetItemCount();
+        using namespace AIMP36SDK;
+        IAIMPPlaylist_ptr playlist(aimp36_manager->getPlaylist(playlist_id));
+        fileCount = playlist ? playlist->GetItemCount() : 0;
     }
 
     if (size == 0) {
@@ -2086,42 +2089,42 @@ void EmulationOfWebCtlPlugin::getPlaylistSongs(int playlist_id, bool ignore_cach
             using namespace AIMP36SDK;
             using namespace Utilities;
 
-            IAIMPPlaylist_ptr playlist = aimp36_manager->getPlaylist(playlist_id);
+            if (IAIMPPlaylist_ptr playlist = aimp36_manager->getPlaylist(playlist_id)) {
+                for (int i = offset; (i < fileCount) && (i < offset + size); ++i) {
+                    IAIMPPlaylistItem* item_tmp;
+                    HRESULT r = playlist->GetItem(i,
+                                                  IID_IAIMPPlaylistItem,
+                                                  reinterpret_cast<void**>(&item_tmp)
+                                                  );
+                    if (S_OK != r) {
+                        throw std::runtime_error(MakeString() << "playlist->GetItem(IID_IAIMPPlaylistItem) failed. Result " << r);
+                    }
+                    IAIMPPlaylistItem_ptr item(item_tmp, false); 
+                    item_tmp = nullptr;
 
-            for (int i = offset; (i < fileCount) && (i < offset + size); ++i) {
-                IAIMPPlaylistItem* item_tmp;
-                HRESULT r = playlist->GetItem(i,
-                                              IID_IAIMPPlaylistItem,
-                                              reinterpret_cast<void**>(&item_tmp)
-                                              );
-                if (S_OK != r) {
-                    throw std::runtime_error(MakeString() << "playlist->GetItem(IID_IAIMPPlaylistItem) failed. Result " << r);
-                }
-                IAIMPPlaylistItem_ptr item(item_tmp, false); 
-                item_tmp = nullptr;
+                    IAIMPString_ptr display_text;
+                    r = Support::getString(item.get(), AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT, &display_text);
+                    if (S_OK != r) {
+                        throw std::runtime_error(MakeString() << "get prop(AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT) failed. Result " << r);
+                    }
 
-                IAIMPString_ptr display_text;
-                r = Support::getString(item.get(), AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT, &display_text);
-                if (S_OK != r) {
-                    throw std::runtime_error(MakeString() << "get prop(AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT) failed. Result " << r);
-                }
+                    double duration_tmp;
+                    r = item->GetValueAsFloat(AIMP_PLAYLIST_PROPID_DURATION, &duration_tmp);
+                    if (S_OK != r) {
+                        throw std::runtime_error(MakeString() << "IAIMPPlaylistItem::GetValueAsFloat(AIMP_PLAYLIST_PROPID_DURATION) failed. Result " << r);
+                    }
+                    const INT64 duration = static_cast<INT64>(duration_tmp);
 
-                double duration_tmp;
-                r = item->GetValueAsFloat(AIMP_PLAYLIST_PROPID_DURATION, &duration_tmp);
-                if (S_OK != r) {
-                    throw std::runtime_error(MakeString() << "IAIMPPlaylistItem::GetValueAsFloat(AIMP_PLAYLIST_PROPID_DURATION) failed. Result " << r);
+                    entry_title.assign( display_text->GetData(), display_text->GetData() + display_text->GetLength() );
+                    using namespace Utilities;
+                    replaceAll(L"\"", 1,
+                               L"\\\"", 2,
+                               &entry_title);
+                    if (i != 0) {
+                        out << ',';
+                    }
+                    out << "{\"name\":\"" << StringEncoding::utf16_to_utf8(entry_title) << "\",\"length\":" << duration << "}";
                 }
-                const INT64 duration = static_cast<INT64>(duration_tmp);
-
-                entry_title.assign( display_text->GetData(), display_text->GetData() + display_text->GetLength() );
-                using namespace Utilities;
-                replaceAll(L"\"", 1,
-                           L"\\\"", 2,
-                           &entry_title);
-                if (i != 0) {
-                    out << ',';
-                }
-                out << "{\"name\":\"" << StringEncoding::utf16_to_utf8(entry_title) << "\",\"length\":" << duration << "}";
             }
         }
         out << "]";
@@ -2169,6 +2172,7 @@ void EmulationOfWebCtlPlugin::getCurrentSong(std::ostringstream& out)
         aimp2_manager->aimp2_playlist_manager_->AIMP_PLS_Entry_GetTitle( track.playlist_id, track.track_id, 
                                                                          &entry_title[0], entry_title.length()
                                                                         );
+        entry_title.resize( wcslen( entry_title.c_str() ) );
     } else if ( AIMPPlayer::AIMPManager30* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager30*>(&aimp_manager_) ) {
         using namespace AIMP3SDK;
         HPLSENTRY entry_handle = aimp3_manager->aimp3_playlist_manager_->StorageGetEntry(cast<AIMP3SDK::HPLS>(track.playlist_id), track.track_id);
@@ -2183,9 +2187,19 @@ void EmulationOfWebCtlPlugin::getCurrentSong(std::ostringstream& out)
         aimp3_manager->aimp3_playlist_manager_->EntryPropertyGetValue( entry_handle, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_DISPLAYTEXT,
                                                                        &entry_title[0], entry_title.length()
                                                                       );
+        entry_title.resize( wcslen( entry_title.c_str() ) );
+    } else if ( AIMPPlayer::AIMPManager36* aimp36_manager = dynamic_cast<AIMPPlayer::AIMPManager36*>(&aimp_manager_) ) {
+        using namespace AIMP36SDK;
+        using namespace Utilities;
+        if (IAIMPPlaylistItem_ptr item = aimp36_manager->getPlaylistItem(track.track_id)) {
+            IAIMPString_ptr display_text;
+            HRESULT r = Support::getString(item.get(), AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT, &display_text);
+            if (S_OK == r) {
+                entry_title.assign(display_text->GetData(), display_text->GetLength()); 
+            }
+        }
     }
 
-    entry_title.resize( wcslen( entry_title.c_str() ) );
     using namespace Utilities;
     replaceAll(L"\"", 1,
                 L"\\\"", 2,
@@ -2251,6 +2265,23 @@ void EmulationOfWebCtlPlugin::sortPlaylist(int playlist_id, const std::string& s
         } else if (sortType.compare("randomize") == 0) {
             aimp_playlist_manager->StorageSort(playlist_handle, AIMP_PLAYLIST_SORT_TYPE_RANDOMIZE);
         }
+    } else if ( AIMPPlayer::AIMPManager36* aimp36_manager = dynamic_cast<AIMPPlayer::AIMPManager36*>(&aimp_manager_) ) {
+        using namespace AIMP36SDK;
+        if (IAIMPPlaylist_ptr playlist = aimp36_manager->getPlaylist(playlist_id)) {
+            if (sortType.compare("title") == 0) {
+                playlist->Sort(AIMP_PLAYLIST_SORTMODE_TITLE);
+            } else if (sortType.compare("filename") == 0) {
+                playlist->Sort(AIMP_PLAYLIST_SORTMODE_FILENAME);
+            } else if (sortType.compare("duration") == 0) {
+                playlist->Sort(AIMP_PLAYLIST_SORTMODE_DURATION);
+            } else if (sortType.compare("artist") == 0) {
+                playlist->Sort(AIMP_PLAYLIST_SORTMODE_ARTIST);
+            } else if (sortType.compare("inverse") == 0) {
+                playlist->Sort(AIMP_PLAYLIST_SORTMODE_INVERSE);
+            } else if (sortType.compare("randomize") == 0) {
+                playlist->Sort(AIMP_PLAYLIST_SORTMODE_RANDOMIZE);
+            }
+        }
     }
 }
 
@@ -2271,6 +2302,16 @@ void EmulationOfWebCtlPlugin::addFile(int playlist_id, const std::string& filena
         const std::wstring filename = StringEncoding::utf8_to_utf16( WebCtl::urldecode(filename_url) );
         strings->ItemAdd(const_cast<PWCHAR>( filename.c_str() ), nullptr);
         aimp3_manager->aimp3_playlist_manager_->StorageAddEntries( playlist_handle, strings.get() );
+    } else if ( AIMPPlayer::AIMPManager36* aimp36_manager = dynamic_cast<AIMPPlayer::AIMPManager36*>(&aimp_manager_) ) {
+        using namespace AIMP36SDK;
+        if (IAIMPPlaylist_ptr playlist = aimp36_manager->getPlaylist(playlist_id)) {
+            std::wstring filename = StringEncoding::utf8_to_utf16( WebCtl::urldecode(filename_url) );
+            AIMPString filename_string(&filename, true);
+            filename_string.AddRef(); // prevent destruction by AIMP.
+            DWORD flags = 0;
+            int insert_in = -1; // at the end of playlist.
+            playlist->Add(&filename_string, flags, insert_in);
+        }
     }
 }
 
@@ -2292,6 +2333,7 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
 
         AIMPPlayer::AIMPManager26* aimp2_manager = dynamic_cast<AIMPPlayer::AIMPManager26*>(&aimp_manager_);
         AIMPPlayer::AIMPManager30* aimp3_manager = dynamic_cast<AIMPPlayer::AIMPManager30*>(&aimp_manager_);
+        AIMPPlayer::AIMPManager36* aimp36_manager = dynamic_cast<AIMPPlayer::AIMPManager36*>(&aimp_manager_);
 
         switch (*method_id) {
         case get_playlist_list:
@@ -2370,7 +2412,22 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
                                                                                                  track_index
                                                                                                  );
                 aimp3_manager->aimp3_playlist_manager_->EntryPropertySetValue( entry_handle, AIMP_PLAYLIST_ENTRY_PROPERTY_INDEX, &position, sizeof(position) );
+            } else if (aimp36_manager) {
+                using namespace AIMP36SDK;
+                if (IAIMPPlaylist_ptr playlist = aimp36_manager->getPlaylist(playlist_id)) {
+                    IAIMPPlaylistItem* item_tmp;
+                    HRESULT r = playlist->GetItem(track_index,
+                                                  IID_IAIMPPlaylistItem,
+                                                  reinterpret_cast<void**>(&item_tmp)
+                                                  );
+                    if (S_OK == r) {
+                        IAIMPPlaylistItem_ptr item(item_tmp, false);
+
+                        item->SetValueAsInt32(AIMP_PLAYLISTITEM_PROPID_INDEX, position);
+                    }
+                }
             }
+
             calcPlaylistCRC(playlist_id);
             }
             break;
@@ -2418,6 +2475,11 @@ ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_request, Rp
                                                                                                  track_index
                                                                                                  );
                 aimp3_manager->aimp3_playlist_manager_->EntryDelete(entry_handle);
+            } else if (aimp36_manager) {
+                using namespace AIMP36SDK;
+                if (IAIMPPlaylist_ptr playlist = aimp36_manager->getPlaylist(playlist_id)) {
+                    playlist->Delete2(track_index);
+                }
             }
             calcPlaylistCRC(playlist_id);
             }
