@@ -1935,13 +1935,13 @@ PlaylistID AIMPManager36::getPlayingPlaylist() const
 PlaylistEntryID AIMPManager36::getPlayingEntry() const
 {    
     IAIMPPlaylistItem* playlist_item_tmp;
-    HRESULT r = aimp_service_player_->GetPlaylistItem(&playlist_item_tmp);
-    if (S_OK == r && playlist_item_tmp) {
+    HRESULT get_playing_item_result = aimp_service_player_->GetPlaylistItem(&playlist_item_tmp);
+    if (S_OK == get_playing_item_result && playlist_item_tmp) {
         playlist_item_tmp->Release();
     } else {
         // player is stopped at this time, return active playlist for compatibility with AIMPManager: AIMP2-AIMP3.5 returned active entry from active playlist in this case.
         IAIMPPlaylist* playlist_tmp;
-        r = aimp_service_playlist_manager_->GetActivePlaylist(&playlist_tmp);
+        HRESULT r = aimp_service_playlist_manager_->GetActivePlaylist(&playlist_tmp);
         if (S_OK != r) {
             throw std::runtime_error(MakeString() << __FUNCTION__": aimp_service_playlist_manager_->GetActivePlaylist() failed. Result: " << r);
         }
@@ -1953,6 +1953,8 @@ PlaylistEntryID AIMPManager36::getPlayingEntry() const
                 throw std::runtime_error(MakeString() << __FUNCTION__": playlist->GetItem(0, IID_IAIMPPlaylistItem) failed. Result: " << r);
             }
             playlist_item_tmp->Release();
+        } else {
+            throw std::runtime_error(MakeString() << __FUNCTION__": Unable to get playing entry because GetPlaylistItem failed with result " << get_playing_item_result << ", and there is no tracks in active playlist. This can happen if playing track removed from playlist.");
         }
     }
     return castToPlaylistEntryID(playlist_item_tmp);

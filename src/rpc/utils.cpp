@@ -103,15 +103,48 @@ void setCurrentRadioCaptureMode(bool value, Rpc::Value& result)
 void setIsCurrentTrackSourceRadioIfPossible(const AIMPManager& aimp_manager, Rpc::Value& result)
 {
     if (aimp_manager.getPlaybackState() != AIMPManager::STOPPED) {
-        TrackDescription playing_track = aimp_manager.getPlayingTrack();
-        result["current_track_source_radio"] = aimp_manager.getTrackSourceType(playing_track) == AIMPManager::SOURCE_TYPE_RADIO;
+        try {
+            TrackDescription playing_track = aimp_manager.getPlayingTrack();
+            result["current_track_source_radio"] = aimp_manager.getTrackSourceType(playing_track) == AIMPManager::SOURCE_TYPE_RADIO;
+        } catch (std::exception& e) {
+            BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << ". Skip setting of current_track_source_radio field. Reason: " << e.what();
+        }
     }
 }
 
 void setCurrentPlayingSourceInfo(const AIMPManager& aimp_manager, Rpc::Value& result)
 {
-    setCurrentPlaylist(aimp_manager.getPlayingPlaylist(), result);
-    setCurrentPlaylistEntry(aimp_manager.getPlayingEntry(), result);
+    struct {
+        PlaylistID value;
+        bool valid;
+    } playlistID = { 0, false };
+
+    try {
+        playlistID.value = aimp_manager.getPlayingPlaylist();
+        playlistID.valid = true;
+    } catch (std::exception& e) {
+        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << ". Skip setting of playing playlist ID. Reason: " << e.what();
+    }
+
+    struct {
+        PlaylistEntryID value;
+        bool valid;
+    } playlistEntryID = { 0, false };
+
+    try {
+        playlistEntryID.value = aimp_manager.getPlayingEntry();
+        playlistEntryID.valid = true;
+    } catch (std::exception& e) {
+        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << ". Skip setting of playing playlist entry ID. Reason: " << e.what();
+    }
+
+    if (playlistID.valid) {
+        setCurrentPlaylist(playlistID.value, result);
+    }
+
+    if (playlistEntryID.valid) {
+        setCurrentPlaylistEntry(playlistEntryID.value, result);
+    }
 }
 
 void setControlPanelInfo(const AIMPManager& aimp_manager, Rpc::Value& result)

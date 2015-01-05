@@ -226,6 +226,10 @@ function gotoCurrentTrackInPlaylist(force_page_and_playlist_switch_local)
         }
     }
     
+    if (!control_panel_state.hasOwnProperty('track_id')) {
+        return;
+    }
+    
     if (entries_requests.hasOwnProperty(control_panel_state.playlist_id) ) {
         var request_params = entries_requests[control_panel_state.playlist_id]; // maybe we need copy this
         request_params['track_id'] = control_panel_state.track_id;
@@ -958,18 +962,22 @@ function updatePlaybackPanelState(control_panel_state)
     if ( isPlaybackActive() ) {
         $('#playback_state_label').text( getText('playback_state_playing') );
 
-        aimp_manager.getFormattedTrackTitle({
-                                              track_id : control_panel_state.track_id,
-                                              playlist_id : control_panel_state.playlist_id,
-                                              format_string : getFormatOfTrackInfoFromCookies()
-                                            },
-                                            { on_success : function (result) {
-                                                            //alert(result.formatted_string);
-                                                            $scroll_text_div.text(result.formatted_string);
-                                                           }
-
-                                            }
-        );
+        if (!control_panel_state.hasOwnProperty('track_id')) {
+            $scroll_text_div.text(''); // entry is being played but it was removed from playlist.
+        } else {
+            aimp_manager.getFormattedTrackTitle({
+                                                  track_id : control_panel_state.track_id,
+                                                  playlist_id : control_panel_state.playlist_id,
+                                                  format_string : getFormatOfTrackInfoFromCookies()
+                                                },
+                                                { on_success : function (result) {
+                                                                //alert(result.formatted_string);
+                                                                $scroll_text_div.text(result.formatted_string);
+                                                               }
+    
+                                                }
+            );
+        }
     } else {
         $('#playback_state_label').text( getText('playback_state_stopped') );
         $scroll_text_div.text('');
