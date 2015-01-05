@@ -767,6 +767,35 @@ double getDouble(IAIMPFileInfo* file_info, const int property_id, const char* er
     return value;
 }
 
+HRESULT getDouble(IAIMPPlaylistItem* playlist_item, const int property_id, double* value)
+{
+    assert(playlist_item);
+    assert(value);
+
+    double value_tmp;
+    HRESULT r = playlist_item->GetValueAsFloat(property_id, &value_tmp);
+    if (S_OK == r) {
+        *value = value_tmp;
+
+#ifndef NDEBUG
+        //BOOST_LOG_SEV(logger(), debug) << "getDouble(property_id = " << property_id << ") value: " << *value;
+#endif
+    }
+    return r;
+}
+
+double getDouble(IAIMPPlaylistItem* playlist_item, const int property_id, const char* error_prefix)
+{
+    assert(error_prefix);
+
+    double value;
+    HRESULT r = getDouble(playlist_item, property_id, &value);
+    if (S_OK != r) {
+        throw std::runtime_error(MakeString() << error_prefix << ": getDouble(): playlist_item->GetValueAsFloat(property id = " << property_id << ") failed. Result " << r);
+    }
+    return value;
+}
+
 } // namespace Support
 
 void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
@@ -852,7 +881,8 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
             samplerate = getInt(file_info.get(), AIMP_FILEINFO_PROPID_SAMPLERATE, error_prefix);
 
             duration = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_DURATION, error_prefix));
-            rating   = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_MARK,     error_prefix));
+            //rating   = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_MARK,     error_prefix)); // slow all the time.
+            rating   = static_cast<int>(getDouble(item.get(), AIMP_PLAYLISTITEM_PROPID_MARK, error_prefix)); // slow first time only.
 
             filesize = getInt64(file_info.get(), AIMP_FILEINFO_PROPID_FILESIZE, error_prefix);
         } else {
