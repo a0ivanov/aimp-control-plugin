@@ -1075,11 +1075,15 @@ void AIMPManager36::startPlayback()
         }
         break;
     }
+    case STOPPED:
+        try {
+            startPlayback(TrackDescription(-1, -1));
+        } catch (std::exception& e) {
+            BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__": startPlayback(TrackDescription(-1, -1)) failed. Reason: " << e.what();
+        }
+        break;
     case PLAYING:
         // do nothing
-        break;
-    case STOPPED:
-        startPlayback(TrackDescription(-1, -1));
         break;
     }
 }
@@ -1130,9 +1134,14 @@ std::string AIMPManager36::getAIMPVersion() const
 
 void AIMPManager36::pausePlayback()
 {
-    HRESULT r = aimp_service_player_->Pause();
-    if (S_OK != r) {
-        throw std::runtime_error( MakeString() << __FUNCTION__": aimp_service_player_->Pause() failed. Result: " << r);
+    if (getPlaybackState() == AIMPManager::PLAYING) {
+
+        HRESULT r = aimp_service_player_->Pause();
+        if (S_OK != r) {
+            throw std::runtime_error( MakeString() << __FUNCTION__": aimp_service_player_->Pause() failed. Result: " << r);
+        }
+    } else {
+        startPlayback();
     }
 }
 
