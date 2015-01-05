@@ -1124,61 +1124,70 @@ void AIMPManager36::playPreviousTrack()
 
 void AIMPManager36::onAimpCoreMessage(DWORD AMessage, int AParam1, void* /*AParam2*/, HRESULT* AResult)
 {
-    assert(AResult);
-    /*
-        ///!!! do not know when to notify about these events.
-        EVENT_INFO_UPDATE,
-        EVENT_EFFECT_CHANGED,
-    */
-    switch (AMessage) {
-    case AIMP_MSG_EVENT_PLAYER_STATE:
-        notifyAllExternalListeners(EVENT_PLAYER_STATE);
-        break;
-    case AIMP_MSG_EVENT_PLAYER_UPDATE_POSITION:
-        //notifyAllExternalListeners(EVENT_PLAY_FILE);
-        break;
-    case AIMP_MSG_EVENT_STREAM_START:
-        notifyAllExternalListeners(EVENT_TRACK_PROGRESS_CHANGED_DIRECTLY);
-        break;
-    case AIMP_MSG_CMD_QUIT:
-        notifyAllExternalListeners(EVENT_AIMP_QUIT);
-        break;
-    case AIMP_MSG_EVENT_PROPERTY_VALUE: {
-        const int property_id = AParam1;
-        switch (property_id) {
-        case AIMP_MSG_PROPERTY_VOLUME:
-            notifyAllExternalListeners(EVENT_VOLUME);
+    try {
+        assert(AResult);
+        /*
+            ///!!! do not know when to notify about these events.
+            EVENT_INFO_UPDATE,
+            EVENT_EFFECT_CHANGED,
+        */
+        switch (AMessage) {
+        case AIMP_MSG_EVENT_PLAYER_STATE:
+            notifyAllExternalListeners(EVENT_PLAYER_STATE);
             break;
-        case AIMP_MSG_PROPERTY_MUTE:
-            notifyAllExternalListeners(EVENT_MUTE);
+        case AIMP_MSG_EVENT_PLAYER_UPDATE_POSITION:
+            //notifyAllExternalListeners(EVENT_PLAY_FILE);
             break;
-        case AIMP_MSG_PROPERTY_SHUFFLE:
-            notifyAllExternalListeners(EVENT_SHUFFLE);
+        case AIMP_MSG_EVENT_STREAM_START:
+            notifyAllExternalListeners(EVENT_TRACK_PROGRESS_CHANGED_DIRECTLY);
             break;
-        case AIMP_MSG_PROPERTY_REPEAT:
-            notifyAllExternalListeners(EVENT_REPEAT);
+        case AIMP_MSG_CMD_QUIT:
+            notifyAllExternalListeners(EVENT_AIMP_QUIT);
             break;
-        case AIMP_MSG_PROPERTY_EQUALIZER:
-        case AIMP_MSG_PROPERTY_EQUALIZER_BAND:
-            notifyAllExternalListeners(EVENT_EQ_CHANGED);
-            break;
-        case AIMP_MSG_PROPERTY_PLAYER_POSITION:
-            notifyAllExternalListeners(EVENT_TRACK_POS_CHANGED);
-            break;
-        case AIMP_MSG_PROPERTY_RADIOCAP:
-            notifyAllExternalListeners(EVENT_RADIO_CAPTURE);
-            break;
-        default:
-            notifyAllExternalListeners(EVENT_STATUS_CHANGE);
+        case AIMP_MSG_EVENT_PROPERTY_VALUE: {
+            const int property_id = AParam1;
+            switch (property_id) {
+            case AIMP_MSG_PROPERTY_VOLUME:
+                notifyAllExternalListeners(EVENT_VOLUME);
+                break;
+            case AIMP_MSG_PROPERTY_MUTE:
+                notifyAllExternalListeners(EVENT_MUTE);
+                break;
+            case AIMP_MSG_PROPERTY_SHUFFLE:
+                notifyAllExternalListeners(EVENT_SHUFFLE);
+                break;
+            case AIMP_MSG_PROPERTY_REPEAT:
+                notifyAllExternalListeners(EVENT_REPEAT);
+                break;
+            case AIMP_MSG_PROPERTY_EQUALIZER:
+            case AIMP_MSG_PROPERTY_EQUALIZER_BAND:
+                notifyAllExternalListeners(EVENT_EQ_CHANGED);
+                break;
+            case AIMP_MSG_PROPERTY_PLAYER_POSITION:
+                notifyAllExternalListeners(EVENT_TRACK_POS_CHANGED);
+                break;
+            case AIMP_MSG_PROPERTY_RADIOCAP:
+                notifyAllExternalListeners(EVENT_RADIO_CAPTURE);
+                break;
+            default:
+                notifyAllExternalListeners(EVENT_STATUS_CHANGE);
+                break;
+            }
             break;
         }
-        break;
+        default:
+            AMessage = AMessage;
+            break;
+        }
+        *AResult = E_NOTIMPL;
+    } catch (std::exception& e) {
+        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << ": AMessage: " << AMessage << ", AParam1: " << AParam1 << ". Reason: " << e.what();
+        *AResult = E_NOTIMPL;
+    } catch (...) {
+        // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
+        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << ": AMessage: " << AMessage << ", AParam1: " << AParam1;
+        *AResult = E_NOTIMPL;
     }
-    default:
-        AMessage = AMessage;
-        break;
-    }
-    *AResult = E_NOTIMPL;
 }
 
 namespace
