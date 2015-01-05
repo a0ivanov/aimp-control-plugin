@@ -1087,17 +1087,11 @@ std::string AIMPManager36::getAIMPVersion() const
 
     std::ostringstream os;
 
-    IAIMPString* info_tmp;
-    r = version_info->FormatInfo(&info_tmp);
-    if (S_OK == r) {
-        IAIMPString_ptr info(info_tmp, false);
-        os << ' ' << StringEncoding::utf16_to_system_ansi_encoding_safe(info->GetData());
-    } else {
-        using namespace std;
-        const int version = version_info->GetVersionID();
-        os << version / 1000 << '.' << setfill('0') << setw(2) << (version % 1000) / 10 << '.' << version % 10
-           << " Build " << version_info->GetBuildNumber();   
-    }
+    // Do not use version_info->FormatInfo() for consistency with AIMP 3.5 and older.
+    using namespace std;
+    const int version = version_info->GetVersionID();
+    os << version / 1000 << '.' << setfill('0') << setw(2) << (version % 1000) / 10 << '.' << version % 10
+        << " Build " << version_info->GetBuildNumber();   
     
     std::string result(os.str());
     boost::algorithm::trim(result);
