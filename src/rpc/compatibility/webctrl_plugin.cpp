@@ -213,7 +213,7 @@ HRESULT getString(IAIMPPropertyList* property_list, const int property_id, IAIMP
         IAIMPString_ptr(value_tmp, false).swap(*value);
 
 #ifndef NDEBUG
-        BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << property_id << ") value: " << StringEncoding::utf16_to_utf8(value_tmp->GetData(), value_tmp->GetData() + value_tmp->GetLength());
+        //BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << property_id << ") value: " << StringEncoding::utf16_to_utf8(value_tmp->GetData(), value_tmp->GetData() + value_tmp->GetLength());
 #endif
     }
     return r;

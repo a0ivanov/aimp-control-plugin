@@ -604,7 +604,7 @@ HRESULT getString(IAIMPPropertyList* property_list, const int property_id, IAIMP
         IAIMPString_ptr(value_tmp, false).swap(*value);
 
 #ifndef NDEBUG
-        BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << property_id << ") value: " << StringEncoding::utf16_to_utf8(value_tmp->GetData(), value_tmp->GetData() + value_tmp->GetLength());
+        //BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << property_id << ") value: " << StringEncoding::utf16_to_utf8(value_tmp->GetData(), value_tmp->GetData() + value_tmp->GetLength());
 #endif
     }
     return r;
@@ -633,7 +633,7 @@ HRESULT getString(IAIMPFileInfo* file_info, const int property_id, IAIMPString_p
         IAIMPString_ptr(value_tmp, false).swap(*value);
 
 #ifndef NDEBUG
-        BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << AIMP36SDK::Support::FileinfoPropIdToString(property_id) << ") value: " << StringEncoding::utf16_to_utf8(value_tmp->GetData(), value_tmp->GetData() + value_tmp->GetLength());
+        //BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << AIMP36SDK::Support::FileinfoPropIdToString(property_id) << ") value: " << StringEncoding::utf16_to_utf8(value_tmp->GetData(), value_tmp->GetData() + value_tmp->GetLength());
 #endif
     }
     return r;
@@ -662,7 +662,7 @@ HRESULT getString(IAIMPPlaylistItem* playlist_item, const int property_id, IAIMP
         IAIMPString_ptr(value_tmp, false).swap(*value);
 
 #ifndef NDEBUG
-        BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << AIMP36SDK::Support::PlaylistItemToString(property_id) << ") value: " << StringEncoding::utf16_to_utf8(value_tmp->GetData(), value_tmp->GetData() + value_tmp->GetLength());
+        //BOOST_LOG_SEV(logger(), debug) << "getString(property_id = " << AIMP36SDK::Support::PlaylistItemToString(property_id) << ") value: " << StringEncoding::utf16_to_utf8(value_tmp->GetData(), value_tmp->GetData() + value_tmp->GetLength());
 #endif
     }
     return r;
@@ -691,7 +691,7 @@ HRESULT getInt(IAIMPFileInfo* file_info, const int property_id, int* value)
         *value = value_tmp;
 
 #ifndef NDEBUG
-        BOOST_LOG_SEV(logger(), debug) << "getInt(property_id = " << AIMP36SDK::Support::FileinfoPropIdToString(property_id) << ") value: " << *value;
+        //BOOST_LOG_SEV(logger(), debug) << "getInt(property_id = " << AIMP36SDK::Support::FileinfoPropIdToString(property_id) << ") value: " << *value;
 #endif
     }
     return r;
@@ -720,7 +720,7 @@ HRESULT getInt64(IAIMPFileInfo* file_info, const int property_id, INT64* value)
         *value = value_tmp;
 
 #ifndef NDEBUG
-        BOOST_LOG_SEV(logger(), debug) << "getInt64(property_id = " << AIMP36SDK::Support::FileinfoPropIdToString(property_id) << ") value: " << *value;
+        //BOOST_LOG_SEV(logger(), debug) << "getInt64(property_id = " << AIMP36SDK::Support::FileinfoPropIdToString(property_id) << ") value: " << *value;
 #endif
     }
     return r;
@@ -749,7 +749,7 @@ HRESULT getDouble(IAIMPFileInfo* file_info, const int property_id, double* value
         *value = value_tmp;
 
 #ifndef NDEBUG
-        BOOST_LOG_SEV(logger(), debug) << "getDouble(property_id = " << AIMP36SDK::Support::FileinfoPropIdToString(property_id) << ") value: " << *value;
+        //BOOST_LOG_SEV(logger(), debug) << "getDouble(property_id = " << AIMP36SDK::Support::FileinfoPropIdToString(property_id) << ") value: " << *value;
 #endif
     }
     return r;
@@ -886,7 +886,7 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
         const int entry_id = castToPlaylistEntryID(item.get());
 
 #ifndef NDEBUG
-        BOOST_LOG_SEV(logger(), debug) << "index: " << item_index << ", entry_id: " << entry_id;
+        //BOOST_LOG_SEV(logger(), debug) << "index: " << item_index << ", entry_id: " << entry_id;
 #endif
 
 
@@ -1776,8 +1776,8 @@ void AIMPManager36::reloadQueuedEntries()
         filesize = getInt64(file_info.get(), AIMP_FILEINFO_PROPID_FILESIZE, error_prefix);
 
 #ifndef NDEBUG
-        const int entry_id = castToPlaylistEntryID(item.get());
-        BOOST_LOG_SEV(logger(), debug) << "index: " << item_index << ", entry_id: " << entry_id;
+        //const int entry_id = castToPlaylistEntryID(item.get());
+        //BOOST_LOG_SEV(logger(), debug) << "index: " << item_index << ", entry_id: " << entry_id;
 #endif
 
         { // special db code
