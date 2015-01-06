@@ -2006,7 +2006,7 @@ PlaylistEntryID AIMPManager36::getPlayingEntry() const
     HRESULT get_playing_item_result = aimp_service_player_->GetPlaylistItem(&playlist_item_tmp);
     if (S_OK == get_playing_item_result && playlist_item_tmp) {
         playlist_item_tmp->Release();
-        BOOST_LOG_SEV(logger(), debug) << __FUNCTION__": S_OK: playlist_item: " << castToPlaylistEntryID(playlist_item_tmp);
+        //BOOST_LOG_SEV(logger(), debug) << __FUNCTION__": S_OK: playlist_item: " << castToPlaylistEntryID(playlist_item_tmp);
     } else {
         // player is stopped at this time, return active playlist for compatibility with AIMPManager: AIMP2-AIMP3.5 returned active entry from active playlist in this case.
         IAIMPPlaylist* playlist_tmp;
@@ -2030,22 +2030,21 @@ PlaylistEntryID AIMPManager36::getPlayingEntry() const
         boost::intrusive_ptr<IAIMPPropertyList> playlist_propertylist(playlist_propertylist_tmp, false);
         playlist_propertylist_tmp = nullptr;
 
-        int playing_index = 0;
+        int playing_index;
         r = playlist_propertylist->GetValueAsInt32(AIMP_PLAYLIST_PROPID_PLAYINGINDEX, &playing_index);
-        if (S_OK != r) {
-            throw std::runtime_error(MakeString() << __FUNCTION__": IAIMPPropertyList::GetValueAsInt32(AIMP_PLAYLIST_PROPID_PLAYINGINDEX) failed. Result " << r);
-        }
-
-        if (playing_index != -1) {
+        if (S_OK == r && playing_index != -1) {
             r = playlist->GetItem(playing_index, IID_IAIMPPlaylistItem, reinterpret_cast<void**>(&playlist_item_tmp));
             if (S_OK != r) {
                 throw std::runtime_error(MakeString() << __FUNCTION__": playlist->GetItem(0, IID_IAIMPPlaylistItem) failed. Result: " << r);
             }
             playlist_item_tmp->Release();
 
-            BOOST_LOG_SEV(logger(), debug) << __FUNCTION__": playing_index: " << playing_index << ", playlist_item: " << castToPlaylistEntryID(playlist_item_tmp);
+            //BOOST_LOG_SEV(logger(), debug) << __FUNCTION__": playing_index: " << playing_index << ", playlist_item: " << castToPlaylistEntryID(playlist_item_tmp);
         } else {
-            throw std::runtime_error(MakeString() << __FUNCTION__": Unable to get playing entry because GetPlaylistItem failed with result " << get_playing_item_result << " and PROPID_PLAYINGINDEX is -1. This can happen if playing track removed from playlist.");
+            if (S_OK != r) {
+                BOOST_LOG_SEV(logger(), error) << __FUNCTION__": IAIMPPropertyList::GetValueAsInt32(AIMP_PLAYLIST_PROPID_PLAYINGINDEX) failed. Result " << r;
+            }
+            throw std::runtime_error(MakeString() << __FUNCTION__": Unable to get playing entry because GetPlaylistItem failed with result " << get_playing_item_result << " and PROPID_PLAYINGINDEX is " << (S_OK != r ? "unknown" : "-1" ) << ". This can happen if playing track removed from playlist.");
         }
     }
     return castToPlaylistEntryID(playlist_item_tmp);
