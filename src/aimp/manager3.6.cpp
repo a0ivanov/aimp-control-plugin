@@ -2006,23 +2006,46 @@ PlaylistEntryID AIMPManager36::getPlayingEntry() const
     HRESULT get_playing_item_result = aimp_service_player_->GetPlaylistItem(&playlist_item_tmp);
     if (S_OK == get_playing_item_result && playlist_item_tmp) {
         playlist_item_tmp->Release();
+        BOOST_LOG_SEV(logger(), debug) << __FUNCTION__": S_OK: playlist_item: " << castToPlaylistEntryID(playlist_item_tmp);
     } else {
         // player is stopped at this time, return active playlist for compatibility with AIMPManager: AIMP2-AIMP3.5 returned active entry from active playlist in this case.
         IAIMPPlaylist* playlist_tmp;
-        HRESULT r = aimp_service_playlist_manager_->GetActivePlaylist(&playlist_tmp);
+        HRESULT r = aimp_service_playlist_manager_->GetPlayablePlaylist(&playlist_tmp);
         if (S_OK != r) {
-            throw std::runtime_error(MakeString() << __FUNCTION__": aimp_service_playlist_manager_->GetActivePlaylist() failed. Result: " << r);
+            BOOST_LOG_SEV(logger(), error) << __FUNCTION__": aimp_service_playlist_manager_->GetPlayablePlaylist() failed. Result: " << r;
+
+            r = aimp_service_playlist_manager_->GetActivePlaylist(&playlist_tmp);
+            if (S_OK != r) {
+                throw std::runtime_error(MakeString() << __FUNCTION__": aimp_service_playlist_manager_->GetActivePlaylist() failed. Result: " << r);
+            }           
         }
         boost::intrusive_ptr<IAIMPPlaylist> playlist(playlist_tmp, false);
 
-        if (playlist->GetItemCount() > 0) {
-            r = playlist->GetItem(0, IID_IAIMPPlaylistItem, reinterpret_cast<void**>(&playlist_item_tmp));
+        IAIMPPropertyList* playlist_propertylist_tmp;
+        r = playlist->QueryInterface(IID_IAIMPPropertyList,
+                                             reinterpret_cast<void**>(&playlist_propertylist_tmp));
+        if (S_OK != r) {
+            throw std::runtime_error(MakeString() << __FUNCTION__": playlist->QueryInterface(IID_IAIMPPropertyList) failed. Result " << r);
+        }
+        boost::intrusive_ptr<IAIMPPropertyList> playlist_propertylist(playlist_propertylist_tmp, false);
+        playlist_propertylist_tmp = nullptr;
+
+        int playing_index = 0;
+        r = playlist_propertylist->GetValueAsInt32(AIMP_PLAYLIST_PROPID_PLAYINGINDEX, &playing_index);
+        if (S_OK != r) {
+            throw std::runtime_error(MakeString() << __FUNCTION__": IAIMPPropertyList::GetValueAsInt32(AIMP_PLAYLIST_PROPID_PLAYINGINDEX) failed. Result " << r);
+        }
+
+        if (playing_index != -1) {
+            r = playlist->GetItem(playing_index, IID_IAIMPPlaylistItem, reinterpret_cast<void**>(&playlist_item_tmp));
             if (S_OK != r) {
                 throw std::runtime_error(MakeString() << __FUNCTION__": playlist->GetItem(0, IID_IAIMPPlaylistItem) failed. Result: " << r);
             }
             playlist_item_tmp->Release();
+
+            BOOST_LOG_SEV(logger(), debug) << __FUNCTION__": playing_index: " << playing_index << ", playlist_item: " << castToPlaylistEntryID(playlist_item_tmp);
         } else {
-            throw std::runtime_error(MakeString() << __FUNCTION__": Unable to get playing entry because GetPlaylistItem failed with result " << get_playing_item_result << ", and there is no tracks in active playlist. This can happen if playing track removed from playlist.");
+            throw std::runtime_error(MakeString() << __FUNCTION__": Unable to get playing entry because GetPlaylistItem failed with result " << get_playing_item_result << " and PROPID_PLAYINGINDEX is -1. This can happen if playing track removed from playlist.");
         }
     }
     return castToPlaylistEntryID(playlist_item_tmp);
