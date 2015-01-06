@@ -2325,7 +2325,7 @@ bool AIMPManager36::getCoverImageContainter(TrackDescription track_desc, boost::
             if (image) {
                 *image = request.out_.image_;
             }
-            return true;
+            return request.out_.image_container_ || request.out_.image_;
         }
     } else {
         throw std::runtime_error( MakeString() << __FUNCTION__": invalid track " << track_desc);
