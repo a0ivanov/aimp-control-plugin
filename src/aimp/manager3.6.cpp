@@ -111,9 +111,10 @@ private:
     AIMPManager36* aimp36_manager_;
 };
 
-AIMPManager36::AIMPManager36(boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_core)
+AIMPManager36::AIMPManager36(boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_core, boost::asio::io_service& io_service)
     :   playlists_db_(nullptr),
-        aimp36_core_(aimp36_core)
+        aimp36_core_(aimp36_core),
+        io_service_(io_service)
 {
     try {
         initializeAIMPObjects();
@@ -363,10 +364,17 @@ void AIMPManager36::playlistRemoved(AIMP36SDK::IAIMPPlaylist* playlist)
 
 std::string playlist36NotifyFlagsToString(DWORD flags);
 
+void onEntriesReloadTimer(AIMPManager36* aimp_manager36, AIMP36SDK::IAIMPPlaylist* playlist, DWORD flags, const boost::system::error_code& e)
+{
+    if (e != boost::asio::error::operation_aborted) {
+        BOOST_LOG_SEV(logger(), debug) << __FUNCTION__": call AIMPManager36::playlistChanged by timer.";
+        aimp_manager36->playlistChanged(playlist, flags);
+    }
+}
+
 void AIMPManager36::playlistChanged(AIMP36SDK::IAIMPPlaylist* playlist, DWORD flags)
 {
     try {
-        
         BOOST_LOG_SEV(logger(), debug) << "playlistChanged()...: id = " << cast<PlaylistID>(playlist) << ", flags = " << flags << ": " << playlist36NotifyFlagsToString(flags);
 
         PlaylistID playlist_id = cast<PlaylistID>(playlist);
@@ -384,9 +392,28 @@ void AIMPManager36::playlistChanged(AIMP36SDK::IAIMPPlaylist* playlist, DWORD fl
             || (AIMP_PLAYLIST_NOTIFY_CONTENT  & flags) != 0 
             )
         {
-            BOOST_LOG_SEV(logger(), debug) << "loadEntries";
-            loadEntries(playlist); 
-            is_playlist_changed = true;
+            PlaylistHelper& playlist_helper = getPlaylistHelper(playlist);
+
+            using namespace boost::posix_time;
+            ptime now = microsec_clock::universal_time();
+            time_duration duration = now - playlist_helper.entries_load_.last_update_time_;
+            boost::asio::deadline_timer& timer = *(playlist_helper.entries_load_.reload_timer_);
+                
+            if (duration.total_milliseconds() > PlaylistHelper::EntriesLoad::MIN_TIME_BETWEEN_ENTRIES_LOADING_MS) {
+                // load entries
+                BOOST_LOG_SEV(logger(), debug) << "loadEntries";
+                loadEntries(playlist); 
+                is_playlist_changed = true;
+            } else {
+                // schedule entries loading in MIN_TIME_BETWEEN_ENTRIES_LOADING_MS.
+                bool managed_to_cancel_timer = timer.expires_from_now( boost::posix_time::milliseconds(PlaylistHelper::EntriesLoad::MIN_TIME_BETWEEN_ENTRIES_LOADING_MS) ) > 0;
+                BOOST_LOG_SEV(logger(), debug) << "skip entries loading because last update was " << duration.total_milliseconds() << " ms ago. Timer canceled: " << managed_to_cancel_timer;
+
+                timer.async_wait( boost::bind( &onEntriesReloadTimer, this, playlist, flags, _1 ) );
+            }
+
+            // Set last update time in both cases: on real entries loading and on when we schedule entries loading.
+            playlist_helper.entries_load_.last_update_time_ = boost::posix_time::microsec_clock::universal_time();
         }
 
         if (is_playlist_changed) {
@@ -505,7 +532,8 @@ void releasePlaylistItems(sqlite3* playlists_db, const std::string& query)
 AIMPManager36::PlaylistHelper::PlaylistHelper(IAIMPPlaylist_ptr playlist, AIMPManager36* aimp36_manager)
     : playlist_(playlist),
       crc32_(cast<PlaylistID>(playlist.get()), aimp36_manager->playlists_db()),
-      listener_(new AIMPPlaylistListener(playlist.get(), aimp36_manager))
+      listener_(new AIMPPlaylistListener(playlist.get(), aimp36_manager)),
+      entries_load_(aimp36_manager->io_service_)
 {
     playlist_->ListenerAdd(listener_.get());
 }
@@ -816,6 +844,7 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
     const int entries_count = playlist->GetItemCount();
 
     deletePlaylistEntriesFromPlaylistDB(playlist_id); // remove old entries before adding new ones.
+
     PlaylistItems& entry_ids = getPlaylistHelper(playlist).entry_ids_;
     entry_ids.clear();
     entry_ids.reserve(entries_count);

@@ -29,7 +29,7 @@ class AIMPManager36 : public AIMPManager,
 {
 public:
 
-    AIMPManager36(boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_core); // throws std::runtime_error
+    AIMPManager36(boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_core, boost::asio::io_service& io_service); // throws std::runtime_error
 
     virtual ~AIMPManager36();
 
@@ -297,16 +297,32 @@ private:
 
     struct PlaylistHelper {    
         AIMP36SDK::IAIMPPlaylist_ptr playlist_;
-        PlaylistCRC32 crc32_;
+        mutable PlaylistCRC32 crc32_;
         AIMPPlaylistListener_ptr listener_;
         PlaylistItems entry_ids_; // used for validation of external playlist item ID.
+
+        struct EntriesLoad {
+            static const boost::int32_t MIN_TIME_BETWEEN_ENTRIES_LOADING_MS = 1000;
+            boost::posix_time::ptime last_update_time_;
+            boost::shared_ptr<boost::asio::deadline_timer> reload_timer_;
+
+            EntriesLoad(boost::asio::io_service& io_service)
+                :
+                reload_timer_(new boost::asio::deadline_timer(io_service))
+            {}
+
+        } entries_load_;
 
         PlaylistHelper(AIMP36SDK::IAIMPPlaylist_ptr playlist, AIMPManager36* aimp36_manager);
         ~PlaylistHelper();
     };
+
     typedef std::vector<PlaylistHelper> PlaylistHelpers;
     mutable PlaylistHelpers playlist_helpers_;
     PlaylistHelper& getPlaylistHelper(AIMP36SDK::IAIMPPlaylist* playlist); // throws std::runtime_error
+    const PlaylistHelper& getPlaylistHelper(AIMP36SDK::IAIMPPlaylist* playlist) const; // throws std::runtime_error
+
+    boost::asio::io_service& io_service_;
 
     // These class were made friend only for easy emulate web ctl plugin behavior. Remove when possible.
     friend class AimpRpcMethods::EmulationOfWebCtlPlugin;

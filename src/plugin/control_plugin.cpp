@@ -426,7 +426,7 @@ boost::shared_ptr<AIMPPlayer::AIMPManager> AIMPControlPlugin::CreateAIMPManager(
             result.reset( new AIMPPlayer::AIMPManager30(aimp3_core_unit_) );
         }
     } else if (aimp36_core_) {
-        result.reset( new AIMPPlayer::AIMPManager36(aimp36_core_) );
+        result.reset( new AIMPPlayer::AIMPManager36(aimp36_core_, *server_io_service_) );
     } else {
         assert(!"both AIMP2 and AIMP3 plugin addon objects do not exist.");
         throw std::runtime_error("both AIMP2 and AIMP3 plugin addon objects do not exist. "__FUNCTION__);
