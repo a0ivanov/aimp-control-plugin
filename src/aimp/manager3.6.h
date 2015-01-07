@@ -270,6 +270,8 @@ private:
     int getPlaylistIndexByHandle(AIMP36SDK::IAIMPPlaylist* playlist);
     void loadPlaylist(AIMP36SDK::IAIMPPlaylist* playlist, int playlist_index);
     void loadEntries(AIMP36SDK::IAIMPPlaylist* playlist); // throws std::runtime_error
+    void handlePlaylistChange(AIMP36SDK::IAIMPPlaylist* playlist, DWORD flags);
+    void handlePlaylistUpdateTimer(AIMP36SDK::IAIMPPlaylist_ptr playlist, const boost::system::error_code& e);
 
     std::auto_ptr<ImageUtils::AIMPCoverImage> getCoverImage(boost::intrusive_ptr<AIMP36SDK::IAIMPImage> image, int cover_width, int cover_height) const;
 
@@ -295,36 +297,42 @@ private:
     typedef boost::intrusive_ptr<AIMPPlaylistListener> AIMPPlaylistListener_ptr;
     typedef std::vector<AIMP36SDK::IAIMPPlaylistItem_ptr> PlaylistItems;
 
-    struct PlaylistHelper {    
+    struct PlaylistHelper {
         AIMP36SDK::IAIMPPlaylist_ptr playlist_;
         mutable PlaylistCRC32 crc32_;
         AIMPPlaylistListener_ptr listener_;
         PlaylistItems entry_ids_; // used for validation of external playlist item ID.
 
-        struct EntriesLoad {
-            static const boost::int32_t MIN_TIME_BETWEEN_ENTRIES_LOADING_MS = 1000;
-            boost::posix_time::ptime last_update_time_;
-            boost::shared_ptr<boost::asio::deadline_timer> reload_timer_;
+        struct PlaylistChanged {
+            AIMPManager36* aimp36_manager_;
+            static const boost::int32_t MIN_TIME_BETWEEN_PLAYLIST_CONTENT_UPDATES_MS = 1000;
+            boost::posix_time::ptime last_time_;
+            boost::shared_ptr<boost::asio::deadline_timer> playlist_changed_timer_;
+            DWORD flags;
 
-            EntriesLoad(boost::asio::io_service& io_service)
+            PlaylistChanged(AIMPManager36* aimp36_manager)
                 :
-                reload_timer_(new boost::asio::deadline_timer(io_service))
+                aimp36_manager_(aimp36_manager),
+                last_time_(boost::posix_time::microsec_clock::universal_time()),
+                playlist_changed_timer_(new boost::asio::deadline_timer(aimp36_manager->io_service_)),
+                flags(0)
             {}
 
-        } entries_load_;
+        } playlist_changed_;
 
         PlaylistHelper(AIMP36SDK::IAIMPPlaylist_ptr playlist, AIMPManager36* aimp36_manager);
         ~PlaylistHelper();
+
+        bool trySchedulePlaylistContentUpdate(DWORD flags);
     };
 
     typedef std::vector<PlaylistHelper> PlaylistHelpers;
     mutable PlaylistHelpers playlist_helpers_;
     PlaylistHelper& getPlaylistHelper(AIMP36SDK::IAIMPPlaylist* playlist); // throws std::runtime_error
-    const PlaylistHelper& getPlaylistHelper(AIMP36SDK::IAIMPPlaylist* playlist) const; // throws std::runtime_error
 
     boost::asio::io_service& io_service_;
 
-    // These class were made friend only for easy emulate web ctl plugin behavior. Remove when possible.
+    // This class was made friend only for easy emulate web ctl plugin behavior. Remove when possible.
     friend class AimpRpcMethods::EmulationOfWebCtlPlugin;
 };
 

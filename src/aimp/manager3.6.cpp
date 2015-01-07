@@ -364,63 +364,13 @@ void AIMPManager36::playlistRemoved(AIMP36SDK::IAIMPPlaylist* playlist)
 
 std::string playlist36NotifyFlagsToString(DWORD flags);
 
-void onEntriesReloadTimer(AIMPManager36* aimp_manager36, AIMP36SDK::IAIMPPlaylist* playlist, DWORD flags, const boost::system::error_code& e)
-{
-    if (e != boost::asio::error::operation_aborted) {
-        BOOST_LOG_SEV(logger(), debug) << __FUNCTION__": call AIMPManager36::playlistChanged by timer.";
-        aimp_manager36->playlistChanged(playlist, flags);
-    }
-}
-
 void AIMPManager36::playlistChanged(AIMP36SDK::IAIMPPlaylist* playlist, DWORD flags)
 {
     try {
         BOOST_LOG_SEV(logger(), debug) << "playlistChanged()...: id = " << cast<PlaylistID>(playlist) << ", flags = " << flags << ": " << playlist36NotifyFlagsToString(flags);
 
-        PlaylistID playlist_id = cast<PlaylistID>(playlist);
-        bool is_playlist_changed = false;
-        if (   (AIMP_PLAYLIST_NOTIFY_NAME       & flags) != 0 
-            || (AIMP_PLAYLIST_NOTIFY_FILEINFO   & flags) != 0
-            || (AIMP_PLAYLIST_NOTIFY_STATISTICS & flags) != 0 
-            )
-        {
-            BOOST_LOG_SEV(logger(), debug) << "updatePlaylist";
-            is_playlist_changed = true;
-        }
-
-        if (   (AIMP_PLAYLIST_NOTIFY_FILEINFO & flags) != 0  
-            || (AIMP_PLAYLIST_NOTIFY_CONTENT  & flags) != 0 
-            )
-        {
-            PlaylistHelper& playlist_helper = getPlaylistHelper(playlist);
-
-            using namespace boost::posix_time;
-            ptime now = microsec_clock::universal_time();
-            time_duration duration = now - playlist_helper.entries_load_.last_update_time_;
-            boost::asio::deadline_timer& timer = *(playlist_helper.entries_load_.reload_timer_);
-                
-            if (duration.total_milliseconds() > PlaylistHelper::EntriesLoad::MIN_TIME_BETWEEN_ENTRIES_LOADING_MS) {
-                // load entries
-                BOOST_LOG_SEV(logger(), debug) << "loadEntries";
-                loadEntries(playlist); 
-                is_playlist_changed = true;
-            } else {
-                // schedule entries loading in MIN_TIME_BETWEEN_ENTRIES_LOADING_MS.
-                bool managed_to_cancel_timer = timer.expires_from_now( boost::posix_time::milliseconds(PlaylistHelper::EntriesLoad::MIN_TIME_BETWEEN_ENTRIES_LOADING_MS) ) > 0;
-                BOOST_LOG_SEV(logger(), debug) << "skip entries loading because last update was " << duration.total_milliseconds() << " ms ago. Timer canceled: " << managed_to_cancel_timer;
-
-                timer.async_wait( boost::bind( &onEntriesReloadTimer, this, playlist, flags, _1 ) );
-            }
-
-            // Set last update time in both cases: on real entries loading and on when we schedule entries loading.
-            playlist_helper.entries_load_.last_update_time_ = boost::posix_time::microsec_clock::universal_time();
-        }
-
-        if (is_playlist_changed) {
-            int playlist_index = getPlaylistIndexByHandle(playlist);
-            loadPlaylist(playlist, playlist_index);
-            updatePlaylistCrcInDB(playlist_id, getPlaylistCRC32(playlist_id));
-            notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+        if (!getPlaylistHelper(playlist).trySchedulePlaylistContentUpdate(flags)) {
+            handlePlaylistChange(playlist, flags);
         }
 
         BOOST_LOG_SEV(logger(), debug) << "...playlistChanged()";
@@ -429,6 +379,55 @@ void AIMPManager36::playlistChanged(AIMP36SDK::IAIMPPlaylist* playlist, DWORD fl
     } catch (...) {
         // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
         BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with id " << cast<PlaylistID>(playlist);
+    }
+}
+
+void AIMPManager36::handlePlaylistChange(AIMP36SDK::IAIMPPlaylist* playlist, DWORD flags)
+{
+    BOOST_LOG_SEV(logger(), debug) << "handlePlaylistChange()...: id = " << cast<PlaylistID>(playlist) << ", flags = " << flags << ": " << playlist36NotifyFlagsToString(flags);
+
+    bool is_playlist_changed = false;
+    if (   (AIMP_PLAYLIST_NOTIFY_NAME       & flags) != 0 
+        || (AIMP_PLAYLIST_NOTIFY_FILEINFO   & flags) != 0
+        || (AIMP_PLAYLIST_NOTIFY_STATISTICS & flags) != 0 
+        )
+    {
+        BOOST_LOG_SEV(logger(), debug) << "updatePlaylist";
+        is_playlist_changed = true;
+    }
+
+    if (   (AIMP_PLAYLIST_NOTIFY_FILEINFO & flags) != 0  
+        || (AIMP_PLAYLIST_NOTIFY_CONTENT  & flags) != 0 
+        )
+    {
+        // load entries
+        BOOST_LOG_SEV(logger(), debug) << "loadEntries";
+        loadEntries(playlist); 
+        is_playlist_changed = true;
+    }
+
+    if (is_playlist_changed) {
+        int playlist_index = getPlaylistIndexByHandle(playlist);
+        loadPlaylist(playlist, playlist_index);
+
+        PlaylistID playlist_id = cast<PlaylistID>(playlist);
+        updatePlaylistCrcInDB(playlist_id, getPlaylistCRC32(playlist_id));
+        notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+    }
+
+    BOOST_LOG_SEV(logger(), debug) << "...handlePlaylistChange()";
+}
+
+void AIMPManager36::handlePlaylistUpdateTimer(AIMP36SDK::IAIMPPlaylist_ptr playlist, const boost::system::error_code& e)
+{
+    if (e != boost::asio::error::operation_aborted) {
+        BOOST_LOG_SEV(logger(), debug) << __FUNCTION__": call handlePlaylistChange() by timer.";
+        PlaylistHelper& playlist_helper = getPlaylistHelper(playlist.get());
+        PlaylistHelper::PlaylistChanged& playlist_changed_helper = playlist_helper.playlist_changed_;
+        const DWORD flags = playlist_changed_helper.flags;
+        playlist_changed_helper.flags = 0;
+
+        handlePlaylistChange(playlist.get(), flags);
     }
 }
 
@@ -533,7 +532,7 @@ AIMPManager36::PlaylistHelper::PlaylistHelper(IAIMPPlaylist_ptr playlist, AIMPMa
     : playlist_(playlist),
       crc32_(cast<PlaylistID>(playlist.get()), aimp36_manager->playlists_db()),
       listener_(new AIMPPlaylistListener(playlist.get(), aimp36_manager)),
-      entries_load_(aimp36_manager->io_service_)
+      playlist_changed_(aimp36_manager)
 {
     playlist_->ListenerAdd(listener_.get());
 }
@@ -541,6 +540,31 @@ AIMPManager36::PlaylistHelper::PlaylistHelper(IAIMPPlaylist_ptr playlist, AIMPMa
 AIMPManager36::PlaylistHelper::~PlaylistHelper()
 {
     playlist_->ListenerRemove(listener_.get());
+}
+
+bool AIMPManager36::PlaylistHelper::trySchedulePlaylistContentUpdate(DWORD flags)
+{
+    using namespace boost::posix_time;
+    ptime now = microsec_clock::universal_time();
+    time_duration duration = now - playlist_changed_.last_time_;
+    playlist_changed_.last_time_ = now;
+
+    if (duration.total_milliseconds() <= PlaylistHelper::PlaylistChanged::MIN_TIME_BETWEEN_PLAYLIST_CONTENT_UPDATES_MS) {
+        boost::asio::deadline_timer& timer = *(playlist_changed_.playlist_changed_timer_);
+
+        playlist_changed_.flags |= flags;
+
+        // cancel previous timer(if possible) and schedule new one.
+        bool managed_to_cancel_timer = timer.expires_from_now( milliseconds(PlaylistHelper::PlaylistChanged::MIN_TIME_BETWEEN_PLAYLIST_CONTENT_UPDATES_MS) ) > 0;
+        BOOST_LOG_SEV(logger(), debug) << "skip playlist change event handling because last change was " << duration.total_milliseconds() << " ms ago. Timer canceled: " << managed_to_cancel_timer;
+
+        timer.async_wait( boost::bind( &AIMPManager36::handlePlaylistUpdateTimer, playlist_changed_.aimp36_manager_, playlist_, _1 ) );
+        return true;
+    }
+    
+    playlist_changed_.flags = 0;
+
+    return false;
 }
 
 void AIMPManager36::loadPlaylist(IAIMPPlaylist* playlist, int playlist_index)
