@@ -393,6 +393,9 @@ void AIMPControlPlugin::SystemNotification(int notifyID, IUnknown* data) {
     case AIMP_SYSTEM_NOTIFICATION_SERVICE_REMOVED:
         BOOST_LOG_SEV(logger(), debug) << "SystemNotification(): NotifyID = AIMP_SYSTEM_NOTIFICATION_SERVICE_REMOVED, Data = " << (void*)data;
         break;
+    case AIMP_SYSTEM_NOTIFICATION_EXTENSION_REMOVED:
+        BOOST_LOG_SEV(logger(), debug) << "SystemNotification(): NotifyID = AIMP_SYSTEM_NOTIFICATION_EXTENSION_REMOVED, Data = " << (void*)data;
+        break;
     default:
         BOOST_LOG_SEV(logger(), error) << "SystemNotification(): unexpected NotifyID = " << notifyID << ", Data = " << (void*)data;
         break;
