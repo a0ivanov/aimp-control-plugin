@@ -979,6 +979,8 @@ const wchar_t* getExtensionByFormatId(int format_id)
     return L".unsupported";
 }
 
+void remove_read_only_attribute(const fs::wpath& path);
+
 ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
 {
     const Rpc::Value& params = root_request["params"];
@@ -1072,6 +1074,8 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
             temp_unique_filename.replace_extension(album_cover_filename.extension());
 
             fs::copy_file(album_cover_filename, temp_unique_filename);
+
+            remove_read_only_attribute(temp_unique_filename);
         } else if (   (cover_width == 0 && cover_height == 0) // use direct copy only if no scaling is requested.
                    && container
                    )
@@ -1127,15 +1131,13 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
     return RESPONSE_IMMEDIATE;
 }
 
-void remove_read_only_attribute(const fs::wpath& path);
-
 void GetCover::prepare_cover_directory() // throws runtime_error
 {
     namespace fs = boost::filesystem;
     using namespace Utilities;
 
     try {
-        // cleare cache before using.
+        // clear cache before using.
         const fs::wpath& cover_dir = cover_directory();
 
         if (fs::exists(cover_dir)) {
