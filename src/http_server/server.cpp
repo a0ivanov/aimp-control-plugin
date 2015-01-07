@@ -159,7 +159,7 @@ void Server::handle_accept(IpTcpConnectionAcceptor_ptr acceptor,
 
     if (!e) {
         accepted_connection->start();
-        BOOST_LOG_SEV(logger(), debug) << "Client connection started";
+        //BOOST_LOG_SEV(logger(), debug) << "Client connection started";
         ConnectionIpTcp_ptr new_connection( new ConnectionIpTcp(io_service_, request_handler_) );
         acceptor->async_accept(new_connection->socket(),
                                boost::bind(&Server::handle_accept,
@@ -168,9 +168,9 @@ void Server::handle_accept(IpTcpConnectionAcceptor_ptr acceptor,
                                            new_connection,
                                            boost::asio::placeholders::error)
                               );
-        BOOST_LOG_SEV(logger(), debug) << "Continue to waiting client connection";
+        //BOOST_LOG_SEV(logger(), debug) << "Continue to wait for client connection";
     } else {
-        BOOST_LOG_SEV(logger(), error) << "Error Server::handle_accept():" << e;
+        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__": " << e;
     }
 }
 
