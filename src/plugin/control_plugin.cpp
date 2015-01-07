@@ -384,6 +384,7 @@ PWCHAR AIMPControlPlugin::InfoGet(int index)
 
 void AIMPControlPlugin::SystemNotification(int notifyID, IUnknown* data) {
     // Do nothing here because plugin depends on base services only. They can't be disabled in runtime.
+    // Don't forget to catch all exceptions here when add real code here.
     using namespace AIMP36SDK;
 
     switch (notifyID) {
