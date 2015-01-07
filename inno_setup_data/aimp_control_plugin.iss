@@ -8,6 +8,7 @@
 #define PluginWorkDirectoryName "Control Plugin"
 #define AimpPluginsDirectoryName "Plugins"
 #define FreeImage_VERSION GetEnv('FreeImage_VERSION')
+#define LegacyPluginExecutableFilename "aimp_control_plugin.dll"
 
 [Setup]
 
@@ -54,7 +55,7 @@ Name: ru; MessagesFile: inno_setup_data\Russian.isl; LicenseFile: Lisense-Russia
 Name: cs; MessagesFile: inno_setup_data\Czech.isl;   LicenseFile: Lisense-English.txt;
 
 [Files]
-Source: "{#SrcApp}"; DestDir: "{code:GetPluginDllDestinationDir}"; DestName: "{#PluginWorkDirectoryName}.dll"; Flags: ignoreversion
+Source: "{#SrcApp}"; DestDir: "{code:GetPluginDllDestinationDir}"; DestName: "{#PluginWorkDirectoryName}.dll"; BeforeInstall: RemoveLegacyPluginExecutable; Flags: ignoreversion
 Source: "temp_build\Release\htdocs\*"; DestDir: "{code:GetBrowserScriptsDir}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 Source: "inno_setup_data\default_settings.dat"; DestDir: "{code:GetPluginSettingsDir}"; DestName: "settings.dat"; Flags: onlyifdoesntexist; AfterInstall: AfterInstallSettingsFile( ExpandConstant('{code:GetPluginSettingsDir}\settings.dat') )
@@ -277,6 +278,15 @@ begin
     Result := 'AIMP2'
   else
     Result := 'AIMP3';
+end;
+
+procedure RemoveLegacyPluginExecutable();
+var path: String;
+begin
+  path := ExpandConstant('{app}\{#PluginWorkDirectoryName}') + ExpandConstant('\{#LegacyPluginExecutableFilename}');
+  DeleteFile(path);
+  path := ExpandConstant('{app}') + ExpandConstant('\{#LegacyPluginExecutableFilename}');
+  DeleteFile(path);
 end;
 
 procedure RegisterPreviousData(PreviousDataKey: Integer);
