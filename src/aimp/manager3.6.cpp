@@ -869,9 +869,9 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
 
     deletePlaylistEntriesFromPlaylistDB(playlist_id); // remove old entries before adding new ones.
 
-    PlaylistItems& entry_ids = getPlaylistHelper(playlist).entry_ids_;
-    entry_ids.clear();
-    entry_ids.reserve(entries_count);
+    PlaylistItems& playlist_items = getPlaylistHelper(playlist).items_;
+    playlist_items.clear();
+    playlist_items.reserve(entries_count);
 
     sqlite3_stmt* stmt = createStmt(playlists_db_, "INSERT INTO PlaylistsEntries VALUES (?,?,?,?,?,?,"
                                                                                         "?,?,?,?,?,"
@@ -1016,14 +1016,14 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
                                                      << rc_db << ": " << sqlite3_errmsg(playlists_db_);
                 throw std::runtime_error(msg);
             } else {
-                entry_ids.push_back(item.get()); // notice that we taking ownership to access to items later.
+                playlist_items.push_back(item.get()); // take ownership to access item later by the same ID.
             }
             sqlite3_reset(stmt);
         }
     }
 
     // sort entry ids to use binary search later
-    std::sort(entry_ids.begin(), entry_ids.end());
+    std::sort(playlist_items.begin(), playlist_items.end());
 }
 
 int AIMPManager36::getPlaylistIndexByHandle(IAIMPPlaylist* playlist)
@@ -1060,9 +1060,9 @@ IAIMPPlaylistItem_ptr AIMPManager36::getPlaylistItem(PlaylistEntryID id) const
 {
     IAIMPPlaylistItem* to_search = castToPlaylistItem(id);
     for (auto& helper : playlist_helpers_) {
-        const PlaylistItems& entry_ids = helper.entry_ids_;
-        const auto& begin_it = entry_ids.begin();
-        const auto& end_it = entry_ids.end();
+        const PlaylistItems& playlist_items = helper.items_;
+        const auto& begin_it = playlist_items.begin();
+        const auto& end_it = playlist_items.end();
         PlaylistItems::const_iterator it = std::lower_bound(begin_it, end_it,
                                                             to_search,
                                                             [](const IAIMPPlaylistItem_ptr& element, IAIMPPlaylistItem* to_search) { return element.get() < to_search; }

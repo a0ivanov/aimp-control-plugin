@@ -301,7 +301,8 @@ private:
         AIMP36SDK::IAIMPPlaylist_ptr playlist_;
         mutable PlaylistCRC32 crc32_;
         AIMPPlaylistListener_ptr listener_;
-        PlaylistItems entry_ids_; // used for validation of external playlist item ID.
+        PlaylistItems items_; // used for 1) addref each item to have persistent ID per item lifetime in playlist; 2) validation of external playlist item ID.
+
 
         struct PlaylistChanged {
             AIMPManager36* aimp36_manager_;
