@@ -169,12 +169,12 @@ void EmulationOfWebCtlPlugin::getPlaylistList(std::ostringstream& out)
                 throw std::runtime_error(MakeString() << "IAIMPPropertyList::GetValueAsInt64(AIMP_PLAYLIST_PROPID_SIZE) failed. Result " << r);
             }
 
-            double duration_tmp;
-            r = playlist_propertylist->GetValueAsFloat(AIMP_PLAYLIST_PROPID_DURATION, &duration_tmp);
+            double duration_sec_tmp_;
+            r = playlist_propertylist->GetValueAsFloat(AIMP_PLAYLIST_PROPID_DURATION, &duration_sec_tmp_);
             if (S_OK != r) {
                 throw std::runtime_error(MakeString() << "IAIMPPropertyList::GetValueAsFloat(AIMP_PLAYLIST_PROPID_DURATION) failed. Result " << r);
             }
-            const INT64 duration = static_cast<INT64>(duration_tmp);
+            const INT64 duration_ms = static_cast<INT64>(duration_sec_tmp_ * 1000.);
 
             IAIMPString* name_tmp;
             r = playlist_propertylist->GetValueAsObject(AIMP_PLAYLIST_PROPID_NAME, IID_IAIMPString, reinterpret_cast<void**>(&name_tmp));
@@ -191,7 +191,7 @@ void EmulationOfWebCtlPlugin::getPlaylistList(std::ostringstream& out)
             if (i != 0) {
                 out << ',';
             }
-            out << "{\"id\":" << cast<PlaylistID>(playlist.get()) << ",\"duration\":" << duration << ",\"size\":" << size << ",\"name\":\"" << StringEncoding::utf16_to_utf8(playlist_name) << "\"}";
+            out << "{\"id\":" << cast<PlaylistID>(playlist.get()) << ",\"duration\":" << duration_ms << ",\"size\":" << size << ",\"name\":\"" << StringEncoding::utf16_to_utf8(playlist_name) << "\"}";
         }
     }
 
@@ -373,12 +373,12 @@ void EmulationOfWebCtlPlugin::getPlaylistSongs(int playlist_id, bool ignore_cach
                     }
                     boost::intrusive_ptr<IAIMPFileInfo> file_info(file_info_tmp, false);
 
-                    double duration_tmp;
-                    r = file_info->GetValueAsFloat(AIMP_FILEINFO_PROPID_DURATION, &duration_tmp);
+                    double duration_sec_tmp;
+                    r = file_info->GetValueAsFloat(AIMP_FILEINFO_PROPID_DURATION, &duration_sec_tmp);
                     if (S_OK != r) {
                         throw std::runtime_error(MakeString() << "IAIMPFileInfo::GetValueAsFloat(AIMP_FILEINFO_PROPID_DURATION) failed. Result " << r);
                     }
-                    const INT64 duration = static_cast<INT64>(duration_tmp);
+                    const INT64 duration_ms = static_cast<INT64>(duration_sec_tmp * 1000.);
 
                     entry_title.assign( display_text->GetData(), display_text->GetData() + display_text->GetLength() );
                     using namespace Utilities;
@@ -388,7 +388,7 @@ void EmulationOfWebCtlPlugin::getPlaylistSongs(int playlist_id, bool ignore_cach
                     if (i != 0) {
                         out << ',';
                     }
-                    out << "{\"name\":\"" << StringEncoding::utf16_to_utf8(entry_title) << "\",\"length\":" << duration << "}";
+                    out << "{\"name\":\"" << StringEncoding::utf16_to_utf8(entry_title) << "\",\"length\":" << duration_ms << "}";
                 }
             }
         }

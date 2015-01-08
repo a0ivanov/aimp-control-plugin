@@ -590,12 +590,12 @@ void AIMPManager36::loadPlaylist(IAIMPPlaylist* playlist, int playlist_index)
         throw std::runtime_error(MakeString() << error_prefix << "IAIMPPropertyList::GetValueAsInt64(AIMP_PLAYLIST_PROPID_SIZE) failed. Result " << r);
     }
 
-    double duration_tmp;
-    r = playlist_propertylist->GetValueAsFloat(AIMP_PLAYLIST_PROPID_DURATION, &duration_tmp);
+    double duration_sec_tmp;
+    r = playlist_propertylist->GetValueAsFloat(AIMP_PLAYLIST_PROPID_DURATION, &duration_sec_tmp);
     if (S_OK != r) {
         throw std::runtime_error(MakeString() << error_prefix << "IAIMPPropertyList::GetValueAsFloat(AIMP_PLAYLIST_PROPID_DURATION) failed. Result " << r);
     }
-    const INT64 duration = static_cast<INT64>(duration_tmp);
+    const INT64 duration_ms = static_cast<INT64>(duration_sec_tmp * 1000.);
 
     IAIMPString* name_tmp;
     r = playlist_propertylist->GetValueAsObject(AIMP_PLAYLIST_PROPID_NAME, IID_IAIMPString, reinterpret_cast<void**>(&name_tmp));
@@ -629,7 +629,7 @@ void AIMPManager36::loadPlaylist(IAIMPPlaylist* playlist, int playlist_index)
     bind(int,   2, playlist_index);
     bindText(   3, name, nameStr->GetLength());
     bind(int,   4, entries_count);
-    bind(int64, 5, duration);
+    bind(int64, 5, duration_ms);
     bind(int64, 6, size);
     bind(int64, 7, kCRC32_UNINITIALIZED);
 #undef bind
@@ -906,7 +906,7 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
 
         int bitrate = 0,
             channels = 0,
-            duration = 0,
+            duration_ms = 0,
             rating = 0,
             samplerate = 0;
         int64_t filesize = 0;
@@ -933,7 +933,7 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
             channels   = getInt(file_info.get(), AIMP_FILEINFO_PROPID_CHANNELS,   error_prefix);
             samplerate = getInt(file_info.get(), AIMP_FILEINFO_PROPID_SAMPLERATE, error_prefix);
 
-            duration = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_DURATION, error_prefix));
+            duration_ms = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_DURATION, error_prefix) * 1000.);
             //rating   = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_MARK,     error_prefix)); // slow all the time.
             rating   = static_cast<int>(getDouble(item.get(), AIMP_PLAYLISTITEM_PROPID_MARK, error_prefix)); // slow first time only.
 
@@ -1003,7 +1003,7 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
 #undef bindText
             bind(int,   10, bitrate);
             bind(int,   11, channels);
-            bind(int,   12, duration);
+            bind(int,   12, duration_ms);
             bind(int64, 13, filesize);
             bind(int,   14, rating);
             bind(int,   15, samplerate);
@@ -1832,7 +1832,7 @@ void AIMPManager36::reloadQueuedEntries()
 
         int bitrate = 0,
             channels = 0,
-            duration = 0,
+            duration_ms = 0,
             rating = 0,
             samplerate = 0;
         int64_t filesize = 0;
@@ -1862,7 +1862,7 @@ void AIMPManager36::reloadQueuedEntries()
         channels   = getInt(file_info.get(), AIMP_FILEINFO_PROPID_CHANNELS,   error_prefix);
         samplerate = getInt(file_info.get(), AIMP_FILEINFO_PROPID_SAMPLERATE, error_prefix);
 
-        duration = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_DURATION, error_prefix));
+        duration_ms = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_DURATION, error_prefix) * 1000.);
         rating   = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_MARK,     error_prefix));
 
         filesize = getInt64(file_info.get(), AIMP_FILEINFO_PROPID_FILESIZE, error_prefix);
@@ -1901,7 +1901,7 @@ void AIMPManager36::reloadQueuedEntries()
 #undef bindText
             bind(int,   10, bitrate);
             bind(int,   11, channels);
-            bind(int,   12, duration);
+            bind(int,   12, duration_ms);
             bind(int64, 13, filesize);
             bind(int,   14, rating);
             bind(int,   15, samplerate);
