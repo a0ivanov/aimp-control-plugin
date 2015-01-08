@@ -557,8 +557,12 @@ procedure DonationButtonOnClick(Sender: TObject);
 var
   ErrorCode: Integer;
   URL: String;
+  lang: String;
 begin
-  URL := 'http://www.a0ivanov.ru/aimp/donate_' + ExpandConstant('{language}') + '.html';
+  lang := ExpandConstant('{language}');
+  if (lang <> 'ru') and (lang <> 'en') then lang := 'en';
+
+  URL := 'http://www.a0ivanov.ru/aimp/donate_' + lang + '.html';
 
   if not ShellExec('', URL, '', '', SW_SHOW, ewNoWait, ErrorCode) then
   begin
