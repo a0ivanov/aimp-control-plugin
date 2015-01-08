@@ -9,6 +9,8 @@
 #define AimpPluginsDirectoryName "Plugins"
 #define FreeImage_VERSION GetEnv('FreeImage_VERSION')
 #define LegacyPluginExecutableFilename "aimp_control_plugin.dll"
+#define LogsDirectoryName "logs"
+#define AlbumCoverCacheDirectoryName "album_covers_cache"
 
 [Setup]
 
@@ -65,6 +67,10 @@ Source: "temp_build\Release\SettingsManager\*"; DestDir: "{code:GetSettingsManag
 
 [Registry]
 ; etc.
+
+[UninstallDelete]
+Type: filesandordirs; Name: "{code:GetBrowserScriptsDirOnUninstall}\{#AlbumCoverCacheDirectoryName}"
+Type: filesandordirs; Name: "{code:GetPluginSettingsDir}\{#LogsDirectoryName}"
 
 [Code]
 var
@@ -528,6 +534,11 @@ begin
     Result := 1;
 end;
 
+function GetBrowserScriptsDirOnUninstall(Param: String): String;
+begin
+    Result := GetBrowserScriptsString();
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if (CurStep=ssInstall) then
@@ -535,7 +546,7 @@ begin
     if (IsUpgrade()) then
     begin
       // Do not uninstall previous version till it will be possible remain settings file.
-      // Instead old remove browser scripts.
+      // Instead remove old browser scripts.
       // UnInstallOldVersion();
       RemoveInstalledBrowserScripts();
     end;
