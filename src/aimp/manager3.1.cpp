@@ -19,9 +19,9 @@ namespace AIMPPlayer
 
 using namespace Utilities;
 
-AIMPManager31::AIMPManager31(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_core_unit)
+AIMPManager31::AIMPManager31(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_core_unit, boost::asio::io_service& io_service)
     :
-    AIMPManager30(aimp3_core_unit)
+    AIMPManager30(aimp3_core_unit, io_service)
 {
     try {
         initializeAIMPObjects();

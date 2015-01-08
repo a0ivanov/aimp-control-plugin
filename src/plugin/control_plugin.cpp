@@ -425,9 +425,9 @@ boost::shared_ptr<AIMPPlayer::AIMPManager> AIMPControlPlugin::CreateAIMPManager(
     } else if (aimp3_core_unit_) {
         const int version = getAIMPVersion(aimp3_core_unit_.get());
         if (version >= 3100) {
-            result.reset( new AIMPPlayer::AIMPManager31(aimp3_core_unit_) );
+            result.reset( new AIMPPlayer::AIMPManager31(aimp3_core_unit_, *server_io_service_) );
         } else {
-            result.reset( new AIMPPlayer::AIMPManager30(aimp3_core_unit_) );
+            result.reset( new AIMPPlayer::AIMPManager30(aimp3_core_unit_, *server_io_service_) );
         }
     } else if (aimp36_core_) {
         result.reset( new AIMPPlayer::AIMPManager36(aimp36_core_, *server_io_service_) );

@@ -18,7 +18,7 @@ public:
     /*!
         \param aimp3_core_unit - pointer to IAIMPCoreUnit object.
     */
-    AIMPManager31(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_core_unit); // throws std::runtime_error
+    AIMPManager31(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_core_unit, boost::asio::io_service& io_service); // throws std::runtime_error
 
     virtual ~AIMPManager31();
 

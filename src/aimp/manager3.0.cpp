@@ -168,11 +168,12 @@ private:
 
 };
 
-AIMPManager30::AIMPManager30(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_core_unit)
+AIMPManager30::AIMPManager30(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_core_unit, boost::asio::io_service& io_service)
     :
     aimp3_core_unit_(aimp3_core_unit),
     next_listener_id_(0),
-    playlists_db_(nullptr)
+    playlists_db_(nullptr),
+    io_service_(io_service)
 {
     try {
         initializeAIMPObjects();
@@ -255,6 +256,8 @@ void AIMPManager30::onStorageAdded(AIMP3SDK::HPLS handle)
 {
     try {
         BOOST_LOG_SEV(logger(), debug) << "onStorageAdded: id = " << cast<PlaylistID>(handle);
+        playlist_helpers_.emplace_back(handle, this);
+
         int playlist_index = getPlaylistIndexByHandle(handle);
         loadPlaylist(handle, playlist_index);
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
@@ -311,31 +314,8 @@ void AIMPManager30::onStorageChanged(AIMP3SDK::HPLS handle, DWORD flags)
     try {
         BOOST_LOG_SEV(logger(), debug) << "onStorageChanged()...: id = " << cast<PlaylistID>(handle) << ", flags = " << flags << ": " << playlistNotifyFlagsToString(flags);
 
-        PlaylistID playlist_id = cast<PlaylistID>(handle);
-        bool is_playlist_changed = false;
-        if (   (AIMP_PLAYLIST_NOTIFY_NAME       & flags) != 0 
-            || (AIMP_PLAYLIST_NOTIFY_ENTRYINFO  & flags) != 0
-            || (AIMP_PLAYLIST_NOTIFY_STATISTICS & flags) != 0 
-            )
-        {
-            BOOST_LOG_SEV(logger(), debug) << "updatePlaylist";
-            is_playlist_changed = true;
-        }
-
-        if (   (AIMP_PLAYLIST_NOTIFY_ENTRYINFO & flags) != 0  
-            || (AIMP_PLAYLIST_NOTIFY_CONTENT   & flags) != 0 
-            )
-        {
-            BOOST_LOG_SEV(logger(), debug) << "loadEntries";
-            loadEntries(playlist_id); 
-            is_playlist_changed = true;
-        }
-
-        if (is_playlist_changed) {
-            int playlist_index = getPlaylistIndexByHandle(handle);
-            loadPlaylist(handle, playlist_index);
-            updatePlaylistCrcInDB(playlist_id, getPlaylistCRC32(playlist_id));
-            notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+        if (!getPlaylistHelper(handle).trySchedulePlaylistContentUpdate(flags)) {
+            handlePlaylistChange(handle, flags);
         }
 
         BOOST_LOG_SEV(logger(), debug) << "...onStorageChanged()";
@@ -347,12 +327,66 @@ void AIMPManager30::onStorageChanged(AIMP3SDK::HPLS handle, DWORD flags)
     }
 }
 
+void AIMPManager30::handlePlaylistChange(AIMP3SDK::HPLS handle, DWORD flags)
+{
+    using namespace AIMP3SDK;
+
+    BOOST_LOG_SEV(logger(), debug) << "handlePlaylistChange()...: id = " << cast<PlaylistID>(handle) << ", flags = " << flags << ": " << playlistNotifyFlagsToString(flags);
+
+    PlaylistID playlist_id = cast<PlaylistID>(handle);
+    bool is_playlist_changed = false;
+    if (   (AIMP_PLAYLIST_NOTIFY_NAME       & flags) != 0 
+        || (AIMP_PLAYLIST_NOTIFY_ENTRYINFO  & flags) != 0
+        || (AIMP_PLAYLIST_NOTIFY_STATISTICS & flags) != 0 
+        )
+    {
+        BOOST_LOG_SEV(logger(), debug) << "updatePlaylist";
+        is_playlist_changed = true;
+    }
+
+    if (   (AIMP_PLAYLIST_NOTIFY_ENTRYINFO & flags) != 0  
+        || (AIMP_PLAYLIST_NOTIFY_CONTENT   & flags) != 0 
+        )
+    {
+        BOOST_LOG_SEV(logger(), debug) << "loadEntries";
+        loadEntries(playlist_id); 
+        is_playlist_changed = true;
+    }
+
+    if (is_playlist_changed) {
+        int playlist_index = getPlaylistIndexByHandle(handle);
+        loadPlaylist(handle, playlist_index);
+        updatePlaylistCrcInDB(playlist_id, getPlaylistCRC32(playlist_id));
+        notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
+    }
+
+    BOOST_LOG_SEV(logger(), debug) << "...handlePlaylistChange()";
+}
+
+void AIMPManager30::handlePlaylistUpdateTimer(AIMP3SDK::HPLS playlist_handle, const boost::system::error_code& e)
+{
+    if (e != boost::asio::error::operation_aborted) {
+        BOOST_LOG_SEV(logger(), debug) << __FUNCTION__": call handlePlaylistChange() by timer.";
+        PlaylistHelper& playlist_helper = getPlaylistHelper(playlist_handle);
+        PlaylistHelper::PlaylistChanged& playlist_changed_helper = playlist_helper.playlist_changed_;
+        const DWORD flags = playlist_changed_helper.flags;
+        playlist_changed_helper.flags = 0;
+
+        handlePlaylistChange(playlist_handle, flags);
+    }
+}
+
 void AIMPManager30::onStorageRemoved(AIMP3SDK::HPLS handle)
 {
     try {
         const int playlist_id = cast<PlaylistID>(handle);
-        playlist_crc32_list_.erase(playlist_id);
         deletePlaylistFromPlaylistDB(playlist_id);
+
+        playlist_helpers_.erase(std::remove_if(playlist_helpers_.begin(), playlist_helpers_.end(),
+                                               [handle](const PlaylistHelper& h) { return h.playlist_handle_ == handle; }
+                                               ),
+                                playlist_helpers_.end()
+                                );
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     } catch (std::exception& e) {
         BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << handle << ". Reason: " << e.what();
@@ -360,6 +394,53 @@ void AIMPManager30::onStorageRemoved(AIMP3SDK::HPLS handle)
         // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
         BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with handle " << handle;
     }
+}
+
+AIMPManager30::PlaylistHelper& AIMPManager30::getPlaylistHelper(AIMP3SDK::HPLS playlist_handle)
+{
+    for (auto& helper : playlist_helpers_) {
+        if (helper.playlist_handle_ == playlist_handle) {
+            return helper;
+        }
+    }
+
+    throw std::runtime_error(MakeString() << __FUNCTION__": playlist with id " << cast<PlaylistID>(playlist_handle) << " is not found");
+}
+
+AIMPManager30::PlaylistHelper::PlaylistHelper(AIMP3SDK::HPLS playlist_handle, AIMPManager30* aimp30_manager)
+    : playlist_handle_(playlist_handle),
+      crc32_(cast<PlaylistID>(playlist_handle), aimp30_manager->playlists_db()),
+      playlist_changed_(aimp30_manager)
+{
+}
+
+AIMPManager30::PlaylistHelper::~PlaylistHelper()
+{
+}
+
+bool AIMPManager30::PlaylistHelper::trySchedulePlaylistContentUpdate(DWORD flags)
+{
+    using namespace boost::posix_time;
+    ptime now = microsec_clock::universal_time();
+    time_duration duration = now - playlist_changed_.last_time_;
+    playlist_changed_.last_time_ = now;
+
+    if (duration.total_milliseconds() <= PlaylistHelper::PlaylistChanged::MIN_TIME_BETWEEN_PLAYLIST_CONTENT_UPDATES_MS) {
+        boost::asio::deadline_timer& timer = *(playlist_changed_.playlist_changed_timer_);
+
+        playlist_changed_.flags |= flags;
+
+        // cancel previous timer(if possible) and schedule new one.
+        bool managed_to_cancel_timer = timer.expires_from_now( milliseconds(PlaylistHelper::PlaylistChanged::MIN_TIME_BETWEEN_PLAYLIST_CONTENT_UPDATES_MS) ) > 0;
+        BOOST_LOG_SEV(logger(), debug) << "skip playlist change event handling because last change was " << duration.total_milliseconds() << " ms ago. Timer canceled: " << managed_to_cancel_timer;
+
+        timer.async_wait( boost::bind( &AIMPManager30::handlePlaylistUpdateTimer, playlist_changed_.aimp30_manager_, playlist_handle_, _1 ) );
+        return true;
+    }
+    
+    playlist_changed_.flags = 0;
+
+    return false;
 }
 
 void AIMPManager30::loadPlaylist(int playlist_index)
@@ -378,16 +459,7 @@ void AIMPManager30::loadPlaylist(AIMP3SDK::HPLS handle, int playlist_index)
 {
     const PlaylistID playlist_id = cast<PlaylistID>(handle);
 
-    { // handle crc32.
-    auto it = playlist_crc32_list_.find(playlist_id);
-    if (it == playlist_crc32_list_.end()) {
-        it = playlist_crc32_list_.insert(std::make_pair(playlist_id,
-                                                        PlaylistCRC32(playlist_id, playlists_db_)
-                                                        )
-                                         ).first;
-    }
-    it->second.reset_properties();
-    }
+    getPlaylistCRC32Object(playlist_id).reset_properties();
 
     const char * const error_prefix = "Error occured while extracting playlist data: ";
     
@@ -462,11 +534,12 @@ int AIMPManager30::getPlaylistIndexByHandle(AIMP3SDK::HPLS handle)
     return -1;
 }
 
-PlaylistCRC32& AIMPManager30::getPlaylistCRC32Object(PlaylistID playlist_id) const // throws std::runtime_error
+PlaylistCRC32& AIMPManager30::getPlaylistCRC32Object(PlaylistID playlist_id) const
 {
-    auto it = playlist_crc32_list_.find(playlist_id);
-    if (it != playlist_crc32_list_.end()) {
-        return it->second;
+    AIMP3SDK::HPLS playlist_handle = cast<AIMP3SDK::HPLS>(playlist_id);
+    auto it = std::find_if(playlist_helpers_.begin(), playlist_helpers_.end(), [playlist_handle](const PlaylistHelper& h) { return h.playlist_handle_ == playlist_handle; });
+    if (it != playlist_helpers_.end()) {
+        return it->crc32_;
     }
     throw std::runtime_error(MakeString() << "Playlist " << playlist_id << " was not found in "__FUNCTION__);
 }

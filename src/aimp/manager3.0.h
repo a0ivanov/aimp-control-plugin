@@ -39,7 +39,7 @@ public:
     /*!
         \param aimp3_core_unit - pointer to IAIMPCoreUnit object.
     */
-    AIMPManager30(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_core_unit); // throws std::runtime_error
+    AIMPManager30(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3_core_unit, boost::asio::io_service& io_service); // throws std::runtime_error
 
     virtual ~AIMPManager30();
 
@@ -159,7 +159,9 @@ private:
         \throw std::runtime_error if error occured while loading entries data.
     */
     void loadEntries(PlaylistID playlist_id); // throws std::runtime_error
-
+    void handlePlaylistChange(AIMP3SDK::HPLS handle, DWORD flags);
+    void handlePlaylistUpdateTimer(AIMP3SDK::HPLS playlist_handle, const boost::system::error_code& e);
+    
     //! Loads playlist by AIMP internal index.
     void loadPlaylist(int playlist_index); // throws std::runtime_error
     void loadPlaylist(AIMP3SDK::HPLS handle, int playlist_index); // throws std::runtime_error
@@ -203,9 +205,39 @@ private:
     // Returns -1 if handle not found in playlists list.
     int getPlaylistIndexByHandle(AIMP3SDK::HPLS handle);
 
-    typedef std::map<PlaylistID, PlaylistCRC32> PlaylistCRC32List;
-    mutable PlaylistCRC32List playlist_crc32_list_;
+    struct PlaylistHelper {
+        AIMP3SDK::HPLS playlist_handle_;
+        mutable PlaylistCRC32 crc32_;
 
+        struct PlaylistChanged {
+            AIMPManager30* aimp30_manager_;
+
+            static const boost::int32_t MIN_TIME_BETWEEN_PLAYLIST_CONTENT_UPDATES_MS = 1000;
+            boost::posix_time::ptime last_time_;
+            boost::shared_ptr<boost::asio::deadline_timer> playlist_changed_timer_;
+            DWORD flags;
+
+            PlaylistChanged(AIMPManager30* aimp30_manager)
+                :
+                aimp30_manager_(aimp30_manager),
+                last_time_(boost::posix_time::microsec_clock::universal_time()),
+                playlist_changed_timer_(new boost::asio::deadline_timer(aimp30_manager->io_service_)),
+                flags(0)
+            {}
+
+        } playlist_changed_;
+
+        PlaylistHelper(AIMP3SDK::HPLS playlist_handle, AIMPManager30* aimp30_manager);
+        ~PlaylistHelper();
+
+        bool trySchedulePlaylistContentUpdate(DWORD flags);
+    };
+
+    typedef std::vector<PlaylistHelper> PlaylistHelpers;
+    mutable PlaylistHelpers playlist_helpers_;
+    PlaylistHelper& getPlaylistHelper(AIMP3SDK::HPLS playlist_handle); // throws std::runtime_error
+
+    boost::asio::io_service& io_service_;
 
     // These class were made friend only for easy emulate web ctl plugin behavior. Remove when possible.
     friend class AimpRpcMethods::EmulationOfWebCtlPlugin;
