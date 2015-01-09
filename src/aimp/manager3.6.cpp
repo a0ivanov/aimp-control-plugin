@@ -1863,7 +1863,8 @@ void AIMPManager36::reloadQueuedEntries()
         samplerate = getInt(file_info.get(), AIMP_FILEINFO_PROPID_SAMPLERATE, error_prefix);
 
         duration_ms = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_DURATION, error_prefix) * 1000.);
-        rating   = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_MARK,     error_prefix));
+        //rating   = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_MARK,     error_prefix)); // slow all the time.
+        rating   = static_cast<int>(getDouble(item.get(), AIMP_PLAYLISTITEM_PROPID_MARK, error_prefix)); // slow first time only.
 
         filesize = getInt64(file_info.get(), AIMP_FILEINFO_PROPID_FILESIZE, error_prefix);
 
