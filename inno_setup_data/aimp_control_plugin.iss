@@ -11,6 +11,7 @@
 #define LegacyPluginExecutableFilename "aimp_control_plugin.dll"
 #define LogsDirectoryName "logs"
 #define AlbumCoverCacheDirectoryName "album_covers_cache"
+#define LegacyAIMP3_6_RC_PluginDirName "aimp_control_plugin"
 
 [Setup]
 
@@ -289,10 +290,12 @@ end;
 procedure RemoveLegacyPluginExecutable();
 var path: String;
 begin
-  path := ExpandConstant('{app}\{#PluginWorkDirectoryName}') + ExpandConstant('\{#LegacyPluginExecutableFilename}');
+  path := ExpandConstant('{app}\{#PluginWorkDirectoryName}\{#LegacyPluginExecutableFilename}');
   DeleteFile(path);
-  path := ExpandConstant('{app}') + ExpandConstant('\{#LegacyPluginExecutableFilename}');
+  path := ExpandConstant('{app}\{#LegacyPluginExecutableFilename}');
   DeleteFile(path);
+  path := ExpandConstant('{app}\{#LegacyAIMP3_6_RC_PluginDirName}');
+  DelTree(path, True, True, True); 
 end;
 
 procedure RegisterPreviousData(PreviousDataKey: Integer);
