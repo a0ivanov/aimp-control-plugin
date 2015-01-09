@@ -1156,7 +1156,7 @@ private:
 
     \param track_id - int. \ref ids_info "More"
     \param playlist_id - int. \ref ids_info "More"
-    \param rating - int. Range [0-5], zero means rating is not set.
+    \param rating - double. Range [0-5], zero means rating is not set.
 */
 class SetTrackRating : public AIMPRPCMethod
 {

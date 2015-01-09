@@ -1585,6 +1585,21 @@ INT64 getEntryField(sqlite3* db, const char* field, PlaylistEntryID entry_id)
     return r;
 }
 
+template<>
+double getEntryField(sqlite3* db, const char* field, PlaylistEntryID entry_id)
+{
+    double r;
+    auto handler = [&](sqlite3_stmt* stmt) {
+        assert(sqlite3_column_type(stmt, 0) == SQLITE_FLOAT);
+        if (sqlite3_column_type(stmt, 0) != SQLITE_FLOAT) {
+            throw std::runtime_error(MakeString() << "Unexpected column type at "__FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Entry " << entry_id);
+        }
+        r = sqlite3_column_double(stmt, 0);
+    };
+    getEntryField_(db, field, entry_id, handler);
+    return r;
+}
+
 void AIMPManager30::notifyAllExternalListeners(EVENTS event) const
 {
     BOOST_FOREACH(const auto& listener_pair, external_listeners_) {
@@ -1654,20 +1669,22 @@ std::wstring AIMPManager30::getEntryFilename(TrackDescription track_desc) const 
     return filename;
 }
 
-void AIMPManager30::trackRating(TrackDescription track_desc, int rating) // throws std::runtime_error
+void AIMPManager30::trackRating(TrackDescription track_desc, double rating) // throws std::runtime_error
 {
     using namespace AIMP3SDK;
     HPLSENTRY entry_handle = castToHPLSENTRY(getAbsoluteEntryID(track_desc.track_id));
-    HRESULT r = aimp3_playlist_manager_->EntryPropertySetValue( entry_handle, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_MARK, &rating, sizeof(rating) );    
+
+    int rating_int = static_cast<int>(rating);
+    HRESULT r = aimp3_playlist_manager_->EntryPropertySetValue( entry_handle, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_MARK, &rating_int, sizeof(rating_int) );    
     if (S_OK != r) {
         throw std::runtime_error(MakeString() << "Error " << r << " in "__FUNCTION__", track " << track_desc);
     }  
     // Note: at this point entry does not exist any more, since EntryPropertySetValue forces calling of onStorageChanged() so, entries are reloaded.
 }
 
-int AIMPManager30::trackRating(TrackDescription track_desc) const // throws std::runtime_error
+double AIMPManager30::trackRating(TrackDescription track_desc) const // throws std::runtime_error
 {
-    return getEntryField<DWORD>(playlists_db_, "rating", getAbsoluteEntryID(track_desc.track_id));
+    return getEntryField<double>(playlists_db_, "rating", getAbsoluteEntryID(track_desc.track_id));
 }
 
 void AIMPManager30::initPlaylistDB() // throws std::runtime_error
@@ -1705,7 +1722,7 @@ void AIMPManager30::initPlaylistDB() // throws std::runtime_error
                                                       "channels_count INTEGER,"
                                                       "duration       INTEGER,"
                                                       "filesize       BIGINT,"
-                                                      "rating         TINYINT,"
+                                                      "rating         DOUBLE,"
                                                       "samplerate     INTEGER,"
                                                       "crc32          BIGINT," // use BIGINT since crc32 is uint32.
                                                       "PRIMARY KEY (entry_id)"

@@ -91,7 +91,7 @@ public:
     virtual bool isCoverImageFileExist(TrackDescription /*track_desc*/, boost::filesystem::wpath* path = nullptr) const
         { (void)path; return false; } // unsupported by AIMP 2 SDK.
 
-    virtual int trackRating(TrackDescription track_desc) const; // throws std::runtime_error
+    virtual double trackRating(TrackDescription track_desc) const; // throws std::runtime_error
 
     virtual void addFileToPlaylist(const boost::filesystem::wpath& path, PlaylistID playlist_id); // throws std::runtime_error
     
@@ -229,5 +229,8 @@ DWORD getEntryField(sqlite3* db, const char* field, TrackDescription track_desc)
 
 template<>
 INT64 getEntryField(sqlite3* db, const char* field, TrackDescription track_desc);
+
+template<>
+double getEntryField(sqlite3* db, const char* field, TrackDescription track_desc);
 
 } // namespace AIMPPlayer

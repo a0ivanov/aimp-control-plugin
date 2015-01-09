@@ -1182,9 +1182,9 @@ void AIMPManager26::removeEntryFromPlayQueue(TrackDescription track_desc) // thr
     }
 }
 
-int AIMPManager26::trackRating(TrackDescription track_desc) const // throws std::runtime_error
+double AIMPManager26::trackRating(TrackDescription track_desc) const // throws std::runtime_error
 {
-    return getEntryField<DWORD>(playlists_db_, "rating", getAbsoluteTrackDesc(track_desc));
+    return getEntryField<double>(playlists_db_, "rating", getAbsoluteTrackDesc(track_desc));
 }
 
 void AIMPManager26::saveCoverToFile(TrackDescription track_desc, const std::wstring& filename, int cover_width, int cover_height) const // throw std::runtime_error
@@ -1312,6 +1312,21 @@ INT64 getEntryField(sqlite3* db, const char* field, TrackDescription track_desc)
             throw std::runtime_error(MakeString() << "Unexpected column type at "__FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Track " << track_desc);
         }
         r = sqlite3_column_int64(stmt, 0);
+    };
+    getEntryField_(db, field, track_desc, handler);
+    return r;
+}
+
+template<>
+double getEntryField(sqlite3* db, const char* field, TrackDescription track_desc)
+{
+    double r;
+    auto handler = [&](sqlite3_stmt* stmt) {
+        assert(sqlite3_column_type(stmt, 0) == SQLITE_FLOAT);
+        if (sqlite3_column_type(stmt, 0) != SQLITE_FLOAT) {
+            throw std::runtime_error(MakeString() << "Unexpected column type at "__FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Track " << track_desc);
+        }
+        r = sqlite3_column_double(stmt, 0);
     };
     getEntryField_(db, field, track_desc, handler);
     return r;
@@ -1775,7 +1790,7 @@ void AIMPManager26::initPlaylistDB() // throws std::runtime_error
                                                       "channels_count INTEGER,"
                                                       "duration       INTEGER,"
                                                       "filesize       BIGINT,"
-                                                      "rating         TINYINT,"
+                                                      "rating         DOUBLE,"
                                                       "samplerate     INTEGER,"
                                                       "crc32          BIGINT," // use BIGINT since crc32 is uint32.
                                                       "PRIMARY KEY (playlist_id, entry_id)"

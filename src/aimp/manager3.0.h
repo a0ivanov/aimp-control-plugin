@@ -97,7 +97,7 @@ public:
 
     virtual void onTick();
 
-    virtual int trackRating(TrackDescription track_desc) const; // throws std::runtime_error
+    virtual double trackRating(TrackDescription track_desc) const; // throws std::runtime_error
 
     virtual void addFileToPlaylist(const boost::filesystem::wpath& path, PlaylistID playlist_id); // throws std::runtime_error
     
@@ -110,7 +110,7 @@ public:
     // AIMP3 specific functionality, not supported by AIMP2.
 
     // IPlaylistEntryRatingManager method.
-    virtual void trackRating(TrackDescription track_desc, int rating); // throw std::runtime_error
+    virtual void trackRating(TrackDescription track_desc, double rating); // throw std::runtime_error
 
     // IPlaylistUpdateManager methods.
     virtual void lockPlaylist(PlaylistID playlist_id); // throws std::runtime_error
@@ -268,5 +268,8 @@ DWORD getEntryField(sqlite3* db, const char* field, PlaylistEntryID entry_id);
 
 template<>
 INT64 getEntryField(sqlite3* db, const char* field, PlaylistEntryID entry_id);
+
+template<>
+double getEntryField(sqlite3* db, const char* field, PlaylistEntryID entry_id);
 
 } // namespace AIMPPlayer

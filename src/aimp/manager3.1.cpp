@@ -250,7 +250,7 @@ void AIMPManager31::initPlaylistDB() // throws std::runtime_error
                                                     "channels_count INTEGER,"
                                                     "duration       INTEGER,"
                                                     "filesize       BIGINT,"
-                                                    "rating         TINYINT,"
+                                                    "rating         DOUBLE,"
                                                     "samplerate     INTEGER"
                                                   ")",
                       nullptr, /* Callback function */

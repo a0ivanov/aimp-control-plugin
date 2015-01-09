@@ -1410,7 +1410,27 @@ ResponseType SetTrackRating::execute(const Rpc::Value& root_request, Rpc::Value&
     const Rpc::Value& params = root_request["params"];
 
     const TrackDescription track_desc(getTrackDesc(params));
-    const int rating( Utilities::limit_value<int>(params["rating"], 0, 5) ); // set rating range [0, 5]
+
+    double rating = -1.;
+    if (params.isMember("rating")) {
+        const Rpc::Value& ratingArg = params["rating"];
+        
+        switch (ratingArg.type()) {
+        case Rpc::Value::TYPE::TYPE_DOUBLE:
+            rating = Utilities::limit_value<double>(ratingArg, 0., 5.);
+            break;
+        case Rpc::Value::TYPE::TYPE_INT:
+            rating = Utilities::limit_value<int>(ratingArg, 0, 5);
+            break;
+        case Rpc::Value::TYPE::TYPE_UINT:
+            rating = Utilities::limit_value<unsigned int>(ratingArg, 0, 5);
+            break;
+        }
+    }
+
+    if (rating == -1) {
+        throw Rpc::Exception("Expected rating argumet, type double or int", WRONG_ARGUMENT);
+    }
 
     IPlaylistEntryRatingManager* rating_manager = dynamic_cast<IPlaylistEntryRatingManager*>(&aimp_manager_);
     if (rating_manager) {

@@ -257,10 +257,9 @@ public:
     virtual void saveCoverToFile(TrackDescription track_desc, const std::wstring& filename, int cover_width = 0, int cover_height = 0) const = 0; // throw std::runtime_error
 
     /*
-        Returns track rating.
-        rating value is in range [0-5]. Zero value means rating is not set.
+        Returns track rating in range [0-5]. Zero value means rating is not set.
     */
-    virtual int trackRating(TrackDescription track_desc) const = 0; // throws std::runtime_error
+    virtual double trackRating(TrackDescription track_desc) const = 0; // throws std::runtime_error
 
     virtual void addFileToPlaylist(const boost::filesystem::wpath& path, PlaylistID playlist_id) = 0; // throws std::runtime_error
     

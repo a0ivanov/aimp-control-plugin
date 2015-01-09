@@ -244,7 +244,7 @@ void AIMPManager36::initPlaylistDB()
                                                       "channels_count INTEGER,"
                                                       "duration       INTEGER,"
                                                       "filesize       BIGINT,"
-                                                      "rating         TINYINT,"
+                                                      "rating         DOUBLE,"
                                                       "samplerate     INTEGER,"
                                                       "crc32          BIGINT," // use BIGINT since crc32 is uint32.
                                                       "PRIMARY KEY (entry_id)"
@@ -295,7 +295,7 @@ void AIMPManager36::initPlaylistDB()
                                                     "channels_count INTEGER,"
                                                     "duration       INTEGER,"
                                                     "filesize       BIGINT,"
-                                                    "rating         TINYINT,"
+                                                    "rating         DOUBLE,"
                                                     "samplerate     INTEGER"
                                                   ")",
                       nullptr, /* Callback function */
@@ -907,9 +907,9 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
         int bitrate = 0,
             channels = 0,
             duration_ms = 0,
-            rating = 0,
             samplerate = 0;
         int64_t filesize = 0;
+        double rating = 0.;
 
         IAIMPFileInfo* file_info_tmp;
         r = item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_FILEINFO, IID_IAIMPFileInfo,
@@ -935,7 +935,7 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
 
             duration_ms = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_DURATION, error_prefix) * 1000.);
             //rating   = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_MARK,     error_prefix)); // slow all the time.
-            rating   = static_cast<int>(getDouble(item.get(), AIMP_PLAYLISTITEM_PROPID_MARK, error_prefix)); // slow first time only.
+            rating = getDouble(item.get(), AIMP_PLAYLISTITEM_PROPID_MARK, error_prefix); // slow first time only.
 
             filesize = getInt64(file_info.get(), AIMP_FILEINFO_PROPID_FILESIZE, error_prefix);
         } else {
@@ -1005,7 +1005,7 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
             bind(int,   11, channels);
             bind(int,   12, duration_ms);
             bind(int64, 13, filesize);
-            bind(int,   14, rating);
+            bind(double,14, rating);
             bind(int,   15, samplerate);
             bind(int64, 16, crc32(info));
 #undef bind
@@ -1833,9 +1833,9 @@ void AIMPManager36::reloadQueuedEntries()
         int bitrate = 0,
             channels = 0,
             duration_ms = 0,
-            rating = 0,
             samplerate = 0;
         int64_t filesize = 0;
+        double rating = 0.;
 
         IAIMPFileInfo* file_info_tmp;
         r = item->GetValueAsObject(AIMP_PLAYLISTITEM_PROPID_FILEINFO, IID_IAIMPFileInfo,
@@ -1864,7 +1864,7 @@ void AIMPManager36::reloadQueuedEntries()
 
         duration_ms = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_DURATION, error_prefix) * 1000.);
         //rating   = static_cast<int>(getDouble(file_info.get(), AIMP_FILEINFO_PROPID_MARK,     error_prefix)); // slow all the time.
-        rating   = static_cast<int>(getDouble(item.get(), AIMP_PLAYLISTITEM_PROPID_MARK, error_prefix)); // slow first time only.
+        rating   = getDouble(item.get(), AIMP_PLAYLISTITEM_PROPID_MARK, error_prefix); // slow first time only.
 
         filesize = getInt64(file_info.get(), AIMP_FILEINFO_PROPID_FILESIZE, error_prefix);
 
@@ -1904,7 +1904,7 @@ void AIMPManager36::reloadQueuedEntries()
             bind(int,   11, channels);
             bind(int,   12, duration_ms);
             bind(int64, 13, filesize);
-            bind(int,   14, rating);
+            bind(double,14, rating);
             bind(int,   15, samplerate);
 #undef bind
 
@@ -2485,16 +2485,16 @@ void AIMPManager36::saveCoverToFile(TrackDescription track_desc, const std::wstr
     }
 }
 
-int AIMPManager36::trackRating(TrackDescription track_desc) const
+double AIMPManager36::trackRating(TrackDescription track_desc) const
 {
-	return getEntryField<DWORD>(playlists_db_, "rating", getAbsoluteEntryID(track_desc.track_id));
+	return getEntryField<double>(playlists_db_, "rating", getAbsoluteEntryID(track_desc.track_id));
 }
 
-void AIMPManager36::trackRating(TrackDescription track_desc, int rating)
+void AIMPManager36::trackRating(TrackDescription track_desc, double rating)
 {
     TrackDescription absolute_track_desc(getAbsoluteTrackDesc(track_desc));
     if (IAIMPPlaylistItem_ptr item = getPlaylistItem(absolute_track_desc.track_id)) {
-        HRESULT r = item->SetValueAsFloat(AIMP36SDK::AIMP_PLAYLISTITEM_PROPID_MARK, (double)rating);
+        HRESULT r = item->SetValueAsFloat(AIMP36SDK::AIMP_PLAYLISTITEM_PROPID_MARK, rating);
         if (S_OK != r) {
             throw std::runtime_error( MakeString() << __FUNCTION__": SetValueAsFloat(AIMP36SDK::AIMP_PLAYLISTITEM_PROPID_MARK) failed. Result " << r);
         }

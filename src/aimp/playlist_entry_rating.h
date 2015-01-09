@@ -15,7 +15,7 @@ public:
         \param track_desc - track descriptor.
         \param rating - rating value is in range [0-5]. Zero value means rating is not set.
     */
-    virtual void trackRating(TrackDescription track_desc, int rating) = 0; // throw std::runtime_error
+    virtual void trackRating(TrackDescription track_desc, double rating) = 0; // throw std::runtime_error
 
 protected:
 

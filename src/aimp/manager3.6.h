@@ -194,7 +194,7 @@ public:
         Returns track rating.
         rating value is in range [0-5]. Zero value means rating is not set.
     */
-    virtual int trackRating(TrackDescription track_desc) const; // throws std::runtime_error
+    virtual double trackRating(TrackDescription track_desc) const; // throws std::runtime_error
 
     virtual void addFileToPlaylist(const boost::filesystem::wpath& path, PlaylistID playlist_id); // throws std::runtime_error
     
@@ -223,7 +223,7 @@ public:
     virtual void onTick();
 
     // IPlaylistEntryRatingManager method.
-    virtual void trackRating(TrackDescription track_desc, int rating); // throw std::runtime_error
+    virtual void trackRating(TrackDescription track_desc, double rating); // throw std::runtime_error
 
     virtual void playlistActivated(AIMP36SDK::IAIMPPlaylist* playlist);
     virtual void playlistAdded(AIMP36SDK::IAIMPPlaylist* playlist);
