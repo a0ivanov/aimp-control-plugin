@@ -2281,7 +2281,7 @@ void CALLBACK OnAlbumArtReceive(IAIMPImage* image, IAIMPImageContainer* image_co
         request->out_.image_.reset(image);
 
         IAIMPString* filename;
-        HRESULT r = image_container->QueryInterface(IID_IAIMPString, reinterpret_cast<void**>(&filename));
+        HRESULT r = image->QueryInterface(IID_IAIMPString, reinterpret_cast<void**>(&filename));
         if (S_OK == r) {
             // album cover file exists.
             request->out_.cover_filename_.reset(filename);
