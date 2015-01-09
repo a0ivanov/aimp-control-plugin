@@ -1011,7 +1011,6 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
 
     AIMPPlayer::AIMPManager36* aimp36_manager = dynamic_cast<AIMPPlayer::AIMPManager36*>(&aimp_manager_);
     boost::intrusive_ptr<AIMP36SDK::IAIMPImageContainer> container;
-    boost::intrusive_ptr<AIMP36SDK::IAIMPImage> image;
     boost::intrusive_ptr<AIMP36SDK::IAIMPHashCode> cover_hash;
 
     cache_search_result = cache_.isCoverCachedForCurrentTrack(track_desc, cover_width, cover_height);
@@ -1025,6 +1024,7 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
             }
         } else {
             // aimp 36: use cover hash to find out image in cache.
+            boost::intrusive_ptr<AIMP36SDK::IAIMPImage> image;
             if (aimp36_manager->getCoverImageContainter(track_desc, &container, &image)) {
                 if (container) {
                     AIMP36SDK::IAIMPHashCode* hash_code;
