@@ -1070,15 +1070,15 @@ AIMPManager36::PlaylistHelper& AIMPManager36::getPlaylistHelper(IAIMPPlaylist* p
 IAIMPPlaylistItem_ptr AIMPManager36::getPlaylistItem(PlaylistEntryID id) const
 {
     IAIMPPlaylistItem* to_search = castToPlaylistItem(id);
+    const auto& pred = [](const IAIMPPlaylistItem_ptr& element, IAIMPPlaylistItem* to_search) { return element.get() < to_search; };
+
     for (auto& helper : playlist_helpers_) {
         const PlaylistItems& playlist_items = helper.items_;
         const auto& begin_it = playlist_items.begin();
         const auto& end_it = playlist_items.end();
-        PlaylistItems::const_iterator it = std::lower_bound(begin_it, end_it,
-                                                            to_search,
-                                                            [](const IAIMPPlaylistItem_ptr& element, IAIMPPlaylistItem* to_search) { return element.get() < to_search; }
-                                                            );
-        if (it != end_it && !(to_search < (*begin_it).get())) {
+        
+        PlaylistItems::const_iterator it = std::lower_bound(begin_it, end_it, to_search, pred);
+        if (it != end_it && !pred(to_search, (*it).get())) {
             return *it;
         }
     }
