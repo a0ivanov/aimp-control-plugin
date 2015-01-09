@@ -432,6 +432,7 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager,
 
     auto int_setter   = boost::bind( createSetter(&sqlite3_column_int),   _1, _2, _3 );
     auto int64_setter = boost::bind( createSetter(&sqlite3_column_int64), _1, _2, _3 );
+    auto double_setter   = boost::bind( createSetter(&sqlite3_column_double),   _1, _2, _3 );
     auto text_setter  = boost::bind( createSetter(&sqlite3_column_text),  _1, _2, _3 );
     auto folder_name_setter = [](sqlite3_stmt* stmt, int column_index, Rpc::Value& rpc_value) {
         const unsigned char* path = sqlite3_column_text(stmt, column_index);
@@ -448,7 +449,7 @@ GetPlaylistEntries::GetPlaylistEntries(AIMPManager& aimp_manager,
         ( getStringFieldID(PlaylistEntry::BITRATE),  int_setter )
         ( getStringFieldID(PlaylistEntry::DURATION), int_setter )
         ( getStringFieldID(PlaylistEntry::FILESIZE), int64_setter )
-        ( getStringFieldID(PlaylistEntry::RATING),   int_setter )
+        ( getStringFieldID(PlaylistEntry::RATING),   double_setter )
         ( kRQST_KEY_FIELD_FOLDER_NAME,               folder_name_setter) // For now only folder name is supported.
     ;
 

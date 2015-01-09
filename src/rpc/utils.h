@@ -69,6 +69,12 @@ void setRpcValue(const T& value, Rpc::Value& rpc_value)
     rpc_value = static_cast<int>(value);
 }
 
+template<>
+inline void setRpcValue(const double& value, Rpc::Value& rpc_value)
+{
+    rpc_value = value;
+}
+
 //! Set UTF-8 string field in Rpc struct. Use unsigned char special for compatibility with "const unsigned char *sqlite3_column_text(sqlite3_stmt*, int iCol)".
 inline void setRpcValue(const unsigned char* value, Rpc::Value& rpc_value)
 {
