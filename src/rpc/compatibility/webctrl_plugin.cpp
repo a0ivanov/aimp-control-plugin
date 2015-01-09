@@ -181,8 +181,8 @@ void EmulationOfWebCtlPlugin::getPlaylistList(std::ostringstream& out)
             if (S_OK != r) {
                 throw std::runtime_error(MakeString() << "IAIMPAddonsPlaylistManager::StoragePropertyGetValue(AIMP_PLAYLIST_STORAGE_PROPERTY_NAME) failed. Result " << r);
             }
-            boost::intrusive_ptr<IAIMPString> nameStr(name_tmp, false);
-            playlist_name.assign(nameStr->GetData(), nameStr->GetData() + nameStr->GetLength());
+            IAIMPString_ptr nameStr(name_tmp, false);
+            playlist_name.assign(nameStr->GetData(), nameStr->GetLength());
 
             using namespace Utilities;
             replaceAll(L"\"", 1,
@@ -380,7 +380,7 @@ void EmulationOfWebCtlPlugin::getPlaylistSongs(int playlist_id, bool ignore_cach
                     }
                     const INT64 duration_ms = static_cast<INT64>(duration_sec_tmp * 1000.);
 
-                    entry_title.assign( display_text->GetData(), display_text->GetData() + display_text->GetLength() );
+                    entry_title.assign( display_text->GetData(), display_text->GetLength() );
                     using namespace Utilities;
                     replaceAll(L"\"", 1,
                                L"\\\"", 2,

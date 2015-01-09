@@ -53,6 +53,17 @@ IAIMPPlaylistItem* castToPlaylistItem(PlaylistEntryID id)
     return reinterpret_cast<IAIMPPlaylistItem*>(id);
 }
 
+std::wstring makeString(IAIMPString* string)    
+{
+    assert(string);
+    return std::wstring(string->GetData(), string->GetLength());
+}
+
+std::wstring makeString(IAIMPString_ptr string)    
+{
+    return makeString(string.get());
+}
+
 class AIMPExtensionPlaylistManagerListener : public AIMP36SDK::IUnknownInterfaceImpl<AIMP36SDK::IAIMPExtensionPlaylistManagerListener>
 {
 public:
@@ -2229,8 +2240,8 @@ std::wstring AIMPManager36::getFormattedEntryTitle(TrackDescription track_desc, 
         if (S_OK != r) {
             throw std::runtime_error(MakeString() << __FUNCTION__": formatter->Format() failed. Result: " << r << ". format_string_utf8: " << format_string_utf8);
         }
-        boost::intrusive_ptr<IAIMPString> formatted_string(formatted_string_tmp, false);
-        return std::wstring(formatted_string->GetData(), formatted_string->GetLength());    
+        IAIMPString_ptr formatted_string(formatted_string_tmp, false);
+        return makeString(formatted_string);
     } else {
         throw std::runtime_error( MakeString() << __FUNCTION__": invalid track" << track_desc);
     }
@@ -2251,8 +2262,8 @@ std::wstring AIMPManager36::getEntryFilename(TrackDescription track_desc) const
         boost::intrusive_ptr<IAIMPFileInfo> file_info(file_info_tmp, false);
 
         using namespace Support;
-        IAIMPString_ptr file_name = getString(file_info.get(), AIMP_FILEINFO_PROPID_FILENAME, __FUNCTION__" error: ");
-        return std::wstring(file_name->GetData(), file_name->GetLength());
+        IAIMPString_ptr filename = getString(file_info.get(), AIMP_FILEINFO_PROPID_FILENAME, __FUNCTION__" error: ");
+        return makeString(filename);
     } else {
         throw std::runtime_error( MakeString() << __FUNCTION__": invalid track" << track_desc);
     }
@@ -2339,13 +2350,22 @@ bool AIMPManager36::isCoverImageFileExist(TrackDescription track_desc, boost::fi
 
         r = aimp_service_album_art_->Get2(file_info.get(), flags, OnAlbumArtReceive, reinterpret_cast<void*>(&request), &task_id);
 
-        boost::system::error_code ignored_ec;
-        const bool exists = request.out_.cover_filename_ && fs::exists(request.out_.cover_filename_->GetData(), ignored_ec);
-    
-        if (exists && path) {
-            *path = boost::filesystem::wpath(request.out_.cover_filename_->GetData());
+        if (S_OK != r) {
+            BOOST_LOG_SEV(logger(), error) << __FUNCTION__": aimp_service_album_art_->Get2 failed. Result: " << r;
         }
-    
+
+        if (!request.out_.cover_filename_) {
+            return false;
+        }
+
+        const std::wstring& cover_path = makeString(request.out_.cover_filename_);
+
+        boost::system::error_code ignored_ec;
+        const bool exists = fs::exists(cover_path, ignored_ec);
+        if (exists && path) {
+            *path = cover_path;
+        }
+
         return exists;
     } else {
         throw std::runtime_error( MakeString() << __FUNCTION__": invalid track " << track_desc);
@@ -2628,7 +2648,7 @@ std::wstring AIMPManager36::supportedTrackExtentions() // throws std::runtime_er
     }
 
     IAIMPString_ptr exts(exts_tmp, false);
-    return std::wstring(exts->GetData(), exts->GetData() + exts->GetLength());
+    return makeString(exts);
 }
 
 std::string playlist36NotifyFlagsToString(DWORD flags)

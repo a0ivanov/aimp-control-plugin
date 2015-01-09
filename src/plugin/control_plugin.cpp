@@ -176,7 +176,7 @@ std::wstring AIMPControlPlugin::getAimpPath(int path_id) const
         AIMP36SDK::IAIMPString* path_tmp;
         if (S_OK == aimp36_core_->GetPath(path_id, &path_tmp)) {
             AIMP36SDK::IAIMPString_ptr path(path_tmp, false);
-            return std::wstring(path->GetData(), path->GetData() + path->GetLength());
+            return std::wstring(path->GetData(), path->GetLength());
         }
     }
 
