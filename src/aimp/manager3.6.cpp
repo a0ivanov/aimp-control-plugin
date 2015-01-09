@@ -2465,6 +2465,10 @@ void AIMPManager36::saveCoverToFile(TrackDescription track_desc, const std::wstr
     }
 
     if (!image) {
+        if (!container) {
+            throw std::runtime_error(MakeString() << __FUNCTION__": container is null");
+        }
+
         AIMP36SDK::IAIMPImage* image_tmp;
         HRESULT r = container->CreateImage(&image_tmp);
         if (S_OK != r) {

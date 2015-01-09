@@ -177,6 +177,9 @@ public:
     */
     virtual bool isCoverImageFileExist(TrackDescription track_desc, boost::filesystem::wpath* path = nullptr) const; // throw std::runtime_error
 
+    /*
+        Returns true if container OR image is valid.
+    */
     bool getCoverImageContainter(TrackDescription track_desc, boost::intrusive_ptr<AIMP36SDK::IAIMPImageContainer>* container = nullptr, boost::intrusive_ptr<AIMP36SDK::IAIMPImage>* image = nullptr) const; // throw std::runtime_error
 
     /*!
