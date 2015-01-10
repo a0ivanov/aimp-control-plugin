@@ -2028,7 +2028,7 @@ PlaylistID AIMPManager36::getPlayingPlaylist() const
         // player is stopped at this time, return active playlist for compatibility with AIMPManager: AIMP2-AIMP3.5 returned active playlist in this case.
         r = aimp_service_playlist_manager_->GetActivePlaylist(&playlist_tmp);
         if (S_OK != r) {
-            std::runtime_error(MakeString() << __FUNCTION__": aimp_service_playlist_manager_->GetActivePlaylist() failed. Result: " << r);
+            throw std::runtime_error(MakeString() << __FUNCTION__": aimp_service_playlist_manager_->GetActivePlaylist() failed. Result: " << r);
         }
         assert(playlist_tmp);
         playlist_tmp->Release();
