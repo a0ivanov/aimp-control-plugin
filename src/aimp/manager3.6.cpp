@@ -2019,20 +2019,14 @@ PlaylistID AIMPManager36::getPlayingPlaylist() const
 {
     IAIMPPlaylist* playlist_tmp;
     HRESULT r = aimp_service_playlist_manager_->GetPlayablePlaylist(&playlist_tmp);
-    if (S_OK != r) {
-        throw std::runtime_error(MakeString() << __FUNCTION__": aimp_service_playlist_manager_->GetPlayablePlaylist() failed. Result: " << r);
-    }
-    if (playlist_tmp) {
-        playlist_tmp->Release();
-    } else {
-        // player is stopped at this time, return active playlist for compatibility with AIMPManager: AIMP2-AIMP3.5 returned active playlist in this case.
-        r = aimp_service_playlist_manager_->GetActivePlaylist(&playlist_tmp);
-        if (S_OK != r) {
-            throw std::runtime_error(MakeString() << __FUNCTION__": aimp_service_playlist_manager_->GetActivePlaylist() failed. Result: " << r);
+    if (S_OK != r || playlist_tmp == nullptr) {
+        if (S_OK == r) {
+            throw std::runtime_error(MakeString() << __FUNCTION__": aimp_service_playlist_manager_->GetPlayablePlaylist() returned null playlist");
+        } else {
+            throw std::runtime_error(MakeString() << __FUNCTION__": aimp_service_playlist_manager_->GetPlayablePlaylist() failed. Result: " << r);
         }
-        assert(playlist_tmp);
-        playlist_tmp->Release();
     }
+    playlist_tmp->Release();
     return cast<PlaylistID>(playlist_tmp);
 }
 
@@ -2044,30 +2038,10 @@ PlaylistEntryID AIMPManager36::getPlayingEntry() const
         playlist_item_tmp->Release();
         //BOOST_LOG_SEV(logger(), debug) << __FUNCTION__": S_OK: playlist_item: " << castToPlaylistEntryID(playlist_item_tmp);
     } else {
-        // player is stopped at this time, return active playlist for compatibility with AIMPManager: AIMP2-AIMP3.5 returned active entry from active playlist in this case.
-        IAIMPPlaylist* playlist_tmp;
-        HRESULT r = aimp_service_playlist_manager_->GetPlayablePlaylist(&playlist_tmp);
-        if (S_OK != r || playlist_tmp == nullptr) {
-            if (S_OK == r) {
-                BOOST_LOG_SEV(logger(), error) << __FUNCTION__": aimp_service_playlist_manager_->GetPlayablePlaylist() returned null playlist";
-            } else {
-                BOOST_LOG_SEV(logger(), error) << __FUNCTION__": aimp_service_playlist_manager_->GetPlayablePlaylist() failed. Result: " << r;
-            }
-            
-            r = aimp_service_playlist_manager_->GetActivePlaylist(&playlist_tmp);
-            if (S_OK != r) {
-                throw std::runtime_error(MakeString() << __FUNCTION__": aimp_service_playlist_manager_->GetActivePlaylist() failed. Result: " << r);
-            }
-
-            if (!playlist_tmp) {
-                throw std::runtime_error(MakeString() << __FUNCTION__": aimp_service_playlist_manager_->GetActivePlaylist() returned null playlist");
-            }
-        }
- 
-        boost::intrusive_ptr<IAIMPPlaylist> playlist(playlist_tmp, false);
+        IAIMPPlaylist* playlist = cast<IAIMPPlaylist*>(getPlayingPlaylist());
 
         IAIMPPropertyList* playlist_propertylist_tmp;
-        r = playlist->QueryInterface(IID_IAIMPPropertyList,
+        HRESULT r = playlist->QueryInterface(IID_IAIMPPropertyList,
                                              reinterpret_cast<void**>(&playlist_propertylist_tmp));
         if (S_OK != r) {
             throw std::runtime_error(MakeString() << __FUNCTION__": playlist->QueryInterface(IID_IAIMPPropertyList) failed. Result " << r);
