@@ -935,6 +935,14 @@ function updateControlPanel()
 function updateControlPanelState(result) {
     control_panel_state = result; // update global variable.
     
+    if (!control_panel_state.hasOwnProperty('playlist_id')) {
+        control_panel_state['playlist_id'] = 0;
+    }
+    
+    if (!control_panel_state.hasOwnProperty('track_id')) {
+        control_panel_state['track_id'] = 0;
+    }
+    
     if (control_panel_state.playlist_id == 0) { // in case when track from removed playlist is playing.
         // TODO: ask about first available real playlist
         //control_panel_state.playlist_id = ;
