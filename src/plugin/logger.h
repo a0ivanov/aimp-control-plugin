@@ -18,6 +18,8 @@ namespace ControlPlugin {
 //! contains logger utils.
 namespace PluginLogger {
 
+BOOST_LOG_ATTRIBUTE_KEYWORD(channel, "Channel", std::string)
+
 //! Identificators of log message's severity level. If you need to add levels update ControlPlugin::PluginSettings severityToString/severityFromString functions.
 enum SEVERITY_LEVELS { debug = 0,
                        info,
@@ -99,7 +101,7 @@ private:
                Function tries to find specified module name string in that list.
         \return true if log is enabled for specified module, false otherwise.
     */
-    bool logInModuleEnabled(const std::string& module_name) const;
+	bool logInModuleEnabled(boost::log::value_ref<std::string, tag::channel > const& channel) const;
 
     //!< Messages with lower severity will not be written.
     SEVERITY_LEVELS severity_;
