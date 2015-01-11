@@ -5,13 +5,12 @@
 #include "utils/string_encoding.h"
 #include "utils/util.h"
 #include <boost/filesystem.hpp>
-
-#pragma warning (push, 3)
+#include <boost/log/core.hpp>
+#include <boost/log/expressions.hpp>
 #include <boost/log/utility/exception_handler.hpp>
-#include <boost/log/formatters.hpp>
 #include <boost/log/attributes.hpp>
-#include <boost/log/filters.hpp>
-#pragma warning (pop)
+#include <boost/phoenix/bind.hpp>
+#include <boost/log/support/date_time.hpp>
 
 namespace ControlPlugin { namespace PluginLogger {
 
@@ -19,6 +18,11 @@ const std::string LogManager::kRPC_SERVER_MODULE_NAME =   "rpc_server";
 const std::string LogManager::kHTTP_SERVER_MODULE_NAME =  "http_server";
 const std::string LogManager::kAIMP_MANAGER_MODULE_NAME = "aimp_manager";
 const std::string LogManager::kPLUGIN_MODULE_NAME =       "plugin";
+
+BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", SEVERITY_LEVELS)
+BOOST_LOG_ATTRIBUTE_KEYWORD(timestamp, "TimeStamp", boost::log::attributes::timer::value_type)
+//BOOST_LOG_ATTRIBUTE_KEYWORD(tag_attr, "Tag", std::string)
+//BOOST_LOG_ATTRIBUTE_KEYWORD(line_id, "LineID", unsigned int)
 
 LogManager::LogManager()
     : severity_(severity_levels_count),
@@ -33,9 +37,9 @@ LogManager::~LogManager()
     stopLog();
 }
 
-bool LogManager::logInModuleEnabled(const std::string& module_name) const
+bool LogManager::logInModuleEnabled(boost::log::value_ref<std::string, tag::channel > const& channel) const
 {
-    return modules_to_log_.find(module_name) != modules_to_log_.end();
+	return modules_to_log_.find(channel.get()) != modules_to_log_.end();
 }
 
 /*
@@ -87,12 +91,16 @@ void LogManager::checkDirectoryAccess(const boost::filesystem::wpath& log_direct
     }
 }
 
+bool severityFilter(LogManager* lm, boost::log::value_ref< SEVERITY_LEVELS, tag::severity > const& level)
+{
+	return level >= lm->getSeverity();
+}
+
 void LogManager::startLog(const fs::wpath& log_directory,
                           const std::set<std::string>& modules_to_log)
 {
     namespace attrs = boost::log::attributes;
-    namespace fmt = boost::log::formatters;
-    namespace flt = boost::log::filters;
+	namespace expr = boost::log::expressions;
 
     modules_to_log_ = modules_to_log;
 
@@ -104,7 +112,8 @@ void LogManager::startLog(const fs::wpath& log_directory,
         core->set_logging_enabled(true);
 
         // Set a global severity filter.
-        core->set_filter(flt::attr< SEVERITY_LEVELS >("Severity") >= severity_);
+		namespace phoenix = boost::phoenix;
+		core->set_filter(phoenix::bind(&severityFilter, this, severity.or_none()));
 
         // add a time stamp attribute.
         core->add_global_attribute("TimeStamp", attrs::local_clock());
@@ -122,12 +131,12 @@ void LogManager::startLog(const fs::wpath& log_directory,
 
     // use macro since sinks::debug_output_backend need newline character at the end.
     // Thread id format syntax is got from http://sourceforge.net/projects/boost-log/forums/forum/710021/topic/5064327. Old syntax generates exception of first use.
-#define AIMP_FORMATTER fmt::stream \
-        << fmt::date_time< boost::posix_time::ptime >("TimeStamp", "%d.%m.%Y %H:%M:%S.%f") \
-        << " [Thread " << fmt::attr< attrs::current_thread_id::value_type >("ThreadID") << "] " \
-        << fmt::attr< SEVERITY_LEVELS >("Severity", std::nothrow) << " " \
-        << fmt::attr< std::string >("Channel") << " : " \
-        << fmt::message()
+#define AIMP_FORMATTER expr::stream \
+		<< expr::format_date_time<boost::posix_time::ptime>("TimeStamp", "%d.%m.%Y %H:%M:%S.%f") \
+		<< " [Thread " << expr::attr< attrs::current_thread_id::value_type >("ThreadID") << "] " \
+        << ControlPlugin::PluginLogger::severity << " " \
+		<< expr::attr< std::string >("Channel") << " : " \
+        << expr::smessage
 
     // create debug sink
     {
@@ -137,7 +146,7 @@ void LogManager::startLog(const fs::wpath& log_directory,
 
         // Set the special filter to the frontend
         // in order to skip the sink when no debugger is available
-        sink_dbg_->set_filter( sinks::debug_output_backend::debugger_presence_filter() );
+		sink_dbg_->set_filter(expr::is_debugger_present());
 
         core->add_sink(sink_dbg_);
     }
@@ -179,9 +188,8 @@ void LogManager::startLog(const fs::wpath& log_directory,
         sink_file_->set_formatter(AIMP_FORMATTER);
 
         // add module filter
-        sink_file_->set_filter(
-            flt::attr< std::string >("Channel").satisfies( boost::bind(&LogManager::logInModuleEnabled, this, _1) )
-        );
+		namespace phoenix = boost::phoenix;
+		sink_file_->set_filter(phoenix::bind(&LogManager::logInModuleEnabled, this, channel.or_none()));
 
         core->add_sink(sink_file_);
     }

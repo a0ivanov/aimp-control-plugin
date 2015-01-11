@@ -59,8 +59,13 @@
 
 #include <boost/log/common.hpp>
 #include <boost/log/attributes.hpp>
-#include <boost/log/filters.hpp>
-#include <boost/log/formatters.hpp>
+#include <boost/log/expressions/filter.hpp>
+#pragma warning (push, 4)
+#pragma warning( disable : 4996 )
+#include <boost/log/expressions/formatters.hpp>
+#pragma warning (pop)
+#include <boost/log/core.hpp>
+#include <boost/log/expressions.hpp>
 #include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/sinks/text_file_backend.hpp>
 #include <boost/log/sinks/debug_output_backend.hpp>

@@ -9,7 +9,7 @@
 #include <boost/foreach.hpp>
 #include <boost/numeric/conversion/cast.hpp>
 #include <boost/assign/std.hpp>
-#include <libs/serialization/src/utf8_codecvt_facet.cpp>
+#include <codecvt>
 
 namespace ControlPlugin { namespace PluginSettings {
 
@@ -60,9 +60,9 @@ void loadPropertyTreeFromFile(wptree& pt, const boost::filesystem::wpath& filena
 
     // set UTF-8 convert facet.
     istream.imbue( std::locale(istream.getloc(),
-                                new boost::archive::detail::utf8_codecvt_facet
-                                )
-                    );
+							   new std::codecvt_utf8<WCHAR>
+							   )
+				  );
 
     read_xml(istream, pt); // Load XML file and put its contents in property tree.
     istream.close();
@@ -199,15 +199,15 @@ void savePropertyTreeToFile(const wptree& pt, const boost::filesystem::wpath& fi
 
     // set UTF-8 convert facet.
     ostream.imbue( std::locale(ostream.getloc(),
-                               new boost::archive::detail::utf8_codecvt_facet
-                               )
-                  );
+							   new std::codecvt_utf8<WCHAR>
+							   )
+				  );
 
     // format of xml: indent count and character. Use 4 spaces for indent.
     const wptree::key_type::value_type indent_char = L' ';
     const wptree::key_type::size_type indent_count = 4;
     using boost::property_tree::xml_parser::xml_writer_make_settings;
-    write_xml( ostream, pt, xml_writer_make_settings(indent_char, indent_count) ); // Write property tree to XML file
+    write_xml( ostream, pt, xml_writer_make_settings<std::wstring>(indent_char, indent_count) ); // Write property tree to XML file
     ostream.close();
 }
 
