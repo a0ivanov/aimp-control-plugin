@@ -62,7 +62,7 @@
       </Command>
     </PreBuildEvent>
     <ClCompile>
-      <AdditionalOptions>-Zm149 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-Zm179 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\src;$(BOOST_DIR);$(FREEIMAGELIB_DIR)\Dist;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\Dist;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;AIMP_CONTROL_PLUGIN_EXPORTS;BOOST_NO_POINTER_TO_MEMBER_TEMPLATE_PARAMETERS;U_STATIC_IMPLEMENTATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -90,7 +90,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalOptions>/MP$(NUMBER_OF_PROCESSORS) -Zm149 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/MP$(NUMBER_OF_PROCESSORS) -Zm179 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <AdditionalIncludeDirectories>..\src;$(BOOST_DIR);$(FREEIMAGELIB_DIR)\Dist;$(FREEIMAGELIB_DIR)\Wrapper\FreeImagePlus\Dist;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
