@@ -1,7 +1,7 @@
 :: setup paths of all tools used in plugin build process.
 
 :: Avoid MSBuild's error MSB8008: Specified platform toolset (v110) is not installed or invalid.
-set VisualStudioVersion=11.0
+set VisualStudioVersion=12.0
 call "%ProgramFiles(x86)%\Microsoft Visual Studio %VisualStudioVersion%\VC\bin\vcvars32.bat"
 
 :: pythonis used in MINIMIZE_CLIENT_SRC task.

@@ -4,7 +4,7 @@ call setup_vs_project_variables.bat > nul
 :: # Visual C++ Express 2012
 rem start msvc\aimp_control_plugin.sln
 
-:: This starts Visual Studio 2012 even if aimp_control_plugin.sln points to Visual C++ Express 2010
-"%ProgramFiles(x86)%\Microsoft Visual Studio 11.0\Common7\IDE\WDExpress" "%~dp0\msvc\aimp_control_plugin.sln"
+:: This starts Visual Studio 2013 even if aimp_control_plugin.sln points to Visual C++ Express 2010
+"%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\Common7\IDE\devenv" "%~dp0\msvc\aimp_control_plugin.sln"
 
 ::start msvc\aimp_control_plugin.sln
