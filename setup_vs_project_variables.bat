@@ -2,7 +2,7 @@
 @echo off
 call setup_environment.bat > nul
 
-set BOOST_DIR=c:\libraries\boost\boost_1_52_0
+set BOOST_DIR=c:\libraries\boost\boost_1_57_0
 set FREEIMAGELIB_DIR=c:\libraries\FreeImage\%FreeImage_VERSION%
 ::set AIMP_PLUGINS_DIR=%ProgramFiles%\AIMP3\Plugins
 set AIMP_PLUGINS_DIR=c:\AIMP\AIMP3.60.1466_beta\Plugins

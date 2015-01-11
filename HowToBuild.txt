@@ -1,19 +1,24 @@
 Visual Studio
-    Download and install "Visual Studio 2012 Express for Windows Desktop" from http://www.microsoft.com/visualstudio/eng/downloads#d-2012-express
+
+    Download and install "Visual Studio Community 2013" from http://www.visualstudio.com/en-us/downloads/download-visual-studio-vs#DownloadFamilies_2
 
 Boost library
+
     1) Visual Studio project uses environment variable BOOST_DIR which points to root of Boost library.
     2) Boost Log library should be downloaded from http://sourceforge.net/projects/boost-log/
-    and placed as boost library. Notice that currently Boost Log v2 is used (since v1 fails to compile with msvc11) so if it is not available by link above (like at the time of this doc writing) use SVN repository located at https://boost-log.svn.sourceforge.net/svnroot/boost-log, tested revision is 737.
-    3) Following libraries must be built: filesystem, date_time, thread, regex, log.
+    and placed as boost library. 
+    3) Prepare boost build system
+        execute bootstrap.bat
+    4) Following libraries must be built: filesystem, date_time, thread, regex, log.
 
         Commands sequence without explanation(see details below):
-            3.1) for Release config:
-                 bjam --with-date_time --with-thread --with-regex --with-filesystem  link=static runtime-link=static
-                 bjam --with-log define=BOOST_LOG_NO_COMPILER_TLS link=static runtime-link=static 
-            3.2) for Debug config:
-                 bjam --with-date_time --with-thread --with-regex --with-filesystem 
-                 bjam --with-log define=BOOST_LOG_NO_COMPILER_TLS
+            Current directory: boost root directory. For example, C:\libraries\boost\boost_1_57_0
+
+            4.1) for Release config:
+                 bjam --toolset=msvc-12.0 --with-date_time --with-thread --with-regex --with-filesystem --with-log define=BOOST_LOG_NO_COMPILER_TLS link=static runtime-link=static
+            4.2) for Debug config:
+                 bjam --toolset=msvc-12.0 --with-date_time --with-thread --with-regex --with-filesystem --with-log define=BOOST_LOG_NO_COMPILER_T
+LS
                  
         Details:
             To build as "Multi-threaded DLL" (currently used by Debug configuration) use command:
@@ -24,7 +29,7 @@ Boost library
             To build with "Multi-threaded" runtime (currently used by Release configuration) add options to bjam:
                 link=static runtime-link=static
             To rebuild library use "bjam --with-XXX --clean" command, then build as usual.
-            To choose VS version use "--toolset=XXX", when XXX can be following: msvc-9.0, msvc-10.0, msvc-11.0.
+            To choose VS version use "--toolset=XXX", when XXX can be following: msvc-9.0, msvc-10.0, msvc-11.0, msvc-12.0.
 
 Python
 
@@ -63,6 +68,7 @@ FreeImage
     Required only for enabling Rpc function which extracts album cover on AIMP2 and extended support on AIMP3.
 
 SQLite
+
     It will be needed if AIMP will use sqlite with new interface.
     To create *.lib file from *.def use command:
         lib /DEF: sqlite3.def /OUT:sqlite3.lib
