@@ -328,11 +328,16 @@ private:
         ~PlaylistHelper();
 
         bool trySchedulePlaylistContentUpdate(DWORD flags);
-    };
 
-    typedef std::vector<PlaylistHelper> PlaylistHelpers;
+        private:
+            PlaylistHelper();
+            PlaylistHelper(const PlaylistHelper&);
+            PlaylistHelper& operator=(const PlaylistHelper&);
+    };
+    typedef std::map<AIMP36SDK::IAIMPPlaylist*, PlaylistHelper> PlaylistHelpers;
     mutable PlaylistHelpers playlist_helpers_;
     PlaylistHelper& getPlaylistHelper(AIMP36SDK::IAIMPPlaylist* playlist); // throws std::runtime_error
+    const PlaylistHelper& getPlaylistHelper(AIMP36SDK::IAIMPPlaylist* playlist) const; // throws std::runtime_error
 
     boost::asio::io_service& io_service_;
 
