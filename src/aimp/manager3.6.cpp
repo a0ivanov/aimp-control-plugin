@@ -31,6 +31,9 @@ namespace AIMPPlayer
 using namespace Utilities;
 using namespace AIMP36SDK;
 
+const int kNoParam1 = 0;
+void * const kNoParam2 = nullptr;
+
 template<>
 PlaylistID cast(IAIMPPlaylist* playlist)
 {
@@ -1133,35 +1136,8 @@ void AIMPManager36::unRegisterListener(AIMPManager::EventsListenerID listener_id
 
 void AIMPManager36::startPlayback()
 {
-    switch (getPlaybackState()) {
-    case PAUSED: {
-        HRESULT r = aimp_service_player_->Resume();
-        if (S_OK != r) {
-            throw std::runtime_error( MakeString() << __FUNCTION__": aimp_service_player_->Resume() failed. Result: " << r);
-        }
-        break;
-    }
-    case STOPPED:
-        try {
-            startPlayback(TrackDescription(-1, -1));
-        } catch (std::exception& e) {
-            BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__": startPlayback(TrackDescription(-1, -1)) failed. Reason: " << e.what();
-
-			// this could happen if playable playlist is unavailable. Just play first track in first playlist.
-			if (!playlist_helpers_.empty()) {
-				HRESULT r = aimp_service_player_->Play3(playlist_helpers_.begin()->first);
-				if (S_OK != r) {
-					throw std::runtime_error(MakeString() << __FUNCTION__": aimp_service_player_->Play3() failed. Result: " << r);
-				}			
-			} else {
-				// nothing to play.
-			}
-        }
-        break;
-    case PLAYING:
-        // do nothing
-        break;
-    }
+	using namespace AIMP36SDK;
+	aimp_service_message_dispatcher_->Send(AIMP_MSG_CMD_PLAY, kNoParam1, kNoParam2);
 }
 
 void AIMPManager36::startPlayback(TrackDescription track_desc)
