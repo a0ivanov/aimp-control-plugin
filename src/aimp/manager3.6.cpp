@@ -1146,6 +1146,16 @@ void AIMPManager36::startPlayback()
             startPlayback(TrackDescription(-1, -1));
         } catch (std::exception& e) {
             BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__": startPlayback(TrackDescription(-1, -1)) failed. Reason: " << e.what();
+
+			// this could happen if playable playlist is unavailable. Just play first track in first playlist.
+			if (!playlist_helpers_.empty()) {
+				HRESULT r = aimp_service_player_->Play3(playlist_helpers_.begin()->first);
+				if (S_OK != r) {
+					throw std::runtime_error(MakeString() << __FUNCTION__": aimp_service_player_->Play3() failed. Result: " << r);
+				}			
+			} else {
+				// nothing to play.
+			}
         }
         break;
     case PLAYING:
