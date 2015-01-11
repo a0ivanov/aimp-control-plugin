@@ -169,12 +169,15 @@ public:
         //boost::asio::detail::socket_ops(&address_, 0, SOL_SOCKET, SO_PROTOCOL_INFO, &protocol_info, &protocol_info_size, ec);
         DWORD addr_str_length = max_addr_bth_str_len;
         using namespace boost::asio::detail::socket_ops;
+#pragma warning (push, 4)
+#pragma warning( disable : 4996 )
         const INT result = error_wrapper(::WSAAddressToStringA(reinterpret_cast<LPSOCKADDR>(const_cast<SOCKADDR_BTH*>(&address_) ),
                                                                size(),
                                                                NULL, // &protocol_info,
                                                                addr_str,
                                                                &addr_str_length),
                                           ec);
+#pragma warning (pop)
         const int socket_error_retval = SOCKET_ERROR;
         // Windows may set error code on success.
         if (result != socket_error_retval) {
