@@ -1775,4 +1775,15 @@ double Scheduler::Timer::expires_in() const
     return static_cast<double>(diff.total_seconds());
 }
 
+ResponseType CreatePlaylist::execute(const Rpc::Value& root_request, Rpc::Value& root_response)
+{
+	using namespace Utilities;
+
+	const Rpc::Value& params = root_request["params"];
+	PlaylistID playlist_id = aimp_manager_.createPlaylist(StringEncoding::utf8_to_utf16(params["title"]));
+
+	root_response["result"]["playlist_id"] = playlist_id;
+	return RESPONSE_IMMEDIATE;
+}
+
 } // namespace AimpRpcMethods

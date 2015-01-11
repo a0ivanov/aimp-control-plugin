@@ -2513,7 +2513,6 @@ void AIMPManager36::addURLToPlaylist(const std::string& url, PlaylistID playlist
 
 PlaylistID AIMPManager36::createPlaylist(const std::wstring& title)
 {
-    assert(!"Implement me properly. See comments at the end.");
     AIMPString playlist_title(const_cast<std::wstring*>(&title), true); // rely on fact that AIMP will not change this string.
     playlist_title.AddRef(); // prevent destruction by AIMP.
     IAIMPPlaylist* playlist;
@@ -2523,7 +2522,7 @@ PlaylistID AIMPManager36::createPlaylist(const std::wstring& title)
         throw std::runtime_error( MakeString() << __FUNCTION__": aimp_service_playlist_manager_->CreatePlaylist(title " << StringEncoding::utf16_to_utf8(title) << ") failed. Result " << r);
     }
 
-    playlist->AddRef(); ///!!! TODO: ensure that playlist was addrefed by in playlist list and remove this test code.
+    playlist->Release(); // playlist was addrefed by in playlist list manager.
     return cast<PlaylistID>(playlist);
 }
 

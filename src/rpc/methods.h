@@ -75,7 +75,8 @@ enum ERROR_CODES {
                    REMOVE_TRACK_FAILED = 28, /*!< can't remove track from playlist. Possible reason: track was not found. */
                    REMOVE_TRACK_PHYSICAL_DELETION_DISABLED = 29, /*!< can't remove track physically. Reason: user has disabled it in plugin settings. */
                    SCHEDULER_DISABLED = 30, /*!< can't shutdown/hibernate machine or stop playback by timer. Reason: user has disabled it in plugin settings. */
-                   SCHEDULER_UNSUPPORTED_ACTION = 31 /*!< can't schedule specified action. Reason: machine does not support action. For example, hibernation/shutdown/sleep can be disabled. */
+                   SCHEDULER_UNSUPPORTED_ACTION = 31, /*!< can't schedule specified action. Reason: machine does not support action. For example, hibernation/shutdown/sleep can be disabled. */
+				   PLAYLIST_CREATION_FAILED = 32 /*!< can't create playlist. */
 };
 
 using namespace AIMPPlayer;
@@ -1364,6 +1365,33 @@ private:
     };
 
     std::unique_ptr<Timer> timer_;
+};
+
+/*!
+\brief Creates new playlist.
+\param title - string. Playlist title.
+\return object which describes:
+- success:<BR>
+Example: \code "result":{"playlist_id":1234567} \endcode
+- failure: object which describes error: {code, message}<BR>
+Error codes in addition to \link #Rpc::ERROR_CODES Common errors\endlink:
+- ::PLAYLIST_CREATION_FAILED
+
+Example: \code {"error":{"code":32,"message":"???"}} \endcode
+*/
+class CreatePlaylist : public AIMPRPCMethod
+{
+public:
+	CreatePlaylist(AIMPManager& aimp_manager, Rpc::RequestHandler& rpc_request_handler)
+		: AIMPRPCMethod("CreatePlaylist", aimp_manager, rpc_request_handler)
+	{}
+
+	std::string help()
+	{
+		return "";
+	}
+
+	Rpc::ResponseType execute(const Rpc::Value& root_request, Rpc::Value& root_response);
 };
 
 } // namespace AimpRpcMethods

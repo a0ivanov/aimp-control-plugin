@@ -634,6 +634,7 @@ void AIMPControlPlugin::createRpcMethods()
     REGISTER_AIMP_RPC_METHOD(GetPlayerControlPanelState);
     // playlists
     REGISTER_AIMP_RPC_METHOD(GetPlaylists);
+	REGISTER_AIMP_RPC_METHOD(CreatePlaylist);
     // tracks
     REGISTER_AIMP_RPC_METHOD(EnqueueTrack);
     REGISTER_AIMP_RPC_METHOD(RemoveTrackFromPlayQueue);

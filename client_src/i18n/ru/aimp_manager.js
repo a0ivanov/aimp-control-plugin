@@ -28,5 +28,10 @@ error_rating_set_failed : 'Ошибка при сохранении рейтин
 error_status_set_failed : 'Ошибка при сохранении статуса',
 error_radio_capture_set_failed : 'Ошибка при установке режима "Захват радио"',
 error_move_track_in_queue_failed: 'Ошибка перемещения трека в очереди',
-error_add_url_to_playlist_failed: 'Ошибка добавления ссылки в плейлист'
+error_add_url_to_playlist_failed: 'Ошибка добавления ссылки в плейлист',
+error_remove_track_failed: 'Ошибка удаления трека. Вероятная причина: трек не найден.',
+error_remove_track_physical_deletion_disabled: 'Ошибка удаления трека. Причина: удаление треков не разрешено в настройках плагина.',
+error_scheduler_disabled: 'Ошибка планировщика. Причина: планировщик не включен в настройках плагина.',
+error_scheduler_unsupported_action: 'Ошибка планировщика. Причина: данное действие не поддерживается компьютером или не включено в настройках плагина.',
+error_playlist_creation_failed: 'Ошибка создания плейлиста'
 }

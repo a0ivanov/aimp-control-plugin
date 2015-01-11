@@ -1900,8 +1900,9 @@ void AIMPManager26::addURLToPlaylist(const std::string& url, PlaylistID playlist
 
 PlaylistID AIMPManager26::createPlaylist(const std::wstring& title)
 {
+	const bool activate = false;
     return aimp2_playlist_manager_->AIMP_PLS_NewEx(const_cast<PWCHAR>(title.c_str()),
-                                                   false
+												   activate
                                                    );
 }
 

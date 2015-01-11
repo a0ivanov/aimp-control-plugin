@@ -39,7 +39,7 @@ function AimpManager() {
                                           'RadioCaptureMode',
                                           'Status', // get/set various aspects of player
                                           'EnqueueTrack', 'RemoveTrackFromPlayQueue', // queue tracks
-                                          'GetPlaylists', 'GetPlaylistEntries', 'GetEntryPositionInDataTable', 'GetPlaylistEntriesCount', 'GetFormattedEntryTitle', 'GetPlaylistEntryInfo', 'SetTrackRating', // playlists and tracks utils
+                                          'GetPlaylists', 'CreatePlaylist', 'GetPlaylistEntries', 'GetEntryPositionInDataTable', 'GetPlaylistEntriesCount', 'GetFormattedEntryTitle', 'GetPlaylistEntryInfo', 'SetTrackRating', // playlists and tracks utils
                                           'GetCover', // album cover URI getter
                                           'DownloadTrack', // track URI getter
                                           'SubscribeOnAIMPStateUpdateEvent', // subscribe for AIMP player state notifications
@@ -95,7 +95,12 @@ function AimpManager() {
             24 : 'error_status_set_failed',
             25 : 'error_radio_capture_set_failed',
             26 : 'error_move_track_in_queue_failed',
-	    27 : 'error_add_url_to_playlist_failed'
+            27 : 'error_add_url_to_playlist_failed',
+            28 : 'error_remove_track_failed',
+            29 : 'error_remove_track_physical_deletion_disabled',
+            30 : 'error_scheduler_disabled',
+            31 : 'error_scheduler_unsupported_action',
+            32 : 'error_playlist_creation_failed'
         };
     }
     initLocalizedErrorMessages();
@@ -533,6 +538,15 @@ pluginCapabilities : function(callbacks) {
 */
 addURLToPlaylist : function(params, callbacks) {
     this.callRpc(this.aimp_service.AddURLToPlaylist, params, callbacks);
+},
+
+/*
+    Returns ID of create playlist.
+	Param params.title, string - playlist title.
+        Param callbacks - see description in AimpManager comments.
+*/
+createPlaylist : function(params, callbacks) {
+    this.callRpc(this.aimp_service.CreatePlaylist, params, callbacks);
 }
 
 }; // AimpManager.prototype

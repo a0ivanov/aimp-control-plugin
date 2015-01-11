@@ -203,6 +203,7 @@ public:
     
     virtual void addURLToPlaylist(const std::string& url, PlaylistID playlist_id); // throws std::runtime_error
 
+	// AIMP 3.6 specific: ensure that client code properly releases returned playlist instance.
     virtual PlaylistID createPlaylist(const std::wstring& title);
 
     virtual void removeTrack(TrackDescription track_desc, bool physically = false); // throws std::runtime_error

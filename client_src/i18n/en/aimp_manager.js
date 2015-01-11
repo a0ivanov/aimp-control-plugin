@@ -27,5 +27,10 @@ error_rating_set_failed : 'Rating set failed',
 error_status_set_failed : 'Status set failed',
 error_radio_capture_set_failed : 'Radio capture mode set failed',
 error_move_track_in_queue_failed: 'Moving track in queue failed',
-error_add_url_to_playlist_failed: 'Add URL to playlist failed'
+error_add_url_to_playlist_failed: 'Add URL to playlist failed',
+error_remove_track_failed: 'Revoving track failed. Possible reason: track was not found.',
+error_remove_track_physical_deletion_disabled: 'Track removing failed. Reason: Track removing isn\'t enabled in plugin settings',
+error_scheduler_disabled: 'Sheduling failed. Reason: user has disabled it in plugin settings',
+error_scheduler_unsupported_action: 'Scheduling failed. Reason: machine does not support action. It can be disabled in plugin settings or action is not supported.',
+error_playlist_creation_failed: 'Playlist creation failed'
 }
