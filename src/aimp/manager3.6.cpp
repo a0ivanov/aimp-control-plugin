@@ -2440,7 +2440,10 @@ void AIMPManager36::saveCoverToFile(TrackDescription track_desc, const std::wstr
     boost::intrusive_ptr<IAIMPImage> image;
 
     if (!getCoverImageContainter(track_desc, &container, &image)) {
-        return; // there is no cover available.
+		// there is no cover available.
+		const std::string& str = MakeString() << "Error occured while cover saving to file for " << track_desc << ". Reason: no available cover.";
+		BOOST_LOG_SEV(logger(), error) << str;
+		throw std::runtime_error(str);
     }
 
     if (!image) {
