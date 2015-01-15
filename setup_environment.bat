@@ -33,4 +33,4 @@ set HHC_EXECUTABLE_PATH=%ProgramFiles(x86)%\HTML Help Workshop\hhc.exe
 
 set PROJECT_VERSION_FILE=version.txt
 
-set FreeImage_VERSION=3.15.4
+set FreeImage_VERSION=3.16.0
