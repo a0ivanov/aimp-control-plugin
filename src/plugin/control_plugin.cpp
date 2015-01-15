@@ -214,11 +214,10 @@ void appendPathToPathEnvironmentVariable(boost::filesystem::wpath path)
     const LPCTSTR path_env = L"PATH"; 
     const DWORD buffer_size = GetEnvironmentVariable(path_env, nullptr, 0);
     if (buffer_size > 0) {
-        std::wstring value(buffer_size - 1, '\0');
-        GetEnvironmentVariable(path_env, const_cast<LPWSTR>(value.c_str()), buffer_size);
-        value += ';';
-        value += path.normalize().native();
-        SetEnvironmentVariable( path_env, value.c_str() );
+        std::wstring original_path(buffer_size - 1, '\0');
+		GetEnvironmentVariable(path_env, const_cast<LPWSTR>(original_path.c_str()), buffer_size);
+		std::wstring new_path = path.normalize().native() + L";" + original_path;
+		SetEnvironmentVariable(path_env, new_path.c_str());
     }
 }
 
