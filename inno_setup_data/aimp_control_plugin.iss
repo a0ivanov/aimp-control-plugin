@@ -53,9 +53,9 @@ AppendDefaultDirName=true
 
 [Languages]
 ; Language name is used on Donation page as {language} constant.
-Name: en; MessagesFile: inno_setup_data\English.isl; LicenseFile: Lisense-English.txt;
-Name: ru; MessagesFile: inno_setup_data\Russian.isl; LicenseFile: Lisense-Russian.txt;
-Name: cs; MessagesFile: inno_setup_data\Czech.isl;   LicenseFile: Lisense-English.txt;
+Name: en; MessagesFile: inno_setup_data\English.isl; LicenseFile: License-English.txt;
+Name: ru; MessagesFile: inno_setup_data\Russian.isl; LicenseFile: License-Russian.txt;
+Name: cs; MessagesFile: inno_setup_data\Czech.isl;   LicenseFile: License-English.txt;
 
 [Files]
 Source: "{#SrcApp}"; DestDir: "{code:GetPluginDllDestinationDir}"; DestName: "{#PluginWorkDirectoryName}.dll"; BeforeInstall: RemoveLegacyPluginExecutable; Flags: ignoreversion
