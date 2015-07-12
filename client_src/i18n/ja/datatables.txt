@@ -1,0 +1,17 @@
+{
+    "sProcessing": "トラックリストを読み込み中...",
+    "sLengthMenu": "1ページに表示するトラック数: _MENU_",
+    "sZeroRecords": "該当するトラックは見つかりません",
+    "sInfo": "_TOTAL_曲中_START_～_END_曲目を表示しています",
+    "sInfoEmtpy": "該当なし",
+    "sInfoFiltered": "(全_MAX_曲のうち該当するトラック)",
+    "sInfoPostFix": "",
+    "sSearch": "検索:",
+    "sUrl": "",
+    "oPaginate": {
+        "sFirst": "|＜",
+        "sPrevious": "＜",
+        "sNext": "＞",
+        "sLast": "＞|"
+    }
+}
