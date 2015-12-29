@@ -102,8 +102,9 @@ begin
                                                     );
   AimpVersionSelectionPage.Add('AIMP2');
   AimpVersionSelectionPage.Add('AIMP3');
+  AimpVersionSelectionPage.Add('AIMP4');
 
-  AimpVersionSelectionPage.SelectedValueIndex := 1; { default is AIMP3 }
+  AimpVersionSelectionPage.SelectedValueIndex := 2; { default is AIMP4 }
 
   BrowserScriptsDirPage := CreateInputDirPage(wpSelectDir,
                                               ExpandConstant('{cm:BrowserScriptsDirSelectionMsg1}'),
@@ -201,14 +202,15 @@ begin
 end;
 
 function IsAimp2(): Boolean; forward;
+function IsAimp3(): Boolean; forward;
 
 function GetAimpPlayerAppDataDirName(): String;
 begin
   { Return the name of AppData directory for selected AIMP player version }
-  if IsAimp2() then
-	  Result := 'AIMP'
+  if IsAimp3() then
+	  Result := 'AIMP3'
   else
-	  Result := 'AIMP3';
+	  Result := 'AIMP';
 end;
 
 function GetBrowserScriptsDir(Param: String): String;
@@ -220,6 +222,11 @@ end;
 function IsAimp2(): Boolean;
 begin
    Result := AimpVersionSelectionPage.SelectedValueIndex = 0;
+end;
+
+function IsAimp3(): Boolean;
+begin
+   Result := AimpVersionSelectionPage.SelectedValueIndex = 1;
 end;
 
 function GetPluginWorkDir(Param: String): String;
@@ -256,12 +263,14 @@ begin
   }
 end;
 
+function GetAimpIniFileName(): String; forward;
+
 function GetAimp3VersionCode(): Integer;
 var
     version: Longint;
     aimpIniFilePath: String;
 begin
-   aimpIniFilePath := ExpandConstant('{app}\..\AIMP3.ini');
+   aimpIniFilePath := ExpandConstant('{app}\..\' + GetAimpIniFileName());
    version := GetIniInt('System', 'Version', 0, 0, 555555, aimpIniFilePath);
    Log('Aimp version is: ' + IntToStr(version));
    
@@ -283,8 +292,19 @@ begin
   { Return the name of program directory for selected AIMP player version }
   if IsAimp2() then
     Result := 'AIMP2'
+  else if IsAimp3() then
+    Result := 'AIMP3'
   else
-    Result := 'AIMP3';
+    Result := 'AIMP'; // AIMP4+.
+end;
+
+function GetAimpIniFileName(): String;
+begin
+  { Return the name of ini file in program directory for selected AIMP player version }
+  if IsAimp3() then
+    Result := 'AIMP3.ini'
+  else
+    Result := 'AIMP.ini'; // AIMP4+, AIMP2 has no ini file in program directory.
 end;
 
 procedure RemoveLegacyPluginExecutable();
