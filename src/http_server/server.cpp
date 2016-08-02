@@ -67,7 +67,7 @@ Server::Server( boost::asio::io_service& io_service, RequestHandler& request_han
             open_specified_socket(endpoint.host, endpoint.port);
         } catch(std::exception& e) {
             using namespace Utilities;
-            throw std::runtime_error( MakeString() << "Error in "__FUNCTION__": Failed to start server on '"
+            throw std::runtime_error( MakeString() << "Error in " __FUNCTION__": Failed to start server on '"
                                                    << endpoint.host << "':" << endpoint.port << "' interface. Reason: " << e.what()
                                      );
         }
@@ -111,7 +111,7 @@ void Server::open_specified_socket(const std::string& address, const std::string
             BOOST_LOG_SEV(logger(), debug) << ip::tcp::endpoint(*endpoint_iter);
         }
     } catch(std::exception& e) {
-        throw std::runtime_error( MakeString() << "Error in "__FUNCTION__": Failed to resolve endpoint for ip '"
+        throw std::runtime_error( MakeString() << "Error in " __FUNCTION__": Failed to resolve endpoint for ip '"
                                                << address << "' and port '" << port << "'. Reason: " << e.what()
                                  );
     }
@@ -120,9 +120,9 @@ void Server::open_specified_socket(const std::string& address, const std::string
     try {
         start_accept_connections_on(endpoint);
     } catch(std::exception& e) { // this also handles boost::system::system_error exceptions from acceptor_ methods.
-        throw std::runtime_error( MakeString() << "Error in "__FUNCTION__": Failed to start server on " << endpoint << " interface. Reason: " << e.what() );
+        throw std::runtime_error( MakeString() << "Error in " __FUNCTION__": Failed to start server on " << endpoint << " interface. Reason: " << e.what() );
     } catch(...) {
-        throw std::runtime_error(MakeString() << "Error in "__FUNCTION__": Failed to start server on " << endpoint << " interface. Reason: unknown");
+        throw std::runtime_error(MakeString() << "Error in " __FUNCTION__": Failed to start server on " << endpoint << " interface. Reason: unknown");
     }
 }
 
@@ -170,7 +170,7 @@ void Server::handle_accept(IpTcpConnectionAcceptor_ptr acceptor,
                               );
         //BOOST_LOG_SEV(logger(), debug) << "Continue to wait for client connection";
     } else {
-        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__": " << e;
+        BOOST_LOG_SEV(logger(), error) << "Error in " __FUNCTION__": " << e;
     }
 }
 

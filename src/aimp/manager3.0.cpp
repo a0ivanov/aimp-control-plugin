@@ -262,10 +262,10 @@ void AIMPManager30::onStorageAdded(AIMP3SDK::HPLS handle)
         loadPlaylist(handle, playlist_index);
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     } catch (std::exception& e) {
-        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << handle << ". Reason: " << e.what();
+        BOOST_LOG_SEV(logger(), error) << "Error in " __FUNCTION__ << " for playlist with handle " << handle << ". Reason: " << e.what();
     } catch (...) {
         // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
-        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with handle " << handle;
+        BOOST_LOG_SEV(logger(), error) << "Unknown exception in " __FUNCTION__ << " for playlist with handle " << handle;
     }
 }
 
@@ -320,10 +320,10 @@ void AIMPManager30::onStorageChanged(AIMP3SDK::HPLS handle, DWORD flags)
 
         BOOST_LOG_SEV(logger(), debug) << "...onStorageChanged()";
     } catch (std::exception& e) {
-        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << handle << ". Reason: " << e.what();
+        BOOST_LOG_SEV(logger(), error) << "Error in " __FUNCTION__ << " for playlist with handle " << handle << ". Reason: " << e.what();
     } catch (...) {
         // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
-        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with handle " << handle;
+        BOOST_LOG_SEV(logger(), error) << "Unknown exception in " __FUNCTION__ << " for playlist with handle " << handle;
     }
 }
 
@@ -389,10 +389,10 @@ void AIMPManager30::onStorageRemoved(AIMP3SDK::HPLS handle)
                                 );
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     } catch (std::exception& e) {
-        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << handle << ". Reason: " << e.what();
+        BOOST_LOG_SEV(logger(), error) << "Error in " __FUNCTION__ << " for playlist with handle " << handle << ". Reason: " << e.what();
     } catch (...) {
         // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
-        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with handle " << handle;
+        BOOST_LOG_SEV(logger(), error) << "Unknown exception in " __FUNCTION__ << " for playlist with handle " << handle;
     }
 }
 
@@ -541,7 +541,7 @@ PlaylistCRC32& AIMPManager30::getPlaylistCRC32Object(PlaylistID playlist_id) con
     if (it != playlist_helpers_.end()) {
         return it->crc32_;
     }
-    throw std::runtime_error(MakeString() << "Playlist " << playlist_id << " was not found in "__FUNCTION__);
+    throw std::runtime_error(MakeString() << "Playlist " << playlist_id << " was not found in " __FUNCTION__);
 }
 
 crc32_t AIMPManager30::getPlaylistCRC32(PlaylistID playlist_id) const // throws std::runtime_error
@@ -583,7 +583,7 @@ void AIMPManager30::loadEntries(PlaylistID playlist_id) // throws std::runtime_e
         try {
             getPlaylistCRC32Object(playlist_id).reset_entries();
         } catch (std::exception& e) {
-            throw std::runtime_error(MakeString() << "expected crc32 struct for playlist " << playlist_id << " not found in "__FUNCTION__". Reason: " << e.what());
+            throw std::runtime_error(MakeString() << "expected crc32 struct for playlist " << playlist_id << " not found in " __FUNCTION__". Reason: " << e.what());
         }
     }
 
@@ -689,7 +689,7 @@ void AIMPManager30::startPlayback(TrackDescription track_desc) // throws std::ru
 {
     HRESULT r = aimp3_player_manager_->PlayEntry( castToHPLSENTRY( getAbsoluteEntryID(track_desc.track_id) ) );
     if (S_OK != r) {
-        throw std::runtime_error( MakeString() << "Error " << r << " in "__FUNCTION__" with " << track_desc );
+        throw std::runtime_error( MakeString() << "Error " << r << " in " __FUNCTION__" with " << track_desc );
     }
 }
 
@@ -779,25 +779,15 @@ void AIMPManager30::onAimpCoreMessage(DWORD AMessage, int AParam1, void* /*APara
         *AResult = E_NOTIMPL;
 
     } catch (std::exception& e) {
-        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << ": AMessage: " << AMessage << ", AParam1: " << AParam1 << ". Reason: " << e.what();
+        BOOST_LOG_SEV(logger(), error) << "Error in " __FUNCTION__ << ": AMessage: " << AMessage << ", AParam1: " << AParam1 << ". Reason: " << e.what();
     } catch (...) {
         // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
-        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << ": AMessage: " << AMessage << ", AParam1: " << AParam1;
+        BOOST_LOG_SEV(logger(), error) << "Unknown exception in " __FUNCTION__ << ": AMessage: " << AMessage << ", AParam1: " << AParam1;
     }
 }
 
 void AIMPManager30::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValue status_value)
 {
-    //try {
-    //    if ( FALSE == aimp2_controller_->AIMP_Status_Set(cast<AIMP2SDK_STATUS>(status), value) ) {
-    //        throw std::runtime_error(MakeString() << "Error occured while setting status " << asString(status) << " to value " << value);
-    //    }
-    //} catch (std::bad_cast& e) {
-    //    throw std::runtime_error( e.what() );
-    //}
-
-    //notifyAboutInternalEventOnStatusChange(status);
-
     using namespace AIMP3SDK;
     DWORD msg = 0;
     const int param1 = AIMP_MSG_PROPVALUE_SET;
@@ -919,9 +909,9 @@ void AIMPManager30::setStatus(AIMPManager::STATUS status, AIMPManager::StatusVal
     case STATUS_EQ_SLDR17:
     case STATUS_EQ_SLDR18: {
         msg = AIMP_MSG_PROPERTY_EQUALIZER_BAND;
-        const int param1 = MAKELONG(AIMP_MSG_PROPVALUE_SET, status - STATUS_EQ_SLDR01);
+        const int param1_local = MAKELONG(AIMP_MSG_PROPVALUE_SET, status - STATUS_EQ_SLDR01);
         float value = status_value / 100.f * 30.f - 15.f;
-        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        r = aimp3_core_unit_->MessageSend(msg, param1_local, &value);
         if (S_OK == r) {
             return;
         }
@@ -1159,9 +1149,9 @@ AIMPManager30::StatusValue AIMPManager30::getStatus(AIMPManager30::STATUS status
     case STATUS_EQ_SLDR17:
     case STATUS_EQ_SLDR18: {
         msg = AIMP_MSG_PROPERTY_EQUALIZER_BAND;
-        const int param1 = MAKELONG(AIMP_MSG_PROPVALUE_GET, status - STATUS_EQ_SLDR01);
+        const int param1_local = MAKELONG(AIMP_MSG_PROPVALUE_GET, status - STATUS_EQ_SLDR01);
         float value;
-        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        r = aimp3_core_unit_->MessageSend(msg, param1_local, &value);
         if (S_OK == r) {
             return static_cast<StatusValue>((value + 15.f) / 30.f * 100.f);
         }
@@ -1257,19 +1247,19 @@ AIMPManager30::StatusValue AIMPManager30::getStatus(AIMPManager30::STATUS status
     case STATUS_PL_HWND:
     case STATUS_EQ_HWND: {
         msg = AIMP_MSG_PROPERTY_HWND;
-        int param1 = 0;
+        int param1_local = 0;
         switch (status) {
-        case STATUS_MAIN_HWND: param1 = AIMP_MPH_MAINFORM; break;
-        case STATUS_APP_HWND:  param1 = AIMP_MPH_APPLICATION; break;
-        case STATUS_TC_HWND:   param1 = AIMP_MPH_TRAYCONTROL; break;
-        case STATUS_PL_HWND:   param1 = AIMP_MPH_PLAYLISTFORM; break;
-        case STATUS_EQ_HWND:   param1 = AIMP_MPH_EQUALIZERFORM; break;
+        case STATUS_MAIN_HWND: param1_local = AIMP_MPH_MAINFORM; break;
+        case STATUS_APP_HWND:  param1_local = AIMP_MPH_APPLICATION; break;
+        case STATUS_TC_HWND:   param1_local = AIMP_MPH_TRAYCONTROL; break;
+        case STATUS_PL_HWND:   param1_local = AIMP_MPH_PLAYLISTFORM; break;
+        case STATUS_EQ_HWND:   param1_local = AIMP_MPH_EQUALIZERFORM; break;
         default:
             assert(!"unknown status");
             break;
         }
         HWND value;
-        r = aimp3_core_unit_->MessageSend(msg, param1, &value);
+        r = aimp3_core_unit_->MessageSend(msg, param1_local, &value);
         if (S_OK == r) {
             return reinterpret_cast<StatusValue>(value);
         }
@@ -1367,12 +1357,12 @@ PlaylistEntryID AIMPManager30::getPlayingEntry() const
                                                                   &internal_playing_entry_index, sizeof(internal_playing_entry_index) 
                                                                  );
     if (S_OK != r) {
-        throw std::runtime_error(MakeString() << "Error " << r << " in StoragePropertyGetValue(AIMP_PLAYLIST_STORAGE_PROPERTY_PLAYINGINDEX) in "__FUNCTION__);
+        throw std::runtime_error(MakeString() << "Error " << r << " in StoragePropertyGetValue(AIMP_PLAYLIST_STORAGE_PROPERTY_PLAYINGINDEX) in " __FUNCTION__);
     }
 
     const HPLSENTRY entry_handle = aimp3_playlist_manager_->StorageGetEntry(playlist_handle, internal_playing_entry_index);
     if (S_OK != r) {
-        throw std::runtime_error(MakeString() << "Error " << r << " in StorageGetEntry in "__FUNCTION__);
+        throw std::runtime_error(MakeString() << "Error " << r << " in StorageGetEntry in " __FUNCTION__);
     }
 
     return castToPlaylistEntryID(entry_handle);
@@ -1419,7 +1409,7 @@ void AIMPManager30::enqueueEntryForPlay(TrackDescription track_desc, bool insert
 
     HRESULT r = aimp3_playlist_manager_->QueueEntryAdd(entry_handle, insert_at_queue_beginning);
     if (S_OK != r) {
-        throw std::runtime_error(MakeString() << "Error " << r << " in "__FUNCTION__" with " << track_desc);
+        throw std::runtime_error(MakeString() << "Error " << r << " in " __FUNCTION__" with " << track_desc);
     }
 }
 
@@ -1430,7 +1420,7 @@ void AIMPManager30::removeEntryFromPlayQueue(TrackDescription track_desc) // thr
 
     HRESULT r = aimp3_playlist_manager_->QueueEntryRemove(entry_handle);
     if (S_OK != r) {
-        throw std::runtime_error(MakeString() << "Error " << r << " in "__FUNCTION__" with " << track_desc);
+        throw std::runtime_error(MakeString() << "Error " << r << " in " __FUNCTION__" with " << track_desc);
     }
 }
 
@@ -1455,7 +1445,7 @@ void AIMPManager30::saveCoverToFile(TrackDescription track_desc, const std::wstr
 std::auto_ptr<ImageUtils::AIMPCoverImage> AIMPManager30::getCoverImage(TrackDescription track_desc, int cover_width, int cover_height) const
 {
     if (cover_width < 0 || cover_height < 0) {
-        throw std::invalid_argument(MakeString() << "Error in "__FUNCTION__ << ". Negative cover size.");
+        throw std::invalid_argument(MakeString() << "Error in " __FUNCTION__ << ". Negative cover size.");
     }
 
     const std::wstring& entry_filename = getEntryField<std::wstring>(playlists_db_, "filename", track_desc.track_id);
@@ -1537,7 +1527,7 @@ void getEntryField_(sqlite3* db, const char* field, PlaylistEntryID entry_id, st
 		}
     }
 
-    throw std::runtime_error(MakeString() << "Error in "__FUNCTION__ << ". Entry " << entry_id << " does not exist");
+    throw std::runtime_error(MakeString() << "Error in " __FUNCTION__ << ". Entry " << entry_id << " does not exist");
 }
 
 template<>
@@ -1547,7 +1537,7 @@ std::wstring getEntryField(sqlite3* db, const char* field, PlaylistEntryID entry
     auto handler = [&](sqlite3_stmt* stmt) {
         assert(sqlite3_column_type(stmt, 0) == SQLITE_TEXT);
         if (sqlite3_column_type(stmt, 0) != SQLITE_TEXT) {
-            throw std::runtime_error(MakeString() << "Unexpected column type at "__FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Entry " << entry_id);
+            throw std::runtime_error(MakeString() << "Unexpected column type at " __FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Entry " << entry_id);
         }
         r = static_cast<const std::wstring::value_type*>(sqlite3_column_text16(stmt, 0));
     };
@@ -1562,7 +1552,7 @@ DWORD getEntryField(sqlite3* db, const char* field, PlaylistEntryID entry_id)
     auto handler = [&](sqlite3_stmt* stmt) {
         assert(sqlite3_column_type(stmt, 0) == SQLITE_INTEGER);
         if (sqlite3_column_type(stmt, 0) != SQLITE_INTEGER) {
-            throw std::runtime_error(MakeString() << "Unexpected column type at "__FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Entry " << entry_id);
+            throw std::runtime_error(MakeString() << "Unexpected column type at " __FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Entry " << entry_id);
         }
         r = static_cast<DWORD>(sqlite3_column_int(stmt, 0));
     };
@@ -1577,7 +1567,7 @@ INT64 getEntryField(sqlite3* db, const char* field, PlaylistEntryID entry_id)
     auto handler = [&](sqlite3_stmt* stmt) {
         assert(sqlite3_column_type(stmt, 0) == SQLITE_INTEGER);
         if (sqlite3_column_type(stmt, 0) != SQLITE_INTEGER) {
-            throw std::runtime_error(MakeString() << "Unexpected column type at "__FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Entry " << entry_id);
+            throw std::runtime_error(MakeString() << "Unexpected column type at " __FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Entry " << entry_id);
         }
         r = sqlite3_column_int64(stmt, 0);
     };
@@ -1592,7 +1582,7 @@ double getEntryField(sqlite3* db, const char* field, PlaylistEntryID entry_id)
     auto handler = [&](sqlite3_stmt* stmt) {
         assert(sqlite3_column_type(stmt, 0) == SQLITE_FLOAT);
         if (sqlite3_column_type(stmt, 0) != SQLITE_FLOAT) {
-            throw std::runtime_error(MakeString() << "Unexpected column type at "__FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Entry " << entry_id);
+            throw std::runtime_error(MakeString() << "Unexpected column type at " __FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Entry " << entry_id);
         }
         r = sqlite3_column_double(stmt, 0);
     };
@@ -1639,7 +1629,7 @@ std::wstring AIMPManager30::getFormattedEntryTitle(TrackDescription track_desc, 
     HRESULT r = aimp3_playlist_manager_->EntryPropertyGetValue( entry_handle, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_INFO,
                                                                 &file_info_helper.getEmptyFileInfo(), sizeof(file_info_helper.getEmptyFileInfo()) ); 
     if (S_OK != r) {
-        throw std::runtime_error(MakeString() << "Error of IAIMPAddonsPlaylistManager::EntryPropertyGetValue() " << r << " in "__FUNCTION__" with " << format_string_utf8);
+        throw std::runtime_error(MakeString() << "Error of IAIMPAddonsPlaylistManager::EntryPropertyGetValue() " << r << " in " __FUNCTION__" with " << format_string_utf8);
     }
     
     PWCHAR formatted_string = nullptr;
@@ -1650,7 +1640,7 @@ std::wstring AIMPManager30::getFormattedEntryTitle(TrackDescription track_desc, 
                                                 &formatted_string
                                               );
     if (S_OK != r) {
-        throw std::runtime_error(MakeString() << "Error of IAIMPAddonsPlaylistManager::FormatString() " << r << " in "__FUNCTION__" with " << format_string_utf8);
+        throw std::runtime_error(MakeString() << "Error of IAIMPAddonsPlaylistManager::FormatString() " << r << " in " __FUNCTION__" with " << format_string_utf8);
     }
 
     return formatted_string;
@@ -1677,7 +1667,7 @@ void AIMPManager30::trackRating(TrackDescription track_desc, double rating) // t
     int rating_int = static_cast<int>(rating);
     HRESULT r = aimp3_playlist_manager_->EntryPropertySetValue( entry_handle, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_MARK, &rating_int, sizeof(rating_int) );    
     if (S_OK != r) {
-        throw std::runtime_error(MakeString() << "Error " << r << " in "__FUNCTION__", track " << track_desc);
+        throw std::runtime_error(MakeString() << "Error " << r << " in " __FUNCTION__", track " << track_desc);
     }  
     // Note: at this point entry does not exist any more, since EntryPropertySetValue forces calling of onStorageChanged() so, entries are reloaded.
 }
@@ -1859,12 +1849,12 @@ void AIMPManager30::removeTrack(TrackDescription track_desc, bool physically) //
         HRESULT r = aimp3_playlist_manager_->EntryPropertyGetValue( entry_handle, AIMP3SDK::AIMP_PLAYLIST_ENTRY_PROPERTY_INFO,
                                                                     &file_info_helper.getEmptyFileInfo(), sizeof(file_info_helper.getEmptyFileInfo()) ); 
         if (S_OK != r) {
-            throw std::runtime_error(MakeString() << "Error of IAIMPAddonsPlaylistManager::EntryPropertyGetValue() " << r << " in "__FUNCTION__" with " << track_desc);
+            throw std::runtime_error(MakeString() << "Error of IAIMPAddonsPlaylistManager::EntryPropertyGetValue() " << r << " in " __FUNCTION__" with " << track_desc);
         }
 
         r = aimp3_playlist_manager_->StorageDeleteByFilter(playlist_handle, physically,	&Filter::needToRemove, &file_info_helper.getFileInfo());
         if (S_OK != r) {
-            throw std::runtime_error(MakeString() << "Error of IAIMPAddonsPlaylistManager::StorageDeleteByFilter() " << r << " in "__FUNCTION__" with " << track_desc);
+            throw std::runtime_error(MakeString() << "Error of IAIMPAddonsPlaylistManager::StorageDeleteByFilter() " << r << " in " __FUNCTION__" with " << track_desc);
         } 
     } else {
         int index;

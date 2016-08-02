@@ -1109,7 +1109,7 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
         } else {
             if (!free_image_dll_is_available_) {
                 Rpc::Exception e("Getting cover failed. Reason: FreeImage DLLs are not available.", ALBUM_COVER_LOAD_FAILED);
-                BOOST_LOG_SEV(logger(), error) << "Getting cover failed in "__FUNCTION__ << ". Reason: " << e.message();
+                BOOST_LOG_SEV(logger(), error) << "Getting cover failed in " __FUNCTION__ << ". Reason: " << e.message();
                 throw e;
             }
 
@@ -1123,10 +1123,10 @@ ResponseType GetCover::execute(const Rpc::Value& root_request, Rpc::Value& root_
         const int* cover_hash_ptr = cover_hash ? &cover_hash_code : nullptr;
         cache_.cacheNew(track_desc, album_cover_filename, cover_uri_generic, cover_hash_ptr);
     } catch (fs::filesystem_error& e) {
-        BOOST_LOG_SEV(logger(), error) << "Getting cover failed in "__FUNCTION__ << ". Reason: " << e.what();
+        BOOST_LOG_SEV(logger(), error) << "Getting cover failed in " __FUNCTION__ << ". Reason: " << e.what();
         throw Rpc::Exception("Getting cover failed. Reason: bad temporary directory for store covers.", ALBUM_COVER_LOAD_FAILED);
     } catch (std::exception& e) {
-        BOOST_LOG_SEV(logger(), error) << "Getting cover failed in "__FUNCTION__ << ". Reason: " << e.what();
+        BOOST_LOG_SEV(logger(), error) << "Getting cover failed in " __FUNCTION__ << ". Reason: " << e.what();
         throw Rpc::Exception("Getting cover failed. Reason: album cover extraction or saving error.", ALBUM_COVER_LOAD_FAILED);
     }
     return RESPONSE_IMMEDIATE;
@@ -1326,8 +1326,8 @@ void SubscribeOnAIMPStateUpdateEvent::prepareResponse(EVENTS event_id, Rpc::Valu
         RpcResultUtils::setPlaylistsContentChangeInfo(aimp_manager_, result);
         break;
     default:
-        assert(!"Unsupported event ID in "__FUNCTION__);
-        BOOST_LOG_SEV(logger(), error) << "Unsupported event ID " << event_id << " in "__FUNCTION__;
+        assert(!"Unsupported event ID in " __FUNCTION__);
+        BOOST_LOG_SEV(logger(), error) << "Unsupported event ID " << event_id << " in " __FUNCTION__;
     }
 }
 
@@ -1438,7 +1438,7 @@ ResponseType SetTrackRating::execute(const Rpc::Value& root_request, Rpc::Value&
         try {
             rating_manager->trackRating(track_desc, rating);
         } catch (std::exception& e) {
-            BOOST_LOG_SEV(logger(), error) << "Error saving rating in "__FUNCTION__". Reason: " << e.what();
+            BOOST_LOG_SEV(logger(), error) << "Error saving rating in " __FUNCTION__". Reason: " << e.what();
             throw Rpc::Exception("Error saving rating.", RATING_SET_FAILED);
         }
     } else {
@@ -1454,7 +1454,7 @@ ResponseType SetTrackRating::execute(const Rpc::Value& root_request, Rpc::Value&
                 throw std::exception("Ratings file can not be opened.");
             }
         } catch (std::exception& e) {
-            BOOST_LOG_SEV(logger(), error) << "Error saving rating to text file in "__FUNCTION__". Reason: " << e.what();
+            BOOST_LOG_SEV(logger(), error) << "Error saving rating to text file in " __FUNCTION__". Reason: " << e.what();
             throw Rpc::Exception("Error saving rating to text file.", RATING_SET_FAILED);
         }
     }
@@ -1569,9 +1569,9 @@ void RemoveTrack::onTimerDeleteTrack(const fs::path& filename, RemoveTrack::Resp
             return;
         }
 
-        BOOST_LOG_SEV(logger(), error) << "Error of fs::remove in "__FUNCTION__". File: " << StringEncoding::utf16_to_utf8(filename.native()) << ". Reason: " << ec;
+        BOOST_LOG_SEV(logger(), error) << "Error of fs::remove in " __FUNCTION__". File: " << StringEncoding::utf16_to_utf8(filename.native()) << ". Reason: " << ec;
     } else if (e != boost::asio::error::operation_aborted) { // "operation_aborted" error code is sent when timer is cancelled.
-        BOOST_LOG_SEV(logger(), error) << "err:"__FUNCTION__" timer error:" << e;
+        BOOST_LOG_SEV(logger(), error) << "err:" __FUNCTION__" timer error:" << e;
     }
 
     response_sender_descriptor.sender->sendResponseFault(response_sender_descriptor.root_request, "Removing track failed", REMOVE_TRACK_FAILED);
@@ -1679,11 +1679,11 @@ void Scheduler::onTimerStopPlayback(const boost::system::error_code& e)
     if (!e) { // Timer expired normally.
         aimp_manager_.stopPlayback();
 
-        BOOST_LOG_SEV(logger(), info) << "playback has been stopped by timer. "__FUNCTION__;
+        BOOST_LOG_SEV(logger(), info) << "playback has been stopped by timer. " __FUNCTION__;
 
         timer_.reset();
     } else if (e != boost::asio::error::operation_aborted) { // "operation_aborted" error code is sent when timer is cancelled.
-        BOOST_LOG_SEV(logger(), error) << "err:"__FUNCTION__" timer error:" << e;
+        BOOST_LOG_SEV(logger(), error) << "err:" __FUNCTION__" timer error:" << e;
     }
 }
 
@@ -1693,14 +1693,14 @@ void Scheduler::onTimerPausePlayback(const boost::system::error_code& e)
 
         if (aimp_manager_.getPlaybackState() == AIMPManager::PLAYBACK_STATE::PLAYING) {
             aimp_manager_.pausePlayback();
-            BOOST_LOG_SEV(logger(), info) << "playback has been paused by timer. "__FUNCTION__;
+            BOOST_LOG_SEV(logger(), info) << "playback has been paused by timer. " __FUNCTION__;
         } else {
-            BOOST_LOG_SEV(logger(), info) << "Pausing playback by timer has been skipped because of player state " << aimp_manager_.getPlaybackState() << " in "__FUNCTION__;
+            BOOST_LOG_SEV(logger(), info) << "Pausing playback by timer has been skipped because of player state " << aimp_manager_.getPlaybackState() << " in " __FUNCTION__;
         }
 
         timer_.reset();
     } else if (e != boost::asio::error::operation_aborted) { // "operation_aborted" error code is sent when timer is cancelled.
-        BOOST_LOG_SEV(logger(), error) << "err:"__FUNCTION__" timer error:" << e;
+        BOOST_LOG_SEV(logger(), error) << "err:" __FUNCTION__" timer error:" << e;
     }
 }
 
@@ -1708,12 +1708,12 @@ void Scheduler::onTimerMachineShutdown(const boost::system::error_code& e)
 {
     if (!e) { // Timer expired normally.
         if (PowerManagement::SystemShutdown()) {
-            BOOST_LOG_SEV(logger(), info) << "Machine has been shut down by timer. "__FUNCTION__;
+            BOOST_LOG_SEV(logger(), info) << "Machine has been shut down by timer. " __FUNCTION__;
         }
 
         timer_.reset();
     } else if (e != boost::asio::error::operation_aborted) { // "operation_aborted" error code is sent when timer is cancelled.
-        BOOST_LOG_SEV(logger(), error) << "err:"__FUNCTION__" timer error:" << e;
+        BOOST_LOG_SEV(logger(), error) << "err:" __FUNCTION__" timer error:" << e;
     }
 }
 
@@ -1721,12 +1721,12 @@ void Scheduler::onTimerMachineHibernate(const boost::system::error_code& e)
 {
     if (!e) { // Timer expired normally.
         if (PowerManagement::SystemHibernate()) {
-            BOOST_LOG_SEV(logger(), info) << "Machine has been hibernated by timer. "__FUNCTION__;
+            BOOST_LOG_SEV(logger(), info) << "Machine has been hibernated by timer. " __FUNCTION__;
         }
 
         timer_.reset();
     } else if (e != boost::asio::error::operation_aborted) { // "operation_aborted" error code is sent when timer is cancelled.
-        BOOST_LOG_SEV(logger(), error) << "err:"__FUNCTION__" timer error:" << e;
+        BOOST_LOG_SEV(logger(), error) << "err:" __FUNCTION__" timer error:" << e;
     }
 }
 
@@ -1734,12 +1734,12 @@ void Scheduler::onTimerMachineSleep(const boost::system::error_code& e)
 {
     if (!e) { // Timer expired normally.
         if (PowerManagement::SystemSleep()) {
-            BOOST_LOG_SEV(logger(), info) << "Machine has been set to sleep mode by timer. "__FUNCTION__;
+            BOOST_LOG_SEV(logger(), info) << "Machine has been set to sleep mode by timer. " __FUNCTION__;
         }
 
         timer_.reset();
     } else if (e != boost::asio::error::operation_aborted) { // "operation_aborted" error code is sent when timer is cancelled.
-        BOOST_LOG_SEV(logger(), error) << "err:"__FUNCTION__" timer error:" << e;
+        BOOST_LOG_SEV(logger(), error) << "err:" __FUNCTION__" timer error:" << e;
     }
 }
 

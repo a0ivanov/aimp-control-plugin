@@ -6,7 +6,7 @@ namespace AIMP36SDK
 namespace Support 
 {
 
-inline const char* FileinfoPropIdToString(int id)
+inline const char* FileinfoPropIdToString(int id) // throws std::runtime_error
 {
     switch (id)
     {
@@ -49,12 +49,10 @@ inline const char* FileinfoPropIdToString(int id)
     casePropIdToStr(AIMP_FILEINFO_PROPID_STAT_RATING);
 #undef casePropIdToStr
     }
-    throw std::bad_cast( std::string(Utilities::MakeString() << __FUNCTION__": can't convert id " << id << " to string"
-                                     ).c_str()
-                        );
+    throw std::runtime_error(Utilities::MakeString() << __FUNCTION__": can't convert id " << id << " to string");
 }
 
-inline const char* PlaylistItemToString(int id)
+inline const char* PlaylistItemToString(int id) // throws std::runtime_error
 {
     switch (id)
     {
@@ -71,9 +69,7 @@ inline const char* PlaylistItemToString(int id)
     casePropIdToStr(AIMP_PLAYLISTITEM_PROPID_PLAYBACKQUEUEINDEX);
 #undef casePropIdToStr
     }
-    throw std::bad_cast( std::string(Utilities::MakeString() << __FUNCTION__": can't convert id " << id << " to string"
-                                     ).c_str()
-                        );
+    throw std::runtime_error(Utilities::MakeString() << __FUNCTION__": can't convert id " << id << " to string");
 }
 
 } // namespace Support

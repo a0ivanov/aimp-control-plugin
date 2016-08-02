@@ -31,10 +31,19 @@ bool HibernationEnabled()
 
     #pragma warning (push, 4)
     #pragma warning( disable : 4800 )
-    BOOST_LOG_SEV(logger(), debug) << "systemPowerCapabilities.Hiberboot: " << (bool)systemPowerCapabilities.Hiberboot;
+    // Below SDK version check is required for Windows XP support(when platform toolset is set to v140_xp, for example).
+    bool hiberbootEnabled =
+#if _WIN32_WINNT <= _WIN32_WINNT_WIN7
+        systemPowerCapabilities.spare2[0]
+#else
+        systemPowerCapabilities.Hiberboot // enabled in Windows 8+.
+#endif
+    ;
     #pragma warning (pop)
-
-    return !!systemPowerCapabilities.Hiberboot;
+    
+    BOOST_LOG_SEV(logger(), debug) << "systemPowerCapabilities.Hiberboot: " << hiberbootEnabled;
+    
+    return hiberbootEnabled;
 }
 
 bool SleepEnabled()

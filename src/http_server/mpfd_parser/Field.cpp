@@ -32,9 +32,9 @@ MPFD::Field::~Field() {
 
 }
 
-void MPFD::Field::SetType(int type) {
-    if ((type == TextType) || (type == FileType)) {
-	this->type = type;
+void MPFD::Field::SetType(int type_arg) {
+    if ((type_arg == TextType) || (type_arg == FileType)) {
+	this->type = type_arg;
     } else {
 	throw MPFD::Exception("Trying to set type of field, but type is incorrect.");
     }
@@ -196,8 +196,8 @@ void MPFD::Field::SetUploadedFilesStorage(int where) {
     WhereToStoreUploadedFiles = where;
 }
 
-void MPFD::Field::SetFileContentType(std::string type) {
-    FileContentType = type;
+void MPFD::Field::SetFileContentType(std::string type_arg) {
+    FileContentType = type_arg;
 }
 
 std::string MPFD::Field::GetFileMimeType() {

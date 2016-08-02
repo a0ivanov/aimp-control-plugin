@@ -167,7 +167,7 @@ struct HelperFillRpcFields
                 setter->second(stmt, index, fields[field_id]); // invoke functor, that will assign value to fields[field_id].
             } catch (std::exception& e) {
                 BOOST_LOG_SEV(logger(), error) << "Error occured while filling AIMP " << logger_msg_id_ << " field " << field_id << ". Reason: " << e.what();
-                assert(!"Error occured while filling field in"__FUNCTION__);
+                assert(!"Error occured while filling field in" __FUNCTION__);
                 fields[field_id] = std::string();
             }
             ++index;
@@ -187,7 +187,7 @@ struct HelperFillRpcFields
                 BOOST_LOG_SEV(logger(), error) << "Error occured while filling AIMP " << logger_msg_id_
                                                << " field " << setter->first << ", field index " << index
                                                << ". Reason: " << e.what();
-                assert(!"Error occured while filling field in"__FUNCTION__);
+                assert(!"Error occured while filling field in" __FUNCTION__);
                 fields[index] = std::string();
             }
             ++index;

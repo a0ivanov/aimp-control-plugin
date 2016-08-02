@@ -37,9 +37,9 @@ LogManager::~LogManager()
     stopLog();
 }
 
-bool LogManager::logInModuleEnabled(boost::log::value_ref<std::string, tag::channel > const& channel) const
+bool LogManager::logInModuleEnabled(boost::log::value_ref<std::string, tag::channel > const& channel_arg) const
 {
-	return modules_to_log_.find(channel.get()) != modules_to_log_.end();
+	return modules_to_log_.find(channel_arg.get()) != modules_to_log_.end();
 }
 
 /*
@@ -210,9 +210,9 @@ void LogManager::stopLog()
     }
 }
 
-void LogManager::setSeverity(int severity)
+void LogManager::setSeverity(int severity_arg)
 {
-    severity_ = static_cast<SEVERITY_LEVELS>( Utilities::limit_value<int>( severity,
+    severity_ = static_cast<SEVERITY_LEVELS>( Utilities::limit_value<int>(severity_arg,
                                                                            debug,
                                                                            severity_levels_count - 1
                                                                          )

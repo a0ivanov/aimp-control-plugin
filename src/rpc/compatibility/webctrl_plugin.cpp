@@ -800,7 +800,7 @@ Rpc::ResponseType EmulationOfWebCtlPlugin::execute(const Rpc::Value& root_reques
 
         root_response["result"] = out.str(); // result is simple string.
     } catch (std::runtime_error& e) { // catch all exceptions of aimp manager here.
-        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__". Reason: " << e.what();
+        BOOST_LOG_SEV(logger(), error) << "Error in " __FUNCTION__". Reason: " << e.what();
 
         root_response["result"] = "";
     }

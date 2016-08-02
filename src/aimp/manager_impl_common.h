@@ -67,7 +67,7 @@ inline const char* asString(AIMPManager::STATUS status)
         break;
     }
 
-    assert(!"unknown status in "__FUNCTION__);
+    assert(!"unknown status in " __FUNCTION__);
     static std::string status_string;
     std::stringstream os;
     os << static_cast<int>(status);

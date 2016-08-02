@@ -40,8 +40,8 @@ void setCurrentPlaybackState(AIMPManager::PLAYBACK_STATE playback_state, Rpc::Va
         }
     }
 
-    BOOST_LOG_SEV(logger(), error) << "Unknown playback state " << playback_state << " in "__FUNCTION__;
-    assert(!"Unknown playback state in "__FUNCTION__);
+    BOOST_LOG_SEV(logger(), error) << "Unknown playback state " << playback_state << " in " __FUNCTION__;
+    assert(!"Unknown playback state in " __FUNCTION__);
     result["playback_state"] = "unknown";
 }
 
@@ -107,7 +107,7 @@ void setIsCurrentTrackSourceRadioIfPossible(const AIMPManager& aimp_manager, Rpc
             TrackDescription playing_track = aimp_manager.getPlayingTrack();
             result["current_track_source_radio"] = aimp_manager.getTrackSourceType(playing_track) == AIMPManager::SOURCE_TYPE_RADIO;
         } catch (std::exception& e) {
-            BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << ". Skip setting of current_track_source_radio field. Reason: " << e.what();
+            BOOST_LOG_SEV(logger(), error) << "Error in " __FUNCTION__ << ". Skip setting of current_track_source_radio field. Reason: " << e.what();
         }
     }
 }
@@ -123,7 +123,7 @@ void setCurrentPlayingSourceInfo(const AIMPManager& aimp_manager, Rpc::Value& re
         playlistID.value = aimp_manager.getPlayingPlaylist();
         playlistID.valid = true;
     } catch (std::exception& e) {
-        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << ". Skip setting of playing playlist ID. Reason: " << e.what();
+        BOOST_LOG_SEV(logger(), error) << "Error in " __FUNCTION__ << ". Skip setting of playing playlist ID. Reason: " << e.what();
     }
 
     struct {
@@ -135,7 +135,7 @@ void setCurrentPlayingSourceInfo(const AIMPManager& aimp_manager, Rpc::Value& re
         playlistEntryID.value = aimp_manager.getPlayingEntry();
         playlistEntryID.valid = true;
     } catch (std::exception& e) {
-        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << ". Skip setting of playing playlist entry ID. Reason: " << e.what();
+        BOOST_LOG_SEV(logger(), error) << "Error in " __FUNCTION__ << ". Skip setting of playing playlist entry ID. Reason: " << e.what();
     }
 
     if (playlistID.valid) {

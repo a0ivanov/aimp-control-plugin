@@ -351,10 +351,10 @@ void AIMPManager36::playlistAdded(IAIMPPlaylist* playlist)
         loadEntries(playlist);
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     } catch (std::exception& e) {
-        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with handle " << cast<PlaylistID>(playlist) << ". Reason: " << e.what();
+        BOOST_LOG_SEV(logger(), error) << "Error in " __FUNCTION__ << " for playlist with handle " << cast<PlaylistID>(playlist) << ". Reason: " << e.what();
     } catch (...) {
         // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
-        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with handle " << cast<PlaylistID>(playlist);
+        BOOST_LOG_SEV(logger(), error) << "Unknown exception in " __FUNCTION__ << " for playlist with handle " << cast<PlaylistID>(playlist);
     }
 }
 
@@ -369,10 +369,10 @@ void AIMPManager36::playlistRemoved(AIMP36SDK::IAIMPPlaylist* playlist)
 
         notifyAllExternalListeners(EVENT_PLAYLISTS_CONTENT_CHANGE);
     } catch (std::exception& e) {
-        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with playlist_id " << cast<PlaylistID>(playlist) << ". Reason: " << e.what();
+        BOOST_LOG_SEV(logger(), error) << "Error in " __FUNCTION__ << " for playlist with playlist_id " << cast<PlaylistID>(playlist) << ". Reason: " << e.what();
     } catch (...) {
         // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
-        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with playlist_id " << cast<PlaylistID>(playlist);
+        BOOST_LOG_SEV(logger(), error) << "Unknown exception in " __FUNCTION__ << " for playlist with playlist_id " << cast<PlaylistID>(playlist);
     }
 }
 
@@ -389,10 +389,10 @@ void AIMPManager36::playlistChanged(AIMP36SDK::IAIMPPlaylist* playlist, DWORD fl
 
         BOOST_LOG_SEV(logger(), debug) << "...playlistChanged()";
     } catch (std::exception& e) {
-        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << " for playlist with id " << cast<PlaylistID>(playlist) << ". Reason: " << e.what();
+        BOOST_LOG_SEV(logger(), error) << "Error in " __FUNCTION__ << " for playlist with id " << cast<PlaylistID>(playlist) << ". Reason: " << e.what();
     } catch (...) {
         // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
-        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << " for playlist with id " << cast<PlaylistID>(playlist);
+        BOOST_LOG_SEV(logger(), error) << "Unknown exception in " __FUNCTION__ << " for playlist with id " << cast<PlaylistID>(playlist);
     }
 }
 
@@ -875,7 +875,7 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
         try {
             getPlaylistCRC32Object(playlist_id).reset_entries();
         } catch (std::exception& e) {
-            throw std::runtime_error(MakeString() << "expected crc32 struct for playlist " << playlist_id << " not found in "__FUNCTION__". Reason: " << e.what());
+            throw std::runtime_error(MakeString() << "expected crc32 struct for playlist " << playlist_id << " not found in " __FUNCTION__". Reason: " << e.what());
         }
     }
 
@@ -1272,11 +1272,11 @@ void AIMPManager36::onAimpCoreMessage(DWORD AMessage, int AParam1, void* /*APara
         }
         *AResult = E_NOTIMPL;
     } catch (std::exception& e) {
-        BOOST_LOG_SEV(logger(), error) << "Error in "__FUNCTION__ << ": AMessage: " << AMessage << ", AParam1: " << AParam1 << ". Reason: " << e.what();
+        BOOST_LOG_SEV(logger(), error) << "Error in " __FUNCTION__ << ": AMessage: " << AMessage << ", AParam1: " << AParam1 << ". Reason: " << e.what();
         *AResult = E_NOTIMPL;
     } catch (...) {
         // we can't propagate exception from here since it is called from AIMP. Just log unknown error.
-        BOOST_LOG_SEV(logger(), error) << "Unknown exception in "__FUNCTION__ << ": AMessage: " << AMessage << ", AParam1: " << AParam1;
+        BOOST_LOG_SEV(logger(), error) << "Unknown exception in " __FUNCTION__ << ": AMessage: " << AMessage << ", AParam1: " << AParam1;
         *AResult = E_NOTIMPL;
     }
 }
@@ -1411,9 +1411,9 @@ AIMPManager::StatusValue AIMPManager36::getStatus(AIMPManager::STATUS status) co
     case STATUS_EQ_SLDR17:
     case STATUS_EQ_SLDR18: {
         msg = AIMP_MSG_PROPERTY_EQUALIZER_BAND;
-        const int param1 = MAKELONG(AIMP_MSG_PROPVALUE_GET, status - STATUS_EQ_SLDR01);
+        const int param1_local = MAKELONG(AIMP_MSG_PROPVALUE_GET, status - STATUS_EQ_SLDR01);
         float value;
-        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        r = aimp_service_message_dispatcher_->Send(msg, param1_local, &value);
         if (S_OK == r) {
             return static_cast<StatusValue>((value + 15.f) / 30.f * 100.f);
         }
@@ -1509,19 +1509,19 @@ AIMPManager::StatusValue AIMPManager36::getStatus(AIMPManager::STATUS status) co
     case STATUS_PL_HWND:
     case STATUS_EQ_HWND: {
         msg = AIMP_MSG_PROPERTY_HWND;
-        int param1 = 0;
+        int param1_local = 0;
         switch (status) {
-        case STATUS_MAIN_HWND: param1 = AIMP_MPH_MAINFORM; break;
-        case STATUS_APP_HWND:  param1 = AIMP_MPH_APPLICATION; break;
-        case STATUS_TC_HWND:   param1 = AIMP_MPH_TRAYCONTROL; break;
-        case STATUS_PL_HWND:   param1 = AIMP_MPH_PLAYLISTFORM; break;
-        case STATUS_EQ_HWND:   param1 = AIMP_MPH_EQUALIZERFORM; break;
+        case STATUS_MAIN_HWND: param1_local = AIMP_MPH_MAINFORM; break;
+        case STATUS_APP_HWND:  param1_local = AIMP_MPH_APPLICATION; break;
+        case STATUS_TC_HWND:   param1_local = AIMP_MPH_TRAYCONTROL; break;
+        case STATUS_PL_HWND:   param1_local = AIMP_MPH_PLAYLISTFORM; break;
+        case STATUS_EQ_HWND:   param1_local = AIMP_MPH_EQUALIZERFORM; break;
         default:
             assert(!"unknown status");
             break;
         }
         HWND value;
-        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        r = aimp_service_message_dispatcher_->Send(msg, param1_local, &value);
         if (S_OK == r) {
             return reinterpret_cast<StatusValue>(value);
         }
@@ -1553,16 +1553,6 @@ AIMPManager::StatusValue AIMPManager36::getStatus(AIMPManager::STATUS status) co
 
 void AIMPManager36::setStatus(AIMPManager::STATUS status, AIMPManager::StatusValue status_value)
 {
-    //try {
-    //    if ( FALSE == aimp2_controller_->AIMP_Status_Set(cast<AIMP2SDK_STATUS>(status), value) ) {
-    //        throw std::runtime_error(MakeString() << "Error occured while setting status " << asString(status) << " to value " << value);
-    //    }
-    //} catch (std::bad_cast& e) {
-    //    throw std::runtime_error( e.what() );
-    //}
-
-    //notifyAboutInternalEventOnStatusChange(status);
-
     DWORD msg = 0;
     const int param1 = AIMP_MSG_PROPVALUE_SET;
     HRESULT r = S_OK;
@@ -1683,9 +1673,9 @@ void AIMPManager36::setStatus(AIMPManager::STATUS status, AIMPManager::StatusVal
     case STATUS_EQ_SLDR17:
     case STATUS_EQ_SLDR18: {
         msg = AIMP_MSG_PROPERTY_EQUALIZER_BAND;
-        const int param1 = MAKELONG(AIMP_MSG_PROPVALUE_SET, status - STATUS_EQ_SLDR01);
+        const int param1_local = MAKELONG(AIMP_MSG_PROPVALUE_SET, status - STATUS_EQ_SLDR01);
         float value = status_value / 100.f * 30.f - 15.f;
-        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        r = aimp_service_message_dispatcher_->Send(msg, param1_local, &value);
         if (S_OK == r) {
             return;
         }
@@ -2371,7 +2361,7 @@ bool AIMPManager36::getCoverImageContainter(TrackDescription track_desc, boost::
 std::auto_ptr<ImageUtils::AIMPCoverImage> AIMPManager36::getCoverImage(boost::intrusive_ptr<AIMP36SDK::IAIMPImage> image, int cover_width, int cover_height) const
 {
     if (cover_width < 0 || cover_height < 0) {
-        throw std::invalid_argument(MakeString() << "Error in "__FUNCTION__ << ". Negative cover size.");
+        throw std::invalid_argument(MakeString() << "Error in " __FUNCTION__ << ". Negative cover size.");
     }
 
     HBITMAP cover_bitmap_handle = nullptr;

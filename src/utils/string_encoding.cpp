@@ -19,8 +19,8 @@ namespace StringEncoding {
 static std::string from_utf16_to(int code_page, const WCHAR* begin, const WCHAR* end) // throws InvalidArgument, EncodingError
 {
     if (begin > end) {
-        assert(!"Invalid argument in "__FUNCTION__);
-        throw InvalidArgument("Error in "__FUNCTION__", bad arguments: begin > end.");
+        assert(!"Invalid argument in " __FUNCTION__);
+        throw InvalidArgument("Error in " __FUNCTION__", bad arguments: begin > end.");
     } else if (begin == end) {
         /*
             Return empty string here for following reasons:
@@ -43,7 +43,7 @@ static std::string from_utf16_to(int code_page, const WCHAR* begin, const WCHAR*
                                                                       );
     if (converted_buffer_length_calculated <= 0) {
         std::ostringstream s;
-        s << "Error of WideCharToMultiByte(0): error code" << GetLastError() << "in "__FUNCTION__". Code page:" << code_page;
+        s << "Error of WideCharToMultiByte(0): error code" << GetLastError() << "in " __FUNCTION__". Code page:" << code_page;
         throw EncodingError( s.str() );
     }
 
@@ -60,7 +60,7 @@ static std::string from_utf16_to(int code_page, const WCHAR* begin, const WCHAR*
                                                            );
     if (converted_buffer_length != converted_buffer_length_calculated) {
         std::ostringstream s;
-        s << "Error of WideCharToMultiByte(): error code" << GetLastError() << "in "__FUNCTION__". Code page:" << code_page;
+        s << "Error of WideCharToMultiByte(): error code" << GetLastError() << "in " __FUNCTION__". Code page:" << code_page;
         throw EncodingError( s.str() );
     }
 
@@ -79,8 +79,8 @@ static std::string from_utf16_to(int code_page, const WCHAR* begin, const WCHAR*
 static std::wstring to_utf16_from(int code_page, const CHAR* begin, const CHAR* end) // throws InvalidArgument, EncodingError
 {
     if (begin > end) {
-        assert(!"Invalid argument in "__FUNCTION__);
-        throw InvalidArgument("Error in "__FUNCTION__", bad arguments: begin > end.");
+        assert(!"Invalid argument in " __FUNCTION__);
+        throw InvalidArgument("Error in " __FUNCTION__", bad arguments: begin > end.");
     } else if (begin == end) {
         /*
             Return empty string here for following reasons:
@@ -102,7 +102,7 @@ static std::wstring to_utf16_from(int code_page, const CHAR* begin, const CHAR* 
 
     if (converted_string_length_calculated <= 0) {
         std::ostringstream s;
-        s << "Error of MultiByteToWideChar(0): error code" << GetLastError() << "in "__FUNCTION__". Code page:" << code_page;
+        s << "Error of MultiByteToWideChar(0): error code" << GetLastError() << "in " __FUNCTION__". Code page:" << code_page;
         throw EncodingError( s.str() );
     }
 
@@ -117,7 +117,7 @@ static std::wstring to_utf16_from(int code_page, const CHAR* begin, const CHAR* 
                                                            );
     if (converted_string_length != converted_string_length_calculated) {
         std::ostringstream s;
-        s << "Error of MultiByteToWideChar(): error code" << GetLastError() << "in "__FUNCTION__". Code page:" << code_page;
+        s << "Error of MultiByteToWideChar(): error code" << GetLastError() << "in " __FUNCTION__". Code page:" << code_page;
         throw EncodingError( s.str() );
     }
     return std::wstring( converted_buffer.begin(), converted_buffer.end() );

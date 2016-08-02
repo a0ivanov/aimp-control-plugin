@@ -211,7 +211,7 @@ void AIMPManager31::enqueueEntryForPlay(TrackDescription track_desc, bool insert
 
     HRESULT r = aimp3_playlist_queue_->QueueEntryAdd(entry_handle, insert_at_queue_beginning);
     if (S_OK != r) {
-        throw std::runtime_error(MakeString() << "Error " << r << " in "__FUNCTION__" with " << track_desc);
+        throw std::runtime_error(MakeString() << "Error " << r << " in " __FUNCTION__" with " << track_desc);
     }
 }
 
@@ -222,7 +222,7 @@ void AIMPManager31::removeEntryFromPlayQueue(TrackDescription track_desc) // thr
 
     HRESULT r = aimp3_playlist_queue_->QueueEntryRemove(entry_handle);
     if (S_OK != r) {
-        throw std::runtime_error(MakeString() << "Error " << r << " in "__FUNCTION__" with " << track_desc);
+        throw std::runtime_error(MakeString() << "Error " << r << " in " __FUNCTION__" with " << track_desc);
     }
 }
 

@@ -410,7 +410,7 @@ int getAIMPVersion(AIMP3SDK::IAIMPCoreUnit* aimp3_core_unit)
 
     if (S_OK != r) {
         BOOST_LOG_SEV(logger(), error) << "IAIMPCoreUnit::GetVersion returned " << r;
-        throw std::runtime_error("Unable to extract AIMP version. "__FUNCTION__);
+        throw std::runtime_error("Unable to extract AIMP version. " __FUNCTION__);
     }
     
     return version_info.ID;
@@ -432,7 +432,7 @@ boost::shared_ptr<AIMPPlayer::AIMPManager> AIMPControlPlugin::CreateAIMPManager(
         result.reset( new AIMPPlayer::AIMPManager36(aimp36_core_, *server_io_service_) );
     } else {
         assert(!"both AIMP2 and AIMP3 plugin addon objects do not exist.");
-        throw std::runtime_error("both AIMP2 and AIMP3 plugin addon objects do not exist. "__FUNCTION__);
+        throw std::runtime_error("both AIMP2 and AIMP3 plugin addon objects do not exist. " __FUNCTION__);
     }
     return result;
 }
