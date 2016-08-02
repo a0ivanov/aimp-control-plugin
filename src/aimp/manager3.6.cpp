@@ -1411,9 +1411,9 @@ AIMPManager::StatusValue AIMPManager36::getStatus(AIMPManager::STATUS status) co
     case STATUS_EQ_SLDR17:
     case STATUS_EQ_SLDR18: {
         msg = AIMP_MSG_PROPERTY_EQUALIZER_BAND;
-        const int param1 = MAKELONG(AIMP_MSG_PROPVALUE_GET, status - STATUS_EQ_SLDR01);
+        const int param1_local = MAKELONG(AIMP_MSG_PROPVALUE_GET, status - STATUS_EQ_SLDR01);
         float value;
-        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        r = aimp_service_message_dispatcher_->Send(msg, param1_local, &value);
         if (S_OK == r) {
             return static_cast<StatusValue>((value + 15.f) / 30.f * 100.f);
         }
@@ -1509,19 +1509,19 @@ AIMPManager::StatusValue AIMPManager36::getStatus(AIMPManager::STATUS status) co
     case STATUS_PL_HWND:
     case STATUS_EQ_HWND: {
         msg = AIMP_MSG_PROPERTY_HWND;
-        int param1 = 0;
+        int param1_local = 0;
         switch (status) {
-        case STATUS_MAIN_HWND: param1 = AIMP_MPH_MAINFORM; break;
-        case STATUS_APP_HWND:  param1 = AIMP_MPH_APPLICATION; break;
-        case STATUS_TC_HWND:   param1 = AIMP_MPH_TRAYCONTROL; break;
-        case STATUS_PL_HWND:   param1 = AIMP_MPH_PLAYLISTFORM; break;
-        case STATUS_EQ_HWND:   param1 = AIMP_MPH_EQUALIZERFORM; break;
+        case STATUS_MAIN_HWND: param1_local = AIMP_MPH_MAINFORM; break;
+        case STATUS_APP_HWND:  param1_local = AIMP_MPH_APPLICATION; break;
+        case STATUS_TC_HWND:   param1_local = AIMP_MPH_TRAYCONTROL; break;
+        case STATUS_PL_HWND:   param1_local = AIMP_MPH_PLAYLISTFORM; break;
+        case STATUS_EQ_HWND:   param1_local = AIMP_MPH_EQUALIZERFORM; break;
         default:
             assert(!"unknown status");
             break;
         }
         HWND value;
-        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        r = aimp_service_message_dispatcher_->Send(msg, param1_local, &value);
         if (S_OK == r) {
             return reinterpret_cast<StatusValue>(value);
         }
@@ -1673,9 +1673,9 @@ void AIMPManager36::setStatus(AIMPManager::STATUS status, AIMPManager::StatusVal
     case STATUS_EQ_SLDR17:
     case STATUS_EQ_SLDR18: {
         msg = AIMP_MSG_PROPERTY_EQUALIZER_BAND;
-        const int param1 = MAKELONG(AIMP_MSG_PROPVALUE_SET, status - STATUS_EQ_SLDR01);
+        const int param1_local = MAKELONG(AIMP_MSG_PROPVALUE_SET, status - STATUS_EQ_SLDR01);
         float value = status_value / 100.f * 30.f - 15.f;
-        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        r = aimp_service_message_dispatcher_->Send(msg, param1_local, &value);
         if (S_OK == r) {
             return;
         }
