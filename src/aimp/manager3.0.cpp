@@ -186,11 +186,11 @@ AIMPManager30::AIMPManager30(boost::intrusive_ptr<AIMP3SDK::IAIMPCoreUnit> aimp3
         // do not addref our pointer since AIMP do this itself. aimp3_core_message_hook_->AddRef();
         aimp3_core_unit_->MessageHook( aimp3_core_message_hook_.get() );
 
-        aimp3_playlist_manager_listener_.reset( new AIMPAddonsPlaylistManagerListener(this)  );
-        // do not addref our pointer since AIMP do this itself. aimp3_playlist_manager_listener_->AddRef();
+        aimp3_playlist_manager_listener_.reset( new AIMPAddonsPlaylistManagerListener(this) );
+        // do not addref our pointer because AIMP does it. aimp3_playlist_manager_listener_->AddRef();
         aimp3_playlist_manager_->ListenerAdd( aimp3_playlist_manager_listener_.get() );
     } catch (std::runtime_error& e) {
-        throw std::runtime_error( std::string("Error occured during AIMPManager30 initialization. Reason:") + e.what() );
+        throw std::runtime_error( MakeString() << "Error occured during AIMPManager30 initialization. Reason: " << e.what() );
     }
 }
 
