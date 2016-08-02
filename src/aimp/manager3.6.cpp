@@ -147,6 +147,8 @@ AIMPManager36::AIMPManager36(boost::intrusive_ptr<AIMP36SDK::IAIMPCore> aimp36_c
             throw std::runtime_error(MakeString() << "aimp_service_message_dispatcher_->Hook() failed. Result " << r); 
         }
         
+        // load playlists content here to handle case when plugin is being loaded via AIMP Plugins menu by user.
+        loadPlaylistsContent();
     } catch (std::runtime_error& e) {
         throw std::runtime_error( std::string("Error occured during AIMPManager36 initialization. Reason:") + e.what() );
     }
@@ -330,6 +332,21 @@ void AIMPManager36::shutdownPlaylistDB()
         BOOST_LOG_SEV(logger(), error) << "sqlite3_close error: " << rc;
     }
     playlists_db_ = nullptr;
+}
+
+void AIMPManager36::loadPlaylistsContent()
+{
+    aimp_service_playlist_manager_->GetLoadedPlaylistCount();
+    for (int i = 0, count = aimp_service_playlist_manager_->GetLoadedPlaylistCount(); i != count; ++i) {
+        IAIMPPlaylist* playlist_tmp;
+        HRESULT r = aimp_service_playlist_manager_->GetLoadedPlaylist(i, &playlist_tmp);
+        if (S_OK != r) {
+            throw std::runtime_error(MakeString() << "loadPlaylistsContent(): GetLoadedPlaylist failure: " << r);
+        }
+        boost::intrusive_ptr<IAIMPPlaylist> playlist(playlist_tmp, false);
+
+        playlistAdded(playlist.get());
+    }
 }
 
 void AIMPManager36::playlistActivated(AIMP36SDK::IAIMPPlaylist* /*playlist*/)

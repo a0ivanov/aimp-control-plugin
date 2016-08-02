@@ -229,6 +229,7 @@ public:
     // IPlaylistEntryRatingManager method.
     virtual void trackRating(TrackDescription track_desc, double rating); // throw std::runtime_error
 
+    virtual void loadPlaylistsContent();
     virtual void playlistActivated(AIMP36SDK::IAIMPPlaylist* playlist);
     virtual void playlistAdded(AIMP36SDK::IAIMPPlaylist* playlist);
 	virtual void playlistRemoved(AIMP36SDK::IAIMPPlaylist* playlist);
