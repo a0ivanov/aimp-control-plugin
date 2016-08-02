@@ -226,8 +226,11 @@ AIMPCoverImage::AIMPCoverImage(HBITMAP cover_bitmap_handle, bool release_bitmap,
         throw std::runtime_error("Error occured while create AIMPCoverImage from HBITMAP.");
     }
 
-    if (width != 0 && height != 0) {
-        SIZE size = { width, height };
+    if (	(0 < width && width <= (unsigned)std::numeric_limits<LONG>::max())
+		&&	(0 < height && height <= (unsigned)std::numeric_limits<LONG>::max())
+		)
+	{
+        SIZE size = { (LONG)width, (LONG)height };
         SIZE bitmap_size = getBitmapSize(cover_bitmap_handle);
         if (bitmap_size.cx != size.cx || bitmap_size.cy != size.cy) {
             result = rescale(size.cx, size.cy, FREE_IMAGE_FILTER::FILTER_BICUBIC);
