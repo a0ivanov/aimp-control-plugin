@@ -213,10 +213,10 @@ template<typename To, typename From> To cast(From);
 typedef int AIMP2SDK_STATUS;
 
 template<>
-AIMP2SDK_STATUS cast(AIMPManager::STATUS status); // throws std::bad_cast
+AIMP2SDK_STATUS cast(AIMPManager::STATUS status); // throws std::runtime_error
 
 template<>
-AIMPManager26::STATUS cast(AIMP2SDK_STATUS status); // throws std::bad_cast
+AIMPManager26::STATUS cast(AIMP2SDK_STATUS status); // throws std::runtime_error
 
 template<typename T>
 T getEntryField(sqlite3* db, const char* field, TrackDescription track_desc);

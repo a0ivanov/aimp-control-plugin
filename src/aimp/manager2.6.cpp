@@ -180,7 +180,7 @@ PlaylistCRC32& AIMPManager26::getPlaylistCRC32Object(PlaylistID playlist_id) con
     if (it != playlist_crc32_list_.end()) {
         return it->second;
     }
-    throw std::runtime_error(MakeString() << "Playlist " << playlist_id << " was not found in "__FUNCTION__);
+    throw std::runtime_error(MakeString() << "Playlist " << playlist_id << " was not found in " __FUNCTION__);
 }
 
 
@@ -305,7 +305,7 @@ void AIMPManager26::loadEntries(PlaylistID playlist_id) // throws std::runtime_e
         try {
             getPlaylistCRC32Object(playlist_id).reset_entries();
         } catch (std::exception& e) {
-            throw std::runtime_error(MakeString() << "expected crc32 struct for playlist " << playlist_id << " not found in "__FUNCTION__". Reason: " << e.what());
+            throw std::runtime_error(MakeString() << "expected crc32 struct for playlist " << playlist_id << " not found in " __FUNCTION__". Reason: " << e.what());
         }
     }
 
@@ -453,7 +453,7 @@ int playlistsCount(sqlite3* db)
             throw std::runtime_error(msg);
 		}
     }
-    assert(!"Unexpected query result in "__FUNCTION__);
+    assert(!"Unexpected query result in " __FUNCTION__);
     return 0;
 }
 
@@ -668,7 +668,7 @@ void AIMPManager26::onTimerPlaylistsChangeCheck(const boost::system::error_code&
         // Do check
         checkIfPlaylistsChanged();
     } else if (e != boost::asio::error::operation_aborted) { // "operation_aborted" error code is sent when timer is cancelled.
-        BOOST_LOG_SEV(logger(), error) << "err:"__FUNCTION__" timer error:" << e;
+        BOOST_LOG_SEV(logger(), error) << "err:" __FUNCTION__" timer error:" << e;
     }
 }
 
@@ -769,7 +769,7 @@ void AIMPManager26::startPlayback(TrackDescription track_desc) // throws std::ru
 {
     track_desc = getAbsoluteTrackDesc(track_desc);
     if ( FALSE == aimp2_player_->PlayTrack(track_desc.playlist_id, track_desc.track_id) ) {
-        throw std::runtime_error( MakeString() << "Error in "__FUNCTION__" with " << track_desc );
+        throw std::runtime_error( MakeString() << "Error in " __FUNCTION__" with " << track_desc );
     }
 }
 
@@ -798,7 +798,7 @@ void AIMPManager26::playPreviousTrack()
 //typedef int AIMP2SDK_STATUS;
 
 template<>
-AIMP2SDK_STATUS cast(AIMPManager::STATUS status) // throws std::bad_cast
+AIMP2SDK_STATUS cast(AIMPManager::STATUS status) // throws std::runtime_error
 {
     using namespace AIMP2SDK;
     switch (status) {
@@ -855,14 +855,14 @@ AIMP2SDK_STATUS cast(AIMPManager::STATUS status) // throws std::bad_cast
         break;
     }
 
-    assert(!"unknown AIMPSDK status in "__FUNCTION__);
-    throw std::bad_cast( std::string(MakeString() << "can't cast AIMPManager::STATUS status " << static_cast<int>(status) << " to AIMPSDK status"
-                                     ).c_str()
-                        );
+    assert(!"unknown AIMPSDK status in " __FUNCTION__);
+	
+	// it was supposed to be std::bad_cast, but it lacks required ctor.
+    throw std::runtime_error(MakeString() << "can't cast AIMPManager::STATUS status " << static_cast<int>(status) << " to AIMPSDK status");
 }
 
 template<>
-AIMPManager26::STATUS cast(AIMP2SDK_STATUS status) // throws std::bad_cast
+AIMPManager26::STATUS cast(AIMP2SDK_STATUS status) // throws std::runtime_error
 {
     using namespace AIMP2SDK;
     switch (status) {
@@ -919,13 +919,13 @@ AIMPManager26::STATUS cast(AIMP2SDK_STATUS status) // throws std::bad_cast
         break;
     }
 
-    assert(!"unknown AIMPSDK status in "__FUNCTION__);
-    throw std::bad_cast( std::string(MakeString() << "can't cast AIMP SDK status " << status << " to AIMPManager::STATUS"
-                                     ).c_str()
-                        );
+    assert(!"unknown AIMPSDK status in " __FUNCTION__);
+
+	// it was supposed to be std::bad_cast, but it lacks required ctor.
+	throw std::runtime_error(MakeString() << "can't cast AIMP SDK status " << status << " to AIMPManager::STATUS");
 }
 
-const char* asString(AIMP2SDK_STATUS status)
+const char* asString(AIMP2SDK_STATUS status) // throws std::runtime_error
 {
     using namespace AIMP2SDK;
     switch (status) {
@@ -982,9 +982,8 @@ const char* asString(AIMP2SDK_STATUS status)
         break;
     }
 
-    assert(!"unknown AIMPSDK status in "__FUNCTION__);
-    throw std::bad_cast( std::string(MakeString() << "can't find string representation of AIMP SDK status " << status).c_str()
-                        );
+    assert(!"unknown AIMPSDK status in " __FUNCTION__);
+    throw std::runtime_error(MakeString() << "can't find string representation of AIMP SDK status " << status);
 }
 
 bool AIMPManager26::getEventRelatedTo(AIMPManager26::STATUS status, AIMPManager26::EVENTS* event)
@@ -1038,10 +1037,10 @@ void AIMPManager26::setStatus(AIMPManager26::STATUS status, AIMPManager26::Statu
                                                          ) 
            )
         {
-            throw std::runtime_error(MakeString() << "Error occured while setting status " << asString(status) << " to value " << value);
+            throw std::runtime_error("AIMP_Status_Set failed");
         }
-    } catch (std::bad_cast& e) {
-        throw std::runtime_error( e.what() );
+    } catch (std::runtime_error& e) {
+        throw std::runtime_error(MakeString() << "Error occured while setting status " << asString(status) << " to value " << value << ". Reason: " << e.what());
     }
 
     EVENTS event;
@@ -1170,7 +1169,7 @@ void AIMPManager26::enqueueEntryForPlay(TrackDescription track_desc, bool insert
 {
     track_desc = getAbsoluteTrackDesc(track_desc);
     if ( S_OK != aimp2_playlist_manager_->AIMP_PLS_Entry_QueueSet(track_desc.playlist_id, track_desc.track_id, insert_at_queue_beginning) ) {
-        throw std::runtime_error(MakeString() << "Error in "__FUNCTION__" with " << track_desc);
+        throw std::runtime_error(MakeString() << "Error in " __FUNCTION__" with " << track_desc);
     }
 }
 
@@ -1178,7 +1177,7 @@ void AIMPManager26::removeEntryFromPlayQueue(TrackDescription track_desc) // thr
 {
     track_desc = getAbsoluteTrackDesc(track_desc);
     if ( S_OK != aimp2_playlist_manager_->AIMP_PLS_Entry_QueueRemove(track_desc.playlist_id, track_desc.track_id) ) {
-        throw std::runtime_error(MakeString() << "Error in "__FUNCTION__" with " << track_desc);
+        throw std::runtime_error(MakeString() << "Error in " __FUNCTION__" with " << track_desc);
     }
 }
 
@@ -1205,7 +1204,7 @@ void AIMPManager26::saveCoverToFile(TrackDescription track_desc, const std::wstr
 std::auto_ptr<ImageUtils::AIMPCoverImage> AIMPManager26::getCoverImage(TrackDescription track_desc, int cover_width, int cover_height) const
 {
     if (cover_width < 0 || cover_height < 0) {
-        throw std::invalid_argument(MakeString() << "Error in "__FUNCTION__ << ". Negative cover size.");
+        throw std::invalid_argument(MakeString() << "Error in " __FUNCTION__ << ". Negative cover size.");
     }
 
     const std::wstring& entry_filename = getEntryField<std::wstring>(playlists_db_, "filename", track_desc);
@@ -1269,7 +1268,7 @@ void getEntryField_(sqlite3* db, const char* field, TrackDescription track_desc,
 		}
     }
 
-    throw std::runtime_error(MakeString() << "Error in "__FUNCTION__ << ". Track " << track_desc << " does not exist");
+    throw std::runtime_error(MakeString() << "Error in " __FUNCTION__ << ". Track " << track_desc << " does not exist");
 }
 
 template<>
@@ -1279,7 +1278,7 @@ std::wstring getEntryField(sqlite3* db, const char* field, TrackDescription trac
     auto handler = [&](sqlite3_stmt* stmt) {
         assert(sqlite3_column_type(stmt, 0) == SQLITE_TEXT);
         if (sqlite3_column_type(stmt, 0) != SQLITE_TEXT) {
-            throw std::runtime_error(MakeString() << "Unexpected column type at "__FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Track " << track_desc);
+            throw std::runtime_error(MakeString() << "Unexpected column type at " __FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Track " << track_desc);
         }
         r = static_cast<const std::wstring::value_type*>(sqlite3_column_text16(stmt, 0));
     };
@@ -1294,7 +1293,7 @@ DWORD getEntryField(sqlite3* db, const char* field, TrackDescription track_desc)
     auto handler = [&](sqlite3_stmt* stmt) {
         assert(sqlite3_column_type(stmt, 0) == SQLITE_INTEGER);
         if (sqlite3_column_type(stmt, 0) != SQLITE_INTEGER) {
-            throw std::runtime_error(MakeString() << "Unexpected column type at "__FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Track " << track_desc);
+            throw std::runtime_error(MakeString() << "Unexpected column type at " __FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Track " << track_desc);
         }
         r = static_cast<DWORD>(sqlite3_column_int(stmt, 0));
     };
@@ -1309,7 +1308,7 @@ INT64 getEntryField(sqlite3* db, const char* field, TrackDescription track_desc)
     auto handler = [&](sqlite3_stmt* stmt) {
         assert(sqlite3_column_type(stmt, 0) == SQLITE_INTEGER);
         if (sqlite3_column_type(stmt, 0) != SQLITE_INTEGER) {
-            throw std::runtime_error(MakeString() << "Unexpected column type at "__FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Track " << track_desc);
+            throw std::runtime_error(MakeString() << "Unexpected column type at " __FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Track " << track_desc);
         }
         r = sqlite3_column_int64(stmt, 0);
     };
@@ -1324,7 +1323,7 @@ double getEntryField(sqlite3* db, const char* field, TrackDescription track_desc
     auto handler = [&](sqlite3_stmt* stmt) {
         assert(sqlite3_column_type(stmt, 0) == SQLITE_FLOAT);
         if (sqlite3_column_type(stmt, 0) != SQLITE_FLOAT) {
-            throw std::runtime_error(MakeString() << "Unexpected column type at "__FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Track " << track_desc);
+            throw std::runtime_error(MakeString() << "Unexpected column type at " __FUNCTION__ << ": " << sqlite3_column_type(stmt, 0) << ". Track " << track_desc);
         }
         r = sqlite3_column_double(stmt, 0);
     };
@@ -1707,7 +1706,7 @@ public:
                 throw std::runtime_error(msg);
 		    }
         }
-        throw std::runtime_error(MakeString() << "Track " << track_desc << " not found at "__FUNCTION__);
+        throw std::runtime_error(MakeString() << "Track " << track_desc << " not found at " __FUNCTION__);
     }
 
 private:

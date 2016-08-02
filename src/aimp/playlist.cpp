@@ -78,7 +78,7 @@ crc32_t PlaylistCRC32::calc_crc32_properties()
             throw std::runtime_error(msg);
 		}
     }
-    throw std::runtime_error(MakeString() << "Playlist " << playlist_id_ << " is not found in "__FUNCTION__);
+    throw std::runtime_error(MakeString() << "Playlist " << playlist_id_ << " is not found in " __FUNCTION__);
 }
 
 crc32_t crc32_entry(sqlite3_stmt* stmt);
