@@ -277,11 +277,11 @@ private:
         if (info_.nTitleLen == 0) {
             boost::filesystem::wpath path(info_.sFileName);
             path.replace_extension();
-            const boost::filesystem::wpath& filename = path.filename();
-            info_.nTitleLen = std::min((size_t)kFIELDBUFFERSIZE, std::wcslen(filename.c_str()));
+            const boost::filesystem::wpath& filename_local = path.filename();
+            info_.nTitleLen = std::min((size_t)kFIELDBUFFERSIZE, std::wcslen(filename_local.c_str()));
 #pragma warning (push, 4)
 #pragma warning( disable : 4996 )
-            std::wcsncpy(info_.sTitle, filename.c_str(), info_.nTitleLen);
+            std::wcsncpy(info_.sTitle, filename_local.c_str(), info_.nTitleLen);
 #pragma warning (pop)
         }
     }

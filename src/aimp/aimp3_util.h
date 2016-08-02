@@ -93,11 +93,11 @@ private:
         if (info_.TitleBufferSizeInChars == 0) {
             boost::filesystem::wpath path(info_.FileNameBuffer);
             path.replace_extension();
-            const boost::filesystem::wpath& filename = path.filename();
-            info_.TitleBufferSizeInChars = std::min((size_t)kFIELDBUFFERSIZE, std::wcslen(filename.c_str()));
+            const boost::filesystem::wpath& filename_local = path.filename();
+            info_.TitleBufferSizeInChars = std::min((size_t)kFIELDBUFFERSIZE, std::wcslen(filename_local.c_str()));
 #pragma warning (push, 4)
 #pragma warning( disable : 4996 )
-            std::wcsncpy(info_.TitleBuffer, filename.c_str(), info_.TitleBufferSizeInChars);
+            std::wcsncpy(info_.TitleBuffer, filename_local.c_str(), info_.TitleBufferSizeInChars);
 #pragma warning (pop)
         }
     }
