@@ -127,12 +127,12 @@ crc32_t crc32_entry(sqlite3_stmt* stmt)
             crc32_text16( sqlite3_column_text16(stmt, 3) ),
             crc32_text16( sqlite3_column_text16(stmt, 4) ),
             crc32_text16( sqlite3_column_text16(stmt, 5) ),
-                          sqlite3_column_int   (stmt, 6),
-                          sqlite3_column_int   (stmt, 7),
-                          sqlite3_column_int   (stmt, 8),
+                 (crc32_t)sqlite3_column_int   (stmt, 6),
+                 (crc32_t)sqlite3_column_int   (stmt, 7),
+                 (crc32_t)sqlite3_column_int   (stmt, 8),
         Utilities::crc32( sqlite3_column_int64 (stmt, 9) ),
-                          sqlite3_column_int   (stmt,10),
-                          sqlite3_column_int   (stmt,11),
+                 (crc32_t)sqlite3_column_int   (stmt,10),
+                 (crc32_t)sqlite3_column_int   (stmt,11),
     };
 
     return Utilities::crc32( &members_crc32_list[0], sizeof(members_crc32_list) );
