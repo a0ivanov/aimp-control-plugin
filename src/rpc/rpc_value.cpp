@@ -13,7 +13,7 @@ namespace Rpc
 void handleUnknownType()
 {
     assert(!"unknown Value type");
-    // throw Exception("type error: unknown type", TYPE_ERROR);
+    // throw Exception("type error: unknown type", TYPE_ERROR); Dot not throw as we call it from dtor now.
 }
 
 const char* asString(Value::TYPE type)
