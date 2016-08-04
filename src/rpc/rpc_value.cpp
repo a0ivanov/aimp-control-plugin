@@ -243,7 +243,13 @@ Value& Value::operator=(const Value& rhs)
 
 Value& Value::operator=(Value&& rhs)
 {
-    swap(rhs);
+    if (this != &rhs)
+    {
+        reset();
+        type_ = rhs.type_;
+        value_ = std::move(rhs.value_);
+        rhs.type_ = TYPE_NONE;
+    }
     return *this;
 }
 
