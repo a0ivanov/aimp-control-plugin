@@ -13,7 +13,7 @@ namespace Rpc
 void handleUnknownType()
 {
     assert(!"unknown Value type");
-    throw Exception("type error: unknown type", TYPE_ERROR);
+    // throw Exception("type error: unknown type", TYPE_ERROR);
 }
 
 const char* asString(Value::TYPE type)
@@ -186,6 +186,11 @@ Value::Value(const Value& rhs)
         handleUnknownType();
         break;
     }
+}
+
+Value::~Value()
+{
+    reset();
 }
 
 void Value::reset()

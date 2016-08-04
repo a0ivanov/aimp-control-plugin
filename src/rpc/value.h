@@ -46,6 +46,7 @@ public:
     explicit Value(const String& value);
     explicit Value(const Array& value);
     explicit Value(const Object& value);
+    ~Value();
 
     Value& operator=(const Value& rhs);
     Value& operator=(const Null&);
