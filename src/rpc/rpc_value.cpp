@@ -188,6 +188,14 @@ Value::Value(const Value& rhs)
     }
 }
 
+Value::Value(Value&& o) noexcept
+    :
+    type_(o.type_),
+    value_(std::move(o.value_))
+{
+    o.type_ = TYPE_NONE;
+}
+
 Value::~Value()
 {
     reset();
@@ -230,6 +238,18 @@ void Value::swap(Value& rhs)
 Value& Value::operator=(const Value& rhs)
 {
     Value(rhs).swap(*this);
+    return *this;
+}
+
+Value& Value::operator=(Value&& rhs)
+{
+    if (this != &rhs)
+    {
+        reset();
+        type_ = rhs.type_;
+        value_ = std::move(rhs.value_);
+        rhs.type_ = TYPE_NONE;
+    }
     return *this;
 }
 

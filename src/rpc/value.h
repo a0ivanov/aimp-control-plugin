@@ -10,7 +10,6 @@
 namespace Rpc
 {
 
-
 /*  Represents "interception" of XmlRpc value and JsonRpc value.
     This means that we can not use Base64 and DateTime types from XmlRpc.
 */
@@ -37,6 +36,7 @@ public:
 
     Value();
     Value(const Value& rhs);
+    Value(Value&& rhs) noexcept;
     explicit Value(const Null&);
     explicit Value(bool value);
     explicit Value(int value);
@@ -49,6 +49,7 @@ public:
     ~Value();
 
     Value& operator=(const Value& rhs);
+    Value& operator=(Value&& rhs);
     Value& operator=(const Null&);
     Value& operator=(bool value);
     Value& operator=(int value);
