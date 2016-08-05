@@ -1047,7 +1047,7 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
                                                      << rc_db << ": " << sqlite3_errmsg(playlists_db_);
                 throw std::runtime_error(msg);
             } else {
-                playlist_items.push_back(item.get()); // take ownership to access item later by the same ID.
+                playlist_items.push_back(item); // take ownership to access item later by the same ID.
             }
             sqlite3_reset(stmt);
         }
