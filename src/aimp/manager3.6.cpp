@@ -971,30 +971,30 @@ void AIMPManager36::loadEntries(IAIMPPlaylist* playlist)
             filesize = getInt64(file_info.get(), AIMP_FILEINFO_PROPID_FILESIZE, error_prefix);
         } else {
             // This item is not of IAIMPFileInfo type.
-            IAIMPVirtualFile* virtual_file_tmp;
-            r = item->QueryInterface(IID_IAIMPVirtualFile,
-                                     reinterpret_cast<void**>(&virtual_file_tmp)
-                                     );
-            if (S_OK == r) {
-                boost::intrusive_ptr<IAIMPVirtualFile> virtual_file(virtual_file_tmp, false);
-                virtual_file_tmp = nullptr;
-            } else {
-                // This item is not of IAIMPFileInfo/IAIMPVirtualFile types.
-                // Use PLAYLISTITEM fields
-                            /*
-                    const int AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT    = 1; <- used when AIMP_FILEINFO_PROPID_TITLE is empty or does not exits.
-                    const int AIMP_PLAYLISTITEM_PROPID_FILEINFO       = 2;
-                    const int AIMP_PLAYLISTITEM_PROPID_FILENAME       = 3;
-                    const int AIMP_PLAYLISTITEM_PROPID_GROUP          = 4;
-                    const int AIMP_PLAYLISTITEM_PROPID_INDEX          = 5;
-                    const int AIMP_PLAYLISTITEM_PROPID_MARK           = 6;
-                    const int AIMP_PLAYLISTITEM_PROPID_PLAYINGSWITCH  = 7;
-                    const int AIMP_PLAYLISTITEM_PROPID_PLAYLIST       = 8;
-                    const int AIMP_PLAYLISTITEM_PROPID_SELECTED       = 9;
-                    const int AIMP_PLAYLISTITEM_PROPID_PLAYBACKQUEUEINDEX = 10;
-                            */
+            //IAIMPVirtualFile* virtual_file_tmp;
+            //r = item->QueryInterface(IID_IAIMPVirtualFile,
+            //                         reinterpret_cast<void**>(&virtual_file_tmp)
+            //                         );
+            //if (S_OK == r) {
+            //    boost::intrusive_ptr<IAIMPVirtualFile> virtual_file(virtual_file_tmp, false);
+            //    virtual_file_tmp = nullptr;
+            //} else {
+            //    // This item is not of IAIMPFileInfo/IAIMPVirtualFile types.
+            //    // Use PLAYLISTITEM fields
+            //                /*
+            //        const int AIMP_PLAYLISTITEM_PROPID_DISPLAYTEXT    = 1; <- used when AIMP_FILEINFO_PROPID_TITLE is empty or does not exits.
+            //        const int AIMP_PLAYLISTITEM_PROPID_FILEINFO       = 2;
+            //        const int AIMP_PLAYLISTITEM_PROPID_FILENAME       = 3;
+            //        const int AIMP_PLAYLISTITEM_PROPID_GROUP          = 4;
+            //        const int AIMP_PLAYLISTITEM_PROPID_INDEX          = 5;
+            //        const int AIMP_PLAYLISTITEM_PROPID_MARK           = 6;
+            //        const int AIMP_PLAYLISTITEM_PROPID_PLAYINGSWITCH  = 7;
+            //        const int AIMP_PLAYLISTITEM_PROPID_PLAYLIST       = 8;
+            //        const int AIMP_PLAYLISTITEM_PROPID_SELECTED       = 9;
+            //        const int AIMP_PLAYLISTITEM_PROPID_PLAYBACKQUEUEINDEX = 10;
+            //                */
 
-            }
+            //}
         }
 
         const int entry_id = castToPlaylistEntryID(item.get());
