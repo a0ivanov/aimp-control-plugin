@@ -8,7 +8,7 @@
       <tab type="namespacemembers" visible="yes" title="" intro=""/>
     </tab>
     <tab type="classes" visible="yes" title="RPC functions">
-      <tab type="classes" visible="no" title="" intro="List of supported functions available at URI '/JSON_RPC':"/>
+      <tab type="classes" visible="no" title="" intro="List of supported functions available at URI '/RPC_JSON':"/>
       <tab type="classindex" visible="no" title="" intro=""/> 
       <tab type="hierarchy" visible="no" title="" intro=""/>
       <tab type="classmembers" visible="no" title="" intro=""/>
