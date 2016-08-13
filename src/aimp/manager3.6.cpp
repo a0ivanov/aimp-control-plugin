@@ -1309,6 +1309,25 @@ AIMPManager::StatusValue patchBool(BOOL value)
 
 } // namespace
 
+float toRange(float old_min, float old_max, float new_min, float new_max, float old_value) {
+
+    float old_range = old_max - old_min;
+    float new_range = new_max - new_min;
+    float new_value = (((old_value - old_min) * new_range) / old_range) + new_min;
+    
+    return new_value;
+}
+
+float fromPercentsRange(float prop_min, float prop_max, int percents) 
+{
+    return toRange(0.0f, 100.0f, prop_min, prop_max, static_cast<float>(percents));
+}
+
+int toPercentsRange(float propMin, float propMax, float propValue) 
+{
+    return static_cast<int>(toRange(propMin, propMax, 0.0f, 100.0f, propValue));
+}
+
 AIMPManager::StatusValue AIMPManager36::getStatus(AIMPManager::STATUS status) const
 {
     DWORD msg = 0;
@@ -1339,6 +1358,51 @@ AIMPManager::StatusValue AIMPManager36::getStatus(AIMPManager::STATUS status) co
         r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
         if (S_OK == r) {
             return static_cast<StatusValue>((value - 0.5f) * 100.f);
+        }
+        break;
+    }
+    case STATUS_BASS: {
+        msg = AIMP_MSG_PROPERTY_TRUEBASS;
+        float value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return static_cast<StatusValue>(toPercentsRange(0.f, 2.f, value));
+        }
+        break;
+    }
+    case STATUS_ENHANCER: {
+        msg = AIMP_MSG_PROPERTY_ENHANCER;
+        float value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return static_cast<StatusValue>(toPercentsRange(1.f, 5.f, value));
+        }
+        break;
+    }
+    case STATUS_TEMPO: {
+        msg = AIMP_MSG_PROPERTY_TEMPO;
+        float value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return static_cast<StatusValue>(toPercentsRange(0.8f, 1.5f, value));
+        }
+        break;
+    }
+    case STATUS_PITCH: {
+        msg = AIMP_MSG_PROPERTY_PITCH;
+        float value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return static_cast<StatusValue>(toPercentsRange(-10.f, 10.f, value));
+        }
+        break;
+    }
+    case STATUS_PREAMP: {
+        msg = AIMP_MSG_PROPERTY_PREAMP;
+        float value;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return static_cast<StatusValue>(toPercentsRange(-15.f, 15.f, value));
         }
         break;
     }
@@ -1595,6 +1659,51 @@ void AIMPManager36::setStatus(AIMPManager::STATUS status, AIMPManager::StatusVal
     case STATUS_SPEED: {
         msg = AIMP_MSG_PROPERTY_SPEED;
         float value = status_value / 100.f + 0.5f;
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+	case STATUS_BASS: {
+        msg = AIMP_MSG_PROPERTY_TRUEBASS;
+        float value = fromPercentsRange(0.f, 2.f, status_value);
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_ENHANCER: {
+        msg = AIMP_MSG_PROPERTY_ENHANCER;
+        float value = fromPercentsRange(1.f, 5.f, status_value);
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_TEMPO: {
+        msg = AIMP_MSG_PROPERTY_TEMPO;
+        float value = fromPercentsRange(0.8f, 1.5f, status_value);
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_PREAMP: {
+        msg = AIMP_MSG_PROPERTY_PREAMP;
+        float value = fromPercentsRange(-15.f, 15.f, status_value);
+        r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
+        if (S_OK == r) {
+            return;
+        }
+        break;
+    }
+    case STATUS_PITCH: {
+        msg = AIMP_MSG_PROPERTY_PITCH;
+        float value = fromPercentsRange(-10.f, 10.f, status_value);
         r = aimp_service_message_dispatcher_->Send(msg, param1, &value);
         if (S_OK == r) {
             return;
