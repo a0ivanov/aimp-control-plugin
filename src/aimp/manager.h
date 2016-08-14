@@ -72,6 +72,12 @@ public:
         STATUS_EQ_HWND,
         STATUS_TRAY, // [0,1] false/true.
 
+        STATUS_BASS, // [0,100]
+        STATUS_ENHANCER, // [0,100]
+        STATUS_TEMPO, // [0,100] 
+        STATUS_PITCH, // [0,100] 
+        STATUS_PREAMP, // [0,100] 
+
         STATUS_LAST // not a status.
     };
 
