@@ -1,4 +1,4 @@
-#define SourceDir "..\"
+﻿#define SourceDir "..\"
 #define AppName "AIMP Control Plugin"
 #define SrcApp "temp_build\Release\Control Plugin.dll"
 ; use absolute path as GetFileVersion() argument since there is problem with relative path when we execute this script from command line.
@@ -56,6 +56,7 @@ AppendDefaultDirName=true
 Name: en; MessagesFile: inno_setup_data\English.isl; LicenseFile: License-English.txt;
 Name: ru; MessagesFile: inno_setup_data\Russian.isl; LicenseFile: License-Russian.txt;
 Name: cs; MessagesFile: inno_setup_data\Czech.isl;   LicenseFile: License-English.txt;
+Name: pl; MessagesFile: inno_setup_data\Polish.isl;  LicenseFile: License-English.txt;
 
 [Files]
 Source: "{#SrcApp}"; DestDir: "{code:GetPluginDllDestinationDir}"; DestName: "{#PluginWorkDirectoryName}.dll"; BeforeInstall: RemoveLegacyPluginExecutable; Flags: ignoreversion
