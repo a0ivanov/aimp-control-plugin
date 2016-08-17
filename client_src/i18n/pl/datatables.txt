@@ -1,0 +1,17 @@
+{
+    "sProcessing": "Pobieranie listy utworów...",
+    "sLengthMenu": "Pokaż _MENU_ pozycji",
+    "sZeroRecords": "Nie znaleziono wyszukiwanych pozycji",
+    "sInfo": "Pokazuję _START_ do _END_ z _TOTAL_ wszystkich utworów",
+    "sInfoEmtpy": "Brak utworów do pokazania... Dodaj jakieś, bo inaczej po co ci AIMP? :)",
+    "sInfoFiltered": "(przefiltrowano z _MAX_ wszystkich pozycji)",
+    "sInfoPostFix": "",
+    "sSearch": "Wyszukiwanie:",
+    "sUrl": "",
+    "oPaginate": {
+        "sFirst": "Pierwszy",
+        "sPrevious": "Poprzedni",
+        "sNext": "Następny",
+        "sLast": "Poprzedni"
+    }
+}
