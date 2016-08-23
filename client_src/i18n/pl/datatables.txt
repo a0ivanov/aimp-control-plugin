@@ -9,9 +9,9 @@
     "sSearch": "Wyszukiwanie:",
     "sUrl": "",
     "oPaginate": {
-        "sFirst": "Pierwszy",
-        "sPrevious": "Poprzedni",
-        "sNext": "Następny",
-        "sLast": "Poprzedni"
+        "sFirst": "Pierwsza",
+        "sPrevious": "Poprzednia",
+        "sNext": "Następna",
+        "sLast": "Ostatnia"
     }
 }
