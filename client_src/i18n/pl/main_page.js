@@ -45,7 +45,7 @@ settings_dialog_title : 'Ustawienia',
 settings_dialog_save_button : 'Zapisz ustawienia',
 settings_dialog_cancel_button : 'Anuluj',
 // tab 'playlist view'
-settings_dialog_playlist_view_tab_title : 'Wydok playlisty',
+settings_dialog_playlist_view_tab_title : 'Widok playlisty',
 settings_dialog_playlist_view_tab_show_fields : 'Pola wyświetlane',
 settings_dialog_playlist_view_tab_hide_fields : 'Pola ukryte',
 settings_dialog_playlist_view_tab_entry_field_warning : 'Musisz wybrać minimum jedno pole do wyświetlenia.',
