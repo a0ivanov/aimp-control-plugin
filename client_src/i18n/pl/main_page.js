@@ -4,7 +4,7 @@
 */
 var language_main_page = {
 
-page_title : 'Remote AIMP player control',
+page_title : 'Zdalne Zarządzanie AIMPem',
 error_playlists_loading : 'Błąd pobierania playlisty',
 error_playlist_entries_loading : 'Błąd pobierania listy utworów playlisty',
 error_stop_playback : 'Błąd zatrzymywania utworu',
@@ -58,7 +58,7 @@ settings_dialog_trackinfo_format : 'Format paska informacji',
 entry_field_caption_title : 'Tytuł',
 entry_field_caption_artist : 'Artysta',
 entry_field_caption_album : 'Album',
-entry_field_caption_date : 'Rocznik',
+entry_field_caption_date : 'Data wydania',
 entry_field_caption_genre : 'Gatunek',
 entry_field_caption_bitrate : 'Bitrate',
 entry_field_caption_duration : 'Czas',
